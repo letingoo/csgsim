@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="IndexEvaluation">
+
+	<typeAlias alias="indexEvaModel" type="indexEvaluation.model.IndexEvaModel"/>
+	
+	<select id="getSETDataOfBusiness" resultClass="indexEvaModel" parameterClass="indexEvaModel"> 
+		
+		select t.id, t.name, t.type,t.calculate_method,t.operator_1,t.operator_2, t.value, t.unit,t.score,t.updatedate starttime
+  			from index_evaluation t where t.type != '通信网络运维质量指标'
+  			
+  			<isNotEmpty prepend="and" property="dept">
+				t.dept like '%$dept$%'
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="and" property="starttime">
+				updatedate =
+				#starttime#
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="and" property="end">-->
+<!--				updatedate &lt;=-->
+<!--				#end#-->
+<!--			</isNotEmpty>-->
+  			
+ 			<!--  group by t.type, t.name, t.id, t.value, t.unit -->
+ 			order by t.type, t.name, t.id, t.value, t.unit,t.updatedate
+ 			
+	</select>
+	
+	<select id="getMaxTimeByTable" parameterClass="string" resultClass="string">
+		select max(t.updatedate) from $tablename$ t
+	</select>
+	
+	<select id="getMaxTimeByTableUnion" resultClass="string">
+		select max(a.time1) from (
+			select max(t.updatedate) time1 from index_evaluation t
+			union
+			select max(t.updatedate) time1 from operation_quality t) a
+	</select>
+	
+	<select id="getOperationQualityData" resultClass="indexEvaModel" parameterClass="indexEvaModel">
+		select t.id,t.network, t.name, t.type,t.calculate_method,t.operator_1,t.operator_2, t.value,t.score, t.unit,t.updatedate starttime
+  			from operation_quality t where 1=1
+  			<isNotEmpty prepend="and" property="dept">
+				t.dept like '%$dept$%'
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="and" property="starttime">
+				updatedate =
+				#starttime#
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="and" property="end">-->
+<!--				updatedate &lt;=-->
+<!--				#end#-->
+<!--			</isNotEmpty>-->
+<!-- 			group by t.network,t.type, t.name, t.id, t.value, t.unit-->
+ 			order by t.network,t.type,t.id,t.name,   t.value, t.unit,t.updatedate
+	</select>
+	
+	<select id="getMaintainQualityData" resultClass="indexEvaModel" parameterClass="indexEvaModel">
+		select t.id, t.name, t.type, t.value,t.calculate_method,t.operator_1,t.operator_2,t.score, t.unit,t.updatedate starttime
+  			from index_evaluation t where t.type = '通信网络运维质量指标'
+  			<isNotEmpty prepend="and" property="dept">
+				t.dept like '%$dept$%'
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="and" property="starttime">
+				updatedate =
+				#starttime#
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="and" property="end">-->
+<!--				updatedate &lt;=-->
+<!--				#end#-->
+<!--			</isNotEmpty>-->
+<!-- 			group by t.type, t.name, t.id, t.value, t.unit-->
+ 			order by t.type, t.name, t.id, t.value, t.unit,t.updatedate
+	</select>
+	
+	<select id="getDeptLst" resultClass="netres.model.ComboxDataModel">
+		select distinct t.dept id,t.dept label
+		from index_evaluation t
+	</select>
+	
+	<update id="setQualityEvaluationData" parameterClass="map">
+		update $tableName$ set score=#num# where id=#id# and name=#name#
+	</update>
+	
+	<update id="updateBasticData" parameterClass="map">
+		update $talename$ set 
+		operator_1=#operator_1#,
+		operator_2=#operator_2#,
+		value=#value#,
+		score=#score# where id=#id#
+		and updatedate=#starttime#
+		<isNotEmpty prepend="and" property="dept">
+			dept=#dept#
+		</isNotEmpty>
+	</update>
+	
+	<select id="getQualityEvaluationData" resultClass="indexEvaModel" parameterClass="indexEvaModel">
+		select first_level, network, type, name, value, relatetype, id,score,starttime
+  from (select '通信网络运行质量指标' first_level,
+               t.network,
+               t.type,
+               t.name,
+               t.value,
+               t.RELATETYPE,
+               t.id,
+               t.updatedate starttime,
+               t.score
+          from operation_quality t where 1=1
+          <isNotEmpty prepend="and" property="dept">
+				t.dept like '%$dept$%'
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="and" property="starttime">
+				updatedate =
+				#starttime#
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="and" property="end">-->
+<!--				updatedate &lt;=-->
+<!--				#end#-->
+<!--			</isNotEmpty>-->
+        union
+        select '业务支撑度指标' first_level,
+               '' network,
+               t.type,
+               t.name,
+               t.value,
+               t.RELATETYPE,
+               t.id,
+               t.updatedate starttime,
+               t.score
+          from index_evaluation t
+         where t.type != '通信网络运维质量指标'
+         <isNotEmpty prepend="and" property="dept">
+				t.dept like '%$dept$%'
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="and" property="starttime">
+				updatedate =
+				#starttime#
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="and" property="end">-->
+<!--				updatedate &lt;=-->
+<!--				#end#-->
+<!--			</isNotEmpty>-->
+        union
+        select '业通信网络运维质量指标' first_level,
+               '' network,
+               t.type,
+               t.name,
+               t.value,
+               t.RELATETYPE,
+               t.id,
+               t.updatedate starttime,
+               t.score
+          from index_evaluation t
+         where t.type = '通信网络运维质量指标'
+         <isNotEmpty prepend="and" property="dept">
+				t.dept like '%$dept$%'
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="and" property="starttime">
+				updatedate =
+				#starttime#
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="and" property="end">-->
+<!--				updatedate &lt;=-->
+<!--				#end#-->
+<!--			</isNotEmpty>-->
+			) a
+			 group by a.first_level,
+			          a.network,
+			          a.type,
+			          a.name,
+			          a.value,
+			          a.RELATETYPE,
+			          a.id,
+			          a.starttime,
+			          a.score
+			 order by a.first_level,
+			          a.network,
+			          a.type,
+			          a.name,
+			          a.value,
+			          a.RELATETYPE,
+			          a.id,
+			          a.score,
+			          a.starttime
+	</select>
+	
+	<select id="getIndexValueByMap" parameterClass="map" resultClass="string">
+		select distinct t.eval_time from value_eval_simulate t where t.eval_time=#time#
+		<isNotEmpty prepend="and" property="dept">
+			t.unit=#dept#
+		</isNotEmpty>
+		
+	</select>
+	
+	<select id="getIndexValueBymap" parameterClass="map" resultClass="string">
+		select distinct t.eval_value from value_eval_simulate t where t.eval_time=#time#
+		<isNotEmpty prepend="and" property="dept">
+			t.unit=#dept#
+		</isNotEmpty>
+	</select>
+	
+	<insert id="insertIndexValueByMap" parameterClass="map">
+		insert into value_eval_simulate values(#value#,#time#,#dept:VARCHAR#)
+	</insert>
+	
+	<update id="updateIndexValueByMap" parameterClass="map">
+		 update value_eval_simulate t set t.eval_value=#value# where t.eval_time=#time# 
+		 <isNotEmpty prepend="and" property="dept">
+		 t.unit=#dept#
+		 </isNotEmpty>
+	</update>
+	
+	<select id="getIndexEvalValueLst" parameterClass="indexEvaModel" resultClass="indexEvaModel">
+		select distinct t.eval_value value,t.eval_time starttime from value_eval_simulate t
+		<dynamic prepend="where">
+			<isNotEmpty prepend="and" property="dept">
+				t.unit = #dept#
+			</isNotEmpty>
+		</dynamic>
+		order by t.eval_time
+	</select>
+	
+	<select id="getRESID" parameterClass="string" resultClass="string">
+		select RESID from EN_TOPOLINK where LABEL=#label#
+	</select>
+	
+	<insert id="insertBusIndexValue" parameterClass="indexEvaModel">
+		<selectKey keyProperty="id" resultClass="string">
+			select max(to_number(id))+1 as id from index_evaluation
+		</selectKey>
+		<![CDATA[
+		insert into index_evaluation(id,name,type,value,dept,updatedate,relatetype,CALCULATE_METHOD,score)
+		values(
+		#id#,
+		'$name$',
+		'$type$',
+		'$value$',
+		'$dept$',
+		'$starttime$',
+		'$relateType$',
+		'$calculate_method$',
+		'$score$'
+		)
+		
+		]]>
+	</insert>
+	
+	<insert id="insertQulityIndexValue" parameterClass="indexEvaModel">
+		<selectKey keyProperty="id" resultClass="string">
+			select max(to_number(id))+1 as id from operation_quality
+		</selectKey>
+		<![CDATA[
+		insert into operation_quality(id,name,type,value,dept,updatedate,relatetype,CALCULATE_METHOD,score,network)
+		values(
+		#id#,
+		'$name$',
+		'$type$',
+		'$value$',
+		'$dept$',
+		'$starttime$',
+		'$relateType$',
+		'$calculate_method$',
+		'$score$',
+		'$network$'
+		)
+		
+		]]>
+	</insert>
+	
+	<select id="getIndexEvalNameLst_yewu" parameterClass="indexEvaModel" resultClass="string">
+		select t.updatedate
+		  from index_evaluation t
+		 where t.updatedate = #starttime#
+		   and t.dept = #dept#
+		   and t.type = #type#
+		   and t.name =#name#
+	</select>
+	<select id="getIndexEvalNameLst" parameterClass="indexEvaModel" resultClass="string">
+		select t.updatedate
+		  from operation_quality t
+		 where t.updatedate = #starttime#
+		   and t.dept =#dept#
+		   and t.type = #type#
+		   and t.name = #name#
+		   and t.network=#network#
+		
+	</select>
+	
+	<update id="updateIndexEvalModel_yewu" parameterClass="indexEvaModel">
+		update index_evaluation t
+		   set t.value = #value#, t.score = #score#
+		 where t.name = #name#
+		   and t.type = #type#
+		   and t.dept = #dept#
+		   and t.updatedate = #starttime#
+	</update>
+	<update id="updateIndexEvalModel" parameterClass="indexEvaModel">
+		update operation_quality t
+		   set t.value = #value#, t.score = #score#
+		 where t.name = #name#
+		   and t.type = #type#
+		   and t.dept = #dept#
+		   and t.updatedate = #starttime#
+		   and t.network= #network#
+	</update>
+
+</sqlMap>

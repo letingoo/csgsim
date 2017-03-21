@@ -1,0 +1,153 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="批量操作" label="批量操作" creationComplete="init();" width="338" height="224"  layout="absolute"  xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import twaver.IElement;
+			import twaver.Link;
+			import twaver.network.Network;
+			
+			public var network:Network;
+			public var portA:String;
+			public var portZ:String;
+			public var link:Link;
+			public var native_rateA:String;
+			public var native_rateZ:String;
+			public var slotView:configEquipSlot;
+			private function init():void
+			{
+				var vc4Count:int = 0;
+				if(native_rateA!=null&&native_rateA!="10M/s-100M/s"){
+				  vc4Count = containsVC4Count(native_rateA);
+				}
+				if(native_rateZ!=null&&native_rateZ!="10M/s-100M/s"){
+				  vc4Count = containsVC4Count(native_rateZ);
+				}
+				var vc4List:String;
+				for(var i:int=1;i<=vc4Count;i++){
+					vc4List +="<name label='VC4-"+i+"' code='"+i+"' ></name>";
+				}
+				startVC4.dataProvider = new XMLList(vc4List); 
+				if(startVC4.dataProvider!=null){
+				    var vc12List:String;
+					for(var i:int=1;i<=63;i++){
+						vc12List +="<name label='VC12-"+i+"' code='"+i+"' ></name>";
+					}
+					startVC12.dataProvider = new XMLList(vc12List);
+				}
+			}
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);  
+			}
+			private function save():void
+			{
+				if(startVC4.selectedItem!=null&&startVC12.selectedItem!=null){
+					var portnameA:String;
+					var portnameZ:String;
+					var portcodeA:String;
+					var portcodeZ:String;
+					if(native_rateA!=null&&native_rateA=="10M/s-100M/s"){
+						portnameA = network.elementBox.getDataByID(portA).name;
+						portnameZ = network.elementBox.getDataByID(portZ).name;
+						portcodeA = portA;
+						portcodeZ = portZ;
+					}
+					if(native_rateZ!=null&&native_rateZ=="10M/s-100M/s"){
+						portnameA = network.elementBox.getDataByID(portZ).name;
+						portnameZ = network.elementBox.getDataByID(portA).name;
+						portcodeA = portZ;
+						portcodeZ = portA;
+					}
+					var alertString:String;
+					var endVC12:int = int(startVC12.selectedItem.@code)+count.value-1;
+					if(count.value>1)
+						alertString = "您确认建立"+portnameA+"到"+portnameZ+"的第"+startVC4.selectedItem.@code+"个VC4的第"+startVC12.selectedItem.@code+"个VC12到第"+endVC12+"个VC12的连接？"
+					else
+						alertString = "您确认建立"+portnameA+"到"+portnameZ+"的第"+startVC4.selectedItem.@code+"个VC4的第"+startVC12.selectedItem.@code+"个VC12的连接？"
+					Alert.show(alertString,
+						"提示",
+						Alert.YES|Alert.NO,
+						null,
+						function(e:CloseEvent):void{
+							if(e.detail==Alert.YES){
+								var slotzArray:Array = new Array;
+								for(var i:int=0;i<count.value;i++){
+								   var slotz:int = int(startVC12.selectedItem.@code)+i;
+								   slotz = (int(startVC4.selectedItem.@code)-1)*63 + slotz;
+								   slotzArray.push(slotz.toString());
+								}
+								var rt:RemoteObject =  new RemoteObject("channelTree");
+								rt.showBusyCursor = true;
+								rt.endpoint = ModelLocator.END_POINT;
+							    rt.insertCCNativeForBatch(portcodeA,'1',portcodeZ,slotzArray,'VC12');
+								rt.addEventListener(ResultEvent.RESULT,function(event:ResultEvent):void{
+									Alert.show("批量连接建立成功！","提示");
+									slotView.isShowBatch = false;
+									slotView.drawPic();
+								});
+							}
+						}
+					);
+				}else{
+					Alert.show("所属VC4和起始VC12均不能为空！","提示")
+				}
+			}
+			
+			private function containsVC4Count(rate:String):int{
+				var totoalNum:int = 0;
+				if(rate=="2.5G/s"||rate=="2.5Gb/s"){
+					totoalNum = 16;
+				}else if(rate=="155M/s"||rate=="155Mb/s"){
+					totoalNum = 1;
+				}
+				else if(rate=="622M/s"||rate=="622Mb/s"){
+					totoalNum = 4;
+				}
+				else if(rate=="1.25G/s"||rate=="1.25Gb/s"){
+					totoalNum = 8;
+				}
+				else if(rate=="10G/s"||rate=="10Gb/s"){
+					totoalNum = 64;
+				}
+				return totoalNum;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingTop="0" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		horizontalAlign="center" verticalGap="0">
+	<mx:Form width="100%" height="80%">
+		<mx:FormItem label="所属VC4:">
+			<mx:ComboBox   id="startVC4" labelField="@label"  width="134" fontFamily="宋体" fontSize="12"/>
+		</mx:FormItem>
+		<mx:FormItem label="起始VC12:">
+			<mx:ComboBox   id="startVC12" labelField="@label"  width="134" fontFamily="宋体" fontSize="12"/>
+		</mx:FormItem>
+		<mx:FormItem label="连接数量:">
+			<mx:NumericStepper x="117" y="92"  id="count" maximum="63" minimum="1"  width="134" fontFamily="宋体" fontSize="12"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:HBox 
+		width="100%" verticalAlign="middle"  backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+		backgroundSize="100%"
+		horizontalAlign="center" height="20%">
+		<mx:Button label="确定" click="save()"  width="80" styleName="loginprimary"/>
+		<mx:Spacer width="40"/>
+		<mx:Button label="关闭" click="close()"  width="80" styleName="loginprimary"/> 
+	</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>  

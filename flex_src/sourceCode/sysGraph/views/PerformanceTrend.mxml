@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+				title="性能趋势图"
+				showCloseButton="true"
+				close="titlewindow1_closeHandler(event)"
+				width="800" height="500">
+
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.businessDispatch.model.ResultModel;
+			
+			[Bindable]
+			private var datas:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var time:String="24h";
+			public var logicport:String = "sunjt";
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				var date:String = df.text;
+				df.enabled=false;
+				if(logicport!=""){
+					var obj:RemoteObject = new RemoteObject("fiberWire");
+					obj.endpoint = ModelLocator.END_POINT;
+					obj.showBusyCursor=true;
+					obj.getLinedata(logicport,time,date);
+					obj.addEventListener(ResultEvent.RESULT,showDatas);
+				}
+			}
+			private function showDatas(e:ResultEvent):void{
+				if(e.result){
+					var result:ResultModel = e.result as ResultModel;
+					datas = result.orderList;
+				}
+			}
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+
+			protected function df_initializeHandler(event:FlexEvent):void
+			{
+				df.selectedDate = new Date();
+			}
+
+		]]>
+	</mx:Script>
+	<!--<mx:SolidColorStroke id="scs" color="0xFFFFFF" alpha="1"/>
+	<mx:SolidColorStroke id="a" weight="0" color="0x00ff00"/>
+	<mx:SolidColorStroke id="b"  weight="0" color="0xff0000"/>
+	<mx:SolidColorStroke id="c" weight="0" color="0xeeff00"/>-->
+	<mx:VBox width="100%" height="100%" paddingLeft="5" paddingBottom="5" paddingRight="5" paddingTop="5" borderSides="top,left,right,bottom">
+		<mx:HBox width="100%" height="10%" horizontalAlign="left" verticalAlign="middle" borderStyle="inset"> 
+			<mx:Label text="日期"/>
+			<mx:DateField id="df" formatString="YYYY-MM-DD" yearNavigationEnabled="true" enabled="false" 
+						  initialize="df_initializeHandler(event)"
+						  dayNames="['日', '一', '二', '三', '四', '五', '六']" 
+						  monthNames="['一月', '二月', '三月', '四月', '五月','六月', '七月', '八月', '九月', '十月', '十一月','十二月']" />
+			<mx:RadioButton label="15分钟" groupName="rbg" click="{this.time='15min';df.enabled=true}" />
+			<mx:RadioButton label="24小时" groupName="rbg" click="{this.time='24h';df.enabled=false}" selected="true" />
+			<mx:RadioButtonGroup id="rbg"/>
+			<mx:Button label="生成趋势图" click="button1_clickHandler(event)" />
+		</mx:HBox>
+		<mx:VBox width="100%" height="100%" borderStyle="inset">
+			<mx:LineChart width="100%" dataProvider="{datas}" showDataTips="true">
+				<mx:horizontalAxis>
+					<mx:CategoryAxis categoryField="pf_time" />
+					<!--<mx:DateTimeAxis dataUnits="hours"/>-->
+				</mx:horizontalAxis>
+				<mx:series>
+					<mx:LineSeries  id="lines" yField="pf_valueiop" xField="pf_time" displayName="性能输入"/>
+					<mx:LineSeries  id="linesoop" yField="pf_valueoop" xField="pf_time" displayName="性能输出"/>
+				</mx:series>
+			</mx:LineChart>
+		</mx:VBox>
+	</mx:VBox>
+</mx:TitleWindow>

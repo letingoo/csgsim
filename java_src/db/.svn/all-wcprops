@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 34
+/svn/csgsim/!svn/ver/1/java_src/db
+END
+GetAndSetProperty.java
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/csgsim/!svn/ver/1/java_src/db/GetAndSetProperty.java
+END
+ForTimeBaseDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/csgsim/!svn/ver/1/java_src/db/ForTimeBaseDAO.java
+END
+DbDAOiBatis.java
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/csgsim/!svn/ver/1/java_src/db/DbDAOiBatis.java
+END
+NewBaseDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/csgsim/!svn/ver/1/java_src/db/NewBaseDAO.java
+END
+DbDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/csgsim/!svn/ver/1/java_src/db/DbDAO.java
+END
+BaseDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/csgsim/!svn/ver/1/java_src/db/BaseDAO.java
+END

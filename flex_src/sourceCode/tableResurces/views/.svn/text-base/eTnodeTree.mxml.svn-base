@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				 title="选择T接"
+				 showCloseButton="true"
+				 close="{PopUpManager.removePopUp(this)}"
+				 creationComplete="App(event);initEvent();"
+				 layout="absolute" minWidth="955" minHeight="600" 
+				 width="400" height="400" fontSize="13">
+	
+	<mx:Script source="../actionscript/eTnodeTree.as" />
+	
+	<mx:Tree x="0" y="0" 
+			 width="100%" height="100%" 
+			 dataProvider="{folderCollection}"
+			 labelField="@label"
+			 defaultLeafIcon="{leafPic}" 
+			 borderStyle="none"
+			 doubleClickEnabled="true"
+			 doubleClick="tNodeTree_doubleClickHandler(event)"
+			 change="tNodeTree_changeHandler()"
+			 itemClick="tree_itemClick(event)"
+			 itemOpen="tNodeTree_changeHandler()"
+			 itemRollOver="curIndex = event.rowIndex"
+			 verticalScrollPolicy="auto"
+			 id="tNodeTree"/>	
+</mx:TitleWindow>

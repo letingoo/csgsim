@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100%" 
+		 creationComplete="init()" 
+		 preinitialize="preinitialize()"
+		 xmlns:views="sourceCode.tableResurces.views.*" xmlns:component="common.component.*">
+	
+	<mx:Script source="../actionscript/EventIntervention1.as" />
+	<mx:RemoteObject id="subMessage" destination="RemoteMessage"  endpoint="{ModelLocator.END_POINT}" 
+					 result="subMessage_resultHandler(event)" /> 
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off" >
+		
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="演习科目管理" imgName="alarmexperience"
+							  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="{isSearch}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}" showIsActiveButton="{isActive}" showMonitorButton="{sceneMonitor}"
+							  controlAdd="toolbar_toolEventAddHandler(event)" controlEdit="toolbar_toolEventEditHandler(event)" 
+							  controlDel="toolbar_toolEventDeleteHandler(event)" controlSearch="toolbar_toolEventSearchHandler(event)"
+							  controlExportExcel="toolbar_toolEventEmpExcelHandler(event)" controlImport="toolbar_toolEventImpExcelHandler(event)"
+							  showIsActive="toolbar_toolEventIsActiveHandler(event)" showMonitor="toolbar_toolEventShowMonitorHandler(event)"/>
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true"
+		    headerRelease="dg_headerReleaseHandler(event)">
+			<mx:columns>
+				
+				<mx:DataGridColumn headerText="序号" dataField="no" width="50" sortable="false"/>
+				<!--<mx:DataGridColumn headerText="演习ID" dataField="projectid" width="250" visible="false"/>-->
+				<mx:DataGridColumn headerText="科目ID" dataField="interposeid" width="250" visible="false"/>
+				<mx:DataGridColumn headerText="科目名称" dataField="interposename" width="250"/>
+				<!--<mx:DataGridColumn headerText="演习名称" dataField="projectname" width="250" sortable="false"/>-->
+				<mx:DataGridColumn headerText="参演人员" dataField="user_id"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="参演人员" dataField="user_name"  width="270" sortable="false"/>
+				<mx:DataGridColumn headerText="科目类型" dataField="interposetype"  width="170" />
+				<mx:DataGridColumn headerText="科目类型id" dataField="interposetypeid"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="故障类型" dataField="faulttype"  width="170" />
+				<mx:DataGridColumn headerText="故障类型id" dataField="faulttypeid"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="是否主科目" dataField="ismaininterpose"  width="100" visible="false"/>
+				<mx:DataGridColumn headerText="科目状态" dataField="isactive"  width="70"/>
+				<mx:DataGridColumn headerText="处理状态" dataField="isOperated"  width="170" visible="{isshow}"/>
+				<mx:DataGridColumn headerText="资源类型" dataField="equiptype" width="170"/>
+				<mx:DataGridColumn headerText="设备编号" dataField="equipcode"  width="100" visible="false"/>
+				<mx:DataGridColumn headerText="设备名称" dataField="equipname"  width="300"/>
+				<mx:DataGridColumn headerText="资源名称" dataField="resourcename"  width="170"/>
+				<mx:DataGridColumn headerText="资源编号" dataField="resourcecode"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="科目种类" dataField="s_event_title"  width="70" />
+				<mx:DataGridColumn headerText="更新人员" dataField="updateperson"  width="170" />
+				<mx:DataGridColumn headerText="更新时间" dataField="updatetime"  width="170" />
+				<mx:DataGridColumn headerText="备注说明" dataField="remark"  width="300"/>
+			</mx:columns>
+			
+		</mx:DataGrid>
+		
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>
+		
+	</mx:VBox>
+	
+	
+</mx:VBox>

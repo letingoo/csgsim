@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				showCloseButton="true" close="close()" layout="absolute"
+				title="属性" fontWeight="bold"
+				width="307" height="242" fontSize="13" 
+				horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.mapResourcesInfo.model.SpModeler;
+			import sourceCode.ocableResource.model.FiberDetailsModel;
+			import sourceCode.ocableResource.model.OcableSectionModule;
+			import sourceCode.ocableTopo.model.SpModeleSp;
+			public var ocablecodeid:String;
+			private function savePackInfo():void{	
+				var model:SpModeleSp = new SpModeleSp();
+				model.SUBSECTIONCODE = ocablecodeid;
+				model.LENGTH =LENGTH.text;
+				model.LAYMODE = LAYMODE.text;
+				model.REMARK = REMARK.text;
+				var rbj:RemoteObject=new RemoteObject("mapResourcesInfo");
+				rbj.endpoint = ModelLocator.END_POINT;
+				rbj.showBusyCursor = true;
+				rbj.ModifyModeler(model);
+				rbj.addEventListener(ResultEvent.RESULT,addSpHandler);
+				PopUpManager.removePopUp(this);
+			}
+			private function addSpHandler(event:ResultEvent):void{
+				Alert.show("更新成功","提示！");
+				
+			}
+			public function close():void{
+				MyPopupManager.removePopUp(this); 
+			}			
+		]]>
+	</mx:Script>
+	<mx:Canvas width="100%" height="100%">
+		<mx:Label x="20" y="25" text="光缆类型:"/>
+		<mx:Label x="48" y="69" text="长度:"/>
+		<mx:Label x="48" y="113" text="备注:"/>
+		<mx:TextInput x="108" y="23" width="131" id="LAYMODE" height="25" editable="true"/>
+		<mx:TextInput x="108" y="67" width="131" id="LENGTH" height="25" editable="true"/>
+		<mx:TextInput x="108" y="111" width="131" id="REMARK" height="25" editable="true"/>
+		<mx:Button id="btnSave" label="保存" click="savePackInfo()" styleName="loginprimary"  x="48" y="161" height="22" textAlign="center" width="75"/>
+		<mx:Button label="关闭" click="close()" styleName="loginsecondary"  x="162.5" y="161" height="22" textAlign="center" width="75"/> 
+	</mx:Canvas>
+</mx:TitleWindow>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" title="添加虚拟设备" fontSize="13"
+				showCloseButton="true" close="closeHandler(event)"
+				width="300" height="300" creationComplete="creationCompleteHandler(event)">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import twaver.ElementBox;
+			import twaver.Follower;
+			import twaver.Node;
+			import twaver.Styles;
+			import twaver.Consts;
+
+			public var box:ElementBox;
+			public var node:Node;
+			public var stationIcon:String = "twaverImages/businessDispatch/equip_dispatch.png";
+			protected function closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+			private function faultHandler(e:FaultEvent):void{
+				Alert.show(e.fault.toString(), "错误提示");
+			}
+
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				//初始化设备厂家下拉框
+				var ro:RemoteObject = new RemoteObject("businessDispatch");
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.showBusyCursor = true;
+				ro.addEventListener(ResultEvent.RESULT, getVendorHandler);
+				ro.addEventListener(FaultEvent.FAULT, faultHandler);
+				ro.getXTBM("ZY08__");
+				//初始化设备类型下拉框
+				var ro1:RemoteObject = new RemoteObject("businessDispatch");
+				ro1.endpoint = ModelLocator.END_POINT;
+				ro1.showBusyCursor = true;
+				ro1.addEventListener(ResultEvent.RESULT, getTypeHandler);
+				ro1.addEventListener(FaultEvent.FAULT, faultHandler);
+				ro1.getXTBM("ZY030702__");
+			}
+
+			private function getVendorHandler(e:ResultEvent):void{
+				var xmldata:XMLList = new XMLList(e.result.toString());
+				vendor.dataProvider = xmldata.children();
+				vendor.labelField = "@xtxx";
+			}
+
+			private function getTypeHandler(e:ResultEvent):void{
+				var xmldata:XMLList = new XMLList(e.result.toString());
+				etype.dataProvider = xmldata.children();
+				etype.labelField = "@xtxx";
+			}
+			
+			protected function ok_clickHandler(event:MouseEvent):void
+			{
+				if(node.followers != null){
+					box.remove(node.followers.getItemAt(0));
+				}
+				node.image = stationIcon;
+				node.setStyle(Styles.INNER_COLOR,0xFFFFFF);
+				node.setSize(67,77);
+				//添加设备follower
+				var fo:Follower = new Follower();
+				fo.image = null;
+				fo.setCenterLocation(node.centerLocation.x, node.centerLocation.y - 33);
+				fo.host = node;
+				fo.name = getX_Model(model.text);
+				fo.setStyle(Styles.LABEL_SIZE,9);
+				fo.setClient("flag", "vequipment");
+				fo.setClient("vendorcode", vendor.selectedItem.@xtbm);
+				fo.setClient("vendorname", vendor.selectedItem.@xtxx);
+				fo.setClient("equipmodel", model.text);
+				fo.setClient("equiptype", etype.selectedItem.@xtbm);
+				fo.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+				box.add(fo);
+				this.dispatchEvent(new Event("addVirtualEquipment"));
+				PopUpManager.removePopUp(this);
+			}
+			//格式化设备型号
+			private function getX_Model(x_model:String):String{
+				if(x_model.indexOf("NEC_SDH_") > -1)
+					return x_model.replace("NEC_SDH_", "");
+				if(x_model.indexOf("烽火SDH ") > -1)
+					return x_model.replace("烽火SDH ", "");
+				if(x_model.indexOf("马可尼") > -1)
+					return x_model.replace("马可尼", "");
+				if(x_model.indexOf("中兴SDH ") > -1)
+					return x_model.replace("中兴SDH ", "");
+				if(x_model.indexOf("格林威尔多业务接入平台 ") > -1)
+					return x_model.replace("格林威尔多业务接入平台 ", "");
+				if(x_model.indexOf("格林威尔继电保护PCM ") > -1)
+					return x_model.replace("格林威尔继电保护PCM ", "");
+				if(x_model.indexOf("OptiX ") > -1)
+					return x_model.replace("OptiX ", "");
+				return x_model;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" verticalGap="0">
+		<mx:HBox width="100%" height="80%">
+			<mx:Form width="100%">
+				<mx:FormItem label="名称" width="100%">
+					<mx:TextInput id="ename" width="100%"/>
+				</mx:FormItem>
+				<mx:FormItem label="厂家" width="100%">
+					<mx:ComboBox id="vendor" width="100%"/>
+				</mx:FormItem>
+				<mx:FormItem label="型号" width="100%">
+					<mx:TextInput id="model" width="100%"/>
+				</mx:FormItem>
+				<mx:FormItem label="类型" width="100%">
+					<mx:ComboBox id="etype" width="100%"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox width="100%" height="20%" styleName="btnbg">
+			<mx:Button id="ok" label="完成" click="ok_clickHandler(event)" styleName="primary"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

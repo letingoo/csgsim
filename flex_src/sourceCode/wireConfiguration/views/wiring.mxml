@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" implements="twaver.ISerializable"
+				xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+				xmlns:twaver="twaver.common.*"
+		  		width="1200" height="638" 
+				close="close()" showCloseButton="true" 
+		   		creationComplete="init()">  
+	<mx:Script>  
+		<![CDATA[  
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.*;
+			import mx.controls.Alert;
+			import mx.events.*;
+			import mx.managers.*;
+			
+			import twaver.*;
+			import twaver.controls.*;
+			import twaver.network.*;
+			
+			[Embed(source="assets/images/wireConfiguration/linkToArrowDelta.png")]
+			public static const linkToArrowDelta:Class;
+			[Embed(source="assets/images/wireConfiguration/linkToArrowStandard.png")]
+			public static const linkToArrowStandard:Class;
+			[Embed(source="assets/images/wireConfiguration/linkToArrowShort.png")]
+			public static const linkToArrowShort:Class;
+			[Embed(source="assets/images/wireConfiguration/linkToArrowDiamond.png")]
+			public static const linkToArrowDiamond:Class;
+			[Embed(source="assets/images/wireConfiguration/linkToArrowSlant.png")]
+			public static const linkToArrowSlant:Class;
+			
+			[Embed(source="assets/images/wireConfiguration/linkFromArrowDelta.png")]
+			public static const linkFromArrowDelta:Class;
+			[Embed(source="assets/images/wireConfiguration/linkFromArrowStandard.png")]
+			public static const linkFromArrowStandard:Class;
+			[Embed(source="assets/images/wireConfiguration/linkFromArrowShort.png")]
+			public static const linkFromArrowShort:Class;
+			[Embed(source="assets/images/wireConfiguration/linkFromArrowDiamond.png")]
+			public static const linkFromArrowDiamond:Class;
+			[Embed(source="assets/images/wireConfiguration/linkFromArrowSlant.png")]
+			public static const linkFromArrowSlant:Class;
+			
+			
+			[Embed(source="assets/images/wireConfiguration/ODF06.png")]
+			public static const ODF06:Class;
+			[Embed(source="assets/images/wireConfiguration/ODFPort1Green.png")]
+			public static const ODFPort1GreenIcon:Class;
+			[Embed(source="assets/images/wireConfiguration/INTARWEB.png")]
+			public static const INTARWEBIcon:Class;
+			[Embed(source="assets/images/wireConfiguration/PORT.png")]
+			public static const PORTIcon:Class;
+			[Embed(source="assets/images/wireConfiguration/VLAN.png")]
+			public static const VLANIcon:Class;
+			
+			private var elementBox:ElementBox;
+			/* private var box:ElementBox = new ElementBox(); */
+			private var layerBox:LayerBox;
+			private var layer1:Layer=new Layer("cableLight");
+			private var layer2:Layer=new Layer("cablePort");
+			private var layer3:Layer=new Layer("equipmentPort");
+			private var layer4:Layer=new Layer("Port");
+			
+			public function get dataBox():DataBox{
+				return elementBox;
+			}
+			
+			private function init():void{
+				elementBox=wiringNetwork.elementBox;
+				layerBox=elementBox.layerBox;
+				layerBox.add(layer1);
+				layerBox.add(layer2);
+				layerBox.add(layer3);
+				layerBox.add(layer4);
+				layer3.movable=false;
+				layer1.editable=false;
+				//box=wiringNetwork.elementBox;
+				wiringNetwork.setEditInteractionHandlers();
+				wiringNetwork.editableFunction = function(element:IElement):Boolean{
+					if(element is Node){
+						return (element as Node).width>0 && (element as Node).height>0;
+					}
+					return true;
+				}
+				initData();
+			}
+			
+			private function initData():void{
+				wiringNetwork.addEventListener(MouseEvent.DOUBLE_CLICK,openNodeBranch);
+				//创建头节点
+				var VLAN1:Node = createNode("北京机房", "VLANIcon", new Point(300,25), Consts.POSITION_BOTTOMRIGHT_TOPRIGHT);
+				VLAN1.layerID=layer1.id;
+				
+				//根据后生成所需设备端口
+				var grid:Grid = createGrid(2,12,"",400,500,null);
+				grid.layerID = layer2.id;
+				for(var i:int = 0;i<24;i++){
+					var follower:Follower = new Follower();
+					follower.image="ODFPort1GreenIcon";
+					follower.layerID=layer3.id;
+//					follower.name=""+i;
+					if(i<12){
+						follower.setStyle(Styles.FOLLOWER_COLUMN_INDEX,i);
+						follower.setStyle(Styles.FOLLOWER_ROW_INDEX,0);
+					}else{
+						follower.setStyle(Styles.FOLLOWER_COLUMN_INDEX,i-12);
+						follower.setStyle(Styles.FOLLOWER_ROW_INDEX,1);
+					}
+					follower.host = grid;
+					dataBox.add(follower);
+					grid.addChild(follower,i);
+					
+				}
+
+				for(var j:int = 1; j<=8; j++){
+					var PORT:Node = createNode("p"+j, "PORTIcon", new Point(30+75*(j-1), 160), Consts.POSITION_BOTTOMLEFT);
+					var myLink:Link = createLink(VLAN1, PORT, 0x10F000);
+					myLink.layerID= layer3.id;
+				}
+				
+				//创建跟随者
+				var myFollower1:Follower = createFollower("Follower1", "ODFPort1GreenIcon", new Point(230, 300), Consts.POSITION_BOTTOMLEFT);
+				var myFollower2:Follower = createFollower("Follower2", "ODFPort1GreenIcon", new Point(260, 300), Consts.POSITION_BOTTOMLEFT);
+				var myFollower3:Follower = createFollower("Follower3", "ODFPort1GreenIcon", new Point(300, 400), Consts.POSITION_BOTTOMLEFT);
+				var node2:Node = createNode("node2", "ODF06", new Point(200, 280), Consts.POSITION_RIGHT_RIGHT);
+				grid.host=node2;
+				node2.layerID=layer1.id;
+				myFollower1.host=node2;
+				myFollower2.host=node2;
+				myFollower3.host=node2;
+				myFollower1.layerID=layer3.id;
+				myFollower2.layerID=layer3.id;
+				myFollower3.layerID=layer3.id;
+				var flink1:Link = createLink(myFollower1, myFollower2, 0xF00020, Consts.LINK_TYPE_PARALLEL);
+				flink1.layerID=layer3.id;
+				var aaaa:Node = createNode("firt", "ODFPort1GreenIcon", new Point(700, 160), Consts.POSITION_BOTTOMLEFT);
+				aaaa.layerID = layer2.id; 
+				var flink4:Link = createLink(VLAN1, aaaa, 0x10F000);
+				var flink5:Link = createLink(aaaa, myFollower3, 0xF00020, Consts.LINK_TYPE_PARALLEL);
+				var flink6:Link = createLink(aaaa, myFollower2, 0xF00020, Consts.LINK_TYPE_PARALLEL);
+				var flink7:Link= createLink(aaaa, myFollower1, 0xF00020, Consts.LINK_TYPE_PARALLEL);
+				flink4.layerID=layer3.id;
+				flink5.layerID=layer3.id;
+				flink6.layerID=layer3.id;
+				flink7.layerID=layer3.id;
+
+				
+			}
+			
+			private function openNodeBranch(e:MouseEvent):void{
+				if(wiringNetwork.elementBox.selectionModel.count>0){
+					var element:IElement = wiringNetwork.elementBox.selectionModel.selection.getItemAt(0);
+					if (element is Node ){
+						var node:Node = element as Node;
+						for(var i:int = 1; i<=3; i++){
+							var PORT:Node = createNode("ap"+i, "PORTIcon", new Point(100+75*(i-1), 260), Consts.POSITION_BOTTOMLEFT);
+							var link:Link=createLink(node, PORT, 0x10F000);
+							link.layerID=layer3.id;
+						}
+					}
+				}
+			}
+			
+			//创建grid表格
+			private function createGrid(row:Number,column:Number, image:String, point_x:Number, point_y:Number,labelPosition:String = null):Grid{
+				var grid:Grid = new Grid();
+				grid.setStyle(Styles.GRID_COLUMN_COUNT,column);
+				grid.setStyle(Styles.GRID_ROW_COUNT,row);
+				grid.setStyle(Styles.GRID_BORDER,1);
+				grid.setStyle(Styles.GRID_DEEP, 0);
+				grid.setStyle(Styles.GRID_PADDING,0);
+				grid.setStyle(Styles.GRID_CELL_DEEP,0);
+				grid.setSize(column*20,row*20);
+				grid.setLocation(point_x,point_y);
+				grid.setStyle(Styles.GRID_FILL_ALPHA,0);
+				elementBox.add(grid);
+				return grid;
+			}
+			
+			//创建Node
+			private function createNode(name:String, image:String, location:Point, labelPosition:String = null):Node{
+				var node:Node = new Node();
+				node.name = name;
+				node.image = image;
+				node.location = location;
+				if(labelPosition){
+					node.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				dataBox.add(node);
+				return node;
+			}
+			
+			//创建跟随者follower
+			private function createFollower(name:String, image:String, location:Point, labelPosition:String = null):Follower{
+				var follower:Follower = new Follower();
+				follower.name = name;
+				follower.image = image;
+				follower.location = location;
+				if(labelPosition){
+					follower.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				dataBox.add(follower);
+				return follower;
+			}
+			
+			//创建连线Link
+			private function createLink(from:Node, to:Node, color:uint, linkType:String = null, name:String = null, dashed:Boolean = false, labelPosition:String = null, lineWidth:int = 2):Link{
+				var link:Link = new Link(from,to);
+				link.setStyle(Styles.LINK_COLOR, color);
+				link.setStyle(Styles.LINK_WIDTH, lineWidth);
+				link.setStyle(Styles.LINK_BUNDLE_GAP, -2);
+				link.setStyle(Styles.LINK_BUNDLE_OFFSET,-1);
+				if(linkType == null){
+					linkType = Consts.LINK_TYPE_ORTHOGONAL_VERTICAL;
+					link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+					link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+				}
+				link.setStyle(Styles.LINK_TYPE, linkType);
+				if(name){
+					link.name = name;
+				}
+				if(dashed){
+					link.setStyle(Styles.LINK_PATTERN, [25,10]);
+				}
+				if(labelPosition){
+					link.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				dataBox.add(link);
+				return link;
+			}
+			
+			public function close():void{
+				MyPopupManager.removePopUp(this); 
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{	
+				if(drawlinkbutton.selected){
+					wiringNetwork.setCreateLinkInteractionHandlers(Link,function(link:Link){	
+						link.setStyle(Styles.LINK_COLOR, 0xF00020);
+						link.setStyle(Styles.ARROW_TO_COLOR, 0xF00020);
+						link.setStyle(Styles.LINK_TYPE, Consts.LINK_TYPE_PARALLEL);
+						link.setStyle(Styles.LINK_BUNDLE_OFFSET, 0);
+						link.setStyle(Styles.LINK_BUNDLE_GAP, 2);
+						link.setStyle(Styles.LINK_WIDTH,1);
+						link.layerID= layer3.id;
+					},Consts.LINK_TYPE_PARALLEL,false,null,true);
+				}else{
+					wiringNetwork.setDefaultInteractionHandlers();
+					
+				}
+			}
+			
+		]]>  
+	</mx:Script>
+	
+	<mx:initialize>
+		<![CDATA[
+		Utils.registerImageByClass("linkToArrowDelta",linkToArrowDelta);
+		Utils.registerImageByClass("linkToArrowStandard",linkToArrowStandard);
+		Utils.registerImageByClass("linkToArrowShort",linkToArrowShort);
+		Utils.registerImageByClass("linkToArrowDiamond",linkToArrowDiamond);
+		Utils.registerImageByClass("linkToArrowSlant",linkToArrowSlant);
+		Utils.registerImageByClass("linkFromArrowDelta",linkFromArrowDelta);
+		Utils.registerImageByClass("linkFromArrowStandard",linkFromArrowStandard);
+		Utils.registerImageByClass("linkFromArrowShort",linkFromArrowShort);
+		Utils.registerImageByClass("linkFromArrowDiamond",linkFromArrowDiamond);
+		Utils.registerImageByClass("linkFromArrowSlant",linkFromArrowSlant);
+		
+		Utils.registerImageByClass("ODF06",ODF06);
+		Utils.registerImageByClass("INTARWEBIcon",INTARWEBIcon);
+		Utils.registerImageByClass("PORTIcon",PORTIcon);
+		Utils.registerImageByClass("VLANIcon",VLANIcon);
+		Utils.registerImageByClass("ODFPort1GreenIcon",ODFPort1GreenIcon);
+		]]>
+	</mx:initialize>
+	<mx:states>
+		<mx:State name="wirLink">
+			
+		</mx:State>
+		<mx:State name="canselWriLink" basedOn="wirLink">
+		</mx:State>
+	</mx:states>
+	
+		<mx:Canvas  id="canvas" width="100%" height="100%"  horizontalScrollPolicy="off" verticalScrollPolicy="off"  >
+			<tw:Network id="wiringNetwork" width="100%" height="100%">
+				<!--<mx:LinkButton id="drawlinkbutton" x="999" y="19" height="34" label="启动配线" click="button1_clickHandler(event)"/>-->
+				<mx:LinkButton toolTip="配线" label="配线" toggle="true" 
+							   skin="sourceCode.wireConfiguration.actionscript.ToggleLinkButtonSkin"  
+							   icon="@Embed('assets/images/btn/huaxian_.png')" id="drawlinkbutton"  
+							   click="button1_clickHandler(event)"  x="999" y="19" height="34" width="90" fontSize="12"/>
+			</tw:Network>
+		</mx:Canvas>
+</mx:TitleWindow>  

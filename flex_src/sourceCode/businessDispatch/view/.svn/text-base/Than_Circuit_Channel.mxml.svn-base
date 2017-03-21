@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				width="{parentApplication.workspace.width}"
+				height="{parentApplication.workspace.height}"
+				creationComplete="App(event)"
+				layout="absolute" minWidth="955" minHeight="600" title="方式制作图" fontSize="13" xmlns:flex="http://www.servasoftware.com/2009/twaver/flex">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.XMLToAC;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import twaver.Consts;
+			import twaver.Element;
+			import twaver.ElementBox;
+			import twaver.Follower;
+			import twaver.IElement;
+			import twaver.Link;
+			import twaver.Node;
+			import twaver.SerializationSettings;
+			import twaver.Styles;
+			import twaver.Utils;
+			import twaver.XMLSerializer;
+			public var circuitcode:String;
+			public var DataXML:XML;
+			[Embed(source="assets/images/sysorg.png")]          //这是图片的相对地址 
+			[Bindable] 
+			public var systemIcon:Class; 
+			
+			[Embed(source="assets/images/device/equipment.png")]
+			public static const equipIcon:Class;
+		
+			
+			public var bool:Boolean;
+			
+			protected function App(event:FlexEvent):void
+			{
+				var obj:RemoteObject = new RemoteObject("businessDispatch");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor=true;
+				obj.getCircuit_Channel(circuitcode);
+				obj.addEventListener(ResultEvent.RESULT,CirChannel);
+				
+				Utils.registerImageByClass("equipIcon",ModelLocator.equipIcon );	
+//				Utils.registerImageByClass("ZY0801", ModelLocator.ZY0801);	
+//				Utils.registerImageByClass("ZY0801$FT0102", ModelLocator.ZY0801$FT0102);	
+//				Utils.registerImageByClass("ZY0801$OptiX2500+", ModelLocator.ZY0801$OptiX2500$);
+//				Utils.registerImageByClass("ZY0801$OptiX 2500+", ModelLocator.ZY0801$OptiX2500$);
+//				Utils.registerImageByClass("ZY0801$OptiXOSN3500", ModelLocator.ZY0801$OptiXOSN3500);
+//				Utils.registerImageByClass("ZY0801$OptiX OSN 3500", ModelLocator.ZY0801$OptiXOSN3500);
+//				Utils.registerImageByClass("ZY0801$OptiXOSN7500", ModelLocator.ZY0801$OptiXOSN7500);
+//				Utils.registerImageByClass("ZY0801$OptiX OSN 7500", ModelLocator.ZY0801$OptiXOSN7500);
+//				Utils.registerImageByClass("ZY0802$ZXMPS385", ModelLocator.ZY0802$ZXMPS385);
+//				Utils.registerImageByClass("ZY0804$FT010213", ModelLocator.ZY0804$FT010213);
+//				Utils.registerImageByClass("ZY0804$hiT7070DC", ModelLocator.ZY0804$hiT7070DC);
+//				Utils.registerImageByClass("ZY0804$hiT7070SC", ModelLocator.ZY0804$hiT7070SC);
+//				Utils.registerImageByClass("ZY0804$hiT7070SCDTC", ModelLocator.ZY0804$hiT7070SCDTC);
+//				Utils.registerImageByClass("ZY0804$SLD16B", ModelLocator.ZY0804$SLD16B);
+//				Utils.registerImageByClass("ZY0804$SLD16BE", ModelLocator.ZY0804$SLD16BE);
+//				Utils.registerImageByClass("ZY0804$SLR16", ModelLocator.ZY0804$SLR16);
+//				Utils.registerImageByClass("ZY0804$SMA1/4C", ModelLocator.ZY0804$SMA14C);
+//				Utils.registerImageByClass("ZY0804$SMA16", ModelLocator.ZY0804$SMA16);
+//				Utils.registerImageByClass("ZY0804$SMA16/4", ModelLocator.ZY0804$SMA164);
+//				Utils.registerImageByClass("ZY0805$ADM-U", ModelLocator.ZY0805$ADM$U);
+//				Utils.registerImageByClass("ZY0807$FT0102", ModelLocator.ZY0807$FT0102);
+//				Utils.registerImageByClass("ZY0807$XDM-100", ModelLocator.ZY0807$XDM$100);
+//				Utils.registerImageByClass("ZY0809$1660SM", ModelLocator.ZY0809$1660SM);
+//				Utils.registerImageByClass("ZY0809", ModelLocator.ZY0809);
+//				Utils.registerImageByClass("ZY0809$FT0102", ModelLocator.ZY0809$FT0102);
+//				Utils.registerImageByClass("ZY0899$FT0102", ModelLocator.ZY0899$FT0102);
+//				Utils.registerImageByClass("ZY0899$FT010213",ModelLocator.ZY0899$FT010213);
+//				Utils.registerImageByClass("ZY0809$GenericNE", ModelLocator.ZY0809$GenericNE);
+//				Utils.registerImageByClass("ZY0812", ModelLocator.ZY0812);
+//				Utils.registerImageByClass("ZY0812$FT0102", ModelLocator.ZY0812$FT0102);
+//				Utils.registerImageByClass("ZY0812$FT010213", ModelLocator.ZY0812$FT010213);
+//				Utils.registerImageByClass("ZY0812$SDM-1", ModelLocator.ZY0812$SDM$1);
+//				Utils.registerImageByClass("ZY0812$SDM-4L", ModelLocator.ZY0812$SDM$4L);
+//				Utils.registerImageByClass("ZY0812$SDM-4R", ModelLocator.ZY0812$SDM$4R);
+//				Utils.registerImageByClass("ZY0812$XDM-100", ModelLocator.ZY0812$XDM$100);
+//				Utils.registerImageByClass("ZY0812$XDM-500", ModelLocator.ZY0812$XDM$500);
+//				Utils.registerImageByClass("ZY0812$XDM-500X4", ModelLocator.ZY0812$XDM$500X4);
+//				Utils.registerImageByClass("ZY0812$XDM-1000", ModelLocator.ZY0812$XDM$1000);
+//				Utils.registerImageByClass("ZY0812$XDM-1000X2", ModelLocator.ZY0812$XDM$1000X2);
+//				Utils.registerImageByClass("ZY0814$FT0102", ModelLocator.ZY0814$FT0102);
+//				Utils.registerImageByClass("ZY0814$FT010213", ModelLocator.ZY0814$FT010213);
+//				Utils.registerImageByClass("ZY0814$SMS-150V", ModelLocator.ZY0814$SMS$150V);
+//				Utils.registerImageByClass("ZY0814$SMS-600V", ModelLocator.ZY0814$SMS$600V);
+//				Utils.registerImageByClass("ZY0815$OMS1664", ModelLocator.ZY0815$OMS1664);
+//				Utils.registerImageByClass("ZY0815$FT0102", ModelLocator.ZY0815$FT0102);
+//				Utils.registerImageByClass("ZY0815$FT010203", ModelLocator.ZY0815$FT010203);
+//				Utils.registerImageByClass("ZY0815$FT010213", ModelLocator.ZY0815$FT010213);
+//				Utils.registerImageByClass("ZY0815$OMS1240-4", ModelLocator.ZY0815$OMS1240$4);
+//				Utils.registerImageByClass("ZY0815$OMS1654", ModelLocator.ZY0815$OMS1654);								
+//				Utils.registerImageByClass("ZY0815$OMS860", ModelLocator.ZY0815$OMS860);
+//				Utils.registerImageByClass("ZY0815$Series4SMA1/4(4+4)",ModelLocator.ZY0815$Series4SMA144$4);
+//				Utils.registerImageByClass("ZY0815$Series3SMA1/4c",ModelLocator.ZY0815$Series3SMA1$4c);	
+//				Utils.registerImageByClass("ZY0815$OMS3255(160 G)",ModelLocator.ZY0815$OMS3255$160G);
+//				Utils.registerImageByClass("ZY0815$OMS3240/MSH64C",ModelLocator.ZY0815$OMS3240MSH64C);
+//				Utils.registerImageByClass("ZY0815$Series3SMA16",ModelLocator.ZY0815$Series3SMA16);
+//				Utils.registerImageByClass("ZY0815$Series3SMA4",ModelLocator.ZY0815$Series3SMA4);
+//				Utils.registerImageByClass("ZY0815$Series3SMA4/16c",ModelLocator.ZY0815$Series3SMA416c);	
+//				Utils.registerImageByClass("ZY0823$Series3SMA1/4c",ModelLocator.ZY0823$Series3SMA14c);
+//				Utils.registerImageByClass("ZY0804", ModelLocator.ZY0804);
+//				Utils.registerImageByClass("ZY0807", ModelLocator.ZY0807);	
+//				Utils.registerImageByClass("Cloud",ModelLocator.Cloud);
+//				Utils.registerImageByClass("Port",ModelLocator.portcircuit);
+//				Utils.registerImageByClass("Portright",ModelLocator.portrightcircuit);
+//				
+//				Utils.registerImageByClass("csd",ModelLocator.csd);
+//				
+//				Utils.registerImageByClass("ZY0801circuit", ModelLocator.ZY0801circuit);	
+//				Utils.registerImageByClass("ZY0801$FT0102circuit", ModelLocator.ZY0801$FT0102circuit);	
+//				Utils.registerImageByClass("ZY0801$OptiX2500+circuit", ModelLocator.ZY0801$OptiX2500$circuit);
+//				Utils.registerImageByClass("ZY0801$OptiX 2500+circuit", ModelLocator.ZY0801$OptiX2500$circuit);
+//				Utils.registerImageByClass("ZY0801$OptiXOSN3500circuit", ModelLocator.ZY0801$OptiXOSN3500circuit);
+//				Utils.registerImageByClass("ZY0801$OptiX OSN 3500circuit", ModelLocator.ZY0801$OptiXOSN3500circuit);
+//				Utils.registerImageByClass("ZY0801$OptiXOSN7500circuit", ModelLocator.ZY0801$OptiXOSN7500circuit);
+//				Utils.registerImageByClass("ZY0801$OptiX OSN 7500circuit", ModelLocator.ZY0801$OptiXOSN7500circuit);
+//				Utils.registerImageByClass("ZY0802$ZXMPS385circuit", ModelLocator.ZY0802$ZXMPS385circuit);
+//				Utils.registerImageByClass("ZY0804$FT010213circuit", ModelLocator.ZY0804$FT010213circuit);
+//				Utils.registerImageByClass("ZY0804$hiT7070DCcircuit", ModelLocator.ZY0804$hiT7070DCcircuit);
+//				Utils.registerImageByClass("ZY0804$hiT7070SCcircuit", ModelLocator.ZY0804$hiT7070SCcircuit);
+//				Utils.registerImageByClass("ZY0804$hiT7070SCDTCcircuit", ModelLocator.ZY0804$hiT7070SCDTCcircuit);
+//				Utils.registerImageByClass("ZY0804$SLD16Bcircuit", ModelLocator.ZY0804$SLD16Bcircuit);
+//				Utils.registerImageByClass("ZY0804$SLD16BEcircuit", ModelLocator.ZY0804$SLD16BEcircuit);
+//				Utils.registerImageByClass("ZY0804$SLR16circuit", ModelLocator.ZY0804$SLR16circuit);
+//				Utils.registerImageByClass("ZY0804$SMA1/4Ccircuit", ModelLocator.ZY0804$SMA14Ccircuit);
+//				Utils.registerImageByClass("ZY0804$SMA16circuit", ModelLocator.ZY0804$SMA16circuit);
+//				Utils.registerImageByClass("ZY0804$SMA16/4circuit", ModelLocator.ZY0804$SMA164circuit);
+//				Utils.registerImageByClass("ZY0805$ADM-Ucircuit", ModelLocator.ZY0805$ADM$Ucircuit);
+//				Utils.registerImageByClass("ZY0807$FT0102circuit", ModelLocator.ZY0807$FT0102circuit);
+//				Utils.registerImageByClass("ZY0807$XDM-100circuit", ModelLocator.ZY0807$XDM$100circuit);
+//				Utils.registerImageByClass("ZY0809$1660SMcircuit", ModelLocator.ZY0809$1660SMcircuit);
+//				Utils.registerImageByClass("ZY0809circuit", ModelLocator.ZY0809circuit);
+//				Utils.registerImageByClass("ZY0809$FT0102circuit", ModelLocator.ZY0809$FT0102circuit);
+//				Utils.registerImageByClass("ZY0899$FT0102circuit", ModelLocator.ZY0899$FT0102circuit);
+//				Utils.registerImageByClass("ZY0899$FT010213circuit",ModelLocator.ZY0899$FT010213circuit);
+//				Utils.registerImageByClass("ZY0809$GenericNEcircuit", ModelLocator.ZY0809$GenericNEcircuit);
+//				Utils.registerImageByClass("ZY0812circuit", ModelLocator.ZY0812circuit);
+//				Utils.registerImageByClass("ZY0812$FT0102circuit", ModelLocator.ZY0812$FT0102circuit);
+//				Utils.registerImageByClass("ZY0812$FT010213circuit", ModelLocator.ZY0812$FT010213circuit);
+//				Utils.registerImageByClass("ZY0812$SDM-1circuit", ModelLocator.ZY0812$SDM$1circuit);
+//				Utils.registerImageByClass("ZY0812$SDM-4Lcircuit", ModelLocator.ZY0812$SDM$4Lcircuit);
+//				Utils.registerImageByClass("ZY0812$SDM-4Rcircuit", ModelLocator.ZY0812$SDM$4Rcircuit);
+//				Utils.registerImageByClass("ZY0812$XDM-100circuit", ModelLocator.ZY0812$XDM$100circuit);
+//				Utils.registerImageByClass("ZY0812$XDM-500circuit", ModelLocator.ZY0812$XDM$500circuit);
+//				Utils.registerImageByClass("ZY0812$XDM-500X4circuit", ModelLocator.ZY0812$XDM$500X4circuit);
+//				Utils.registerImageByClass("ZY0812$XDM-1000circuit", ModelLocator.ZY0812$XDM$1000circuit);
+//				Utils.registerImageByClass("ZY0812$XDM-1000X2circuit", ModelLocator.ZY0812$XDM$1000X2circuit);
+//				Utils.registerImageByClass("ZY0814$FT0102circuit", ModelLocator.ZY0814$FT0102circuit);
+//				Utils.registerImageByClass("ZY0814$FT010213circuit", ModelLocator.ZY0814$FT010213circuit);
+//				Utils.registerImageByClass("ZY0814$SMS-150Vcircuit", ModelLocator.ZY0814$SMS$150Vcircuit);
+//				Utils.registerImageByClass("ZY0814$SMS-600Vcircuit", ModelLocator.ZY0814$SMS$600Vcircuit);
+//				Utils.registerImageByClass("ZY0815$OMS1664circuit", ModelLocator.ZY0815$OMS1664circuit);
+//				Utils.registerImageByClass("ZY0815$FT0102circuit", ModelLocator.ZY0815$FT0102circuit);
+//				Utils.registerImageByClass("ZY0815$FT010203circuit", ModelLocator.ZY0815$FT010203circuit);
+//				Utils.registerImageByClass("ZY0815$FT010213circuit", ModelLocator.ZY0815$FT010213circuit);
+//				Utils.registerImageByClass("ZY0815$OMS1240-4circuit", ModelLocator.ZY0815$OMS1240$4circuit);
+//				Utils.registerImageByClass("ZY0815$OMS1654circuit", ModelLocator.ZY0815$OMS1654circuit);								
+//				Utils.registerImageByClass("ZY0815$OMS860circuit", ModelLocator.ZY0815$OMS860circuit);
+//				Utils.registerImageByClass("ZY0815$Series4SMA1/4(4+4)circuit",ModelLocator.ZY0815$Series4SMA144$4circuit);
+//				Utils.registerImageByClass("ZY0815$Series3SMA1/4ccircuit",ModelLocator.ZY0815$Series3SMA1$4ccircuit);	
+//				Utils.registerImageByClass("ZY0815$OMS3255(160 G)circuit",ModelLocator.ZY0815$OMS3255$160G$circuit);
+//				Utils.registerImageByClass("ZY0815$OMS3240/MSH64Ccircuit",ModelLocator.ZY0815$OMS3240MSH64Ccircuit);
+//				Utils.registerImageByClass("ZY0815$Series3SMA16circuit",ModelLocator.ZY0815$Series3SMA16circuit);
+//				Utils.registerImageByClass("ZY0815$Series3SMA4circuit",ModelLocator.ZY0815$Series3SMA4circuit);
+//				Utils.registerImageByClass("ZY0815$Series3SMA4/16ccircuit",ModelLocator.ZY0815$Series3SMA416ccircuit);	
+//				Utils.registerImageByClass("ZY0823$Series3SMA1/4ccircuit",ModelLocator.ZY0823$Series3SMA14ccircuit);
+//				Utils.registerImageByClass("ZY0804circuit", ModelLocator.ZY0804circuit);
+//				Utils.registerImageByClass("ZY0807circuit", ModelLocator.ZY0807circuit);	
+//				
+//				
+//				Utils.registerImageByClass("equipIcon", equipIcon);
+//				
+				
+				
+				SerializationSettings.registerGlobalClient("flag", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("x_vendor", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("x_model", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("topoid", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("tsrate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("timeslot", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("remove", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("port_a", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("port_z", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("circuitProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("childModelProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("virtualTopoLinkProperty", Consts.TYPE_ARRAY_STRING);
+				SerializationSettings.registerGlobalClient("isdefault", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("hasVirtualTopolinkValue", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("formId", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("executeDeptName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("executeDeptCode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("applyPerson", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("applyDeptName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("applyDeptCode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("applyDate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("endDate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("aStationName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("zStationName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("aEquipName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("zEquipName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("rateName", Consts.TYPE_ARRAY_STRING);
+				SerializationSettings.registerGlobalClient("rateCode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("requisitionID", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("equip_a", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equip_a_code", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("port_a_code", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("systemcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("linerate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("linerateName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("slot_z", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equip_z", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("frame_z", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("pack_z_name", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("pack_z_serial", Consts.TYPE_ARRAY_STRING);
+				
+				SerializationSettings.registerGlobalClient("slotSerial", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("packSerial", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("packName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portSerial", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portRate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portRateName", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("topolinkProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("frame_a", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("slot_a", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("pack_a_serial", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("pack_a_name", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("hasTopoLinkValue", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("topolinkProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("virtualPortProperty", Consts.TYPE_STRING);
+				
+				
+				SerializationSettings.registerGlobalClient("systemjumpProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("formName", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("isStart", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("isEnd", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("parentLink", Consts.TYPE_STRING);//add by sjt
+				SerializationSettings.registerGlobalClient("parentLink_slot", Consts.TYPE_STRING);//add by sjt
+				SerializationSettings.registerGlobalClient("topoid", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("topolink",Consts.TYPE_STRING);
+			}
+			public function CirChannel(e:ResultEvent):void{
+				var circuitxml:String = (e.result.toString()).split("=====")[0];
+				var channelxml:String = (e.result.toString()).split("=====")[1];
+//				Alert.show("a:"+circuitxml+",b:"+channelxml);
+	
+				circuit.elementBox.clear();
+				channel.elementBox.clear();
+				var serializer_cir:XMLSerializer = new XMLSerializer(circuit.elementBox);
+				serializer_cir.deserialize(circuitxml);
+				var serializer_cha:XMLSerializer = new XMLSerializer(channel.elementBox);
+				serializer_cha.deserialize(channelxml);
+				//circuit_vs_channel();//circuitxml,channelxml);//前台
+//				than_circuit_channel();//后台的方法
+			}
+			public function than_circuit_channel():void{
+				var than:RemoteObject = new RemoteObject("businessDispatch");
+				than.endpoint = ModelLocator.END_POINT;
+				than.showBusyCursor=true;
+				than.than_cir_cha(circuitcode);
+				than.addEventListener(ResultEvent.RESULT,than_result);
+			}
+			private function than_result(e:ResultEvent):void{
+				var str:String = e.result.toString();
+//				Alert.show(str);
+				if(str=='true'){
+					Alert.show("方式和电路相同！","温馨提示");
+				}else if(str=='false'){
+					Alert.show("请确认数据完整或联系管理员","温馨提示");
+				}else{
+					var arrSlot:Array = new Array();
+					var arrRate:Array = new Array();
+					var arrPort:Array = new Array();
+					var arr:Array = str.split(",");
+					
+					
+//					Alert.show(arr.toString()+"%%%%%%");
+//					Alert.show(arr[0]);
+					for(var i:int=0;i<arr.length;i++){
+//						Alert.show("1");
+						var item:String = arr[i];
+						if(item.indexOf("slot:")!=-1){
+//							Alert.show("2");
+							arrSlot.push(arr[i]);
+						}else if(item.indexOf("port:")!=-1){
+							arrPort.push(arr[i]);
+//							Alert.show("3");
+						}else if(item.indexOf("rate:")!=-1){
+//							Alert.show("4");
+							arrRate.push(arr[i]);
+						}
+					}
+					if(arrSlot.length!=0){
+//						Alert.show("5");
+						thanSlot(arrSlot);
+					}
+					if(arrRate.length!=0){
+//						Alert.show("6");
+						thanRate(arrRate);
+					} 
+					if(arrPort.length!=0){
+//						Alert.show("7");
+						thanPort(arrPort);
+					}
+					
+				
+				}
+			}
+			private var timer:Timer = new Timer(500);
+			private var timerLink:Timer = new Timer(500);
+			private function thanSlot(ar:Array):void{
+				var sll:String;
+				var portcode:String;
+				var slot_r:String;
+				var slot_w:String;
+				for(var s:int;s<ar.length;s++){
+					sll=ar[s];
+//					Alert.show(sll.toString());
+					portcode = (sll.split("--")[0]).split(":")[1];
+					slot_r = (sll.split("--")[1]).split("!=")[0];
+					slot_w = (sll.split("--")[1]).split("!=")[1];
+					Viewslot(portcode,slot_r,slot_w);
+				}
+				
+			}
+			private function thanRate(ar:Array):void{
+				
+			}
+			private function thanPort(ar:Array):void{
+//				Alert.show("1");
+				var equip:String;
+				var ss:String;
+				var port_r:String;
+				var port_r_name:String;
+				var port_w_name:String;
+				var port_w:String;
+				for(var i:int=0;i<ar.length;i++){
+//					Alert.show("2");
+					ss=ar[i];
+//					Alert.show(ss.toString());
+					equip = (ss.split("--")[0]).split(":")[1]; 
+						//ss.substring(ss.indexOf("port:")+5,ss.indexOf("-"));
+					port_r = ((ss.split("--")[1]).split("!=")[0]).split("=")[0];
+					port_r_name = ((ss.split("--")[1]).split("!=")[0]).split("=")[1];
+					port_w = ((ss.split("--")[1]).split("!=")[1]).split("=")[0];
+					port_w_name = ((ss.split("--")[1]).split("!=")[1]).split("=")[1];
+					Viewport(equip,port_r,port_w,port_r_name,port_w_name);
+				}
+			}
+			private var nodeArray:Array = new Array();
+//			private var pCount:int=0;
+			private function Viewport(equip:String,port_r:String,port_w:String,port_r_name:String,port_w_name:String):void{
+//				Alert.show("3");
+				var count:int = circuit.elementBox.datas.count;
+				var node:Node;
+				for(var i:int=0;i<count;i++){
+					var ele:Element = circuit.elementBox.datas.getItemAt(i) as Element;
+					if((ele is Node)&&(ele.name!=""&&ele.name!=null)&&(ele.getClient("flag")=='equipment')&&(ele.getClient("equipcode")!=null)&&(ele.getClient("equipcode")==equip)){
+						node = ele as Node;
+//						Alert.show(node.getClient("equipcode"));
+//						dd=node;
+						if(node.getClient("isStart")!=null&&node.getClient("isStart")=='1'){
+							node.toolTip = "方式制作图的起始端口为"+port_r_name+"-电路路由的端口为"+port_w_name;
+						}else if(node.getClient("isEnd")!=null&&node.getClient("isEnd")=='1'){
+							node.toolTip = "方式制作图的终止端口为"+port_r_name+"-电路路由的端口为"+port_w_name;
+						}else{
+							node.toolTip = "方式制作图的端口为"+port_r_name+"-电路路由的端口为"+port_w_name;
+						}
+						nodeArray.push(node);
+						bianse(node);
+					}
+				}
+			}
+			private function bianse(node:Node):void{
+//				dd = node;?
+				timer.addEventListener(TimerEvent.TIMER,tick);	
+				timer.start();
+			}
+			private var dd:Node = null;
+//			private var ports:ICollection = new Collection();
+			private function tick(event:TimerEvent = null):void {
+//				dd.toolTip=
+				if(nodeArray.length!=0){
+					for(var i:int =0;i<nodeArray.length;i++){
+						dd = nodeArray[i] as Node;
+						
+						if(dd.getStyle(Styles.OUTER_COLOR) == 0x00FF00){
+							dd.setStyle(Styles.OUTER_COLOR, 0xFFFF00);
+						}else{
+							dd.setStyle(Styles.OUTER_COLOR, 0x00FF00);
+						}
+					}
+				}
+			}
+			private var slotArray:ArrayCollection = new ArrayCollection();
+			private var linkSlot:Link;
+			private function Viewslot(portcode:String,slot_r:String,slot_w:String):void{
+//				Alert.show("1");
+				var count:int = circuit.elementBox.datas.count;
+				var link:Link;
+				for(var i:int=0;i<count;i++){
+//					Alert.show("2");
+					var ele:Element = circuit.elementBox.datas.getItemAt(i) as Element;
+					if((ele is Link)){
+						/*&&(ele.name!=null&&ele.name!=null)&&(ele.getClient("topolid")!=null) &&(ele.getClient("topolid").indexOf(portcode)!=-1) */
+//						Alert.show("3");
+						link = ele as Link;
+						
+						var sss:String = link.getClient("topoid");
+						if(sss!=null&&sss.indexOf(portcode)!=-1){
+							if(!slotArray.contains(link)){
+								slotArray.addItem(link);    //toArray().push(link);
+								link.toolTip = link.toolTip+"\n方式制作的时隙为"+slot_r+",电路路由的时隙为"+slot_w;
+							}
+//							Alert.show(slotArray.toArray().toString());
+							
+							bianseLink();
+						}
+						
+						//						Alert.show(node.getClient("equipcode"));
+						//						dd=node;
+//						if(node.getClient("isStart")!=null&&node.getClient("isStart")=='1'){
+//							node.toolTip = "方式制作图的起始端口为"+port_r_name+"-电路路由的端口为"+port_w_name;
+//						}else if(node.getClient("isEnd")!=null&&node.getClient("isEnd")=='1'){
+//							node.toolTip = "方式制作图的终止端口为"+port_r_name+"-电路路由的端口为"+port_w_name;
+//						}else{
+//							node.toolTip = "方式制作图的端口为"+port_r_name+"-电路路由的端口为"+port_w_name;
+//						}
+//						nodeArray.push(node);
+//						bianse(node);
+					}
+				}
+			}
+				private function bianseLink():void{
+					timerLink.addEventListener(TimerEvent.TIMER,linkse);
+					timerLink.start();
+				}
+				
+				private function linkse(event:TimerEvent = null):void{
+					
+					if(slotArray.length!=0){
+						for(var i:int =0;i<slotArray.length;i++){
+							linkSlot = slotArray[i] as Link;
+							
+							if(linkSlot.getStyle(Styles.OUTER_COLOR) == 0x00FF00){
+								linkSlot.setStyle(Styles.OUTER_COLOR, 0xFFFF00);
+							}else{
+								linkSlot.setStyle(Styles.OUTER_COLOR, 0x00FF00);
+							}
+						}
+					}
+				}
+//				dd.setStyle(Styles.OUTER_COLOR,0x00FF00);
+//				dd.setStyle(Styles.ALARM_GRADIENT_COLOR,0x00FF00);
+//				dd.setStyle(Styles.ALARM_OUTLINE_COLOR,0xFFFF00);
+					
+//				var node1:Node = dd;
+//				node1.setStyle(Styles.
+//				if(this.parent == null){
+//					return;
+//				}
+//				for(var i:int=0; i<ports.count; i++){
+//					ports.getItemAt(i).alarmState.clear();
+//				}
+//				for(i=0; i<cards.count; i++){
+//					cards.getItemAt(i).setClient("hidden", false);
+//				}				
+//				var node:Node = ports.getItemAt(Utils.randomInt(ports.count));
+//				dd.alarmState.increaseNewAlarm(Utils.randomNonClearedSeverity());
+//				dd.setStyle(Styles.v
+//				if(dd.getStyle(Styles.VECTOR_FILL_COLOR) == 0x00FF00){
+//					dd.setStyle(Styles.VECTOR_FILL_COLOR, 0xFFFF00);
+//				}else{
+//					dd.setStyle(Styles.VECTOR_FILL_COLOR, 0x00FF00);
+//				}
+//				node = ports.getItemAt(Utils.randomInt(ports.count));
+//				node.alarmState.increaseNewAlarm(Utils.randomNonClearedSeverity());
+				
+//				node = cards.getItemAt(Utils.randomInt(cards.count));
+//				node.setClient("hidden", true);
+				
+//				if(this.light1.getStyle(Styles.VECTOR_FILL_COLOR) == 0x00FF00){
+//					this.light1.setStyle(Styles.VECTOR_FILL_COLOR, 0xFFFF00);
+//				}else{
+//					this.light1.setStyle(Styles.VECTOR_FILL_COLOR, 0x00FF00);
+//				}
+//				
+//				if(this.light2.getStyle(Styles.VECTOR_FILL_COLOR) == 0x0000FF){
+//					this.light2.setStyle(Styles.VECTOR_FILL_COLOR, 0xFF0000);
+//				}else{
+//					this.light2.setStyle(Styles.VECTOR_FILL_COLOR, 0x0000FF);
+//				}			
+//			}
+			public function circuit_vs_channel():void{//a:String,b:String
+//				Alert.show("a:"+a+",b:"+b);
+//				var CT_arr:ArrayCollection;
+//				var CL_arr:ArrayCollection;
+//				CT_arr = XMLToAC.returnArrayCollection(a);
+//				CL_arr = XMLToAC.returnArrayCollection(b);
+//				Alert.show(CT_arr.toArray().toString()+"**************************************************"+CL_arr.toArray().toString());
+				var countT:int=0;
+				var countF:int;
+				var counthasName_t:int=0;
+				var counthasName_l:int=0;
+				if(circuit.elementBox.count==channel.elementBox.count){
+					var box_t:ElementBox = circuit.elementBox;
+					var box_l:ElementBox = channel.elementBox;
+					for(var i:int =0;i<circuit.elementBox.count;i++){
+						var e_circuit:Element = box_t.datas.getItemAt(i) as Element;
+						var e_channel:Element = box_l.datas.getItemAt(i) as Element;
+						if(e_circuit.name!=null&&e_circuit.name!=""){
+							counthasName_t++;
+						}
+						if(e_channel.name!=null&&e_channel.name!=""){
+							counthasName_l++;
+						}
+							if((e_circuit.name == e_channel.name)&&e_circuit.name!=null&&e_channel.name!=null&&e_circuit.name!=""&&e_channel.name!=""){
+								countT++;
+							}else{
+								if(e_circuit.name!=null&&e_channel.name!=null&&e_circuit.name!=""&&e_channel.name!=""){
+									var wrong_t:Element = box_t.datas.getItemAt(i) as Element;
+									var wrong_l:Element = box_l.datas.getItemAt(i) as Element;
+									var n_t:Node = wrong_t as Node;
+									var n_l:Node = wrong_l as Node;
+									colorTips(n_t,n_l);
+//								Alert.show(wrong_t.name+"%%%%%"+wrong_l.name);
+								}
+								
+							}
+//							bool=circuit_vs_channel(e_circuit,e_channel);
+//							if(bool ==true){
+//								countT++;
+//							}else{
+//								countF++;
+//							}
+//						}
+					}
+				//	Alert.show("true:"+countT+",false:"+countF);
+//					if(countF==0){
+//						Alert.show("方式电路一致！","温馨提示")
+//					}{
+//						//Alert.show("不对");
+//					}
+				}else if(circuit.elementBox.count>channel.elementBox.count){
+					Alert.show("该电路不完全，请先补充好数据！","温馨提示");
+				}else{
+					Alert.show("请核查数据，确认该电路是否以该方式为标准","温馨提示");
+				}
+				//Alert.show(countT.toString()+"^^^^^"+counthasName_t.toString()+"^^^^^^"+counthasName_l.toString());
+				Alert.show(countT.toString()+"^^^^^"+circuit.elementBox.count.toString()+"^^^^^^"+channel.elementBox.count.toString());
+				if(countT==counthasName_t&&counthasName_t==counthasName_l){
+					Alert.show("该电路图和方式制作图完全一致！","温馨提示");
+				}else{
+					Alert.show("该电路图和方式制作图不一致！请核对","温馨提示");
+				}
+			}
+			private function colorTips(a:Node,b:Node):void{
+				Alert.show(a.name);
+				
+			}
+
+			protected function duibi_clickHandler(event:MouseEvent):void
+			{
+				if(channel.elementBox.count>1){
+					than_circuit_channel();	
+				}else{
+					Alert.show("请先串接电路再比对！","温馨提示！");
+				}
+			}
+			
+			protected function chuanjie_clickHandler(event:MouseEvent):void{
+				var name:String = labelOne.text.substring(labelOne.text.indexOf("-")+1,labelOne.text.length);
+				var rtobj:RemoteObject = new RemoteObject("channelRoute");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.regetChannelRoute(name,"");//network.name
+				rtobj.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void{
+					refreshResult(event,channel);
+				});
+			}
+			
+			public static function refreshResult(event:ResultEvent,network:Network):void{
+				network.elementBox.clear();
+				if(event.result!=null&&event.result.toString()!=""){
+					var serializer:XMLSerializer = new XMLSerializer(network.elementBox);
+					serializer.deserialize(event.result.toString());
+				}else{
+					Alert.show("电路路由图不存在，电路未开通！","温馨提示");
+				}
+			}
+
+			protected function save_clickHandler(event:MouseEvent):void
+			{
+				var name1:String = labelOne.text.substring(labelOne.text.indexOf("-")+1,labelOne.text.length);
+				var serializer:XMLSerializer = new XMLSerializer(channel.elementBox);
+				//var xmlString:String = serializer.serialize().split(" ").join("");去掉中间的空格  split("\r").join("");
+				var xmlString:String = serializer.serialize();//去掉中间的换行
+				var rtobj:RemoteObject = new RemoteObject("channelTree");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.saveChannelRoute(name1,xmlString);
+				rtobj.addEventListener(ResultEvent.RESULT, saveAction);
+			}
+			public static function saveAction(e:ResultEvent){
+				if(e.result.toString()=='true'){
+					Alert.show("保存成功！","温馨提示");
+					
+				}
+			}
+
+		]]>
+	</mx:Script>
+	<mx:VDividedBox x="0" y="0" width="100%" height="100%">
+		<flex:Network width="100%" height="50%" id="circuit" keyboardRemoveEnabled="false">
+		</flex:Network>
+		<mx:VBox width="100%" height="50%"> 
+			<mx:Canvas x="10" y="0" width="100%" height="20" backgroundColor="0X0066ff">
+				<mx:Label id="labelOne" x="10" y="0" text="电路路由图" fontSize="13" color="#FFFFFF" fontWeight="bold"/>
+				<!--<mx:Button label="串接电路" right="190" bottom="0" height="20" fontSize="12"/>
+				<mx:Button label="对比" height="20" width="60" right="120" bottom="0" fontSize="12"/>
+				<mx:Button label="归档" right="50" bottom="0" height="20" fontSize="12" width="60"/>-->
+				<mx:LinkButton id="chuanjie" label="串接电路" color="#FFFFFF" fontSize="12" right="150" bottom="0" height="20" width="80" click="chuanjie_clickHandler(event)"/>
+				<mx:LinkButton id="duibi" label="对比" height="20" right="100" bottom="0" fontSize="12" width="50" color="#FFFFFF" click="duibi_clickHandler(event)"/>
+				<!--<mx:LinkButton id="save" label="归档" color="#FBFBFB" right="50" bottom="0" height="20" width="50" click="save_clickHandler(event)" />-->
+			</mx:Canvas>
+		<flex:Network x="80" y="328" width="100%" height="100%" id="channel" keyboardRemoveEnabled="false">
+		</flex:Network>
+		</mx:VBox>
+	</mx:VDividedBox>
+</mx:TitleWindow>

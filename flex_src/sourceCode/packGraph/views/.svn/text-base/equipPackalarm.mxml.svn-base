@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="754" height="290"  
+				title="端口告警信息"
+				showCloseButton="true"	
+				close="{MyPopupManager.removePopUp(this)}" 
+				fontFamily="宋体" 
+				fontSize="12">
+	<mx:Script>  
+		<![CDATA[ 
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import twaver.*;
+			private var indexRenderer:Class = SequenceItemRenderer;	 
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+
+		]]>  
+	</mx:Script>	
+	<mx:HDividedBox x="6" y="6" width="728" height="244">  		
+		<mx:VBox horizontalScrollPosition="10" width="554" height="238" >  
+			<mx:DataGrid id="alarmGrid" dragEnabled="true"  horizontalScrollPolicy="auto" 
+						 width="554" horizontalCenter="0"  verticalCenter="-3" editable="false" rowCount="5" height="232">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="40" itemRenderer="{new ClassFactory(indexRenderer)}" /> 
+					<mx:DataGridColumn headerText="告警级别" dataField="@alarmlevel"  width="80"/>
+					<mx:DataGridColumn headerText="告警对象" dataField="@objectinfo" width="230"/>
+					<mx:DataGridColumn headerText="告警描述" dataField="@alarmdesc" width="80"/>
+					<mx:DataGridColumn headerText="告警名称" dataField="@alarmtext" width="80"/>
+					<mx:DataGridColumn headerText="发生时间" dataField="@starttime" width="200"/>
+					<mx:DataGridColumn headerText="是否确认" dataField="@isacked" width="75"/>
+					<mx:DataGridColumn headerText="确认时间" dataField="@acktime" width="100"/>
+					<mx:DataGridColumn headerText="确认人" dataField="@ackperson" width="100"/>
+				</mx:columns>
+			</mx:DataGrid>			
+		</mx:VBox>
+		<mx:VBox horizontalScrollPosition="10" width="161" height="234" >  
+			<mx:DataGrid id="alarmGrid2" dragEnabled="true"  horizontalScrollPolicy="auto" 
+						 width="161" editable="false" rowCount="5" height="230">
+				<mx:columns>
+					<mx:DataGridColumn headerText="告警统计" dataField="@alarmnumber" width="100"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+	</mx:HDividedBox>  
+	
+</mx:TitleWindow>

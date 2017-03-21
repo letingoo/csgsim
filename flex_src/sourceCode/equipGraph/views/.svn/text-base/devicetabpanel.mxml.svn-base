@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas  xmlns:mx="http://www.adobe.com/2006/mxml"  
+		   fontSize="12"
+		   xmlns:controls="ht.*"  
+		   xmlns:demo="twaver.*"  
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+		   xmlns:common="twaver.common.*" 
+		   xmlns:local="*" bottom="0" right="0" width="25"
+		   xmlns:components="components.*"
+		   xmlns:custom="common.component.*"
+		   xmlns:alarm="sourceCode.alarmmgrGraph.views.*"
+		   xmlns:pack="sourceCode.packGraph.views.*"
+		   creationComplete="initApp()" xmlns:model="sourceCode.alarmmgrGraph.model.*" >   
+	<mx:Style>
+		.info {
+			borderAlpha: 0.5;
+			borderThicknessLeft: 5;
+			borderThicknessTop: 5;
+			borderThicknessBottom: 5;
+			borderThicknessRight: 5;
+			cornerRadius: 0;
+			backgroundAlpha: 0.9;
+			highlightAlphas: 0.4, 0.2;
+			headerColors: #0099ff, #006699;
+			footerColors: #0099ff, #c7c7c7;
+			shadowDistance: -1;
+			titleStyleName: "myinfopanelTitle";
+			borderColor: #FFFFFF;
+		}
+		.myinfopanelTitle {
+			fontFamily: Arial;
+			fontSize: 12;
+			fontWeight: bold;
+		}
+	</mx:Style>
+	<mx:Script source="../actionscript/devicetabpanel.as"/>
+	<mx:Number id="lastRollOverIndex" /> 
+	<model:AlarmModel id="alarmequip"/>
+	<mx:Panel id="mypanel" backgroundAlpha="0.6" width="100%" height="100%" 
+			  styleName="info" titleStyleName="myinfopanelTitle" borderThicknessBottom="0" borderThicknessLeft="0" borderThicknessRight="0" borderThicknessTop="0">		
+		<mx:TabNavigator width="100%" height="100%" id="tabnavigator1" creationPolicy="all" change="ChangeEvent()" visible="false" includeInLayout="false">
+			<mx:VBox width="100%" id="carryopera" height="100%" verticalGap="0" label="承载电路">
+				<!--<mx:HBox id="toolbar1" width="100%" horizontalAlign="center"/> -->
+				<mx:DataGrid 
+					
+					id="carryoperagrid" 
+					variableRowHeight="true" 
+					wordWrap="true" 
+					headerColors="[0xFFFFFF,0xE6EEEE]"
+					dragEnabled="false" 
+					dragEnter="dragComplete(event)" 
+					horizontalScrollPolicy="auto" 
+					verticalScrollPolicy="auto" 
+					width="100%" height="100%" 
+					horizontalCenter="16"  
+					verticalCenter="-152" 
+					editable="false"     
+					contextMenu="{cm}"  
+					itemRollOver="lastRollOverIndex = event.rowIndex" 
+					doubleClickEnabled="true" 
+					itemDoubleClick="carryoperagrDoubleClickHandler(event)">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" textAlign="center" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+						<mx:DataGridColumn headerText="承载业务的主键" dataField="@carryoperaid"  visible="false"/>
+	
+						<mx:DataGridColumn headerText="电路号" dataField="@circuitcode" width="{carryoperagrid.width*0.2}"/>
+						<mx:DataGridColumn headerText="速率" dataField="@rate" width="{carryoperagrid.width*0.1}"/>
+						<mx:DataGridColumn headerText="A端端口" dataField="@portserialno1" width="{carryoperagrid.width*0.2}"/>
+						<mx:DataGridColumn headerText="A端时隙" dataField="@slot1" width="{carryoperagrid.width*0.15}"/>
+						<mx:DataGridColumn headerText="Z端端口" dataField="@portserialno2" width="{carryoperagrid.width*0.2}"/>
+						<mx:DataGridColumn headerText="Z端时隙" dataField="@slot2" width="{carryoperagrid.width*0.15}"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<custom:pagetoolbar id="clientPagingBar1" width="100%"/>					
+			</mx:VBox>
+			<mx:VBox  width="100%" id="switchpower" height="100%" verticalGap="0" label="光口时隙使用率">
+				<mx:DataGrid  id="deviceportstatsgrid" headerColors="[0xFFFFFF,0xE6EEEE]" variableRowHeight="true" wordWrap="true"  dragEnabled="false"    dragEnter="dragComplete(event)" horizontalScrollPolicy="auto" width="100%" height="100%" horizontalCenter="16"  verticalCenter="-152" editable="false" >
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" headerStyleName="test" width="50" textAlign="center"  itemRenderer="{new ClassFactory(indexRenderer)}"/>
+						<mx:DataGridColumn headerText="端口" headerStyleName="test" dataField="@logicport" width="{deviceportstatsgrid.width*0.3}"/>
+						<mx:DataGridColumn headerText="速率" headerStyleName="test" dataField="@x_capability" width="{deviceportstatsgrid.width*0.1}"/>
+						<mx:DataGridColumn headerText="占用vc4总数" dataField="@usrvc4" width="{deviceportstatsgrid.width*0.1}"/>
+						<mx:DataGridColumn headerText="占用vc12总数" dataField="@usrvc12" width="{deviceportstatsgrid.width*0.1}"/>
+						<mx:DataGridColumn headerText="时隙使用率" dataField="@rate" width="{deviceportstatsgrid.width*0.2}">
+							<mx:itemRenderer>
+								<mx:Component>
+									<pack:Color1/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>	
+				<custom:pagetoolbar id="clientPagingBar2" width="100%"/>
+			</mx:VBox>	
+			<mx:VBox  width="100%" height="100%" verticalGap="0" label="电口使用率">
+				<mx:DataGrid  id="portusestatsgrid" headerColors="[0xFFFFFF,0xE6EEEE]" variableRowHeight="true" wordWrap="true"  dragEnabled="false"    dragEnter="dragComplete(event)" horizontalScrollPolicy="auto" width="100%" height="100%" horizontalCenter="16"  verticalCenter="-152" editable="false">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" textAlign="center" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/>
+						<mx:DataGridColumn headerText="端口总数" dataField="@portnum" />
+						<mx:DataGridColumn headerText="端口占用数" dataField="@portusenum" />
+						<mx:DataGridColumn headerText="端口速率" dataField="@rate" />
+						<mx:DataGridColumn headerText="端口使用率" dataField="@portuserate" >
+							<mx:itemRenderer>
+								<mx:Component>
+									<pack:Color1/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>		
+				<custom:pagetoolbar id="clientPagingBar3" width="100%"/>
+			</mx:VBox>	
+			<alarm:currentOrHistoryRootAlarmView id="alarmrootgrid" alarmModel="{alarmequip}" titleName="查看当前根告警" label="当前根告警" width="100%" height="100%"/>
+			<alarm:currentOrHistoryOriginalAlarmView id="alarmgrid" alarmModel="{alarmequip}" titleName="查看当前原始告警" label="当前原始告警" width="100%" height="100%"/>
+		</mx:TabNavigator>
+		<mx:TextArea  id="text" borderThickness="4" backgroundAlpha="0.6" backgroundColor="0xFFFFFF" borderColor="0xFFFFFF" fontSize="14" text="设备使用情况" width="25" height="100%" />
+	</mx:Panel>
+	<mx:LinkButton id="linkButton" width="25" label="{btnlabel}" textAlign="right" fontThickness="2"  fontSize="12" click="changeState();" top="4" right="0" />
+	<!--  </mx:Panel>-->
+</mx:Canvas>

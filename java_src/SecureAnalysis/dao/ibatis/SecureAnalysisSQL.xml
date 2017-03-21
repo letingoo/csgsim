@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Secure">
+
+ <select id="getMcname"  resultClass="String"  >
+       <![CDATA[
+ select distinct(s_sbmc) as equipname from equipment t3,(select business_type,t5.* from business,(select business_name,business_id,equipcode,t1.circuitcode  from business_circuit t1,circuit_cc t2 where t1.circuitcode=t2.circuitcode) t5
+ where business.business_id=t5.business_id) t4 
+where t3.equipcode=t4.equipcode
+        ]]>	
+  </select>
+   <select id="getMcocalble"  resultClass="String"  parameterClass="String">
+       <![CDATA[
+select ocablename from  en_ocable where  station_a in(select stationcode from equipment where s_sbmc=#name#)
+UNION 
+select ocablename from  en_ocable where  station_z in(select stationcode from equipment where s_sbmc=#name#)
+        ]]>	
+  </select>
+  <select id="getMctype"  resultClass="String"   parameterClass="String">
+       <![CDATA[
+  select DISTINCT(business_type) from business,(select business_name,business_id from business_circuit where circuitcode in (select circuitcode from circuit_cc 
+where equipcode in (select equipcode from equipment where s_sbmc=#name#))) t1
+where business.business_id=t1.business_id
+        ]]>	
+  </select>
+</sqlMap>  

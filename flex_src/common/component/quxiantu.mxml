@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600" creationComplete="initApp()" >
+	<mx:Script>   
+		<![CDATA[   
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.indexEvaluation.model.IndexEvaluation;   
+			[Bindable]   
+			private var gprsAC:ArrayCollection = new  ArrayCollection();   
+			
+			public var indexModel:IndexEvaluation = new IndexEvaluation();
+			private static const MINISECENDS:int=1000;   
+			private function initApp():void  
+			{   
+//				setInterval(addArr,MINISECENDS); 
+				this.addArr();
+			}   
+			
+			private var i:Number = 1;   
+			private var tmp_obj:Object;   
+			public function addArr():void  
+			{   
+//				tmp_obj = new Object();   
+//				var temp_count:Number = Math.ceil(Math.random()*100);   
+//				tmp_obj["time"]=i;   
+//				tmp_obj["count"]=temp_count;   
+				//查询评估列表
+				indexModel.dept="广州";
+				var rtReport1:RemoteObject = new RemoteObject("indexEvaluation");
+				rtReport1.showBusyCursor = true;
+				rtReport1.endpoint = ModelLocator.END_POINT;
+				rtReport1.addEventListener(ResultEvent.RESULT,getDataResult);
+				rtReport1.getIndexEvalValueLst(indexModel);
+//				gprsAC.addItem(tmp_obj);   
+//				i++;   
+//				if(i==24)   
+//				{   
+//					i = 1;   
+//				}   
+			} 
+			
+			private function getDataResult(event:ResultEvent):void{
+				var arr:ArrayCollection = event.result as ArrayCollection;
+				for(var i:int=0;i<arr.length;i++){
+					tmp_obj = new Object();
+					tmp_obj["time"]=(arr[i] as IndexEvaluation).starttime;   
+					tmp_obj["count"]=(arr[i] as IndexEvaluation).value;
+					gprsAC.addItem(tmp_obj);
+				}
+			}
+
+			protected function label1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				gprsAC=new  ArrayCollection();
+				this.addArr();
+			}
+
+		]]>   
+	</mx:Script>  
+	<mx:Spacer height="20"/>
+	<mx:Button  label="刷新" id="label1" fontSize="15"  click="label1_clickHandler(event)" />
+	
+	<mx:LineChart id="linchart"  color="#333399" width="100%" height="100%"  dataProvider="{gprsAC}"  
+				  showDataTips="true" fontSize="12"  y="77" x="10">   
+		<mx:horizontalAxis>   
+			<mx:CategoryAxis  title="评估时间" categoryField="time"/>   
+		</mx:horizontalAxis>    
+		<mx:backgroundElements>   
+			<mx:GridLines direction="horizontal">   
+				<mx:horizontalStroke>   
+					<mx:Stroke weight="1.5" color="#333399" alpha="0.2"/>   
+				</mx:horizontalStroke>   
+			</mx:GridLines>   
+		</mx:backgroundElements>   
+		<mx:series>   
+			<mx:LineSeries id="lineserie"  displayName="评估值" width="160" yField="count"   />   
+		</mx:series>   
+	</mx:LineChart>  
+</mx:Canvas>

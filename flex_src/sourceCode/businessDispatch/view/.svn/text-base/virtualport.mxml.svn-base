@@ -1,0 +1,295 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="添加虚拟端口" label="添加虚拟端口" creationComplete="init();" width="364" height="392"  layout="absolute"  xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import flexunit.utils.ArrayList;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+
+			
+			import sourceCode.channelRoute.model.Circuit;
+			import sourceCode.packGraph.views.checkedEquipPack;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			
+			
+			public var parent_page:selectEquipment;
+			public var node:Node;
+			public var follow:Follower;
+			public var ratestr:String;
+			private function init():void
+			{
+				
+				if(node.getClient("isStart")!=null&&node.getClient("isStart")=='1'){
+					if((node.name==null||node.name=="")&&node.hasChildren){
+						equipFrameSerial.text = "1";
+						equipSlotSerial.text = "1";
+						equipPackSerial.text = "1";
+						equipPortSerial.text = "1";
+					}else if(node.hasChildren&&node.followers.count!=0){
+						equipName.text = node.name;
+						equipFrameSerial.text = (follow.getClient("frameSerial")==null ? "1" : follow.getClient("frameSerial"));
+						equipSlotSerial.text= (follow.getClient("slotSerial")==null ? "1" : follow.getClient("slotSerial"));
+						equipPackSerial.text= (follow.getClient("packSerial")==null ? "1" : follow.getClient("packSerial"));
+						equipPackName.text= (follow.getClient("packName")==null ? "" : follow.getClient("packName"));
+						equipPortSerial.text= (follow.getClient("portSerial")==null ? "1" : follow.getClient("portSerial"));
+						equipPortRate.text= (follow.getClient("portRateName")==null ? "" : follow.getClient("portRateName"));
+						ratestr = (follow.getClient("portRateName") ==null ? "" :follow.getClient("portRateName"));
+					}else{
+						equipName.text = node.name;
+						equipFrameSerial.text = "1";
+						equipSlotSerial.text = "1";
+						equipPackSerial.text = "1";
+						equipPortSerial.text = "1";
+					}
+				}
+				if(node.getClient("isEnd")!=null&&node.getClient("isEnd")=='1'){
+					if((node.name==null||node.name=="")&&node.hasChildren){
+						equipFrameSerial.text = "1";
+						equipSlotSerial.text = "1";
+						equipPackSerial.text = "1";
+						equipPortSerial.text = "1";
+					}else if(node.hasChildren&&node.followers.count!=0){
+						equipName.text = node.name;
+						equipFrameSerial.text = (follow.getClient("frameSerial")==null ? "1" : follow.getClient("frameSerial"));
+						equipSlotSerial.text= ((follow.getClient("slotSerial")==null) ? "1" : follow.getClient("slotSerial"));
+						equipPackSerial.text= (follow.getClient("packSerial")==null ? "1" : follow.getClient("packSerial"));
+						equipPackName.text= (follow.getClient("packName")==null ? "" : follow.getClient("packName"));
+						equipPortSerial.text=( follow.getClient("portSerial")==null ? "1" : follow.getClient("portSerial"));
+						equipPortRate.text= (follow.getClient("portRateName")==null ? "" : follow.getClient("portRateName"));
+						ratestr = (follow.getClient("portRateName")==null ? "" :follow.getClient("portRateName"));
+					}else{
+						equipName.text = node.name;
+						equipFrameSerial.text = "1";
+						equipSlotSerial.text = "1";
+						equipPackSerial.text = "1";
+						equipPortSerial.text = "1";
+					}
+				}
+				
+				
+				var rtobj11:RemoteObject = new RemoteObject("equInfo");
+				rtobj11.endpoint = ModelLocator.END_POINT;
+				rtobj11.showBusyCursor = true;
+				rtobj11.getFromXTBM('ZY0701__');//根据系统编码查询对应信息(速率)
+				rtobj11.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+					var XMLData_Rate:XMLList = new XMLList(e.result.toString());
+					equipPortRate.dataProvider = XMLData_Rate.children();
+					equipPortRate.labelField = "@label";
+					equipPortRate.selectedIndex = selectRate(e.result.toString());
+				})	
+				
+				
+			}
+			public function selectRate(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(ratestr == xml.name[i].@label){
+						return i; 
+					}
+				}
+				return 0;
+			}
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);  
+			}
+			private function save():void
+			{
+				
+				if(equipName.text==""||equipName.text==null){
+					Alert.show("设备名称不能为空","温馨提示");
+				}else if(equipFrameSerial.text==""||equipFrameSerial.text==null){
+					Alert.show("机框序号不能为空","温馨提示");
+				}else if(equipSlotSerial.text==""||equipSlotSerial.text==null){
+					Alert.show("机槽序号不能为空","温馨提示");
+				}else if(equipPackSerial.text==""||equipPackSerial.text==null){
+					Alert.show("机盘序号不能为空","温馨提示");
+				}/* else if(equipPackName.text==""||equipPackName.text==null){
+					Alert.show("机盘类型不能为空","温馨提示");//机盘类型
+				} */else if(equipPortSerial.text==""||equipPortSerial.text==null){
+					Alert.show("端口序号不能为空","温馨提示");//端口序号
+				} /* else if(equipPortRate.text!="2M/s" && equipPortRate.text!="其它" ){
+					if(portSlot.text==""||portSlot.text==null){
+						Alert.show("当速率不为'2M/s'或'其它'时端口时隙不能为空","温馨提示");//端口时隙
+					} 
+				} */else{
+					var packName:String = "";
+					if(equipPackName.text!=""){
+						packName= equipPackName.text+"-";
+					}
+					var portLabel:String = packName + equipFrameSerial.text+"框-"+equipSlotSerial.text+'槽-'+equipPortSerial.text+'端口';
+//					if(node.name!=""&&node.name!=null){//&&node.hasChildren
+//						
+//						this.parent_page.circuitPic.elementBox.remove(node.followers.getItemAt(0));
+//					}
+					
+					
+//					if(equipSlotSerial.text!=null&&equipPortSerial.text!=null){
+//						portLabel = equipSlotSerial.text+'槽-'+equipPortSerial.text+'端口';
+//					}
+					if(node.getClient("isStart")!=null&&node.getClient("isStart")=='1'){
+						
+						var follow:Follower = new Follower();
+						follow.name = portLabel;
+						follow.setCenterLocation(node.centerLocation.x-39,node.centerLocation.y+7);
+						follow.image='Port';
+						follow.setStyle(Styles.LABEL_POSITION,Consts.POSITION_LEFT_LEFT);
+						follow.setClient("flag","virtualPort");	
+						follow.setSize(12,12);
+						follow.parent = node;
+						follow.host = node;
+						var obj:Object = new Object();
+						//加框！
+						obj.slotSerial = equipSlotSerial.text;
+						obj.packSerial = equipPackSerial.text;
+						obj.packName = equipPackName.text;
+						obj.portSerial = equipPortSerial.text;
+						obj.portRate = equipPortRate.selectedItem.@code;
+						obj.portRateName = equipPortRate.selectedItem.@label;
+						node.name = equipName.text;
+						follow.setClient("frameSerial",equipFrameSerial.text);
+						follow.setClient("slotSerial",equipSlotSerial.text);
+						follow.setClient("packSerial",equipPackSerial.text);
+						follow.setClient("packName",equipPackName.text);
+						follow.setClient("portSerial",equipPortSerial.text);
+						follow.setClient("portRate",equipPortRate.selectedItem.@code);
+						follow.setClient("portRateName",equipPortRate.selectedItem.@label);
+						follow.setClient("virtualPortProperty",obj);
+						parent_page.circuitPic.elementBox.add(follow);
+					}	
+					if(node.getClient("isEnd")!=null&&node.getClient("isEnd")=='1'){
+						
+						var follow:Follower = new Follower();
+						follow.name = portLabel;
+						follow.setCenterLocation(node.centerLocation.x+55,node.centerLocation.y+7);
+						follow.setStyle(Styles.LABEL_POSITION,Consts.POSITION_RIGHT_RIGHT);
+						follow.image='Portright';
+						follow.setClient("flag","virtualPort");
+						follow.setSize(12,12);
+						follow.parent = node;
+						follow.host = node;
+						var obj:Object = new Object();
+						obj.slotSerial = equipSlotSerial.text;
+						obj.packSerial = equipPackSerial.text;
+						obj.packName = equipPackName.text;
+						obj.portSerial = equipPortSerial.text;
+						obj.portRate = equipPortRate.selectedItem.@code;
+						obj.portRateName = equipPortRate.selectedItem.@label;
+						node.name = equipName.text;
+						follow.setClient("frameSerial",equipFrameSerial.text);
+						follow.setClient("slotSerial",equipSlotSerial.text);
+						follow.setClient("packSerial",equipPackSerial.text);
+						follow.setClient("packName",equipPackName.text);
+						follow.setClient("portSerial",equipPortSerial.text);
+						follow.setClient("portRate",equipPortRate.selectedItem.@code);
+						follow.setClient("portRateName",equipPortRate.selectedItem.@label);
+						follow.setClient("virtualPortProperty",obj);
+						parent_page.circuitPic.elementBox.add(follow);
+					}
+					this.close();
+					
+				}
+			}
+			/* private function getSlot(e:Event):void{
+				if(portSlot.enabled==true){
+				
+				var slot_tree:VstForVp = new VstForVp();
+				slot_tree.rate = equipPortRate.selectedItem.@code;
+				slot_tree.linerate=equipPortRate.selectedItem.@code;
+				slot_tree.parent_page = this;
+				slot_tree.flag = 'virtualport';
+				slot_tree.e_node = node;
+				PopUpManager.addPopUp(slot_tree, this, true);
+				PopUpManager.centerPopUp(slot_tree);
+				}
+			} */
+			
+
+			protected function equipPortRate_changeHandler(event:ListEvent):void
+			{
+				var xml:XML = equipPortRate.selectedItem as XML
+				var label = xml.@label;
+				/* if (label != '2M/s' && label != '其它') {
+					portSlot.enabled = true;
+				}else{
+					portSlot.enabled = false;
+				}	 */
+			}
+
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+			 backgroundSize="100%">
+		<mx:Canvas width="100%" height="284">
+	
+	
+	<mx:Label text="设备名称"  y="27" height="25" fontFamily="宋体" x="61" textAlign="center" fontSize="12"/>  
+	<mx:TextInput id="equipName" width="120" x="161" y="25" fontFamily="宋体" fontSize="12"/> 
+	<mx:Label text="机框序号"  y="57" height="25" fontFamily="宋体" x="61" textAlign="center" fontSize="12"/>
+	<mx:TextInput id="equipFrameSerial" width="120" x="161" y="55" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text=" 机槽序号"  y="87" x="46" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="161" y="85" editable="true" id="equipSlotSerial"  width="120" fontFamily="宋体" fontSize="12" />
+
+	
+	<mx:Label text="机盘序号"  y="119" x="50" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="73"/>
+	<mx:TextInput id="equipPackSerial" width="120" x="161" y="117" fontFamily="宋体" fontSize="12" />
+	
+	
+	<mx:Label text="  机盘类型"  y="155" x="50" height="25" fontFamily="宋体" fontSize="12" width="84"/>
+	<mx:TextInput x="161" y="153" editable="true" id="equipPackName" width="120" fontFamily="宋体" fontSize="12"></mx:TextInput>
+	
+	
+	<mx:Label text="端口序号"  y="184" x="62" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput id='equipPortSerial' width="120" x="160" y="184" fontFamily="宋体" fontSize="12" />
+	
+	
+	<mx:Label text="速    率"  y="224" x="62" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:ComboBox id="equipPortRate" width="120" x="160" y="219" change="equipPortRate_changeHandler(event)" labelField="@label"  fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+	
+<!--	<mx:Label text="端口时隙"  y="221" x="61" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput x="159" y="221" id="portSlot" width="120" fontFamily="宋体" click="getSlot(event)" enabled="false" fontSize="12" />-->
+	
+			
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%"  backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+	
+	<mx:Button label="保存" click="save()" styleName="loginprimary"  x="66" y="17" height="22" textAlign="center" fontFamily="宋体" fontSize="12"   width="80"/>
+	<mx:Button label="关闭" click="close()"  styleName="loginsecondary" x="188" y="17" height="22" textAlign="center" fontFamily="宋体" fontSize="12" width="80"/> 
+		</mx:Canvas>
+	</mx:VBox>
+	<mx:Validator source="{equipName}" requiredFieldError="不能为空" property="text"/>
+	<mx:Validator source="{equipSlotSerial}" requiredFieldError="不能为空" property="text"/>
+	<mx:Validator source="{equipPackSerial}" requiredFieldError="不能为空" property="text"/>
+	<mx:Validator source="{equipPackName}" requiredFieldError="不能为空" property="text"/>
+	<mx:Validator source="{equipPortSerial}" requiredFieldError="不能为空" property="text"/>
+	<mx:Validator source="{equipFrameSerial}" requiredFieldError="不能为空" property="text"/>
+</mx:TitleWindow>  

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--根告警统计配-->
+
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				xmlns:cellrender="sourceCode.subject.main.actionscript.*"
+				layout="absolute" 
+				creationComplete="init();" 
+				title="转至已有故障" 
+				width="900" height="400"  
+				showCloseButton="true"
+				close="closeWin()"
+				horizontalScrollPolicy="off" verticalScrollPolicy="off" xmlns:views="com.metarnet.mnt.common.views.*" xmlns:utiltools="sourceCode.ui.utiltools.*" xmlns:views1="sourceCode.common.views.*"
+				>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.other.events.LinkParameterEvent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.controls.Text;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.ObjectUtil;
+			import sourceCode.alarmmgr.actionscript.*;
+			import sourceCode.alarmmgr.model.AlarmMangerModel;
+			import common.actionscript.MyPopupManager;
+			public var flag:int = 0;
+			private var changedate:int;
+			private var showalarmcount:int;
+			private var showackedcount:int;
+			private var showackedtime:int;
+			private var showcompletecount:int;
+			private var param:ArrayCollection =new ArrayCollection();
+			private var indexRenderer:Class = SequenceItemRenderer;  
+			private var alarmmangermodel:AlarmMangerModel =new AlarmMangerModel();
+			[Bindable]
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class;
+			
+			public function init():void{
+				pagingFunction(0,50);
+			}
+			
+			
+			
+			//获取指定查询条件的告警信息
+			private function getSelectAlarms():void{
+				if(ObjectUtil.dateCompare(DateField.stringToDate(starttime.text,"YYYY-MM-DD JJ:NN:SS")
+					,DateField.stringToDate(endtime.text,"YYYY-MM-DD JJ:NN:SS")) == 1){
+					Alert.show("开始时间不能大于结束时间","提示信息",4,this,null,iconClass);
+					return;
+				}
+				pagingFunction(0,50);
+			}
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void {
+				
+				start = (pageIndex * pageSize+1).toString();
+				end = ((pageIndex * pageSize) + pageSize).toString();
+				alarmmangermodel.end= end+"";
+				alarmmangermodel.start= start+"";
+				alarmmangermodel.endTime=endtime.text+'';
+				alarmmangermodel.beginTime=starttime.text+'';
+				alarmmangermodel.dutyid=dutyid.text+"";
+				var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getAlarmDutyid(alarmmangermodel);        //表格加载数据
+				rtobj.addEventListener(ResultEvent.RESULT,loadData);
+			}
+			private function loadData(event:ResultEvent){
+				var alarmInfos:ArrayCollection=event.result.list as ArrayCollection;
+				if(event.result.list==null || event.result.list==""){
+					//					Alert.show("没有符合条件的查询结果，请重新输入查询条件","提示信息",4,this,null,iconClass);
+					Alert.show("没有结果","提示信息",4,this,null,iconClass);
+					
+				}
+				dg.dataProvider=alarmInfos;
+				pagingToolBarforAlarmExp.orgData =alarmInfos;
+				var count:int =int(event.result.alarmcount);
+				pagingToolBarforAlarmExp.totalRecord = count;
+				pagingToolBarforAlarmExp.dataBind(true);
+				//	pagingToolBarforAlarmExp.currentPageIndex=0;
+				
+			}
+			protected function dg_clickHandler(event:MouseEvent):void
+			{
+				if(dg.selectedItem){
+					this.dispatchEvent(new LinkParameterEvent("AfterChangeExist",dg.selectedItem.DUTYID+""));		
+					MyPopupManager.removePopUp(this);
+				}
+			}
+			public function linkRelationUI(obj:Object):void{
+				this.dispatchEvent(new LinkParameterEvent("AfterChangeExist",obj.DUTYID+""));		
+				MyPopupManager.removePopUp(this);
+			}
+			
+			private function closeWin():void{
+				MyPopupManager.removePopUp(this);
+			}
+			private function reset():void{
+				dutyid.text="";
+				starttime.text="";
+				endtime.text="";
+			}
+		]]>
+	</mx:Script>
+	<utiltools:GroupBox width="100%" height="100%" borderStyle="inset" borderColor="#CCCCCC">
+		<mx:VBox width="100%" height="100%"   verticalAlign="middle" horizontalAlign="center" verticalGap="0" backgroundColor="#E0EEEE">
+			<mx:VBox width="100%" height="100%" horizontalGap="10" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+				<mx:Spacer width="5"/>
+				<mx:VBox width="100%" height="20%" verticalAlign="middle" >
+					<utiltools:GroupBox groupTitle="查询" width="100%" height="90%"  borderStyle="inset" borderColor="#CCCCCC" backgroundColor="#E0EEEE">
+						<mx:HBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingTop="10">
+							<mx:Form width="95%" height="95%" verticalGap="20" paddingTop="15" paddingLeft="0" paddingRight="10" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+								<mx:FormItem>
+									<mx:HBox horizontalAlign="center" verticalAlign="middle">
+										<mx:Label text="故障单编号:"/>
+										<mx:TextInput styleName="combox" width="80" id="dutyid"/>
+										<mx:Label text="告警发生时间:" paddingLeft="10"/>
+										<mx:DateField styleName="combox" id="starttime" width="150" dayNames="[日,一,二,三,四,五,六]" monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]"  formatString="YYYY-MM-DD" x="91.4" y="231"/>
+										<mx:Label text="至:" />
+										<mx:DateField styleName="combox" id="endtime" width="150" dayNames="[日,一,二,三,四,五,六]" monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]"  formatString="YYYY-MM-DD" x="91.4" y="257"/>
+										<mx:Button label="查询" height="24" click="getSelectAlarms()">
+											<mx:icon>@Embed(source='/assets/images/rootalarm/search.png')</mx:icon>
+										</mx:Button>
+										<mx:Button label="重置" height="24" width="70" click="reset()" x="152" y="285"/>
+									</mx:HBox>
+								
+								</mx:FormItem>
+							</mx:Form>
+						</mx:HBox>
+					</utiltools:GroupBox>
+				</mx:VBox>
+				<mx:VBox width="100%" height="80%" verticalAlign="middle">
+					<utiltools:GroupBox groupTitle="故障告警列表" width="100%" height="100%"  borderStyle="inset" borderColor="#CCCCCC" backgroundColor="#E0EEEE" >
+						<mx:VBox width="100%" height="100%" verticalGap="0" paddingTop="15">
+							<mx:DataGrid id="dg" headerHeight="25" width="100%"  height="95%" textAlign="center" verticalAlign="middle" doubleClickEnabled="true" doubleClick="dg_clickHandler(event)">
+								<mx:columns>
+									<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="50" textAlign="center"/>
+									<mx:DataGridColumn headerText="根告警设备" dataField="ALARMOBJDESC" width="220" textAlign="left"/>
+									<mx:DataGridColumn headerText="根告警描述" dataField="ALARMDESC" width="220" textAlign="left"/>	
+									<mx:DataGridColumn headerText="告警原因" dataField="ISWORKCASE" width="100" textAlign="left"/>	
+									<mx:DataGridColumn headerText="发生时间" dataField="FIRSTSTARTTIME" width="150" textAlign="left"/>
+									<mx:DataGridColumn headerText="故障单号" dataField="DUTYID" width="80" textAlign="left"/>
+									<mx:DataGridColumn headerText="操作" dataField="OPER" width="100">  
+										<mx:itemRenderer>
+											<mx:Component>
+												<cellrender:RollOverItemRenderer alarmGrade="OPER" click="outerDocument.linkRelationUI(data)"/>
+											</mx:Component>
+										</mx:itemRenderer>	
+									</mx:DataGridColumn>  
+								</mx:columns>
+							</mx:DataGrid>
+							<views1:pagetoolbar width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{dg}" pagingFunction="pagingFunction"/>
+						</mx:VBox>
+					</utiltools:GroupBox>
+				</mx:VBox>
+			</mx:VBox>
+		</mx:VBox>
+	</utiltools:GroupBox>
+	
+</mx:TitleWindow>

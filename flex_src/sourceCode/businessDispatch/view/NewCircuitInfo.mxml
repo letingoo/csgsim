@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" 
+				minWidth="955" minHeight="600" width="527" height="544" 
+				title="新建方式单"
+				titleIcon="@Embed('assets/images/btn/newCircuit.png')"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}" 
+				fontFamily="Verdana" 
+				fontSize="13"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.component.CheckDeptTree;
+			
+			import mx.controls.Alert;
+			import mx.effects.IAbstractEffect;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.errors.NoChannelAvailableError;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.businessDispatch.model.SelectOthersCircuit;
+			import sourceCode.systemManagement.events.DeptParameterEvent;
+			import sourceCode.systemManagement.views.comp.DeptTree;
+			
+			import twaver.Node;
+			private var XMLData_Rates:XMLList;//速率下拉框
+			private var XMLData_userCom:XMLList;//使用单位下拉框
+			private var XMLData_leasers:XMLList;//申请单位下拉框
+			private var XMLData_opTypes:XMLList;//业务类型下拉框
+			private var XMLData_ccLevels:XMLList;//业务等级下拉框
+			private var XMLData_infTypes:XMLList;//接口类型下拉框
+			public var selectUnit:SelectUnit = new SelectUnit;//选择单位小页面
+			public var select_Equip:selectEquipment;//
+			public var ratename:String = ""; 
+			public var propertyname:String ="";
+			public var leasername:String = "";
+			public var optyname:String = "";
+			public var ccLevelname:String = "";
+			public var infTpyename:String = "";
+			public var info_id:String = "";
+			private var sss:String = "";
+			public var whichOne:String = "";
+			public var allStr:XML;//以下字段为隐藏字段
+			public var allStrOfOthers:SelectOthersCircuit;
+			//public var departmentidStr:String ="";//执行单位的编码
+			private var treeXML:XMLList = new XMLList();
+			private var folderCollection:XMLList;
+			private var dlzt:String="";
+			public function init():void{
+				
+				var robj:RemoteObject = new RemoteObject("equInfo");
+				robj.endpoint = ModelLocator.END_POINT;
+				robj.showBusyCursor = true;
+				robj.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率)
+				robj.addEventListener(ResultEvent.RESULT, RatesInfo);
+				
+				var robj1:RemoteObject = new RemoteObject("businessDispatch");
+				robj1.endpoint = ModelLocator.END_POINT;
+				robj1.showBusyCursor =true;
+				robj1.getXTBM('DLDW00__');//使用单位
+				robj1.addEventListener(ResultEvent.RESULT,userComInfo);
+//				var robj2:RemoteObject = new RemoteObject("businessDispatch");
+//				robj2.endpoint = ModelLocator.END_POINT;
+//				robj2.getXTBM('YW010601__');//申请单位
+//				robj2.addEventListener(ResultEvent.RESULT,leaserInfo);
+				var robj3:RemoteObject = new RemoteObject("businessDispatch");
+				robj3.endpoint = ModelLocator.END_POINT;
+				robj3.getXTBM('YW120915__');//业务类型
+				robj3.addEventListener(ResultEvent.RESULT,opTypeInfo);
+				var robj4:RemoteObject = new RemoteObject("businessDispatch");
+				robj4.endpoint = ModelLocator.END_POINT;
+				robj4.getXTBM('YW010710__');//业务等级
+				robj4.addEventListener(ResultEvent.RESULT,ccLevelInfo);
+				var robj5:RemoteObject = new RemoteObject("businessDispatch");
+				robj5.endpoint = ModelLocator.END_POINT;
+				robj5.getXTBM('JK01__');//接口类型
+				robj5.addEventListener(ResultEvent.RESULT,infTypeInfo);
+				
+			}
+			private function YwLevel(e:ResultEvent):void{
+				ccLevelname = e.result.toString();
+				circuitlevel.selectedIndex = selectccLeve(sss);
+			}   
+			private function YwLevel_gd(e:ResultEvent):void{
+				ccLevelname = e.result.toString();
+				var yewumm:String=e.result.toString();
+				circuitlevel.selectedIndex = selectccLeveOK(yewumm);
+			}   
+			private function RatesInfo(event:ResultEvent):void{
+				XMLData_Rates = new XMLList(event.result.toString());	
+				rate.dataProvider = XMLData_Rates.children();
+				rate.labelField = "@label";
+				rate.selectedIndex = selectRate(event.result.toString());
+			} 
+			private function userComInfo(e:ResultEvent):void{
+				
+				XMLData_userCom = new XMLList(e.result.toString());
+				userCom.dataProvider = XMLData_userCom.children();
+				userCom.labelField = "@xtxx";
+				userCom.selectedIndex = selectUserCom(e.result.toString());
+			}
+			public function leaserInfo(e:ResultEvent):void{
+//				XMLData_leasers = new XMLList(e.result.toString());
+//				leaser.dataProvider = XMLData_leasers.children();
+//				leaser.labelField = "@xtxx";
+//				leaser.selectedIndex = selectLeaser(e.result.toString());
+			}
+			public function opTypeInfo(e:ResultEvent):void{
+				XMLData_opTypes = new XMLList(e.result.toString());
+				operationType.dataProvider = XMLData_opTypes.children();
+				operationType.labelField = "@xtxx";
+				operationType.selectedIndex = selectOpty(e.result.toString());
+			}
+			public function ccLevelInfo(e:ResultEvent):void{
+				XMLData_ccLevels = new XMLList(e.result.toString());
+				sss = e.result.toString();
+				circuitlevel.dataProvider = XMLData_ccLevels.children();
+				circuitlevel.labelField = "@xtxx";
+				var robj6:RemoteObject = new RemoteObject("businessDispatch");
+				robj6.endpoint = ModelLocator.END_POINT;
+				robj6.getCircuitLevel(optyname);
+				robj6.addEventListener(ResultEvent.RESULT,YwLevel); 
+			}
+			public function infTypeInfo(e:ResultEvent):void{
+				XMLData_infTypes = new XMLList(e.result.toString());
+				interfaceType.dataProvider = XMLData_infTypes.children();
+				interfaceType.labelField= "@xtxx";
+				interfaceType.selectedIndex = selectInfType(e.result.toString());
+			}
+			public function selectRate(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(ratename == xml.name[i].@label){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectUserCom(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(propertyname == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectLeaser(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(leasername == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectOpty(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(optyname == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectccLeve(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(ccLevelname == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectccLeveOK(s:String):int{
+				var xml:XML =XML(XMLData_ccLevels);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(s == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectInfType(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(infTpyename == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			
+			private var deptsTree:CheckDeptTree;
+			protected function department_clickHandler(event:MouseEvent):void
+			{
+				deptsTree = new CheckDeptTree();
+				deptsTree.user_id=parentApplication.curUser;
+				deptsTree.addEventListener("SaveDept",saveDeptHandler);
+				MyPopupManager.addPopUp(deptsTree, true);
+			}
+			
+			private function saveDeptHandler(event:Event):void{
+				this.department.text = deptsTree.depts;
+				this.department.text = deptsTree.depts.substr(0,deptsTree.depts.length - 1);
+				MyPopupManager.removePopUp(deptsTree);
+			}
+			
+			private function SUTree(e:ResultEvent):void{
+				PopUpManager.addPopUp(selectUnit, this, true);
+				PopUpManager.centerPopUp(selectUnit);
+				treeXML = new XMLList(e.result.toString());
+				folderCollection = new XMLList(treeXML);
+				selectUnit.selectUnitTree.dataProvider = folderCollection.node;
+				var shuzu:Array = department.text.split(",");
+				for(var i:int = 0;i<shuzu.length;i++){
+					var ss:String = shuzu[i];
+					for each (var element:XML in treeXML.elements()) {
+						if(element.@isBranch==false){//分支节点
+							if(element.@name==ss){
+								element.@checked = "1";		
+							}
+						}
+					}
+				}
+			}
+			
+			protected function next_clickHandler(event:MouseEvent):void
+			{
+				if(modeName.text==null||modeName.text ==""){
+					Alert.show("业务名称不能为空！","温馨提示");
+				}else if(aStationnName.text==null||aStationnName.text ==""){
+					Alert.show("起始局站不能为空！","温馨提示");
+				}else if(zStationnName.text==null||zStationnName.text ==""){
+					Alert.show("终止局站不能为空！","温馨提示");
+				}else if(leaser.text==null||leaser.text ==""){
+					Alert.show("申请单位不能为空！","温馨提示");
+				}else if(userCom.selectedItem == null){
+					Alert.show("使用单位不能为空！","温馨提示");
+				}else if(operationType.text==null||operationType.text ==""){
+					Alert.show("业务类型不能为空！","温馨提示");
+				}else if(circuitlevel.text==null||circuitlevel.text ==""){
+					Alert.show("业务等级不能为空！","温馨提示");
+				}else if(rate.text==null||rate.text ==""){
+					Alert.show("速率不能为空！","温馨提示");
+				}else if(requestionID.text==null||requestionID.text ==""){
+					Alert.show("申请名称不能为空！","温馨提示");
+				}else if(state.text==null||state.text ==""){
+					Alert.show("电路状态不能为空！","温馨提示");
+				}else if(finishtime.text == null){
+					Alert.show("完成时间不能为空！","温馨提示");
+				}else if(interfaceType.text==null||interfaceType.text ==""){
+					Alert.show("接口类型不能为空！","温馨提示");
+				}else if(department.text == ""||department == null){
+					Alert.show("执行单位不能为空！","温馨提示");
+				}else{
+					var obj:Object = new Object();
+					if(whichOne!="change"){
+						obj.startTime = new String(allStr.@start_time);//从列表当中读取的申请时间
+						obj.form_id = new String(allStr.@form_id);
+						obj.formName = new String(allStr.@specialtyname);
+						obj.form_no = new String(allStr.@form_no);
+						obj.property = new String(allStr.@appdepartment);
+						obj.leaser = new String(allStr.@applier); 
+						obj.requestionID = new String(allStr.@form_id);
+						if(operationType.selectedItem)
+							obj.operationType = String(operationType.selectedItem.@xtxx);
+						else
+							obj.operationType= new String(allStr.@type); 
+						obj.circuitLevel = new String(circuitlevel.selectedItem.@xtbm);
+						obj.circuitLevelName = new String(circuitlevel.selectedItem.@xtxx); //业务等级
+						obj.appdepartment = new String(allStr.@appdepartment);
+						obj.applier = new String(allStr.@applier);
+						obj.x_purpose=new String(allStr.@purpose);
+					}else{
+						obj.startTime = new String(allStrOfOthers.createtime);
+						obj.form_id = new String(allStrOfOthers.form_id);
+						obj.formName = new String(allStrOfOthers.form_name);
+						obj.form_no = new String(allStrOfOthers.requisitionid);
+						obj.property = new String(allStrOfOthers.requestcom);
+						obj.leaser = new String(allStrOfOthers.leaser); 
+						obj.requestionID = new String(allStrOfOthers.form_id);
+						if(operationType.selectedItem)
+							obj.operationType = String(operationType.selectedItem.@xtxx);
+						else
+							obj.operationType= new String(allStrOfOthers.operationtype); 
+						obj.circuitLevel = new String(circuitlevel.selectedItem.@xtbm);
+						obj.circuitLevelName = new String(circuitlevel.selectedItem.@xtxx); //业务等级
+						obj.appdepartment = new String(allStrOfOthers.requestcom);
+						obj.applier = new String(allStrOfOthers.leaser);
+						obj.x_purpose=new String(allStrOfOthers.state);
+					}
+					
+					if(state.text.indexOf("开通") != -1){
+						dlzt = "YW010301";
+					}else if(state.text.indexOf("撤销") != -1){
+						dlzt = "YW010302";
+					}else if(state.text.indexOf("其他") != -1){
+						dlzt = "YW010303";
+					}else if(state.text.indexOf("变更") != -1){
+						dlzt = "YW010304";
+					}
+					obj.info_id = info_id;
+					obj.rate = new String(rate.selectedItem.@code);//速率编码
+					obj.rateName = rate.text;//速率名称
+					obj.modeName = modeName.text;//业务名称
+					obj.interfaceType = interfaceType.text;//接口类型
+					obj.state=dlzt;
+					obj.stateName = state.text;//电路状态 
+					obj.reqendtime = finishtime.text;//完成时间
+					obj.station_a = aStationnName.text;//
+					obj.station_z = zStationnName.text;//
+					obj.useOfUnits = String(this.userCom.selectedItem.@xtxx);//使用单位
+					obj.useOfUnitsCode = String(this.userCom.selectedItem.@xtbm);//使用单位编码
+					obj.applicantCom = this.leaser.text;//申请单位
+					obj.depar = department.text;
+//					obj.depar = (selectUnit.dtStr).substr(0,(selectUnit.dtStr).length-1);//执行单位
+					obj.departmentid = (selectUnit.dtidStr).substr(0,(selectUnit.dtidStr).length-1);//执行的单位的ID  //selectUnit.selectUnitTree.selectedItem.@xtbm;
+					obj.cooperateDepartment = cooperateDepartment.text;//配合单位
+					obj.beizhu = beizhu.text;//备注
+					select_Equip = new selectEquipment();
+					select_Equip.obj = obj;
+					if(whichOne=="change"){select_Equip.changeOrNot="change";select_Equip.circuitcode = allStrOfOthers.circuitcode; }else{
+						select_Equip.changeOrNot="Not";select_Equip.circuitcode = ""; 
+					}
+					PopUpManager.addPopUp(select_Equip,this,true);
+					PopUpManager.removePopUp(this);
+				}
+			}
+			
+			protected function return_clickHandler(event:MouseEvent):void{
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function operationType_changeHandler(event:ListEvent):void
+			{
+				var YewuName:String =operationType.selectedItem.@xtxx;
+				var robj6:RemoteObject = new RemoteObject("businessDispatch");
+				robj6.endpoint = ModelLocator.END_POINT;
+				robj6.getCircuitLevel(YewuName);
+				robj6.addEventListener(ResultEvent.RESULT,YwLevel_gd); 
+			}
+			
+			private function selectDept():void{
+				var deptsTree:DeptTree=new DeptTree();	
+				MyPopupManager.addPopUp(deptsTree, true);
+				deptsTree.addEventListener("departmentEvent",departmentSearchHandler);	
+			}
+			
+			private var deptcode:String;
+			private function departmentSearchHandler(event:DeptParameterEvent):void
+			{
+				this.deptcode = event.dept_code;
+				this.leaser.text = event.dept_name;
+			}
+		]]>
+	</mx:Script>
+	<mx:Label x="9" y="12" text="业务名称:" width="65" height="24" fontSize="13" color="#000000" textAlign="right"/>
+	<mx:TextInput x="83" y="10" width="415" id="modeName" editable="false" text="{data.@specialtyname}"/>
+	<mx:Validator source="{modeName}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="42" text="起始局站：" fontSize="13" textAlign="right"/>
+	<mx:TextInput x="83" y="40" id="aStationnName" editable="false"/>
+	<mx:Validator source="{aStationnName}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="42" text="终止局站：" fontSize="13"/>
+	<mx:TextInput x="338" y="40" id="zStationnName" editable="false" textAlign="left"/>
+	<mx:Validator source="{zStationnName}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="72" text="申请单位：" fontSize="13" textAlign="right"/>
+	<mx:TextInput x="83" y="70" id="leaser" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0" click="selectDept()" editable="false"/>
+	<mx:Validator source="{leaser}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="72" text="使用单位：" fontSize="13"/>
+	<mx:ComboBox x="338" y="70" id="userCom" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"></mx:ComboBox>
+	<mx:Validator source="{userCom}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<!--sjt20110110<mx:ComboBox x="338" y="70" id="property" width="160" textAlign="left" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"></mx:ComboBox>
+	<mx:Validator source="{property}" property="text" requiredFieldError="该项不能为空！"/>
+	-->
+	<mx:Label x="9" y="102" text="业务类型：" fontSize="13" textAlign="right"/>
+	<mx:ComboBox x="83" y="100" id="operationType" width="160" change="operationType_changeHandler(event)" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"></mx:ComboBox>
+	<mx:Validator source="{operationType}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="102" text="业务等级：" fontSize="13"/>
+	<mx:ComboBox x="338" y="102" id="circuitlevel" width="160" textAlign="left" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"></mx:ComboBox>
+	<mx:Validator source="{circuitlevel}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="10" y="133" text="速     率：" fontSize="13" textAlign="right"/>
+	<mx:ComboBox x="83" y="130" id="rate" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"></mx:ComboBox>
+	<mx:Validator source="{rate}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="132" text="申请名称：" fontSize="13"/>
+	<mx:TextInput x="338" y="130" id="requestionID" editable="false" textAlign="left" width="160"/>
+	<mx:Validator source="{requestionID}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="162" text="电路状态：" fontSize="13" textAlign="right"/>
+	<mx:TextInput x="83" y="160" id="state" editable="false"/>
+	<mx:Validator source="{state}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="162" text="完成时间：" fontSize="13"/>
+	<!--<mx:TextInput x="338" y="160" id="finishtime" editable="false" textAlign="left"/>-->
+	<mx:DateField x="338" y="160" id="finishtime" textAlign="left" formatString="YYYY-MM-DD" width="159"/>
+	<mx:Validator source="{finishtime}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="192" text="接口类型：" fontSize="13" textAlign="right"/>
+	<mx:ComboBox x="83" y="190" id="interfaceType" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"></mx:ComboBox>
+	<mx:Validator source="{interfaceType}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="222" text="执行单位：" fontSize="13" textAlign="right"/>
+	<mx:TextArea x="83" y="223" width="415" height="83" id="department" 
+				 click="department_clickHandler(event)" editable="false" textAlign="left"/>
+	<mx:Validator source="{department}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="10" y="320" text="配合单位：" fontSize="13"/>
+	<mx:TextArea x="83" y="321" width="415" height="83" id="cooperateDepartment"/>
+	<mx:Label x="10" y="415" text="备     注：" fontSize="13"/>
+	<mx:TextArea x="83" y="414" width="415" height="46" id="beizhu"/>
+	
+	<!--	<mx:LinkBar id="linkbar" labelField="label" iconField="ico" 
+	fontSize="13" itemClick="linkBar_itemClick(event)" right="48" bottom="8">
+	<mx:Object label="下一步" ico="@Embed('assets/images/btn/next.png')"/>
+	<mx:Object label="取消" ico="@Embed('assets/images/btn/delete.png')"/>
+	</mx:LinkBar>-->
+	<mx:Canvas backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%" width="100%" height="32" y="475" x="0">
+		<mx:Button x="313" y="2" label="下一步" styleName="loginprimary" click="next_clickHandler(event)" width="80"    />
+		<mx:Button x="418" y="2" label="取 消" styleName="loginsecondary" click="return_clickHandler(event)" width="80"/>
+			
+	</mx:Canvas>
+	
+	
+</mx:TitleWindow>

@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--综合监视主界面-->
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+				xmlns:events="com.adobe.webapis.events.*" 
+				xmlns:views="sourceCode.subject.main.views.*"
+				paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0"
+				verticalScrollPolicy="auto"
+				horizontalScrollPolicy="auto" headerHeight="0"
+				width="100%" height="100%"
+				creationComplete="inital()">
+	<!-- creationComplete="{mdiCanvas.windowManager.cascade()}"-->
+	
+	<mx:Style source="/assets/css/mntsubject.css"/>
+	
+	<mx:Script>
+		<![CDATA[		
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			import common.other.SuperPanelControl.WindowContainer;
+			
+			import flash.net.URLRequest;
+			import flash.net.URLVariables;
+			import flash.net.navigateToURL;
+			import flash.utils.getDefinitionByName;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.*;
+			import mx.containers.Grid;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.Application;
+			import mx.core.ClassFactory;
+			import mx.core.IFlexDisplayObject;
+			import mx.events.CloseEvent;
+			import mx.events.DataGridEvent;
+			import mx.events.ListEvent;
+			import mx.managers.CursorManager;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			import mx.utils.object_proxy;
+			
+			import sourceCode.alarmSet.views.AlarmConfig;
+			import sourceCode.rootalarm.views.RealRootAlarm;
+			import sourceCode.subject.main.actionscript.Subject;
+			import sourceCode.subject.main.views.AreaMonitor;
+			import sourceCode.subject.main.views.KeyBitMonitor;
+			import sourceCode.subject.main.views.NetStateMonitor;
+			import sourceCode.subject.main.views.RootAlarmFlow;
+			import sourceCode.subject.main.views.RootAlarmMonitor1;
+			import sourceCode.subject.main.views.RootAlarmProMonitor;
+			
+			
+			public var gentip:RealRootAlarm=new RealRootAlarm();
+			public  var windowContainer:WindowContainer;
+			private var theStatus:int=0;//窗口状态，0正常 1最大化 2最小化；
+			private var isReSize:Boolean;//是否允许缩放
+			private var theMinWidth:Number=0;//窗口最小宽度
+			private var theMinHeight:Number=0;//窗口最大高度
+			private var theOldPoint:Point;//改变大小前窗口的x，y坐标
+			private var theOldWidth:Number;//最大最小化时的宽
+			private var theOldHeight:Number;//最大最小化时的高
+			
+			private var mouseMargin:Number=4;//响应范围
+			//设置光标的位置值 右上：3  右下：6 左下：11  左上8
+			private var theSide:Number=0;
+			private var SIDE_OTHER:Number=0;
+			private var SIDE_TOP:Number=1;
+			private var SIDE_RIGHT:Number=2;
+			private var SIDE_LEFT:Number=7;
+			private var SIDE_BOTTOM:Number=4;
+			
+			//当前鼠标光标类
+			public var currentType:Class=null;
+			
+			[Embed("/assets/images/mntsubject/resizeCursorH.gif")]
+			private var CursorH:Class;
+			[Embed("/assets/images/mntsubject/resizeCursorTLBR.gif")]
+			private var CursorR:Class;
+			[Embed("/assets/images/mntsubject/resizeCursorTRBL.gif")]
+			private var CursorL:Class;
+			[Embed("/assets/images/mntsubject/resizeCursorV.gif")]
+			private var CursorV:Class;
+			private var CursorNull:Class=null;
+			[Bindable]
+			public var selectedItems:Array = new Array();
+			private var rootAlarmWin:TitleWindow;
+			private var rootWin:TitleWindow;
+			//private var _leftComp:RealAlarmTrend;
+			private var _KeyBitMonitor:KeyBitMonitor=new KeyBitMonitor();//重点电路监视
+			private var _NetStateMonitor:NetStateMonitor=new NetStateMonitor();//网络状态监视
+			private var _RootAlarmProMonitor:RootAlarmProMonitor=new RootAlarmProMonitor();//根告警处理跟踪监视
+			private var _AreaMonitor:AreaMonitor=new AreaMonitor();//区域 状态监视
+			private var _RootAlarmFlow:RootAlarmFlow=new RootAlarmFlow();//根告警处理流向统计
+			private var _RootAlarmMonitor1:RootAlarmMonitor1=new RootAlarmMonitor1();//根告警集中监视
+			private var tempC:ClassFactory;
+			private var instance:*;
+			private var getSubject:RemoteObject;
+			private var objectArray:ArrayCollection;
+			private var mouseDownPosition:Point;
+			private var selectPanel:Object=null;
+			private var flag:int;
+			private var returnSubject:RemoteObject;
+			private var screenX:Number;
+			private var screenY:Number;
+			
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			//根告警消息订阅
+			private var ts:ArrayCollection;
+			private var param:ArrayCollection=new ArrayCollection();
+			//private var consumers:Object;
+			public var winlist:String="";//实时根告警的窗体记录对象
+			private var cacheRootAlarm:ArrayCollection=new ArrayCollection();//记录打开窗口的告警的alarmNumber
+			public function subScriberRootAlarm():void{
+				DealAlarmUtil.initMessage();
+				//consumers=new Object();
+				subscriberRealRootAlarm("realRootAlarm");
+				
+			}
+			
+			public function inital():void{
+				boxs.removeAllChildren();
+//				consumers = new Object();
+//				screenX=Capabilities.screenResolutionX;
+//				screenY=Capabilities.screenResolutionY-70;
+//				subScriberRootAlarm();//订阅根告警数据
+				var hbox1:HBox=new HBox();
+				var hbox2:HBox=new HBox();
+				hbox1.percentWidth=100;
+				hbox1.percentHeight=50;
+				hbox1.setStyle("horizontalGap",0);
+				hbox1.setStyle("verticalGap",0);
+				hbox2.percentWidth=100;
+				hbox2.percentHeight=50;
+				hbox2.setStyle("horizontalGap",0);
+				hbox2.setStyle("verticalGap",0);
+				_KeyBitMonitor.percentWidth=30;
+				_KeyBitMonitor.percentHeight=100;
+				_NetStateMonitor.percentWidth=40;
+				_NetStateMonitor.percentHeight=100;
+				_RootAlarmMonitor1.percentWidth=30;
+				_RootAlarmMonitor1.percentHeight=100;
+				hbox1.addChild(_KeyBitMonitor);
+				hbox1.addChild(_NetStateMonitor);
+				hbox1.addChild(_RootAlarmMonitor1);
+				_RootAlarmProMonitor.percentWidth=30;
+				_RootAlarmProMonitor.percentHeight=100;
+				_AreaMonitor.percentWidth=40;
+				_AreaMonitor.percentHeight=100;
+				_RootAlarmFlow.percentWidth=30;
+				_RootAlarmFlow.percentHeight=100;
+				hbox2.addChild(_RootAlarmProMonitor);
+				hbox2.addChild(_AreaMonitor);
+				hbox2.addChild(_RootAlarmFlow);
+				boxs.addChild(hbox1);
+				boxs.addChild(hbox2);
+//				getRootAlarmCount();
+				this.parentApplication.addEventListener("changalarmEvent",initSixModels);
+			}
+			private function initSixModels(e:Event):void{
+				_KeyBitMonitor.init();
+				_NetStateMonitor.init();
+				_RootAlarmProMonitor.init();
+				_AreaMonitor.init();
+				_RootAlarmFlow.init();
+				_RootAlarmMonitor1.init();
+			}
+			private function getRootAlarmCount():void{
+				var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getRootAlarmCount();
+				rtobj.addEventListener(ResultEvent.RESULT, setAlarmCount);
+			}
+			private function setAlarmCount(event:ResultEvent):void{
+				if(event.result!=0){
+					parentApplication.openModel('当前根告警',false);
+//					PopUpManager.addPopUp(parentApplication.gentip,this,false);
+//					PopUpManager.centerPopUp(parentApplication.gentip);
+				}
+			}
+			private function getSaveSubjectCallback(event:ResultEvent):void{
+				returnSubject.removeEventListener(ResultEvent.RESULT,getSaveSubjectCallback);
+			}
+			private function getSubjectCallback(event:ResultEvent):void{
+				getSubject.removeEventListener(ResultEvent.RESULT,getSubjectCallback);
+				getSubject.removeEventListener(FaultEvent.FAULT,faultHandler);
+				var arrayCollection:ArrayCollection=event.result as ArrayCollection;
+				
+				var menuStatus:String="";
+				menuStatus=arrayCollection[0].ISDRAG;
+				
+				for(var i:int=0;i<arrayCollection.length;i++){
+					var cc:Class = flash.utils.getDefinitionByName(arrayCollection[i].SUBCLASS) as Class;
+					tempC = new ClassFactory(cc);
+					instance = tempC.newInstance();
+					instance.x=(arrayCollection[i].SX)*screenX;
+					instance.y=(arrayCollection[i].SY)*screenY;
+					instance.width=(arrayCollection[i].SWIDTH)*screenX;
+					instance.height=(arrayCollection[i].SHEIGHT)*screenY;
+					//				instance.id=getQualifiedClassName(instance);
+					instance.id=arrayCollection[i].RSCODE;
+					
+					//instance.addEventListener(MouseEvent.MOUSE_DOWN,componentMouseDownHandler);
+					if(menuStatus=='Y'){
+						instance.addEventListener(MouseEvent.CLICK,getSelectSubject);
+						//initMenu();
+					}
+					//					instance.addEventListener(MouseEvent.MOUSE_MOVE,onMouseMove);
+					//					instance.addEventListener(MouseEvent.MOUSE_OUT,onMouseOut);
+					//					instance.addEventListener(MouseEvent.MOUSE_DOWN,onMouseDown);
+					boxs.addChild(instance);
+				}
+				
+				
+				
+			}
+			protected function titlewindow1_mouseDownHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				selectPanel.startDrag();
+			}
+			
+			
+			protected function tw_mouseUpHandler(event:MouseEvent):void
+			{
+				selectPanel.removeEventListener(MouseEvent.MOUSE_DOWN,titlewindow1_mouseDownHandler); 
+				selectPanel.removeEventListener(MouseEvent.MOUSE_UP,tw_mouseUpHandler); 
+				selectPanel.stopDrag();
+				flag=0;
+				selectPanel=null;
+			}
+			private function initMenu():void{
+				//				boxs.stage.addEventListener(MouseEvent.MOUSE_MOVE,containerMouseMoveHandler); 
+				//   		    boxs.stage.addEventListener(MouseEvent.MOUSE_DOWN,containerMouseUpHandler); 
+				
+			}
+			
+			private function popMenu(e:ContextMenuEvent):void{
+				var item:ContextMenuItem = ContextMenuItem(e.target);
+				if(item.caption=="移动位置"){
+					flag=1;
+					selectPanel.addEventListener(MouseEvent.MOUSE_DOWN,titlewindow1_mouseDownHandler); 
+					selectPanel.addEventListener(MouseEvent.MOUSE_UP,tw_mouseUpHandler); 
+				}
+				if(item.caption=="改变大小"){
+					flag=2;
+					selectPanel.addEventListener(MouseEvent.MOUSE_MOVE,onMouseMove);
+					selectPanel.addEventListener(MouseEvent.MOUSE_OUT,onMouseOut);
+					selectPanel.addEventListener(MouseEvent.MOUSE_DOWN,onMouseDown);
+				}
+				if(item.caption=="保存设置"){
+					saveLocation();
+				}	
+			}
+			private function saveLocation():void{
+				var subArray:ArrayCollection=new ArrayCollection();
+				for(var i:int=0;i<boxs.numChildren;i++){
+					var child:Object = IFlexDisplayObject(DisplayObjectContainer(boxs).getChildAt(i));   
+					var subject:Subject=new Subject();
+					subject.id=child.id;
+					subject.loc_x=child.x/screenX;
+					subject.loc_y=child.y/screenY;
+					subject.width=child.width/screenX;
+					subject.height=child.height/screenY;
+					subArray.addItem(subject);
+				}
+				returnSubject=new RemoteObject("subject");
+				returnSubject.endpoint = ModelLocator.END_POINT;
+				//segment.getSegment(nodeStartId,nodeEndId);
+				returnSubject.addEventListener(ResultEvent.RESULT,getSaveSubjectCallback);
+				returnSubject.addEventListener(FaultEvent.FAULT,faultHandler);
+				returnSubject.saveSubject(subArray);
+				
+				
+			}
+			private function getSelectSubject(evt:MouseEvent):void{
+				if(selectPanel!=evt.currentTarget&&selectPanel!=null){
+					selectPanel.contextMenu.customItems=null;
+				}
+				selectPanel=evt.currentTarget;
+				
+				selectPanel.contextMenu=new ContextMenu();
+				selectPanel.contextMenu.hideBuiltInItems();
+				selectPanel.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, function(e:ContextMenuEvent):void {
+					var changeLocation:ContextMenuItem = new ContextMenuItem("移动位置");
+					changeLocation.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,popMenu);
+					
+					var changeSize:ContextMenuItem = new ContextMenuItem("改变大小");
+					changeSize.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,popMenu);
+					
+					var savePeizhi:ContextMenuItem = new ContextMenuItem("保存设置");
+					savePeizhi.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,popMenu);
+					
+					selectPanel.contextMenu.customItems=[changeLocation,changeSize,savePeizhi];
+					if(selectPanel!=null){
+						changeLocation.visible=true;
+						changeSize.visible=true;
+						savePeizhi.visible=true;
+					}else{
+						changeLocation.visible=false;
+						changeSize.visible=false;
+						savePeizhi.visible=false;
+					}
+				});
+				//				selectPanel.addEventListener(MouseEvent.MOUSE_DOWN,titlewindow1_mouseDownHandler); 
+				//				selectPanel.addEventListener(MouseEvent.MOUSE_UP,tw_mouseUpHandler); 
+				//				mouseDownPosition=new Point(evt.stageX,evt.stageY); 
+			}
+			private function faultHandler(evt:FaultEvent):void{
+				Alert.show(evt.fault.toString());
+			}
+			
+			/**
+			 * 实时根告警数据订阅
+			 * 
+			 */
+			private function subscriberRealRootAlarm(subtopic:String):void{				
+				var consumer:Consumer =new Consumer();				
+				var channelSet:ChannelSet = new ChannelSet();   
+				channelSet.addChannel(DealAlarmUtil.streamingAMF);   
+				channelSet.addChannel(DealAlarmUtil.pollingAMF);
+				consumer.destination = DealAlarmUtil.sdestination; 
+				consumer.channelSet = channelSet;
+				consumer.subtopic = subtopic;
+				consumer.addEventListener(MessageEvent.MESSAGE,handleRealRootAlarm);
+				consumer.addEventListener(MessageFaultEvent.FAULT,faultHandlerMsg);
+				consumer.subscribe();
+				//consumers[subtopic] = consumer;
+				DealAlarmUtil.consumers[subtopic] = consumer;
+			}
+			
+			private function handleRealRootAlarm(msg:MessageEvent):void{
+				if(parentApplication.isWinOpen=="YES"){
+					parentApplication.gentip.alone = false;
+					ts = null;
+				}
+				if(msg.message.body==null && msg.message.body==""){
+					Alert.show('接到的消息为空',"提示信息",4,this,null,iconClass); return;
+				}
+				ts = msg.message.body as ArrayCollection;
+				if(parentApplication.isWinOpen=="NO"){
+//					parentApplication.gentip = new RealRootAlarm();
+					if(ts.length!=0){
+						parentApplication.gentip.alarmdate = ts;
+						parentApplication.openModel('当前根告警',false);
+						var obj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+						obj.endpoint = ModelLocator.END_POINT;
+						obj.showBusyCursor = true;
+						obj.WriteLog(ts.length.toString());
+						obj.addEventListener(ResultEvent.RESULT, okHandler);
+//						PopUpManager.addPopUp(parentApplication.gentip,this,false);
+//						PopUpManager.centerPopUp(parentApplication.gentip);
+					}
+				}else{
+					if(parentApplication.gentip.j != ts.length){
+						parentApplication.gentip.updateAlarm(ts);
+						var obj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+						obj.endpoint = ModelLocator.END_POINT;
+						obj.showBusyCursor = true;
+						obj.WriteLog(ts.length.toString());
+						obj.addEventListener(ResultEvent.RESULT, okHandler);
+						_KeyBitMonitor.init();
+						_NetStateMonitor.init();
+						_RootAlarmProMonitor.init();
+						_AreaMonitor.init();
+						_RootAlarmFlow.init();
+						_RootAlarmMonitor1.init();
+						
+					}
+					
+				}
+				
+			} 
+			
+			private function okHandler(e:ResultEvent):void{
+				
+			}
+			
+			
+			
+			
+			
+			/**
+			 * 退订消息
+			 */
+			private function unsubscribe(subtopic:String):void
+			{
+				if (DealAlarmUtil.consumers[subtopic])
+				{
+					var consumer:Consumer = DealAlarmUtil.consumers[subtopic];
+					if(subtopic =="realRootAlarm")
+						consumer.removeEventListener(MessageEvent.MESSAGE, handleRealRootAlarm);
+					if (consumer.subscribed)
+					{
+						consumer.unsubscribe();
+					}
+					
+					consumer.channelSet.disconnectAll();
+					DealAlarmUtil.consumers[subtopic] = null;
+				}
+			}
+			
+			
+			
+			private function faultHandlerMsg(event:MessageFaultEvent):void{
+//				Alert.okLabel = "确  定";
+//				Alert.show("发送请求失败，请检查服务是否启动与数据库连接情况！","提示信息",4,this,null,iconClass);			
+			}
+			
+			private function quitMonitor():void{
+				Alert.show('是否确定要离开？','提示',3,this,alertClickHandler,iconClass);
+			}
+			
+			private function alertClickHandler(event:CloseEvent):void{
+				if(event.detail==Alert.YES){
+					this.removeEventListener("changalarmEvent",initSixModels);
+					windowContainer.closeTitleWindow(this);
+					
+					PopUpManager.removePopUp(this);
+//					PopUpManager.removePopUp(gentip);
+					if(parentApplication.isWinOpen == 'YES'){
+						parentApplication.gentip.closeButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+						parentApplication.isWinOpen="NO";
+					}
+					//以下取消订阅
+					unsubscribe("realRootAlarm");			
+					
+					for each(var c:Object  in DealAlarmUtil.titleWindow){
+						var b:RealRootAlarm=c as RealRootAlarm;
+						PopUpManager.removePopUp(b);
+					}
+				}
+				else{					
+					return;
+				}
+			}  
+			//这里是添加代码的结尾
+			
+			//拖动大小
+			//拖动大小
+			private function onMouseMove(event:MouseEvent):void
+			{
+				if(!theStatus){
+					if(flag==2){
+						var point:Point=new Point();
+						//					point=this.localToGlobal(point);
+						point.x=selectPanel.x;
+						point.y=selectPanel.y;
+						var xPosition:Number=this.mouseX;
+						var yPosition:Number=this.mouseY;
+						if(xPosition>=(point.x+selectPanel.width-mouseMargin)&&yPosition>=(point.y+selectPanel.height-mouseMargin))
+						{//右下
+							onChangeCursor(CursorR,-9,-9);
+							theSide=SIDE_RIGHT+SIDE_BOTTOM;
+						}
+						else if(xPosition<=(point.x+mouseMargin)&&yPosition<=(point.y+mouseMargin))
+						{//左上
+							onChangeCursor(CursorR,-9,-9);
+							theSide=SIDE_LEFT+SIDE_TOP;
+						}
+						else if(xPosition<=(point.x+mouseMargin)&&yPosition>=(point.y+selectPanel.height-mouseMargin))
+						{//左下
+							onChangeCursor(CursorL,-9,-9);
+							theSide=SIDE_BOTTOM+SIDE_LEFT;
+						}
+						else if(xPosition>=(point.x+selectPanel.width-mouseMargin)&&yPosition<=(point.y+mouseMargin))
+						{//右上
+							onChangeCursor(CursorL,-9,-9);
+							theSide=SIDE_RIGHT+SIDE_TOP;
+						}
+						if(xPosition>(point.x+selectPanel.width-mouseMargin))
+						{//右
+							onChangeCursor(CursorH,-9,-9);
+							theSide=SIDE_RIGHT;
+						}
+						else if(xPosition<(point.x+mouseMargin))
+						{//左
+							onChangeCursor(CursorH,-9,-9);
+							theSide=SIDE_LEFT;
+						}
+						else if(yPosition<(point.y+mouseMargin))
+						{//上
+							onChangeCursor(CursorV,-9,-9);
+							theSide=SIDE_TOP;
+						}
+						else if(yPosition>(point.y+selectPanel.height-mouseMargin))
+						{//下
+							onChangeCursor(CursorV,-9,-9);
+							theSide=SIDE_BOTTOM;
+						}
+						else
+						{
+							onChangeCursor(CursorNull);
+							if(!isReSize&&flag==2)
+							{
+								theSide=0;
+							}
+						}
+						event.updateAfterEvent();
+					}
+				}
+			}
+			private function onMouseOut(event:MouseEvent):void
+			{
+				if(!isReSize&&this.theStatus==0)
+				{
+					theSide=0;
+					onChangeCursor(CursorNull);
+				}
+			}
+			private function onMouseDown(event:MouseEvent):void
+			{
+				if(theSide!=0)
+				{
+					isReSize=true;
+					if(flag==2){
+						Application.application.parent.addEventListener(MouseEvent.MOUSE_UP,onMouseUp);
+						Application.application.parent.addEventListener(MouseEvent.MOUSE_MOVE,onResize);
+						var point:Point=new Point();
+						point=selectPanel.localToContent(point);
+						theOldPoint=point;
+					}
+				}
+			}
+			private function onChangeCursor(type:Class,xOffset:Number=0,yOffset:Number=0):void
+			{
+				if(currentType!=type)
+				{
+					currentType=type;
+					CursorManager.removeCursor(CursorManager.currentCursorID);
+					if(type!=null)
+					{
+						CursorManager.setCursor(type,2,xOffset,yOffset);
+					}
+				}
+			}
+			private function onMouseUp(event:MouseEvent):void
+			{
+				if(isReSize)
+				{
+					Application.application.parent.removeEventListener(MouseEvent.MOUSE_UP,onMouseUp);
+					Application.application.parent.removeEventListener(MouseEvent.MOUSE_MOVE,onResize);
+					isReSize=false;
+					selectPanel=null;
+					flag=0;
+				}
+				CursorManager.removeCursor(CursorManager.currentCursorID);
+			}
+			private function onResize(event:MouseEvent):void
+			{
+				if(isReSize&&flag==2)
+				{
+					var xPlus:Number=this.mouseX-selectPanel.x;
+					var yPlus:Number=this.mouseY-selectPanel.y;
+					switch(theSide)
+					{
+						case SIDE_RIGHT+SIDE_BOTTOM:
+							selectPanel.width=xPlus>theMinWidth?xPlus:theMinWidth;
+							selectPanel.height=yPlus>theMinHeight?yPlus:theMinHeight;
+							break;
+						case SIDE_LEFT+SIDE_TOP:
+							selectPanel.width=this.width-xPlus>theMinWidth?selectPanel.width-xPlus:theMinWidth;
+							selectPanel.height=this.height-yPlus>theMinHeight?selectPanel.height-yPlus:theMinHeight;
+							selectPanel.x=selectPanel.width>theMinWidth?this.mouseX:selectPanel.x;
+							selectPanel.y=selectPanel.height>theMinHeight?this.mouseY:selectPanel.y;
+							break;
+						case SIDE_LEFT+SIDE_BOTTOM:
+							selectPanel.width=selectPanel.width-xPlus>theMinWidth?selectPanel.width-xPlus:theMinWidth;
+							selectPanel.height=yPlus>theMinHeight?yPlus:theMinHeight;
+							selectPanel.x=selectPanel.width>theMinWidth?this.mouseX:selectPanel.x;
+							break;
+						case SIDE_RIGHT+SIDE_TOP:
+							selectPanel.width=xPlus>theMinWidth?xPlus:theMinWidth;
+							selectPanel.height=selectPanel.height-yPlus>theMinHeight?selectPanel.height-yPlus:theMinHeight;
+							selectPanel.y=selectPanel.height>theMinHeight?this.mouseY:selectPanel.y;
+							break;
+						case SIDE_RIGHT:
+							selectPanel.width=xPlus>theMinWidth?xPlus:theMinWidth;
+							break;
+						case SIDE_LEFT:
+							selectPanel.width=selectPanel.width-xPlus>theMinWidth?selectPanel.width-xPlus:theMinWidth;
+							selectPanel.x=selectPanel.width>theMinWidth?this.mouseX:selectPanel.x;
+							break;
+						case SIDE_BOTTOM:
+							selectPanel.height=yPlus>theMinHeight?yPlus:theMinHeight;
+							break;
+						case SIDE_TOP:
+							selectPanel.height=selectPanel.height-yPlus>theMinHeight?selectPanel.height-yPlus:theMinHeight;
+							selectPanel.y=selectPanel.height>theMinHeight?this.mouseY:selectPanel.y;
+							break;
+					}
+				}
+				
+			}
+			protected function image1_clickHandler(event:MouseEvent):void
+			{
+				var alarmconfig:AlarmConfig=new AlarmConfig();
+				alarmconfig.cm=this;
+				alarmconfig.flag="1";
+				PopUpManager.addPopUp(alarmconfig,this,false); 
+				PopUpManager.centerPopUp(alarmconfig);
+			}
+			public function refurbish_hz():void{
+				inital();
+			}
+			
+
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+//				if(this.parentApplication.is)
+//				if(gentip.isWinOpen=="YES"){
+//				}else if(gentip.isWinOpen=="NO"){
+//					gentip = new RealRootAlarm();
+//					PopUpManager.addPopUp(gentip,this,false);
+//					PopUpManager.centerPopUp(gentip);
+//				}
+			}
+
+		]]>
+	</mx:Script>		
+	
+	<!--<mx:Canvas id="boxs" width="100%" height="100%">
+	</mx:Canvas>-->
+	
+	<mx:VBox id="vbox" width="100%" height="100%" verticalGap="0" horizontalGap="0" backgroundColor="#ffffff">
+		<mx:HBox width="100%" height="10%" horizontalGap="0" verticalGap="0" backgroundImage="@Embed(source='assets/images/mntsubject/header_bg.png')" backgroundSize="100%">
+			<mx:Grid height="100%" width="100%" verticalGap="0" horizontalGap="0" verticalAlign="middle" horizontalAlign="center">
+				<mx:GridRow horizontalAlign="left" width="100%" height="100%">
+					<mx:GridItem verticalAlign="middle" horizontalAlign="left" width="100%" height="100%">
+						<mx:Image id="title_icon" source="assets/images/mntsubject/mntsub_flash.swf"/>
+						<mx:Image id="title_name" source="assets/images/mntsubject/title_n.png"/>
+					</mx:GridItem>
+					<mx:GridItem verticalAlign="middle" horizontalAlign="center" width="100%" height="100%">
+						<mx:LinkButton label="网络拓扑图" color="white" click="{parentApplication.openModel('网络拓扑图',false)}"/>
+						<mx:VRule height="12"/>
+						<mx:LinkButton label="告警查询" color="white" click="{parentApplication.openModel('告警查询',false)}"/>
+						<mx:VRule height="12"/>
+						<mx:LinkButton label="当前根告警" color="white" click="{parentApplication.openModel('当前根告警',false)}"/>
+						<mx:VRule height="12"/>
+						<mx:LinkButton label="历史根告警" color="white" click="{parentApplication.openModel('历史根告警',false)}"/>
+					</mx:GridItem>
+					<mx:GridItem  horizontalAlign="right" width="100%" height="100%">
+						<mx:Grid height="100%" width="100%" verticalGap="0" horizontalGap="0" >
+							<mx:GridRow  width="100%" height="50%">
+								<mx:GridItem verticalAlign="top" horizontalAlign="right" width="100%" height="100%">
+									<mx:HBox horizontalGap="0" verticalGap="0">
+										<mx:Image id="refurbish" source="assets/images/mntsubject/refurbish.png" useHandCursor="true" toolTip="刷新"
+												  buttonMode="true" mouseChildren="false" width="52" height="22" doubleClickEnabled="true" click="refurbish_hz()" />
+										<mx:Image id="desk" source="assets/images/mntsubject/desk.png" useHandCursor="true" toolTip="最小化" 
+												  buttonMode="true" mouseChildren="false" width="52" height="22" doubleClickEnabled="true" click="DealAlarmUtil.minimizeClickHandler(this)"/>
+										<mx:Image id="quit" source="assets/images/mntsubject/quit.png" useHandCursor="true" toolTip="关闭"
+												  buttonMode="true" mouseChildren="false" width="52" height="22" doubleClickEnabled="true" click="quitMonitor()" />
+									</mx:HBox>
+								</mx:GridItem>
+							</mx:GridRow>
+							<mx:GridRow  width="100%" height="50%">
+								<mx:GridItem verticalAlign="bottom" horizontalAlign="right" width="100%" height="100%" paddingRight="23">
+									<!--<mx:Image source="assets/images/mntsubject/themeset.png" useHandCursor="true" 
+											  doubleClickEnabled="true" click="image1_clickHandler(event)" />-->
+								</mx:GridItem>
+							</mx:GridRow>
+						</mx:Grid>
+						<mx:Spacer width="3"/>
+					</mx:GridItem>
+				</mx:GridRow>
+			</mx:Grid>
+		</mx:HBox>
+		<mx:VBox id="boxs" width="100%" height="90%" horizontalGap="0" verticalGap="0"
+				   backgroundAlpha="1" borderColor="#157baa">
+		</mx:VBox>
+	</mx:VBox>
+</mx:TitleWindow>

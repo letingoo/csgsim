@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+					   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+					   width="1010" height="610" 
+					   creationComplete="OcableRoutInfo_creationCompleteHandler(event)"
+					   fontFamily="宋体"  
+					   fontSize="12" 
+					   enableResize="true"
+					   showControls="true" 
+					   layout="absolute"		
+					   windowContainer="{Application.application.windowContainer}"
+					   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+	<mx:Script>  
+		<![CDATA[  
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.controls.Alert;
+			import mx.controls.Image;
+			import mx.core.Application;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.graphics.ImageSnapshot;
+			import mx.graphics.codec.PNGEncoder;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import sourceCode.sysGraph.model.OcableRoutInfoData;
+			
+			import twaver.*;
+			import twaver.DataBox;
+			import twaver.Follower;
+			import twaver.Link;
+			import twaver.Node;
+			import twaver.Styles;
+			import twaver.XMLSerializer;
+			import twaver.network.Network;
+			
+			private  var elementBox:ElementBox
+			private var layerBox:LayerBox;
+			private var layer1:Layer=new Layer("stations");
+			private var layer2:Layer=new Layer("ports");
+			private var layer3:Layer=new Layer("links");
+			private var FRAME:String = "assets/images/sysGraph/FRAME_DOT_BIG.png";
+			private var ODFPORT_START:String = "assets/images/sysGraph/icon_port_trans.png";
+			private var ODFPORT:String = "assets/images/sysGraph/icon_port_odf.png";
+			private var TNODE:String = "assets/images/sysGraph/icon_T.png";
+			public var systemName:String;
+			public var stationNames:ArrayCollection;
+			public var channelRoutdata:ArrayCollection;
+			public var datas:OcableRoutInfoData;
+			
+			public function get dataBox():DataBox{
+				return elementBox;
+			}
+			
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);
+			}
+			
+			
+			protected function OcableRoutInfo_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				elementBox=network.elementBox;
+				layerBox=elementBox.layerBox;
+				layerBox.add(layer1);//stations
+				layerBox.add(layer3);//Links
+				layerBox.add(layer2);//ports
+				layer1.movable = false;
+				layer2.movable = false;
+				network.elementBox.datas.clear();
+				network.setEditInteractionHandlers();
+				systemName = datas.systemName;
+				stationNames = datas.stationNames;
+				channelRoutdata = datas.channelRoutModelData;
+				network.name=channelRoutdata.getItemAt(0).FIBERCHANNELCODE;
+				this.start.text = stationNames.getItemAt(0).toString();
+				this.end.text = stationNames.getItemAt(stationNames.length-1).toString();
+				this.RoutMapLabel.text = "“"+start.text.toString()+"” 至 “"+end.text.toString()+"” 光路路由图";
+				
+				for(var i:int=0;i<stationNames.length;i++)
+				{
+					this.CreateStation(stationNames.getItemAt(i).toString(),channelRoutdata,300*i+100,100);
+				}
+				this.drawLines(channelRoutdata);
+				tn.addEventListener(IndexChangedEvent.CHANGE,IndexChangedHandler);
+			}
+			
+			
+			public function IndexChangedHandler(event:IndexChangedEvent):void{
+				var str:String="";
+				if(event.target.selectedIndex==0)
+				{
+					
+					
+				}else if(event.target.selectedIndex==1)
+				{
+					this.RoutTableLabel.text = "“"+start.text.toString()+"” 至 “"+end.text.toString()+"” 光路路由列表";
+					for(var i:int=0;i<stationNames.length;i++)
+					{
+						if(stationNames.getItemAt(i))
+						{
+							str +=(stationNames.getItemAt(i)+"-");
+						}
+					}
+					
+					str = str.substr(0,str.length-1);
+					this.stations.text = str;
+					var xml:String = "<data>";
+					var xml2:String = "<data>";
+					for(var j:int=0;j<channelRoutdata.length;j++)
+					{  
+						if(j==0||j==channelRoutdata.length-1)
+						{
+							xml+="<name equipment =\""+channelRoutdata.getItemAt(j).EQUIPNAME+"\" port =\""
+								+channelRoutdata.getItemAt(j).NAME_NODE1+"\"></name>";
+							
+							xml2+="<name equipment =\""+channelRoutdata.getItemAt(j).EQUIPNAME+"\" port =\""
+								+channelRoutdata.getItemAt(j).NAME_NODE2+"\"></name>";
+						}else 
+						{
+							var NAME_NODE1:String =channelRoutdata.getItemAt(j).NAME_NODE1;
+							var EQUIPNAME:String = channelRoutdata.getItemAt(j).EQUIPNAME;
+							var ocablename1:String = channelRoutdata.getItemAt(j).OCABLESECTIONNAME;
+							var fiberserial1:String = channelRoutdata.getItemAt(j).FIBERSERIAL1 + "芯";
+							var fiberserial2:String = channelRoutdata.getItemAt(j).FIBERSERIAL2 + "芯";
+							var name_node1:Array = null;
+							var namenode1:String = null;
+							var equipname:Array = null;
+							var equipname1:String = null
+							if(NAME_NODE1.search("/")!=-1)
+								{
+									name_node1  = NAME_NODE1.split("/");
+									namenode1 = name_node1[4].toString();
+								}else
+								{
+									namenode1 = NAME_NODE1;
+								}
+							
+							if(EQUIPNAME.search("/")!=-1)
+								{
+									equipname = EQUIPNAME.split("/");
+									equipname1 =equipname[2].toString()+"/"+equipname[3].toString();
+									
+								}else
+								{
+									equipname1 = EQUIPNAME;
+									
+								}
+								xml+="<name equipment =\""+equipname1+"\" port =\""+namenode1+"\"></name>";
+								if(ocablename1 != null && ocablename1 != ""){
+									xml+="<name equipment =\""+ocablename1+"\" port =\""+fiberserial1+"\"></name>";
+								}
+								
+								var NAME_NODE2:String =channelRoutdata.getItemAt(j).NAME_NODE2;
+								var EQUIPNAME2:String = channelRoutdata.getItemAt(j).EQUIPNAME;
+								var name_node2:Array = null;
+								var namenode2:String = null;
+								var equipname2:Array = null;
+								var equipname3:String = null;
+								if(NAME_NODE2.search("/")!=-1)
+								{
+									name_node2 = NAME_NODE2.split("/");
+									namenode2 = name_node2[4].toString();
+								}else
+								{
+									namenode2 = NAME_NODE2;
+								}
+								
+								if(EQUIPNAME2.search("/")!=-1)
+								{
+									equipname2 = EQUIPNAME2.split("/");
+									equipname3 = equipname2[2].toString()+"/"+equipname2[3].toString();
+								}else
+								{
+									equipname3 = EQUIPNAME2;
+								}
+								xml2+="<name equipment =\""+equipname3+"\" port =\""+namenode2+"\"></name>";
+								if(ocablename1 != null && ocablename1 != ""){
+									xml2+="<name equipment =\""+ocablename1+"\" port =\""+fiberserial2+"\"></name>";
+								}
+						}
+					}
+					xml+="</data>";
+					xml2+="</data>";
+					var dataa:XMLList = new XMLList(xml);
+					var datab:XMLList = new XMLList(xml2);
+					this.adirection.dataProvider = dataa.children();
+					this.bdirection.dataProvider = datab.children();
+				}
+				
+			}
+			
+			
+			
+			private function CreateStation(stationName:String,channelRoutdata:ArrayCollection,PositionX:Number,PositionY:Number):void{
+				var StationPanel:Node = createNode(stationName,FRAME, new Point(PositionX, PositionY-30),Consts.POSITION_TOP_TOP);
+				var PortName:String;
+				var Port:Follower;
+				var ODFName1:String;
+				var ODFPORT1:Follower;
+				var ODFName2:String;
+				var ODFPORT2:Follower;
+				var TnodeName0:String;
+				var TnodeName2:String;
+				var Tnode0:Follower;
+				var Tnode2:Follower;
+				var i:int = 0;
+				var k:int =0;
+				if(channelRoutdata!=null)
+				{
+					for(var j:int=0;j<channelRoutdata.length;j++)
+					{    
+						if(channelRoutdata.getItemAt(j).STATIONNAME==stationName)
+						{
+							//端口为传输设备端口
+							if(channelRoutdata.getItemAt(j).NODETYPE1=="1")
+							{
+								if(channelRoutdata.getItemAt(j).SERIAL=="1") //起始A端设备端口
+								{
+									//左侧端口
+									PortName= channelRoutdata.getItemAt(j).NAME_NODE1;
+									Port = createFollower(PortName,ODFPORT_START,new Point(PositionX+10, PositionY+80),Consts.POSITION_BOTTOM_BOTTOM);
+									Port.host = StationPanel;
+									Port.parent = StationPanel;
+									Port.layerID = layer2.id;
+								}else if(channelRoutdata.getItemAt(j).SERIAL==channelRoutdata.length.toString()) //终止Z端设备端口
+								{
+									//右侧端口
+									PortName= channelRoutdata.getItemAt(j).NAME_NODE1;
+									Port = createFollower(PortName,ODFPORT_START,new Point(PositionX+130, PositionY+80),Consts.POSITION_BOTTOM_BOTTOM);
+									Port.host = StationPanel;
+									Port.parent = StationPanel;
+									Port.layerID = layer2.id;
+								}
+								
+								
+							}
+							//端口为ODF端口
+							if(channelRoutdata.getItemAt(j).NODETYPE1=="2")
+							{
+								if(channelRoutdata.getItemAt(j).NAME_NODE1!="")
+								{   
+									if(channelRoutdata.getItemAt(j).SERIAL=="2")
+									{
+										//左边
+										var odfPortId:String = channelRoutdata.getItemAt(j).NODECODE1;
+										ODFName1 = channelRoutdata.getItemAt(j).NAME_NODE1;
+										var odfnames:Array  = ODFName1.split("/");
+										var odfname:String = odfnames[2].toString()+"/"+odfnames[3].toString()+"/"+odfnames[4].toString();
+										ODFPORT1 = createFollower(odfname==null?ODFName1:odfname,ODFPORT,new Point(PositionX+90, PositionY+10),Consts.POSITION_BOTTOM_BOTTOM,odfPortId);
+										ODFPORT1.host = StationPanel;
+										ODFPORT1.parent = StationPanel;
+										ODFPORT1.layerID = layer2.id;
+									}else if(channelRoutdata.getItemAt(j).SERIAL == (channelRoutdata.length-1).toString())
+									{   
+										//右边
+										var odfPortId:String = channelRoutdata.getItemAt(j).NODECODE1;
+										ODFName1 = channelRoutdata.getItemAt(j).NAME_NODE1;
+										var odfnames:Array  = ODFName1.split("/");
+										var odfname:String = odfnames[2].toString()+"/"+odfnames[3].toString()+"/"+odfnames[4].toString();
+										ODFPORT1 = createFollower(odfname==null?ODFName1:odfname,ODFPORT,new Point(PositionX+60, PositionY+10),Consts.POSITION_BOTTOM_BOTTOM,odfPortId);
+										ODFPORT1.host = StationPanel;
+										ODFPORT1.parent = StationPanel;
+										ODFPORT1.layerID = layer2.id;
+									}else
+									{
+										k++;
+										var odfPortId:String = channelRoutdata.getItemAt(j).NODECODE1;
+										ODFName1 = channelRoutdata.getItemAt(j).NAME_NODE1;
+										var odfnames:Array  = ODFName1.split("/");
+										var odfname:String = odfnames[2].toString()+"/"+odfnames[3].toString()+"/"+odfnames[4].toString();
+										ODFPORT1 = createFollower(odfname==null?ODFName1:odfname,ODFPORT,new Point(PositionX-60+95*k, PositionY+10),Consts.POSITION_BOTTOM_BOTTOM,odfPortId);
+										ODFPORT1.host = StationPanel;
+										ODFPORT1.parent = StationPanel;
+										ODFPORT1.layerID = layer2.id;
+									}
+									
+									
+								}
+								if(channelRoutdata.getItemAt(j).NAME_NODE2!="")
+								{
+									if(channelRoutdata.getItemAt(j).SERIAL=="2")
+									{
+										//左边
+										var odfPortId2:String = channelRoutdata.getItemAt(j).NODECODE2;
+										ODFName2 = channelRoutdata.getItemAt(j).NAME_NODE2;
+										var odfnames:Array  = ODFName2.split("/");
+										var odfname:String = odfnames[2].toString()+"/"+odfnames[3].toString()+"/"+odfnames[4].toString();
+										ODFPORT2 = createFollower(odfname==null?ODFName2:odfname,ODFPORT,new Point(PositionX+90, PositionY+140),Consts.POSITION_BOTTOM_BOTTOM,odfPortId2);
+										ODFPORT2.host = StationPanel;
+										ODFPORT2.parent = StationPanel;
+										ODFPORT2.layerID = layer2.id;
+									}else if(channelRoutdata.getItemAt(j).SERIAL == (channelRoutdata.length-1).toString())
+									{
+										//右边
+										var odfPortId2:String = channelRoutdata.getItemAt(j).NODECODE2;
+										ODFName2 = channelRoutdata.getItemAt(j).NAME_NODE2;
+										var odfnames:Array  = ODFName2.split("/");
+										var odfname:String = odfnames[2].toString()+"/"+odfnames[3].toString()+"/"+odfnames[4].toString();
+										ODFPORT2 = createFollower(odfname==null?ODFName2:odfname,ODFPORT,new Point(PositionX+60, PositionY+140),Consts.POSITION_BOTTOM_BOTTOM,odfPortId2);
+										ODFPORT2.host = StationPanel;
+										ODFPORT2.parent = StationPanel;
+										ODFPORT2.layerID = layer2.id;
+										
+									}else 
+									{
+										//中间情况
+										i++;
+										var odfPortId2:String = channelRoutdata.getItemAt(j).NODECODE2;
+										ODFName2 = channelRoutdata.getItemAt(j).NAME_NODE2;
+										var odfnames:Array  = ODFName2.split("/");
+										var odfname:String = odfnames[2].toString()+"/"+odfnames[3].toString()+"/"+odfnames[4].toString();
+										ODFPORT2 = createFollower(odfname==null?ODFName2:odfname,ODFPORT,new Point(PositionX-60+95*i, PositionY+140),Consts.POSITION_BOTTOM_BOTTOM,odfPortId2);
+										ODFPORT2.host = StationPanel;
+										ODFPORT2.parent = StationPanel;
+										ODFPORT2.layerID = layer2.id;
+									}
+									
+								}
+							}
+							//为T接的情况
+							if(channelRoutdata.getItemAt(j).NODETYPE1=="3")
+							{
+								if(channelRoutdata.getItemAt(j).NAME_NODE1!="")
+								{   
+									var TnodeID:String = channelRoutdata.getItemAt(j).NODECODE1;
+									TnodeName0 = channelRoutdata.getItemAt(j).NAME_NODE1;
+									Tnode0 = createFollower(TnodeName0,TNODE,new Point(PositionX+80, PositionY+80),Consts.POSITION_BOTTOM_BOTTOM,TnodeID);
+									Tnode0.host = StationPanel;
+									Tnode0.parent = StationPanel;
+									Tnode0.layerID = layer2.id;
+									
+								}
+								
+							}
+							var link1:Link = createLink(ODFPORT1,Port,0x0066cc,Consts.LINK_TYPE_PARALLEL,null,null,true);
+							link1.parent = StationPanel;
+							link1.layerID = layer3.id;
+							
+							var link2:Link = createLink(ODFPORT2,Port,0x0066cc,Consts.LINK_TYPE_PARALLEL,null,null,true);
+							link2.parent = StationPanel;
+							link2.layerID = layer3.id;
+							
+						}
+						
+					}
+				}else 
+				{
+					Alert.show("无相关数据!","提示");
+				}
+				
+			}
+			
+			
+			
+			
+			private function drawLines(channelRoutdata:ArrayCollection):void{
+				if(channelRoutdata!=null)
+				{
+					var elementa:IElement;
+					var elementb:IElement;
+					var port1:Follower;
+					var port2:Follower;
+					
+					var elementc:IElement;
+					var elementd:IElement;
+					var port3:Follower;
+					var port4:Follower;
+					
+					for(var i:int=0;i<channelRoutdata.length;i++)
+					{   
+						if(i!=channelRoutdata.length-1)
+						{
+							elementa = elementBox.getElementByID(channelRoutdata.getItemAt(i).NODECODE1);
+							elementb = elementBox.getElementByID(channelRoutdata.getItemAt(i+1).NODECODE1);
+							if(elementa&&elementb)
+							{
+								port1 = elementa as Follower;
+								port2 = elementb as Follower;
+								var link:Link = createLink(port1,port2,0x0066cc,Consts.LINK_TYPE_PARALLEL);
+								link.layerID = layer3.id;
+								if(channelRoutdata.getItemAt(i).OCABLESECTIONNAME!=null&&channelRoutdata.getItemAt(i).FIBERSERIAL1!=null)
+								{
+									link.name = channelRoutdata.getItemAt(i).FIBERSERIAL1+"/"+channelRoutdata.getItemAt(i).FIBERCOUNT;
+									link.toolTip = channelRoutdata.getItemAt(i).OCABLESECTIONNAME +"-" + channelRoutdata.getItemAt(i).FIBERSERIAL1 + "芯";
+								}
+							}
+							
+							elementc = elementBox.getElementByID(channelRoutdata.getItemAt(i).NODECODE2);
+							elementd = elementBox.getElementByID(channelRoutdata.getItemAt(i+1).NODECODE2);
+							
+							if(elementc&&elementd)
+							{
+								port3 = elementc as Follower;
+								port4 = elementd as Follower;
+								var link2:Link = createLink(port3,port4,0x0066cc,Consts.LINK_TYPE_PARALLEL);
+								link2.layerID = layer3.id;
+								if(channelRoutdata.getItemAt(i).OCABLESECTIONNAME!=null&&channelRoutdata.getItemAt(i).FIBERSERIAL2!=null)
+								{
+									link2.name = channelRoutdata.getItemAt(i).FIBERSERIAL2+"/"+channelRoutdata.getItemAt(i).FIBERCOUNT;
+									link2.toolTip = channelRoutdata.getItemAt(i).OCABLESECTIONNAME +"-" + channelRoutdata.getItemAt(i).FIBERSERIAL2 + "芯";
+								}
+							}
+						}
+						
+					}
+				}
+				
+			}
+			
+			
+			/**
+			 * 创建节点函数
+			 * 
+			 * */
+			
+			private function createNode(name:String, image:String, location:Point, labelPosition:String = null):Node{
+				var node:Node = new Node();
+				node.name = name;
+				node.image = image;
+				node.location = location;
+				if(labelPosition){
+					node.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				dataBox.add(node);
+				return node;
+			}
+			
+			private function createFollower(name:String, image:String, location:Point,labelPosition:String = null,id:Object = null):Follower{
+				var follower:Follower = new Follower(id);
+				follower.name = name;
+				follower.image = image;
+				follower.location = location;
+				if(labelPosition){
+					follower.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				dataBox.add(follower);
+				return follower;
+			}
+			
+			private function createLink(from:Node, to:Node, color:uint, linkType:String = null,linkFromPosition:String = null,name:String = null, dashed:Boolean = false, labelPosition:String = null, lineWidth:int = 3):Link{
+				var link:Link = new Link(from,to);
+				link.setStyle(Styles.LINK_COLOR, color);
+				link.setStyle(Styles.LINK_WIDTH, lineWidth);
+				link.setStyle(Styles.LINK_BUNDLE_GAP, -2);
+				link.setStyle(Styles.LINK_BUNDLE_OFFSET,-1);
+				link.setStyle(Styles.LINK_FROM_POSITION,linkFromPosition);
+				if(linkType == null){
+					linkType = Consts.LINK_TYPE_ORTHOGONAL_VERTICAL;
+					link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+					link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+				}
+				link.setStyle(Styles.LINK_TYPE, linkType);
+				if(name){
+					link.name = name;
+				}
+				if(dashed){
+					link.setStyle(Styles.LINK_PATTERN, [25,10]);
+				}
+				if(labelPosition){
+					link.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				if(!dataBox.getDataByID(link.id))
+					dataBox.add(link);
+				return link;
+			}
+			
+			
+			private function networkClickHandler():void{
+				
+			}
+			
+			//导出操作
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var bitmapData:BitmapData=network.exportAsBitmapData();
+				var encoder:PNGEncoder = new PNGEncoder();
+				var data:ByteArray = encoder.encode(bitmapData);
+				roocablerouteinfo.getByteData(data);
+			}
+			
+			protected function rooocableinfo_resultHandler(event:ResultEvent):void
+			{
+				var url:String = getURL();
+				ro.exportOcableRouteExcel(network.name,url);
+				ro.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void{exportExcelResult(event,network,url)});
+			}
+			
+			public static function exportExcelResult(event:ResultEvent,network:Network,url:String):void{
+				var fileName:String = event.result.toString();
+				var path:String = url+"assets/excels/expfiles/"+fileName+".xls";
+				var request:URLRequest = new URLRequest(encodeURI(path));
+				navigateToURL(request,"_blank");
+				
+			}
+			
+			protected function rooocableinfo_faultHandler(event:FaultEvent):void
+			{
+				Alert.show("导出失败","提示");
+			}
+			
+			private static function getURL():String{
+				var currSwfUrl:String; 
+				var doMain:String = Application.application.stage.loaderInfo.url;  
+				var doMainArray:Array = doMain.split("/");  
+				
+				if (doMainArray[0] == "file:") {  
+					if(doMainArray.length<=3){  
+						currSwfUrl = doMainArray[2];  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf(currSwfUrl.charAt(2)));  
+					}else{  
+						currSwfUrl = doMain;  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+					}  
+				}else{  
+					currSwfUrl = doMain;  
+					currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+				}  
+				currSwfUrl += "/";
+				return currSwfUrl;
+			}
+			
+
+
+			protected function ro_faultHandler(event:FaultEvent):void
+			{
+				Alert.show("导出失败","提示");
+			}
+			
+			private function dataTipFunction(ielement:IElement):String{
+				var tooltip:String="";
+				if(ielement.layerID.toString() == "links"){
+					tooltip = ielement.toolTip;
+				}
+				return tooltip;
+			}
+		]]>  
+	</mx:Script>
+	<mx:Style>
+		.dataGrid{
+			headerColors: #ECF2FE, #ECF2FE;
+			horizontalGridLines: false;
+			verticalGridLineColor: #dadada;
+			borderColor: #b7babc;
+			fontFamily: Arial;
+			fontSize: 12;
+			headerStyleName:"";
+			
+		}
+		
+		.title
+		{
+			backgroundImage: Embed(source="assets/images/sysGraph/titlebg.png");
+			backgroundSize: "100%";
+			fontFamily: Arial;
+			fontSize: 16;
+			fontWeight: bold;
+		}
+		.sat
+		{
+			borderStyle: solid;
+			borderThickness: 1;
+			borderSides: top,bottom;
+			backgroundColor: #FDF8DB;
+			verticalAlign: middle;
+			horizontalAlign: left;
+			paddingLeft: 10;
+			paddingRight: 10;
+			borderColor: #F4E173;
+		}
+		.info
+		{
+			borderStyle: solid;
+			borderThickness: 1;
+			borderSides: bottom,top;
+			backgroundColor: #F8F8F8;
+			verticalAlign: middle;
+			horizontalAlign: left;
+			paddingLeft: 10;
+			paddingRight: 10;
+			borderColor: #C5C5C5;
+		}
+		
+		.page
+		{
+			backgroundColor: #FFFFFF;
+			paddingBottom: 40;
+			paddingTop: 30;
+			paddingLeft: 20;
+			paddingRight: 20;
+			shadowDistance: 3;
+			shadowDirection: right;
+			dropShadowEnabled: true;
+			dropShadowColor: #000000;
+		}
+	</mx:Style>
+	
+	<mx:RemoteObject id="ro"
+					 destination="fiberWire"
+					 endpoint="{ModelLocator.END_POINT}"
+					 showBusyCursor="true"
+					 fault="ro_faultHandler(event)"/>
+		
+	<mx:RemoteObject id="roocablerouteinfo"
+					 destination="fiberWire"
+					 endpoint="{ModelLocator.END_POINT}"
+					 showBusyCursor="true"
+					 result="rooocableinfo_resultHandler(event)"
+					 fault="rooocableinfo_faultHandler(event)"/>
+    <mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+	<mx:HBox width="100%" backgroundImage="assets/images/sysGraph/iconbar_bg.png" backgroundSize="100%" verticalAlign="middle" height="38" horizontalGap="0" paddingLeft="5" paddingRight="5">
+		<mx:LinkButton label="导出" styleName="iconbar" icon="@Embed(source='assets/images/sysGraph/icon_export.png')" click="linkbutton1_clickHandler(event)" />
+		<!-- <mx:Image source="assets/images/sysGraph/iconbar_line.png"/> -->
+		<mx:LinkButton label="打印" visible="false" styleName="iconbar" icon="@Embed(source='assets/images/sysGraph/icon_print.png')"/>
+		<mx:Spacer height="38" width="100%"/>
+	</mx:HBox>
+	<mx:HBox backgroundImage="@Embed(source='assets/images/sysGraph/maintabbg.png')" backgroundSize="100%" width="100%" height="100%" paddingTop="5">
+	<mx:TabNavigator id="tn"  width="100%" height="100%" color="0x323232">
+		<mx:Canvas label="光路路由图" width="100%" height="100%">
+			<mx:VBox width="100%" height="100%" verticalGap="0" id="box1">
+				<mx:VBox width="100%" height="100%" verticalGap="5" paddingBottom="5">
+					<mx:HBox width="100%" height="45" styleName="title" horizontalAlign="center" verticalAlign="middle">
+						<mx:Label id="RoutMapLabel" text=""/>
+					</mx:HBox>
+					<mx:VBox width="100%" height="100%" paddingLeft="5" paddingRight="5">
+						<mx:HBox width="100%" height="35" styleName="info" verticalAlign="middle">
+							<mx:Image source="assets/images/sysGraph/icon_startstation.png"/>
+							<mx:Text text="起始站点：&#xa;" styleName="blackbold"/>
+							<mx:Text id="start" text="" styleName="blackbold"/>
+							<mx:Image source="assets/images/sysGraph/icon_endstation.png"/>
+							<mx:Text text="终止站点：&#xa;" styleName="blackbold"/>
+							<mx:Text id="end" text="" styleName="blackbold"/>
+							<mx:Spacer width="100%" height="20"/>
+							<mx:Image source="assets/images/sysGraph/icon_T.png"/>
+							<mx:Text text="T接点" styleName="blacknormal"/>
+							<mx:Image source="assets/images/sysGraph/icon_port_trans.png"/>
+							<mx:Text text="传输端口" styleName="blacknormal"/>
+							<mx:Image source="assets/images/sysGraph/icon_port_odf.png"/>
+							<mx:Text text="ODF端口" styleName="blacknormal"/>
+							<mx:Image source="assets/images/sysGraph/icon_port_zjgx.png"/>
+							<mx:Text text="站间光纤" styleName="blacknormal"/>
+							<mx:Image source="assets/images/sysGraph/icon_port_znwx.png"/>
+							<mx:Text text="站内尾纤&#xa;" styleName="blacknormal"/>
+						</mx:HBox>
+						<servasoftware:Network id="network" width="100%" height="100%" backgroundColor="0xFFFFFF" click="networkClickHandler()" toolTipFunction="dataTipFunction"/>
+					</mx:VBox>
+				</mx:VBox>
+			</mx:VBox>
+		</mx:Canvas>
+		<mx:Canvas label="光路路由表" width="100%" height="100%">
+			<mx:VBox width="100%" height="100%" verticalGap="0" paddingLeft="0" paddingRight="0" paddingBottom="0">
+				<mx:HBox width="100%" height="45" styleName="title" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label id="RoutTableLabel" text=""/>
+				</mx:HBox>
+				<mx:HBox width="100%" height="100%" backgroundSize="100%" backgroundImage="@Embed(source='assets/images/page_bg.png')" paddingTop="10" paddingBottom="20" verticalAlign="middle" horizontalAlign="center">
+					<mx:VBox width="900" height="100%" styleName="page">
+						<mx:Text text="经过端站" styleName="pagepart"/>
+						<mx:HBox width="100%" height="35" styleName="sat" verticalAlign="middle">
+							<mx:Text id="stations" text="" styleName="blacknormal"/>
+						</mx:HBox>
+						<mx:Text text="详细信息&#xa;" styleName="pagepart"/>
+						<mx:Grid width="100%" height="100%" verticalGap="0" horizontalGap="0" borderSides="top,left" borderStyle="solid" borderThickness="1" borderColor="#C7D8FC">
+							<mx:GridRow width="100%" height="30" backgroundSize="100%" backgroundImage="@Embed(source='assets/images/page_tablecolbg.png')">
+								<mx:GridItem width="50%" height="30" borderSides="right,bottom" verticalAlign="middle" horizontalAlign="center" colSpan="2">
+									<mx:Label text="A向路由" styleName="blackboldleft"/>
+								</mx:GridItem>
+								<mx:GridItem width="50%" height="30" borderSides="right,bottom" verticalAlign="middle" horizontalAlign="center"  colSpan="2">
+									<mx:Label text="B向路由" styleName="blackboldleft"/>
+								</mx:GridItem>
+							</mx:GridRow>
+							<mx:GridRow width="100%" height="100%">
+								<mx:GridItem width="50%" height="30" borderSides="right,bottom" verticalAlign="middle" horizontalAlign="center" colSpan="2">
+									<mx:DataGrid width="100%" height="100%" id="adirection" sortableColumns="false" styleName="dataGrid">
+										<mx:columns>
+											<mx:DataGridColumn headerText="设备或模块" dataField="@equipment"/>
+											<mx:DataGridColumn headerText="端口" dataField="@port"/>
+										</mx:columns>
+									</mx:DataGrid>
+								</mx:GridItem>
+								<mx:GridItem width="50%" height="30" borderSides="right,bottom" verticalAlign="middle" horizontalAlign="center"  colSpan="2">
+									<mx:DataGrid width="100%" height="100%" id="bdirection" sortableColumns="false" styleName="dataGrid">
+										<mx:columns>
+											<mx:DataGridColumn headerText="设备或模块" dataField="@equipment"  />
+											<mx:DataGridColumn headerText="端口" dataField="@port" />
+										</mx:columns>
+									</mx:DataGrid>
+								</mx:GridItem>
+							</mx:GridRow>
+						</mx:Grid>
+					</mx:VBox>
+				</mx:HBox>
+			</mx:VBox>
+		</mx:Canvas>
+	</mx:TabNavigator>
+	</mx:HBox>
+	</mx:VBox>
+</panel:PanelWindow>

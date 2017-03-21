@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 width="100%" 
+		 height="100%"
+		 xmlns:comp="common.actionscript.*"
+		 xmlns:pgtb="sourceCode.systemManagement.views.*" creationComplete="vbox1_creationCompleteHandler(event)" xmlns:actionscript="sourceCode.systemManagement.actionscript.*" xmlns:component="common.component.*">
+	<mx:RemoteObject id="rm" endpoint="{ ModelLocator.END_POINT}" result="rm_resultHandler(event)" destination="netresDao"/>
+	<mx:VBox width="100%" height="100%">
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="问题跟踪" imgName="track"
+							  showAddButton="true" showEditButton="true"  showSearchButton="true"
+							  showExportExcelButton="true" showImportButton="true"
+							  controlAdd="itemClickHandler('添加')" controlEdit="itemClickHandler('修改')" 
+							  controlSearch="itemClickHandler('查询')"
+							  controlExportExcel="itemClickHandler('导出Excel')" controlImport="itemClickHandler('导入数据')"/>
+		<mx:HBox width="100%" height="100%">
+			<mx:Canvas id="content" width="100%" height="100%">
+				<comp:ColorDataGrid id="ProblemdataGrid" width="100%" height="100%" rowColorFunction="setColorFunction">
+					<comp:columns>
+						<mx:DataGridColumn headerText="序号" width="120" itemRenderer="{new ClassFactory(indexRenderer)}"/>
+						<mx:DataGridColumn headerText="ID" dataField="problemid" visible="false" width="0"/>
+						<mx:DataGridColumn headerText="所属模块" dataField="pmodule" width="300"/>
+						<mx:DataGridColumn headerText="问题描述" dataField="pdescription" width="800"/>
+						<mx:DataGridColumn headerText="修改人" dataField="pdealer" width="300"/>
+						<mx:DataGridColumn headerText="问题状态" dataField="pstatus" width="300"/>
+						<mx:DataGridColumn headerText="问题属性" dataField="pproperty" width="300"/>
+						<mx:DataGridColumn headerText="解决方法描述" dataField="ptreatmethod" width="600" visible="false"/>
+						<mx:DataGridColumn headerText="解决备注信息" dataField="premark" width="600" visible="false"/>
+						<mx:DataGridColumn headerText="提出人" dataField="ppopperson" width="400"/>
+						<mx:DataGridColumn headerText="提出时间" dataField="pmakedate" width="400"/>
+						<mx:DataGridColumn headerText="要求完成时间" dataField="deadlinedate" width="400"/>
+						<mx:DataGridColumn headerText="实际完成时间" dataField="finisheddate" width="400"/>
+						<!--<mx:DataGridColumn headerText="指导人" dataField="phelper" width="400" visible="false"/>!-->
+					</comp:columns>
+				</comp:ColorDataGrid>
+			</mx:Canvas>
+			<mx:Canvas id="queryCanvas" width="20" height="100%">
+				<mx:VBox  id="queryPanel" height="100%" width="360" visible="false">
+				</mx:VBox>
+				<mx:Button  icon="{PointIcon}"  click="changeState()" width="16" height="16" top="3" right="3" />
+			</mx:Canvas>
+		</mx:HBox>
+	</mx:VBox>
+	<pgtb:pagetoolbar x="1" id="serverPagingBar1" width="100%"/>
+	<mx:Script source="../actionscript/BugTracing.as"/>
+</mx:VBox>

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+				width="100%" height="100%"  backgroundGradientAlphas="[1.0, 1.0]" 
+				backgroundGradientColors="[#006699, #0099FF]" fontSize="12"
+				creationComplete="validateUser()">
+		<mx:RemoteObject id="roLogin" destination="login" endpoint="{ModelLocator.END_POINT}"
+						 result="loginResultHandler(event)" fault="faultHandler(event)"/>
+	<mx:Style source="assets/css/login.css"/>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="top">
+		<mx:VBox width="840" height="485" horizontalAlign="center" verticalAlign="top" 
+				 backgroundImage="assets/images/integratedloginbg.png" backgroundSize="100%">
+		</mx:VBox>
+	</mx:VBox>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+		<mx:ViewStack id="vs" width="700" height="460" creationPolicy="all" >
+			<mx:Canvas id="cvsFirst" width="100%" height="100%" backgroundImage="assets/images/integratedloginarea.png">
+				<mx:Label x="250" y="75" text="南方电网通信网自愈能力仿真系统" color="white" width="400" fontSize="23" fontWeight="bold"/>
+				<mx:Label x="70" y="195" width="80" text="用户名：" styleName="loginlabel"/>
+				<mx:Label x="70" y="235" width="80" text="密码：" styleName="loginlabel"/>
+				<mx:Label x="70" y="270" width="80" text="版本名：" styleName="loginlabel"/>
+				<mx:TextInput id="txtUserName" x="150" y="190" styleName="login" width="200" height="28"/>
+				<mx:TextInput id="txtPwd" x="150" y="230" displayAsPassword="true" styleName="login" width="200" height="28"  maxChars="20"
+							enter="login()"/>
+				<mx:ComboBox id="txtVersion" x="150" y="270"  labelField="@label"  width="200" height="28" enter="login()" />
+				<mx:Button x="150" y="330" label="登  录" styleName="loginprimary" click="login()"/>
+				<mx:Button x="245" y="330" label="重  置" styleName="loginsecondary" click="reset()"/>
+				<mx:Label x="150" y="290" text="提示:作为提示信息" styleName="logininfo" visible="false"/>
+				<mx:Label x="70" y="150" text="请输入您的用户名和密码：" styleName="logininfob"/>
+				<mx:Image x="390" y="170" source="assets/images/loginline1.png"/>
+				<mx:Image x="410" y="190" source="assets/images/login_icon_tips.png"/>
+				<mx:Text x="445" y="190" text="如果不能正常登录或忘记密码请与&#xa;系统管理员联系。&#xa;&#xa;联系电话：020-38122826" styleName="logintips" width="200" height="120"/>
+				<mx:CheckBox id="chkSavePwd" x="150" y="300" label="记住密码" change="savePwd()"/>
+			</mx:Canvas>
+			<mx:Canvas id="cvsSecond" width="100%" height="100%" backgroundImage="assets/images/integratedloginarea.png"
+					   visible="false" includeInLayout="false">
+				<mx:Label x="70" y="260" text="请选择您要进入的系统：" styleName="logininfob"/>
+				<mx:Image id="login_image" x="60" y="150" source="assets/images/login_male.png"/>
+				<mx:Label x="150" y="160" text="您好，{txtUserName.text}，欢迎登录通信网自愈能力仿真平台。" styleName="logininfo"/>
+				<!--<mx:LinkButton x="150" y="193" label="修改个人信息" styleName="loginlinkbutton" icon="@Embed(source='assets/images/icon_editinfo16.png')"/>-->
+				<mx:LinkButton x="150" y="193" label="注销" styleName="loginlinkbutton" icon="@Embed(source='assets/images/icon_logout16.png')"
+							   click="exitSystem()"/>
+				<mx:Image x="30" y="240" source="assets/images/loginline2.png"/>
+			</mx:Canvas>
+		</mx:ViewStack>
+	</mx:VBox>
+	<!--<mx:SWFLoader source="assets/swf/login.swf" right="0" top="0" width="200" height="130"/>-->
+	<mx:Style>
+		Alert{
+			headerColors: 				#00ccff, #0066ff;
+			footerColors: 				#e7e7e7, #c7c7c7;
+			background-color: #ffffff;
+			border-thickness-left: 		0;
+			border-thickness-top: 		0;
+			border-thickness-bottom:	0;
+			border-thickness-right: 	0;
+			color:#000000;
+			title-style-name:			"myAlertTitle";
+			font-family:"新宋体";
+			font-weight:bold;
+			font-size:13;
+			header-height:35;
+		}
+		.myAlertTitle{
+			color: #ffffff;
+			fontWeight: bold;
+			fontSize:13;
+			font-family:"新宋体";
+		}
+	</mx:Style>
+		<mx:Script>
+			<![CDATA[
+				import common.actionscript.ModelLocator;
+				import common.actionscript.Registry;
+				
+				import flash.net.navigateToURL;
+				
+				import mx.collections.ArrayCollection;
+				import mx.controls.Alert;
+				import mx.core.Application;
+				import mx.events.FlexEvent;
+				import mx.rpc.events.FaultEvent;
+				import mx.rpc.events.ResultEvent;
+				import mx.utils.StringUtil;
+				
+				import sourceCode.systemManagement.model.UserModel;
+				public var so:SharedObject;
+				private var userModel:UserModel;
+				
+				
+				private function validateUser():void{
+					this.txtUserName.setFocus();
+					if(!this.parameters.hasOwnProperty("func"))
+					{
+
+						var roUserInfo:RemoteObject = new RemoteObject("userManager");
+						roUserInfo.endpoint = ModelLocator.END_POINT;
+						roUserInfo.addEventListener(ResultEvent.RESULT,getUserInfo);
+
+					}
+					so = SharedObject.getLocal("userinfo");
+					if(StringUtil.trim(so.data.userName) != "" && StringUtil.trim(so.data.password) != ""){
+						txtUserName.text = so.data.userName;
+						txtPwd.text = so.data.password;//密码
+						chkSavePwd.selected = true;
+					}
+					
+					//初始化 版本号
+					var re:RemoteObject=new RemoteObject("login");
+					re.endpoint = ModelLocator.END_POINT;
+					re.showBusyCursor = true;
+					re.addEventListener(ResultEvent.RESULT,resultVersionHandler);
+					re.getVersionXml(); 
+					
+				}
+				
+				public function resultVersionHandler(event:ResultEvent):void{
+				//	arr_cb = event.result as ArrayCollection;
+					var dealResult:XMLList= new XMLList(event.result);
+				//	Alert.show(dealResult.toString());
+					txtVersion.dataProvider = dealResult.children();
+				}
+				
+				
+				private function getUserInfo(event:ResultEvent):void{
+					var user:UserModel = (UserModel)(event.result);
+					if(user){
+						txtUserName.text = user.user_id;
+						txtPwd.text = user.user_pwd;
+						login();
+					}
+					
+					
+				}
+				
+				private function login():void{
+					if(txtUserName.text == "" || txtPwd.text == ""){
+						ModelLocator.showErrorMessage("用户名和密码不能为空!",this);
+					}else{
+						var userModel:UserModel = new UserModel();
+						userModel.user_name = txtUserName.text;
+						userModel.user_pwd = txtPwd.text;
+						userModel.remark=(txtVersion.selectedItem!=null?txtVersion.selectedItem.@code:"");
+						if(userModel.user_name!="root"&&txtVersion.text=="基础版本"){
+							Alert.show("当前用户不能登录基础版本！","提示");
+							return;
+						}
+						txtUserName.enabled = false;
+						txtPwd.enabled = false;
+						roLogin.login(userModel);
+					}
+				}
+				
+				private function reset():void{
+					txtUserName.enabled = true;
+					txtPwd.enabled = true;
+					txtUserName.text = "";
+					txtPwd.text = "";
+					txtUserName.setFocus();
+				}
+				
+				protected function loginResultHandler(event:ResultEvent):void
+				{
+					if(event.result!=null)
+					{
+						if(chkSavePwd.selected){
+							so.data.userName = txtUserName.text;
+							so.data.password = txtPwd.text;//密码
+							so.flush();
+						}
+//						vs.selectedIndex = 1;
+						userModel=(UserModel)(event.result);
+						if(userModel.user_sex=='F')
+						{
+							login_image.source="assets/images/login_female.png";
+						}
+						navigateToURL(new URLRequest(ModelLocator.getURL()+"main.html"),"_parent");
+						
+					}else{
+						reset();
+						ModelLocator.showErrorMessage("登录失败!请检查输入的用户名和密码是否正确!",this);
+					}
+				}
+				
+				private function gotoMain():void{
+					navigateToURL(new URLRequest(ModelLocator.getURL()+"main.html"),"_parent");
+				}
+				private function gotoTmis():void
+				{
+					var username:String=userModel.user_id;
+					var dept:String=userModel.user_dept;
+					var user_ip:String=userModel.ip;
+					
+					
+					navigateToURL(new URLRequest("http://"+userModel.ip+"/tmis/index.jsp?iv-user="+username),"_parent");
+				}
+				private function exitSystem():void{
+					var roUser:RemoteObject = new RemoteObject("userManager");
+					roUser.showBusyCursor = true;
+					roUser.endpoint = ModelLocator.END_POINT;
+					roUser.addEventListener(ResultEvent.RESULT,resetUserStateHandler);
+					roUser.addEventListener(FaultEvent.FAULT,faultHandler);
+					roUser.userLayout(String(txtUserName.text),"0");
+				}
+				
+				private function resetUserStateHandler(event:ResultEvent):void{
+					vs.selectedIndex = 0;
+					reset();
+				}
+				
+				private function savePwd():void{
+					if(!chkSavePwd.selected){
+						if(so != null){
+							so.clear();
+						}
+					}
+				}
+				
+				protected function faultHandler(event:FaultEvent):void
+				{
+					Alert.show(event.message.toString());
+				}
+			]]>
+		</mx:Script>
+</mx:Application>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="100%" height="412"
+				showCloseButton="true" close="close();" creationComplete="init()" title="复用段主备互换" horizontalAlign="center">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import sourceCode.sysGraph.model.TopolinkRing;
+			
+			private var isInit:Boolean = false;
+			private var _primary:String = "";
+			[Bindable]
+			private var _list:ArrayCollection;
+			[Bindable]
+			public var _labelname:String = "";
+			private var _data:ArrayCollection;
+			public var tr:TopolinkRing;
+			[Bindable]
+			public var mainApp:Object = null;
+			[Bindable]
+			public var callBackFunction:Function;
+			
+			public function set primary(value:String):void{
+				_primary = value;
+			}
+			
+			public function init():void{
+				if(_primary != ""){
+					fiberWire.getTopolinkByLordUseBack(_primary,"","");
+				}
+			}
+			
+			public function save():void{
+				fiberWire.cancelPrimaryUsed(_primary);
+			}
+			
+			private function cpuResultHandler(evt:ResultEvent):void{
+				var item:Object = new Object();
+				for(var i:int=0;i<_data.length;i++){
+					if(radioButtons[i].selected = true){
+						item = _data[i];
+						_data.removeItemAt(i);
+						break;
+					}
+				}
+				tr = new TopolinkRing();
+				tr.label = item.label;
+				var sparetopolink:String = _primary + ",";
+				for(i=0;i<_data.length;i++){
+					sparetopolink += _data[i].label + ",";
+				}
+				tr.sparetopolink = sparetopolink.substring(0, sparetopolink.length - 1);
+				fiberWire.setLordUse(tr);
+			}
+			
+			private function gtbluResultHandler(evt:ResultEvent):void{
+				_data = evt.result as ArrayCollection;
+				_list = _data;
+				if(_list.length > 0){
+					radioButtons[0].selected = true;
+//					if(_list.length == 1) save();
+				}else{
+					Alert.show("无备用复用段！","提示！");close();
+				}
+			}
+			
+			private function sluResultHandler(evt:ResultEvent):void{
+				callBackFunction.call(mainApp);
+				close();
+			}
+			
+			private function faultHandler(evt:FaultEvent):void{
+//				Alert.show("系统出现异常，请刷新页面；\n如仍不能解决问题，请联系系统管理员！","提示！");
+			}
+			
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:RemoteObject id="fiberWire" destination="fiberWire" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}">
+		<mx:method name="getTopolinkByLordUseBack" result="gtbluResultHandler(event)" fault="faultHandler(event)"/>
+		<mx:method name="cancelPrimaryUsed" result="cpuResultHandler(event)" fault="faultHandler(event)"/>
+		<mx:method name="setLordUse" result="sluResultHandler(event)" fault="faultHandler(event)"/>
+	</mx:RemoteObject>
+	<mx:VBox width="95%" height="100%" horizontalAlign="center">
+		<mx:ApplicationControlBar width="100%" height="10%">
+			<mx:Label text="主复用段名称:{_labelname}"/>
+		</mx:ApplicationControlBar>
+		<mx:VBox width="100%" height="75%">
+			<mx:Label text="可选复用段名称:"/>
+			<mx:RadioButtonGroup id="radioGroup" /> 
+			<mx:Repeater id="radioRepeater" 
+						 dataProvider="{_list}"> 
+				<mx:RadioButton id="radioButtons" 
+								label="{radioRepeater.currentItem.labelname}" 
+								group="{radioGroup}" /> 
+			</mx:Repeater>
+		</mx:VBox>
+		<mx:HBox width="100%" height="15%"  horizontalAlign="center"  verticalAlign="middle"	 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			<mx:Button label="保存"  click="save()"  width="65" height="22" textAlign="center"   styleName="loginprimary" />
+			<mx:Spacer width="58"/>
+			<mx:Button label="关闭"  click="close()"  width="65" height="22" textAlign="center"  styleName="loginsecondary"/> 
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

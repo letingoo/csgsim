@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+		   xmlns:custom="common.component.*"	
+		   xmlns:local="sourceCode.packGraph.views.*"
+		   xmlns:alarm="sourceCode.alarmmgrGraph.views.*"
+		   fontSize="12" creationComplete="init()" xmlns:model="sourceCode.alarmmgrGraph.model.*">
+	<mx:Style>
+		mx|Panel
+		 {
+			borderAlpha: 0.5;
+			borderThicknessLeft: 5;
+			borderThicknessTop: 5;
+			borderThicknessBottom: 5;
+			borderThicknessRight: 5;
+			cornerRadius: 0;
+			backgroundAlpha: 0.9;
+			highlightAlphas: 0.4, 0.2;
+			headerColors: #0099ff, #006699;
+			footerColors: #0099ff, #c7c7c7;
+			shadowDistance: -1;
+			titleStyleName: "myinfopanelTitle";
+			borderColor: #FFFFFF;
+		}
+		.myinfopanelTitle {
+			fontFamily: Arial;
+			fontSize: 12;
+			fontWeight: bold;
+		}
+	</mx:Style>
+	
+	<mx:Script source="../actionscript/equipPackTabPanel.as"/>
+	
+	<model:AlarmModel id="alarmpack"/>
+	<mx:Panel id="mypanel"  backgroundAlpha="0.6" width="100%" height="100%" borderThicknessBottom="0" 
+			  borderThicknessLeft="0" borderThicknessRight="0" borderThicknessTop="0">
+		<mx:TabNavigator width="100%" height="100%" id="tabnavigator" creationPolicy="all"  change="ChangeEvent()" visible="false" includeInLayout="false">
+			<mx:VBox width="100%" id="businessBox" height="100%" verticalGap="0" label="承载业务">
+				<mx:DataGrid id="businessGrid" dragEnabled="true" variableRowHeight="true" wordWrap="true"
+							 width="100%" height="100%" horizontalCenter="16"  verticalCenter="-152" 
+							 editable="false" rowCount="5" doubleClickEnabled="true" headerColors="[0xFFFFFF,0xE6EEEE]"
+							 itemDoubleClick="businessGrid_itemDoubleClickHandler(event)">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" textAlign="center" width="30" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+						<mx:DataGridColumn headerText="电路号" dataField="@circuitcode"  visible="true" width="170"/>
+						<mx:DataGridColumn headerText="速率" dataField="@rate" width="50"/>
+						<mx:DataGridColumn headerText="A端端口" dataField="@portserialno1" width="100"/>			
+						<mx:DataGridColumn headerText="A端时隙" width="80" dataField="@slot1"/>
+						<mx:DataGridColumn headerText="Z端端口" dataField="@portserialno2" width="100"/>
+						<mx:DataGridColumn headerText="Z端时隙" width="80" dataField="@slot2"/>
+					</mx:columns>
+				</mx:DataGrid>	
+				<custom:pagetoolbar id="clientPagingBar1" width="100%"/>
+			</mx:VBox>
+			<mx:VBox width="100%" id="resBox2" height="100%" verticalGap="0" label="电口使用率">
+				<mx:DataGrid id="portusestatsgrid" variableRowHeight="true" wordWrap="true" 
+					horizontalScrollPolicy="auto" width="100%" height="100%" headerColors="[0xFFFFFF,0xE6EEEE]"
+					horizontalCenter="16"  verticalCenter="-152" editable="false">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" textAlign="center" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+						<mx:DataGridColumn headerText="端口总数" dataField="@portnum" />
+						<mx:DataGridColumn headerText="端口占用数" dataField="@portusenum" />
+						<mx:DataGridColumn headerText="端口使用率" dataField="@rate" >
+							<mx:itemRenderer>
+								<mx:Component>
+									<local:Color1/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>
+				<custom:pagetoolbar id="clientPagingBar4" width="100%"/>
+			</mx:VBox> 
+			<mx:VBox width="100%" id="resBox" height="100%" verticalGap="0" label="光口时隙使用率">
+				<mx:DataGrid id="resGrid" dragEnabled="true" headerColors="[0xFFFFFF,0xE6EEEE]"
+							 width="100%" height="100%" horizontalCenter="16"  verticalCenter="-152" rowCount="5">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" textAlign="center" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+						<mx:DataGridColumn headerText="端口" dataField="@logicport" width="300"/>
+						<mx:DataGridColumn headerText="速率" dataField="@x_capability" width="80"/>
+						<mx:DataGridColumn headerText="等效vc4总数" dataField="@allvc4" width="100"/>
+						<mx:DataGridColumn headerText="占用等效vc4总数" dataField="@usrvc4" width="110"/>			
+						<mx:DataGridColumn headerText="占用等效vc12总数" dataField="@usrvc12" width="120"/>
+						<mx:DataGridColumn headerText="空闲等效vc4总数" dataField="@freevc4" width="120"/>
+						<mx:DataGridColumn headerText="时隙使用率" dataField="@rate" width="80" >
+							<mx:itemRenderer>
+								<mx:Component>
+									<local:Color1/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>
+				<custom:pagetoolbar id="clientPagingBar3" width="100%"/>
+			</mx:VBox>
+		</mx:TabNavigator>
+		<mx:TextArea  id="text" borderThickness="4" backgroundAlpha="0.6" backgroundColor="0xFFFFFF" borderColor="0xFFFFFF" fontSize="14" text="机盘使用情况" width="25" height="100%" />
+	</mx:Panel>
+	<mx:LinkButton id="linkButton" width="25" label="{btnlabel}" textAlign="right" fontThickness="2"  fontSize="12" click="changeState();" top="4" right="0" />
+</mx:Canvas> 

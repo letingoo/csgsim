@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" 
+	height="100%" 
+	paddingLeft="5" 
+	paddingRight="5"  
+	paddingBottom="5" 
+	paddingTop="5">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.ObjectProxy;
+			
+			import sourceCode.ocableResource.events.ApplyFilter;
+			
+			import twaver.Element;
+			import twaver.Follower;
+			import twaver.Link;
+			import twaver.Node;
+			
+			private var searchType:String;
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var ac:ArrayCollection = new ArrayCollection();
+				if(chkStation.selected){
+					searchType = "station";
+					/* var remoteObject:RemoteObject = new RemoteObject("ocableResources");
+					remoteObject.endpoint = ModelLocator.END_POINT;
+					remoteObject.showBusyCursor = true;
+					remoteObject.addEventListener(ResultEvent.RESULT,resultfunction);
+					remoteObject.getSearchStation(txtName.text); */
+					var c:int = parentDocument.network.elementBox.datas.count;
+					//Alert.show(c.toString());
+					for(var i:int=0; i<c; i++){
+						var ele:Element = parentDocument.network.elementBox.datas.getItemAt(i);
+						if(ele.layerID == "nodeLayer" && ele.getClient("stationname") != null){
+							//Alert.show(ele.getClient("stationname").toString());
+							var sn:String = (ele as Node).getClient("stationname").toString();
+							if(sn.indexOf(txtName.text) > -1){
+								var obj:Object = new Object();
+								obj.code = ele.id.toString();
+								obj.name = sn;
+								ac.addItem(obj);
+							}
+						}
+					}
+				}
+				
+				if(chkOcable.selected){
+					searchType = "ocable";
+					/* var remoteObject:RemoteObject = new RemoteObject("ocableResources");
+					remoteObject.endpoint = ModelLocator.END_POINT;
+					remoteObject.showBusyCursor = true;
+					remoteObject.addEventListener(ResultEvent.RESULT,resultfunction);
+					remoteObject.getSearchOcable(txtName.text); */
+					var c:int = parentDocument.network.elementBox.datas.count;
+					for(var i:int=0; i<c; i++){
+						var ele:Element = parentDocument.network.elementBox.datas.getItemAt(i);
+						if(ele.layerID == "linkLayer"){
+							var sn:String = new String((ele as Link).getClient("ocabledata").OCABLESECTIONNAME);
+							if(sn.indexOf(txtName.text) > -1){
+								var obj:Object = new Object();
+								obj.code = ele.id.toString();
+								obj.name = sn;
+								ac.addItem(obj);
+							}
+						}
+					}
+				}
+				
+				if(chkOneName.selected){
+					searchType = "onename";
+					/* var remoteObject:RemoteObject = new RemoteObject("ocableResources");
+					remoteObject.endpoint = ModelLocator.END_POINT;
+					remoteObject.showBusyCursor = true;
+					remoteObject.addEventListener(ResultEvent.RESULT,resultfunction);
+					remoteObject.getSearchOneName(txtName.text); */
+				}
+				listStation.dataProvider = ac;
+				
+			}
+			
+			private function resultfunction(event:ResultEvent):void{
+				var lineData:String = event.result.toString();
+				var lineXML:XMLList = new XMLList(lineData);
+				listStation.dataProvider = lineXML.child("station");
+			}
+
+
+
+			protected function listStation_itemClickHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.dispatchEvent(new ApplyFilter(listStation.selectedItem,"ApplyFilter",searchType));
+			}
+
+		]]>
+	</mx:Script>
+	
+	<mx:Metadata>
+		[Event(name="ApplyFilter",type="sourceCode.ocableResource.events.ApplyFilter")]
+	</mx:Metadata>
+	
+	<mx:HBox>
+		<mx:TextInput 
+			id="txtName" 
+			width="100%"/>
+		<mx:Button label="搜索" 
+				   click="button1_clickHandler(event)"/>
+	</mx:HBox>
+	
+	<mx:HBox>
+		<mx:RadioButtonGroup id="radioButtonGroup"/>
+		<mx:RadioButton id="chkStation" label="局站" selected="true"  groupName="radioButtonGroup"/>
+		<mx:RadioButton id="chkOcable" label="光缆" groupName="radioButtonGroup"/>
+		<mx:RadioButton id="chkOneName" label="一次线路" groupName="radioButtonGroup" visible="false"/>
+	</mx:HBox>
+	
+	<mx:List 
+		id="listStation"
+		width="100%" 
+		height="100%" 
+		labelField="name" 
+		itemClick="listStation_itemClickHandler(event)"
+		/>
+	
+</mx:VBox>

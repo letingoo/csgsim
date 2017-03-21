@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   xmlns:filters="flash.filters.*" 
+		   width="180" 
+		   height="22" 
+		   horizontalScrollPolicy="off" 
+		   verticalScrollPolicy="off"	
+		   showEffect="{show}"	
+		   hideEffect="{hide}" 
+		   tabEnabled="false" 
+		   visible="false"
+		   horizontalAlign="center"
+		   backgroundImage="assets/images/taskbar/black/tbr.png"
+		   add="visible=false;"
+		   creationComplete="creatComplete();">
+	<!--<mx:Image source="assets/images/taskbar/black/tbr.png" width="100%" height="25"/>-->
+<mx:Script>
+	<![CDATA[
+	import flash.utils.setTimeout;
+	
+	import mx.core.Application;
+	import mx.effects.easing.*;
+	import mx.managers.PopUpManager;
+	
+	[Bindable]
+	public var msg:String;
+	[Bindable]
+	public var xFrom:int;
+	[Bindable]
+	public var yFrom:int;
+	public var delay:uint;
+	public var init:Object;
+	public var modal:Boolean;
+	public var visible_:Boolean = true;
+	/**
+	 * Show and Count Down Time
+	 */
+	private function creatComplete():void{
+		//imgClose.addEventListener(MouseEvent.CLICK,imgClose_click);
+		parseInitValue();
+		visible=visible_;
+		if(delay!=100)	var tmp:Number = setTimeout(unshow, delay);  //Unshow Automatically
+	}
+	
+	private function imgClose_click(event:MouseEvent):void{
+		PopUpManager.removePopUp(this);
+	}
+	
+	private function removeAlertTip(event:Event):void{
+		AlertTip.arrAlert = [];
+		PopUpManager.removePopUp(this);
+	}
+	
+	/**
+	 * Properties
+	 */
+	private function parseInitValue():void{
+		if(init.hasOwnProperty("width")) this.width = init.width;
+		if(init.hasOwnProperty("height")) this.height = init.height;
+		if(init.hasOwnProperty("style")){
+			this.styleName = init.style;
+		}else{
+			this.styleName = "AlertTip";
+		}
+	}
+	
+	/**
+	 * Unshow
+	 */
+	private function unshow():void{
+		visible = false;
+	}
+	
+	/**
+	 * Remove
+	 */
+	private function removePopup():void{
+		PopUpManager.removePopUp(this);
+	}
+
+	/**
+	 * Effect End
+	 */
+	private function endEffect():void{
+		removePopup();
+	}
+	
+	]]>
+</mx:Script>
+	<mx:Move id="show" yFrom="{yFrom - 28}" yTo="{yFrom - this.height}" xFrom="{xFrom - this.width}" xTo="{xFrom - this.width}" duration="1000"/>
+	<mx:Move id="hide" yFrom="{yFrom - this.height}" yTo="{yFrom + 28}" xFrom="{xFrom - this.width}" xTo="{xFrom - this.width}" duration="2000"/>
+	<mx:Text id="msg_txt" htmlText="{msg}" fontSize="12" color="white" selectable="true" width="100%"/>
+		<!--<mx:filters>
+			Text filter
+			<filters:BlurFilter blurX="0" blurY="0" />
+		</mx:filters>
+	</mx:Text>-->
+	<!--<mx:Image id="imgClose" width="10" height="10" source="assets/images/panelIcon/closeButton.png" x="140" y="5"/>-->
+</mx:VBox>

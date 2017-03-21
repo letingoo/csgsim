@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" 
+				width="234" height="202"
+				showCloseButton="true"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				creationComplete="initApp()"
+				close="{PopUpManager.removePopUp(this)}"
+				 title="配置速率" fontSize="13">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+
+			protected function initApp():void
+			{
+				var rtobj11:RemoteObject = new RemoteObject("equInfo");
+				rtobj11.endpoint = ModelLocator.END_POINT;
+				rtobj11.showBusyCursor = true;
+				rtobj11.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率) YW0102__
+				rtobj11.addEventListener(ResultEvent.RESULT, function(e:ResultEvent){
+					var XMLData_Rate:XMLList = new XMLList(e.result.toString())
+					linerate.dataProvider = XMLData_Rate.children();
+					linerate.labelField = "@label";
+//					if(link.getClient("virtualTopoLinkProperty")!=null){
+//						var obj:Object= link.getClient("virtualTopoLinkProperty") as Object;
+//						linerate.selectedItem = new XML("<name label =\""+obj.linerateName+"\" code=\""+obj.linerate+"\" />");
+//					}
+					
+				});
+			}
+
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+		]]>
+	</mx:Script>
+	
+	<mx:Label x="30" y="28" text="速率："/>
+	<mx:ComboBox x="82" y="25" width="100"></mx:ComboBox>
+	<mx:Canvas x="0" y="122" width="100%" backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%" height="36">
+		<mx:Button x="10" y="7" label="确定" styleName="loginprimary" click="button2_clickHandler(event)" width="80"/>
+		<mx:Button x="120" y="7" label="取消" styleName="loginsecondary" click="button1_clickHandler(event)" width="80"/>
+	</mx:Canvas>
+	
+</mx:TitleWindow>

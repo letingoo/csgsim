@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+	 width="320" height="370"  
+	title="传输系统"
+	showCloseButton="true"
+	close="close()">  
+	<mx:Script>  
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.sysGraph.model.SystemInfo;  
+			[Bindable]
+			private var XMLData_Capacity:XMLList;//下拉框列表
+			[Bindable]
+			private var XMLData_Tranmodel:XMLList;//下拉框列表
+			[Bindable]
+			private var XMLData_Vendor:XMLList;//下拉框列表
+			[Bindable]
+			private var _systemInfo:SystemInfo=new SystemInfo();
+			[Bindable]public var boo:Boolean = true;
+			public function get systemInfo():SystemInfo{
+				return _systemInfo;
+			}
+			
+			public function set systemInfo(model:SystemInfo):void{
+				_systemInfo = model;
+			}
+			public function initSys(systemInfo:SystemInfo):void
+			{
+				this._systemInfo=systemInfo;
+				var ro_capacity:RemoteObject=new RemoteObject("equInfo");
+				ro_capacity.endpoint=ModelLocator.END_POINT;
+				ro_capacity.showBusyCursor=true;
+				ro_capacity.addEventListener(ResultEvent.RESULT,generateCapacityInfo);
+				ro_capacity.getFromXTBM('ZY1106__')	
+			}
+			private function generateCapacityInfo(event:ResultEvent):void
+			{
+				XMLData_Capacity = new XMLList(event.result.toString());
+				this.comb_x_capacity.dataProvider = XMLData_Capacity.children();
+				var ro_tranmodel:RemoteObject=new RemoteObject("equInfo");
+				ro_tranmodel.endpoint=ModelLocator.END_POINT;
+				ro_tranmodel.showBusyCursor=true;
+				ro_tranmodel.addEventListener(ResultEvent.RESULT,generateTranModelInfo);
+				ro_tranmodel.getFromXTBM('ZY1103__')	
+			}
+			private function generateTranModelInfo(event:ResultEvent):void
+			{
+				XMLData_Tranmodel= new XMLList(event.result.toString());
+				this.comb_tranmodel.dataProvider=XMLData_Tranmodel.children();
+				var ro_vendor:RemoteObject=new RemoteObject("equInfo");
+				ro_vendor.endpoint=ModelLocator.END_POINT;
+				ro_vendor.showBusyCursor=true;
+				ro_vendor.addEventListener(ResultEvent.RESULT,generateVendorInfo);
+				ro_vendor.getFromXTBM('ZY08__')	
+			}
+			private function generateVendorInfo(event:ResultEvent):void
+			{
+				XMLData_Vendor= new XMLList(event.result.toString());
+				this.comb_vendor.dataProvider=XMLData_Vendor.children();
+				setParameter();
+			}
+			private function setParameter():void
+			{
+//				this.txt_systemcode.text=this._systemInfo.systemcode;
+//				this.txt_systemname.text=this._systemInfo.systemname;
+				if(this._systemInfo.x_capacity!="")
+				{
+					
+					this.setSelectedItem(this.comb_x_capacity,this._systemInfo.x_capacity);	
+				}
+//				this.txt_projectname.text=this._systemInfo.projectname;
+				if(this._systemInfo.tranmodel!="")
+				{
+					
+					this.setSelectedItem(this.comb_tranmodel,this._systemInfo.tranmodel);
+				}
+				if(this._systemInfo.vendor!="")
+				{
+					
+					this.setSelectedItem(this.comb_vendor,this._systemInfo.vendor);
+				}
+//				this.txt_remark.text=this._systemInfo.remark;	
+				
+				
+			}
+			private  function setSelectedItem(cmb:ComboBox,value:String):void{
+				
+				for(var i:int=0;i<cmb.dataProvider.length;i++){
+					if(cmb.dataProvider[i].@code == value){
+					
+						cmb.selectedIndex = i;						
+						break;
+					}
+				}
+			}
+			private function close():void  {  
+				MyPopupManager.removePopUp(this);
+				systemInfo.clear();
+			}  
+			
+			private function save():void   { 
+				this._systemInfo.x_capacity=this.comb_x_capacity.selectedItem.@code;
+				this._systemInfo.tranmodel=this.comb_tranmodel.selectedItem.@code;
+				this._systemInfo.vendor=this.comb_vendor.selectedItem.@code;
+				this.dispatchEvent(new Event("SaveSystem")); 
+				if(title=="添加传输系统"){
+					Alert.show("传输系统添加成功！","提示"); 
+				}
+				else if(title=="修改传输系统"){
+					Alert.show("传输系统修改成功！","提示");
+				}
+				
+			} 
+		
+		]]>  
+	</mx:Script>
+	<mx:Binding source="txt_systemcode.text" destination="_systemInfo.systemcode"/>
+	<mx:Binding source="txt_systemname.text" destination="_systemInfo.systemname"/>
+	<!--<mx:Binding source="comb_x_capacity.selectedItem.@code" destination="_systemInfo.x_capacity"/>-->
+	<mx:Binding source="txt_projectname.text" destination="_systemInfo.projectname"/>
+	<!--<mx:Binding source="comb_tranmodel.selectedItem.@code" destination="_systemInfo.tranmodel"/>
+	<mx:Binding source="comb_vendor.selectedItem.@code" destination="_systemInfo.vendor"/>-->
+	<mx:Binding source="txt_remark.text" destination="_systemInfo.remark"/>
+	
+	<mx:HBox width="100%" height="100%" fontSize="12" >
+	<mx:Form width="100%" height="100%">
+		<mx:FormItem label="系统编码" required="true">			
+			<mx:TextInput id="txt_systemcode" text="{_systemInfo.systemcode}" width="180"/>
+		</mx:FormItem>
+		<mx:FormItem label="系统名称" required="true">			
+			<mx:TextInput id="txt_systemname" text="{_systemInfo.systemname}" width="180"/>
+		</mx:FormItem>
+		<mx:FormItem label="系统容量" required="true">
+			<mx:ComboBox id="comb_x_capacity" width="180" labelField="@label" dropdownWidth="210" /> 
+		</mx:FormItem>
+		<mx:FormItem label="工程项目" required="true">
+			<mx:TextInput id="txt_projectname" width="180" text="{_systemInfo.projectname}"  />	
+		</mx:FormItem>
+		<mx:FormItem label="传输制式" required="true">
+			<mx:ComboBox id="comb_tranmodel" width="180" labelField="@label" dropdownWidth="210" />
+		</mx:FormItem>
+		<mx:FormItem label="设备厂家" required="true">
+			<mx:ComboBox id="comb_vendor" width="180"  labelField="@label" dropdownWidth="210"/>
+		</mx:FormItem>			
+		<mx:FormItem label="备注" >
+			<mx:TextArea id="txt_remark" width="180" text="{_systemInfo.remark}" />
+		</mx:FormItem>
+		</mx:Form>
+		</mx:HBox>
+		<mx:HBox width="100%" height="40"   verticalAlign="middle" horizontalAlign="center" 
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+			<mx:Button label="保存" visible="{boo}" click="save()" width="80"  textAlign="center" styleName="loginprimary"  height="30"/>
+			<mx:Spacer width="20"/>
+			<mx:Button label="取消" visible="{boo}"  click="close()" width="80"  textAlign="center" styleName="loginsecondary"  height="32"/> 
+		</mx:HBox>
+	
+</mx:TitleWindow>  

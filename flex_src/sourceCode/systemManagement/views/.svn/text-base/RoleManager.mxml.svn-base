@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"  
+		 xmlns:comp="sourceCode.systemManagement.views.comp.*"
+		 xmlns:common="common.*"
+		 xmlns:component="common.component.*"
+		 width="100%" 
+		 height="100%"
+		 verticalGap="0"
+		 creationComplete="init()">
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="角色管理" imgName="role"
+						  showAddRoleButton="true" controlAddRole="addRoleHandler()"/>
+	<mx:HDividedBox width="100%" height="100%">
+		<mx:VBox width="70%" height="100%">
+			<mx:Panel width="100%" height="80%" title="功能信息" 
+					  fontSize="12" layout="absolute" 
+					  borderThicknessLeft="0" 
+					  borderThicknessRight="0" 
+					  borderThicknessBottom="0"
+					  dropShadowEnabled="false">
+				<mx:VBox width="100%" height="100%">
+					<mx:HBox width="100%" height="100%" verticalAlign="middle">
+						<mx:Label text="已配置功能" fontWeight="bold" x="18" y="69"/>
+						<mx:Image width="61" height="53"
+								  source="@Embed('assets/images/sysManager/func.png')" 
+								  visible="true"/>
+						<mx:Canvas width="70%" height="172" borderStyle="solid">
+							<mx:Text id="txtFunc" width="100%" height="100%" selectable="false" text="未选中角色!"/>
+						</mx:Canvas>
+					</mx:HBox>
+					<mx:HRule width="100%" x="-1" y="202"/>
+				</mx:VBox>
+			</mx:Panel>
+			<mx:HBox width="100%" horizontalAlign="right">
+				<mx:Button label="配置角色" click="configRole()"/>
+			</mx:HBox>
+			<mx:Panel width="100%" height="50%" title="角色关联的用户信息" 
+					  layout="vertical"
+					  borderThicknessLeft="0" 
+					  borderThicknessRight="0" 
+					  borderThicknessBottom="0"
+					  dropShadowEnabled="false">
+				<mx:DataGrid id="dgUserInfo" width="100%" height="90%" dataProvider="{acUserInfo}">
+					<mx:columns>
+						<!--<mx:DataGridColumn headerText="序号" dataField="rowid" width="50"/>-->
+						<mx:DataGridColumn headerText="序号" dataField="no" width="50"/>
+						<mx:DataGridColumn headerText="用户名" dataField="user_id" width="80"/>
+						<mx:DataGridColumn headerText="真实姓名" dataField="user_name" width="80"/>
+						<mx:DataGridColumn headerText="性别" dataField="user_sex" width="40"/>
+						<mx:DataGridColumn headerText="所属单位" dataField="user_dept"/>
+						<mx:DataGridColumn headerText="职位" dataField="user_post"/>
+						<mx:DataGridColumn headerText="固定电话" dataField="telephone"/>
+						<mx:DataGridColumn headerText="通信地址" dataField="address"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<component:pagetoolbar id="pageToolBar" width="100%" height="10%" 
+								 dataGrid="{dgUserInfo}" 
+								 pagingFunction="pagingFunction"/>
+			</mx:Panel>
+		</mx:VBox>
+		<mx:VBox width="30%" height="100%">
+			<mx:Panel width="100%" height="60%" title="角色列表" 
+					  fontSize="12"
+					  borderThicknessLeft="0" 
+					  borderThicknessRight="2" 
+					  borderThicknessBottom="0"
+					  dropShadowEnabled="false">
+				<mx:Tree id="treeRole" width="100%" height="100%" 
+						 labelField="@text"
+						 iconFunction="iconFunction"
+						 rowHeight="18"
+						 contextMenu="{cm}" 
+						 itemClick="itemClick()"
+						 itemRollOver="{lastRollIndex = event.rowIndex}"/>
+			</mx:Panel>
+			<mx:Panel width="100%" height="40%" layout="absolute"
+					  borderThicknessLeft="0" 
+					  borderThicknessRight="0" 
+					  borderThicknessBottom="0"
+					  dropShadowEnabled="false"
+					  horizontalScrollPolicy="off">
+				<mx:Text text="当你选择一个角色树节点时，将显示它的详细信息！" 
+						 visible="{!treeRole.selectedItem}" x="1" y="4" width="100%" height="42"/>
+				<mx:Canvas x="0" y="-2" width="259" height="137" visible="{treeRole.selectedItem}">
+					<mx:Image x="10" y="6" width="70" height="75"
+							  source="@Embed('assets/images/sysManager/userInfo.png')"/>
+					<mx:Label text="角色信息" x="25" y="85"/>
+					<mx:Label text="角色名称:" fontWeight="bold" x="90" y="23"/>
+					<mx:Label id="lblRoleName" x="149" y="23" width="107" height="18"
+							 text="{treeRole.selectedItem.@text}"/>
+					<mx:Label id="lblRoleDesc" text="角色描述:" fontWeight="bold" x="90" y="43"/>
+					<mx:Text x="149" y="40" width="106" height="83"
+							 text="{treeRole.selectedItem.@desc}"/>
+				</mx:Canvas>
+			</mx:Panel>
+		</mx:VBox>
+	</mx:HDividedBox>
+	<mx:Script source="../actionscript/RoleManager.as"/>
+	<mx:RemoteObject id="roRoleMgr" destination="roleManager" 
+				 showBusyCursor="true"
+				 endpoint="{ModelLocator.END_POINT}" 
+				 result="resultCallBack(event)"/>
+	
+	<mx:RemoteObject id="roUserMgr" destination="userManager" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}" 
+					 result="getUserInfoCallBace(event)"/>
+</mx:VBox>

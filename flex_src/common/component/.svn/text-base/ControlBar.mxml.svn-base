@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" verticalAlign="middle"
+		 backgroundImage="@Embed(source='assets/images/iconbar_bg.png')" backgroundSize="100%"
+		 paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" borderStyle="none" borderThickness="0"
+		 creationComplete="creationCompleteHandler(event)">
+	<mx:Image source="assets/images/iconbar_left.png" scaleContent="false" visible="{showCornerImage}" includeInLayout="{showCornerImage}"/>
+	
+	<mx:LinkButton id="addShortBtn" label="添加快捷方式" styleName="iconbar" icon="@Embed(source='assets/images/icon_tjkjfs.png')"
+				   visible="{showAddShurtCutButton}" includeInLayout="{showAddShurtCutButton}" click="addShurtCut()"/>
+	<mx:LinkButton id="delShortBtn" label="取消快捷方式" styleName="iconbar" icon="@Embed(source='assets/images/icon_qxkjfs.png')"
+				   visible="{showDelShurtCutButton}" includeInLayout="{showDelShurtCutButton}" click="delShurtCut()"/>
+	
+	<mx:Image source="assets/images/iconbar_line.png" visible="{showAddEquipmentModelButton}" 
+			  includeInLayout="{showAddEquipmentModelButton}"/>
+	<mx:LinkButton label="新建设备面板" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_add.png')"
+				   visible="{showAddEquipmentModelButton}" includeInLayout="{showAddEquipmentModelButton}" 
+				   click="dispatchEvent(new Event('controlAddEquipmentModel'))"/>	
+	
+	<mx:LinkButton label="删除设备面板" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_del.png')"
+				   visible="{showDelEquipmentModelButton}" includeInLayout="{showDelEquipmentModelButton}" 
+				   click="dispatchEvent(new Event('controlDelEquipmentModel'))"/>
+	<mx:LinkButton label="扩展" styleName="iconbar" icon="@Embed(source='assets/images/toggle.gif')"
+				   visible="{showExpandButton}" includeInLayout="{showExpandButton}" 
+				   click="dispatchEvent(new Event('controlExpand'))"/>
+	
+	<mx:Image id="addImg" source="assets/images/iconbar_line.png" visible="{showAddButton}" 
+			  includeInLayout="{showAddButton}"/>
+	<mx:LinkButton label="添加" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_add.png')"
+				   visible="{showAddButton}" includeInLayout="{showAddButton}" 
+				   click="dispatchEvent(new Event('controlAdd'))"/>
+	<mx:LinkButton label="修改" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_edit.png')"
+				   visible="{showEditButton}" includeInLayout="{showEditButton}" 
+				   click="dispatchEvent(new Event('controlEdit'))"/>
+	<mx:LinkButton label="删除" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_del.png')"
+				   visible="{showDelButton}" includeInLayout="{showDelButton}" 
+				   click="dispatchEvent(new Event('controlDel'))"/>
+	<mx:LinkButton label="查询" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_search.png')" id="selectButton"
+				   visible="{showSearchButton}" includeInLayout="{showSearchButton}" 
+				   click="dispatchEvent(new Event('controlSearch'))"/>
+	<mx:LinkButton label="刷新" styleName="iconbar" icon="@Embed(source='assets/images/refresh.png')"
+				   visible="{showRefreshButton}" includeInLayout="{showRefreshButton}" 
+				   click="dispatchEvent(new Event('controlRefresh'))"/>
+	<mx:LinkButton label="导出Excel" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_export.png')"
+				   visible="{showExportExcelButton}" includeInLayout="{showExportExcelButton}" 
+				   click="dispatchEvent(new Event('controlExportExcel'))"/>
+	<mx:LinkButton label="导入数据" id="importBtn" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_import.png')"
+				   visible="{showImportButton}" includeInLayout="{showImportButton}" 
+				   click="dispatchEvent(new Event('controlImport'))"/>
+<!--	
+	<mx:Image source="assets/images/iconbar_line.png" visible="{showDomainButton}" 
+			  includeInLayout="{showDomainButton}"/>-->
+<!--	<mx:LinkButton label="区域" styleName="iconbar" icon="{ModelLocator.domain}"
+				   visible="{showDomainButton}" includeInLayout="{showDomainButton}" 
+				   click="dispatchEvent(new Event('controlDomain'))"/>
+	<mx:LinkButton label="省份" styleName="iconbar" icon="{ModelLocator.province}"
+				   visible="{showProvinceButton}" includeInLayout="{showProvinceButton}" 
+				   click="dispatchEvent(new Event('controlProvince'))"/>
+	<mx:LinkButton label="站点" styleName="iconbar" icon="{ModelLocator.station}"
+				   visible="{showStationButton}" includeInLayout="{showStationButton}" 
+				   click="dispatchEvent(new Event('controlStation'))"/>-->
+	
+	<mx:Image source="assets/images/iconbar_line.png" visible="{showAddRoleButton}" 
+			  includeInLayout="{showAddRoleButton}"/>
+	<mx:LinkButton label="添加角色" styleName="iconbar" icon="{ModelLocator.addUserIcon}"
+				   visible="{showAddRoleButton}" includeInLayout="{showAddRoleButton}" 
+				   click="dispatchEvent(new Event('controlAddRole'))"/>
+	
+	<!-- and by xgyin -->
+	<mx:LinkButton label="查看资源结果" styleName="iconbar" icon="{ModelLocator.addUserIcon}"
+				   visible="{showResourceButton}" includeInLayout="{showResourceButton}" 
+				   click="dispatchEvent(new Event('showResource'))"/>
+	<mx:LinkButton label="演习监控" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_search.png')"
+				   visible="{showMonitorButton}" includeInLayout="{showMonitorButton}" 
+				   click="dispatchEvent(new Event('showMonitor'))"/>
+	<mx:LinkButton label="设置激活" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_search.png')"
+				   visible="{showIsActiveButton}" includeInLayout="{showIsActiveButton}" 
+				   click="dispatchEvent(new Event('showIsActive'))"/>
+	<mx:LinkButton label="自动生成故障" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_add.png')"
+				   visible="{showAutoAddButton}" includeInLayout="{showAutoAddButton}" 
+				   click="dispatchEvent(new Event('showAutoAdd'))"/>
+	<mx:LinkButton label="仿真录制与回放" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_alarmhome_EMS.png')"
+				   visible="{showScreanVideoButton}" includeInLayout="{showScreanVideoButton}" 
+				   click="dispatchEvent(new Event('showScreanVideo'))"/>
+	<mx:LinkButton label="同步全部资源" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_alarmhome_EMS.png')"
+				   visible="{showResourceSyncButton}" includeInLayout="{showResourceSyncButton}" 
+				   click="dispatchEvent(new Event('showResourceSync'))"/>
+	<mx:LinkButton label="全选" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_add.png')"
+				   visible="{showAllSelectButton}" includeInLayout="{showAllSelectButton}" 
+				   click="dispatchEvent(new Event('showAllSelect'))"/>
+	<mx:LinkButton label="清空选项" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_del.png')"
+				   visible="{showUnselectedButton}" includeInLayout="{showUnselectedButton}" 
+				   click="dispatchEvent(new Event('showUnselected'))"/>
+	
+	<!-- end add -->
+	
+	<mx:Image source="assets/images/iconbar_line.png" visible="{showLinkMEquipButton}" 
+		includeInLayout="{showLinkMEquipButton}"/>
+	<mx:LinkButton label="连线" styleName="iconbar" icon="@Embed('assets/images/btn/huaxian_.png')" 
+		id="drawlinkbutton" skin="common.actionscript.ToggleLinkButtonSkin" toggle="true"
+		visible="{showLinkMEquipButton}" includeInLayout="{showLinkMEquipButton}" 
+		click="dispatchEvent(new Event('controlLinkMEquip'))"/>
+	<mx:LinkButton label="制作方式单" styleName="iconbar" icon="{ModelLocator.newOneWay}"
+				   visible="{showMakemodeButton}" includeInLayout="{showMakemodeButton}"
+				   click="dispatchEvent(new Event('controlMakemodel'))"/>
+	<!--and by mawj-->
+	<mx:LinkButton label="查看当前连接资源版本" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_search.png')"
+				   visible="{showCurrVersionButton}" includeInLayout="{showCurrVersionButton}" 
+				   click="dispatchEvent(new Event('showCurrVersion'))"/>
+	
+	<mx:Spacer height="38" width="100%"/>
+	<mx:Button id="controlBtn" icon="{ModelLocator.PointIcon}"
+			   useHandCursor="true" buttonMode="true"
+			   width="16" height="15" visible="{showControlRightButton}"
+			   click="dispatchEvent(new Event('controlRightPanel'))"/>
+	<mx:Image source="assets/images/iconbar_right.png" visible="{showCornerImage}" includeInLayout="{showCornerImage}"/>
+	<mx:Metadata>
+		[Event(name="controlRightPanel",type="flash.events.Event")]
+		[Event(name="controlAddEquipmentModel",type="flash.events.Event")]
+		[Event(name="controlDelEquipmentModel",type="flash.events.Event")]
+		[Event(name="controlExpand",type="flash.events.Event")]
+		[Event(name="controlAdd",type="flash.events.Event")]
+		[Event(name="controlEdit",type="flash.events.Event")]
+		[Event(name="controlDel",type="flash.events.Event")]
+		[Event(name="controlSearch",type="flash.events.Event")]
+		[Event(name="controlExportExcel",type="flash.events.Event")]
+		[Event(name="controlImport",type="flash.events.Event")]
+		[Event(name="controlRefresh",type="flash.events.Event")]
+		/* 	[Event(name="controlProvince",type="flash.events.Event")]
+		[Event(name="controlStation",type="flash.events.Event")] */
+		[Event(name="controlAddRole",type="flash.events.Event")]
+		[Event(name="controlLinkMEquip",type="flash.events.Event")]		
+		[Event(name="controlMakemodel",type="flash.events.Event")]
+		//and by xgyin
+		[Event(name="showResource",type="flash.events.Event")]
+		[Event(name="showMonitor",type="flash.events.Event")]
+		[Event(name="showIsActive", type="flash.events.Event")]
+		[Event(name="showAutoAdd", type="flash.events.Event")]
+		[Event(name="showUnselected", type="flash.events.Event")]
+		[Event(name="showScreanVideo", type="flash.events.Event")]
+		[Event(name="showResourceSync", type="flash.events.Event")]
+		[Event(name="showAllSelect", type="flash.events.Event")]
+		//add  by mawj
+		[Event(name="showCurrVersion", type="flash.events.Event")]
+		
+		
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.MenuEvent;
+			
+			public var modelName:String;
+			public var imgName:String;
+			[Bindable]public var showAddShurtCutButton:Boolean = true;
+			[Bindable]public var showDelShurtCutButton:Boolean = true;
+			[Bindable]public var showCornerImage:Boolean = true;
+			[Bindable]public var showControlRightButton:Boolean;
+			[Bindable]public var showAddEquipmentModelButton:Boolean;
+			[Bindable]public var showMyDocumentToolbar:Boolean;
+			[Bindable]public var showDelEquipmentModelButton:Boolean;
+			[Bindable]public var showExpandButton:Boolean;
+			[Bindable]public var showAddButton:Boolean;
+			[Bindable]public var showEditButton:Boolean;
+			[Bindable]public var showDelButton:Boolean;
+			[Bindable]public var showSearchButton:Boolean;
+			[Bindable]public var showExportExcelButton:Boolean;
+			[Bindable]public var showImportButton:Boolean;
+			[Bindable]public var showRefreshButton:Boolean;
+			/* 	[Bindable]public var showProvinceButton:Boolean;
+			[Bindable]public var showStationButton:Boolean; */
+			[Bindable]public var showAddRoleButton:Boolean;
+			[Bindable]public var showLinkMEquipButton:Boolean;
+			[Bindable]public var showMakemodeButton:Boolean;
+			//and by xgyin
+			[Bindable]public var showResourceButton:Boolean;
+			[Bindable]public var showMonitorButton:Boolean;
+			[Bindable]public var showIsActiveButton:Boolean;
+			[Bindable]public var showAutoAddButton:Boolean;
+			[Bindable]public var showUnselectedButton:Boolean;
+			[Bindable]public var showScreanVideoButton:Boolean;
+			[Bindable]public var showResourceSyncButton:Boolean;
+			[Bindable]public var showAllSelectButton:Boolean;
+			//and by mawj
+			[Bindable]public var showCurrVersionButton:Boolean;
+			
+			private function addShurtCut():void{
+				if(modelName){
+					if(modelName == "安稳"){
+						parentApplication.addShorcut(modelName,'safecontrol');
+					}else if(modelName == "保护"){
+						parentApplication.addShorcut(modelName,'protect')
+					}else if(modelName == "自动化"){
+						parentApplication.addShorcut(modelName,'automatic');
+					}
+					else if(modelName=="网络部")
+					{
+						parentApplication.addShorcut(modelName,'networks');
+					}
+					else if(modelName=="文件管理")
+					{
+						parentApplication.addShorcut(modelName,'filemgr');
+					}
+					else if(modelName=="电源图纸资源")
+					{
+						parentApplication.addShorcut(modelName,'powerfile');
+					}
+					else if(modelName=="公共资源管理")
+					{
+						parentApplication.addShorcut(modelName,'publicres');
+					}
+					else
+					{
+						parentApplication.addShorcut(modelName,imgName);
+					}
+				}
+				setBtnVisible(true);
+			}
+			
+			private function delShurtCut():void{
+				if(modelName){
+					parentApplication.delShortcut(modelName);
+					setBtnVisible(false);
+				}
+			}
+
+			private function creationCompleteHandler(event:FlexEvent):void{
+				if(showAddShurtCutButton && showDelShurtCutButton){
+					if(parentApplication.checkShortcut(this.modelName)){
+						setBtnVisible(true);
+					}else{
+						setBtnVisible(false);
+					}
+				}
+			}
+			
+			private function setBtnVisible(bool:Boolean):void{
+				addShortBtn.visible = !bool;
+				addShortBtn.includeInLayout = !bool;
+				delShortBtn.visible = bool;
+				delShortBtn.includeInLayout = bool;
+			}
+
+		]]>
+	</mx:Script>
+</mx:HBox>

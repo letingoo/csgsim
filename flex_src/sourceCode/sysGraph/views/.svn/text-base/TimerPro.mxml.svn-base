@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+		 xmlns:twaver="twaver.common.*"
+		 xmlns:comp="common.actionscript.*"
+		 xmlns:control="sourceCode.businessGraph.views.*"
+		 width="100%" height="100%"
+		 creationComplete="init()" 
+		 xmlns:views="sourceCode.sysGraph.views.*" 
+		 xmlns:actionscript="sourceCode.equipModelResource.actionscript.*"
+		 xmlns:base="base.*"
+		 xmlns:component="common.component.*" 
+		 xmlns:utiltools="sourceCode.ui.utiltools.*"
+		 xmlns:h="sourceCode.sysGraph.actionscript.*" xmlns:common="common.actionscript.*">
+
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.containers.TitleWindow;
+			import mx.containers.utilityClasses.ConstraintColumn;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.ComboBox;
+			import mx.controls.Spacer;
+			import mx.controls.TextArea;
+			import mx.core.Application;
+			import mx.core.DragSource;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.ListEvent;
+			import mx.events.ScrollEvent;
+			import mx.managers.DragManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			
+			[Bindable]
+			public var XMLData:XMLList;
+			[Bindable]
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			private function init():void
+			{
+				var taskTimeCollection:ArrayCollection=new ArrayCollection();
+				var par1:Object= new Object();
+				par1.label='12h';
+				var par2:Object= new Object();
+				par2.label='24h';
+				taskTimeCollection.addItem(par1);
+				taskTimeCollection.addItem(par2);
+				taskTime.dataProvider=taskTimeCollection;
+				pagingFunction(0,50);
+				fw.getTimeSystemTree();
+			}
+			private function pagingFunction(pageIndex:int,pageSize:int):void{
+				start = (pageIndex * pageSize).toString();
+				end = (pageIndex * pageSize) + pageSize.toString();
+				var rto:RemoteObject = new RemoteObject("fiberWire");
+				rto.endpoint= ModelLocator.END_POINT;
+				rto.showBusyCursor = true;
+				rto.searchTasks(start,end);
+				rto.addEventListener(ResultEvent.RESULT, getData);      
+				
+			}
+			private function getData(event:ResultEvent):void{
+				if(event.result == null){
+					Alert.show('没有数据'); return;
+				}
+				
+				var ts : ArrayCollection = event.result.list as ArrayCollection;
+				operadatagrid.dataProvider = ts;
+//				serverPagingBar1.orgData=ts;
+//				serverPagingBar1.dataBind(true);
+//				var totalRecord:int =int(event.result.count);
+//				serverPagingBar1.totalRecord=totalRecord;
+//				Alert.show(totalRecord+"totalRecord");
+//				serverPagingBar1.dataBind(true);	
+			}
+			
+			//点击树触发事件：
+			private function treeChange():void
+			{
+				if(tree.selectedItem){
+					var node:XML=tree.selectedItem as XML;
+					
+					if(node.@type == "system"){
+						var rtobj1:RemoteObject=new RemoteObject("fiberWire");
+						rtobj1.endpoint=ModelLocator.END_POINT;
+						rtobj1.showBusyCursor=true;
+					    var str:String=node.@code;
+						rtobj1.getEquipBySystem1(str);
+						rtobj1.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void
+						{
+							var str:String =event.result as String;
+							node.appendChild(new XMLList(str));
+							tree.expandItem(node, true, true);	
+							var flag:String=node.@checked+"";
+							getPortList(flag,node.children());
+						});
+					}
+					if(node.@type == "equip"){
+						var rtobj:RemoteObject=new RemoteObject("fiberWire");
+						rtobj.endpoint=ModelLocator.END_POINT;
+						rtobj.showBusyCursor=true;
+						var str:String=node.@code;
+						rtobj.getPortByEquip(str);
+						rtobj.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void
+						{
+							var str:String =event.result as String;
+							node.appendChild(new XMLList(str));
+							tree.expandItem(node, true, true);	
+							if(node.@checked=="1"){
+								for each (var element:XML in node.children()){
+									element.@checked="1";
+								}
+							}
+						});
+						
+					}
+				}
+			}
+			private function getPortList(flag:String,equipCollection:XMLList):void{
+				if(flag=="1"){
+					for each (var element:XML in equipCollection){
+						element.@checked="1";
+//						var rtobj:RemoteObject=new RemoteObject("fiberWire");
+//						rtobj.endpoint=ModelLocator.END_POINT;
+//						rtobj.showBusyCursor=true;
+//						var str:String=element.@code;
+//						rtobj.getPortByEquip(str);
+//						rtobj.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void
+//						{
+//							var str:String =event.result as String;
+//							element.appendChild(new XMLList(str));
+//							for each (var elementPort:XML in element.children()){
+//								elementPort.@checked="1";
+//							}
+//						});
+					}
+				}
+			
+			}
+			
+			
+			
+			private function resultHandler(event:ResultEvent):void//对加载树后的处理
+			{
+				XMLData=new XMLList(event.result.toString());
+				tree.dataProvider=XMLData;
+				var xmllist:*=tree.dataProvider;
+				var xmlcollection:XMLListCollection=xmllist;		
+				for each (var element:XML in xmlcollection)
+				{
+					if (element.@code ==  "全网"){
+						tree.expandItem(element,true,true);
+						break;
+					}
+				}
+			}
+			// 错误处理
+			public function DealFault(event:FaultEvent):void //加载系统树失败的处理
+			{
+				Alert.show(event.fault.toString());
+			}
+			private function showSystemMap(evt:MouseEvent):void //选中或者撤销传输系统树中某个系统的操作
+			{
+				if (evt.target is CheckBox)
+					
+				{	 
+					
+					var node:XML=tree.selectedItem as XML;
+					
+					if(node.@type == "system")
+					{
+						if (evt.target.hasOwnProperty('selected'))
+						{ //如果结点有“selected”这个属性
+							if (evt.target.selected)
+							{ //如果结点被选中
+								node.@checked="1";
+							}
+							else
+							{  
+								node.@checked="0";
+							}
+						}
+					}
+				}
+				
+			}
+			//设置不同图表           
+			private function iconFun(item:Object):*
+			{ //为传输系统树的结点设置图标
+				return ModelLocator.systemIcon;
+			}
+		
+
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				if(taskName.text==""){
+					Alert.show("请输入任务名称");
+					return;
+				}else{
+					var taskObject:Object=new Object();
+					taskObject.task_name=taskName.text;
+					taskObject.task_period=taskTime.selectedItem.label;
+					taskObject.isactivated=status.selected==true?'1':'0';
+					var portArrayCollection:ArrayCollection=getSeletPort();
+					var rtobj:RemoteObject=new RemoteObject("fiberWire");
+					rtobj.endpoint=ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void
+					{
+						var str:String=event.result as String;
+						if(str=="success"){
+							pagingFunction(0,50);
+						}
+					});
+					rtobj.insertTask(taskObject,portArrayCollection);
+				}
+			}
+			public function getSeletPort():ArrayCollection{
+				var list:ArrayCollection=new ArrayCollection();
+				var xmllist:*=tree.dataProvider;
+				var xmlcollection:XMLListCollection=xmllist;
+				for each ( var syselement:XML in xmlcollection.children())
+				{
+					for each (var equielement:XML in syselement.children())
+					{
+						for each (var portelement:XML in equielement.children())
+						{
+							if(portelement.@checked=="1"){
+								var port:Object=new Object();
+								port.code=portelement.@code+"";
+								port.equip=portelement.@remark+"";
+								port.solt=portelement.@solt+"";
+								list.addItem(port);
+							}
+						
+						}
+						
+					}
+				}
+				return list;
+			}
+
+			protected function operadatagrid_doubleClickHandler(event:MouseEvent):void
+			{
+				if(operadatagrid.selectedItem){
+					taskName.text=operadatagrid.selectedItem.TASK_NAME;
+					if(operadatagrid.selectedItem.ISACTIVATED=="启动"){
+						status.selected=true;
+					}else{
+						status.selected=false;
+					}
+					var cc:ArrayCollection=taskTime.dataProvider as ArrayCollection;
+					for(var i:int=0;i<cc.length;i++){
+						var c:Object=cc.getItemAt(i) as Object;
+						if(c.label==operadatagrid.selectedItem.TASK_PERIOD){
+							taskTime.selectedItem=c;
+						}
+					}
+				}
+				
+			}
+
+
+			protected function linkbutton2_clickHandler(event:MouseEvent):void
+			{
+				if(operadatagrid.selectedItem){
+					var rtobj:RemoteObject=new RemoteObject("fiberWire");
+					rtobj.endpoint=ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void
+					{
+						var str:String=event.result as String;
+						if(str=="success"){
+							pagingFunction(0,20);
+						}
+					});
+					rtobj.delTask(operadatagrid.selectedItem.TASK_ID+"");
+					
+				}else{
+					Alert.show("请选择任务");
+				}
+			}
+			protected function linkbutton3_clickHandler(event:MouseEvent):void
+			{
+				if(operadatagrid.selectedItem){
+					var rtobj:RemoteObject=new RemoteObject("fiberWire");
+					rtobj.endpoint=ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void
+					{
+						var str:String=event.result as String;
+						if(str=="success"){
+							pagingFunction(0,20);
+						}
+					});
+					var portArrayCollection:ArrayCollection=getSeletPort();
+					var para:Object=new Object();
+					para.task_id=operadatagrid.selectedItem.TASK_ID+"";
+					para.task_name=taskName.text+"";
+					para.task_period=taskTime.selectedItem.label+"";
+					para.isactivated=status.selected==true?'1':'0'
+					rtobj.updateTask(para,portArrayCollection);
+					
+				}else{
+					Alert.show("请选择任务");
+				}
+			}
+
+
+		]]>
+	</mx:Script>
+
+
+
+	<mx:Style>
+		.myAccordion {
+			headerStyleName: "myaccordionHeader";
+		}
+		
+		.myaccordionHeader {
+			fontSize: 12;
+		}
+		
+	</mx:Style>
+	<mx:RemoteObject id="fw"  destination="fiberWire" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" result="resultHandler(event)"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:HDividedBox width="100%" height="100%" >
+			<mx:VBox id="leftpanel" width="300" height="100%" verticalGap="0">
+				<h:CheckTree id="tree"  width="100%" height="100%"
+							 rowHeight="20"
+							 dataProvider="{XMLData}" 
+							 labelField="@name"
+							 iconFunction="iconFun" 
+							 checkBoxOpenItemsOnCheck="true"
+							 checkBoxStateField="@checked"
+							 backgroundImage="@Embed(source='assets/images/treebg.png')"
+							 backgroundSize="100%"									
+							 click="showSystemMap(event)" doubleClickEnabled="true"  change="treeChange()" />					
+			</mx:VBox>	
+			<mx:VBox width="100%" height="100%" horizontalGap="0" >
+				<mx:HBox width="100%" height="40%" horizontalAlign="left" verticalAlign="middle" paddingTop="10">
+					<utiltools:GroupBox groupTitle="性能任务" width="80%" height="80%"  borderStyle="inset" borderColor="#CCCCCC" backgroundColor="#E0EEEE" >
+						<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+							<mx:VBox width="80%" height="90%">
+								<mx:HBox height="33%" width="40%" horizontalAlign="left" verticalAlign="middle" paddingLeft="50">
+									<mx:Label text="任务名称:"/>
+									<mx:TextInput id="taskName"/>
+								</mx:HBox>
+								<mx:HBox height="33%" width="40%" horizontalAlign="left" verticalAlign="middle" paddingLeft="50">
+									<mx:Label text="任务周期:"/>
+									<mx:ComboBox id="taskTime"  width="188"/>
+								</mx:HBox>
+								<mx:HBox height="33%" width="40%" horizontalAlign="left" verticalAlign="middle" paddingLeft="50">
+									<mx:Label text="任务状态:"/>
+									<mx:CheckBox id="status"  label="启动"/>
+								</mx:HBox>
+							</mx:VBox>
+						</mx:VBox>
+					</utiltools:GroupBox>
+					
+				</mx:HBox>
+				<mx:HBox width="100%" id="op" backgroundImage="@Embed(source='assets/images/iconbar_bg.png')" backgroundSize="100%"  height="35" verticalAlign="middle" horizontalAlign="right">
+					<mx:Spacer width="3"/>
+					<mx:LinkButton label="新增任务"  styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_add.png')" click="linkbutton1_clickHandler(event)"/>
+					<mx:Spacer width="10"/>
+					<mx:LinkButton label="更新任务"  styleName="iconbar" icon="@Embed(source='assets/images/exporttopo.png')" click="linkbutton3_clickHandler(event)"/>
+					<mx:Spacer width="10"/>
+					<mx:LinkButton label="删除任务"  styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_del.png')" click="linkbutton2_clickHandler(event)" />
+					<mx:Spacer width="10"/>
+				</mx:HBox>
+				<mx:VBox width="90%" id="tabgrid" height="100%" verticalGap="0">
+					<mx:HBox width="90%" height="100%" paddingTop="10">
+						<utiltools:GroupBox groupTitle="任务列表" width="100%" height="100%"  borderStyle="inset" borderColor="#CCCCCC" backgroundColor="#E0EEEE">
+							<mx:VBox width="100%" height="100%" paddingTop="20">
+								<mx:DataGrid id="operadatagrid" horizontalScrollPolicy="auto"  horizontalCenter="16"
+											 verticalCenter="-152" editable="false" wordWrap="true" doubleClickEnabled="true"  width="100%" height="100%" doubleClick="operadatagrid_doubleClickHandler(event)">
+									<mx:columns>
+										<mx:DataGridColumn headerText="序号" dataField="ROW_ID" width="60" textAlign="center"/>
+										<mx:DataGridColumn headerText="" dataField="TASK_ID" width="0" visible="false"/>
+										<mx:DataGridColumn headerText="任务类型" dataField="TASK_NAME" width="180" />
+										<mx:DataGridColumn headerText="任务周期" dataField="TASK_PERIOD" width="180"/>
+										<mx:DataGridColumn headerText="是否启动" dataField="ISACTIVATED" width="60"/>
+									</mx:columns>
+								</mx:DataGrid>
+								<!--<control:pagetoolbar id="serverPagingBar1" width="100%" height="10%"/>-->
+							</mx:VBox>
+							
+						</utiltools:GroupBox>
+					</mx:HBox>
+				
+				</mx:VBox>
+				
+			</mx:VBox>
+			
+		</mx:HDividedBox>
+		
+		
+	</mx:VBox>
+	
+	
+</mx:VBox>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100%" 
+		 creationComplete="init()" 
+		 xmlns:views="common.component.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.utils.StringUtil;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			import mx.utils.ObjectProxy;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.ocableResource.model.ResultModel;
+			import sourceCode.ocableResource.model.CarryingBusinessModel;
+			
+			import twaver.DemoUtils;
+			import twaver.SequenceItemRenderer;
+			
+			private var pageIndex:int=0;
+			private var pageSize:int=50;
+			private var datanumbers:int;
+			
+			//			[Bindable]public var result:ResultModel = new ResultModel(); 
+			
+			private var indexRenderer:Class = SequenceItemRenderer;
+			
+			[Bindable] public var fibercode:String;
+			
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				serverPagingBar.dataGrid=dg;
+				serverPagingBar.pagingFunction=pagingFunction;
+				serverPagingBar.addEventListener("returnALL",showAllDataHandler);
+				serverPagingBar.addEventListener("exportExcel",ExportExcel);
+				serverPagingBar.exportLinkBtn.visible = false;
+				serverPagingBar.exportLinkBtn.includeInLayout = false;
+			//	getStation("0",pageSize.toString());
+				var contextMenu:ContextMenu=new ContextMenu();
+				dg.contextMenu = contextMenu;
+				dg.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function (event:ContextMenuEvent):void{
+					var item:ContextMenuItem = new ContextMenuItem("方式信息");
+					item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,showCircuitHandler);
+					var flexVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					var playerVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					
+					if(dg.selectedItems.length==0){//选中元素个数
+						dg.contextMenu.hideBuiltInItems();
+						dg.contextMenu.customItems = [flexVersion,playerVersion];
+					}
+					else{
+						dg.contextMenu.hideBuiltInItems();
+						dg.contextMenu.customItems = [item];
+					}
+					
+				});
+				
+			}
+			
+			//查看方式信息
+			private function showCircuitHandler(event:ContextMenuEvent):void{
+				var circuitcode:String=dg.selectedItem.circuitcode;
+				if(circuitcode != ""){
+					Registry.register("para_circuitcode", circuitcode);
+					Application.application.openModel("方式信息", false);
+				}else{
+					Alert.show("请先选择电路！","提示");
+				}
+			}
+			
+			private function getStation(start:String,end:String):void{
+				var rtCarry:RemoteObject = new RemoteObject("operaTopo");
+				var carry:CarryingBusinessModel = new CarryingBusinessModel();
+				rtCarry.addEventListener(ResultEvent.RESULT,resultCarryHandler);
+				rtCarry.addEventListener(FaultEvent.FAULT,faultCallBack);
+				rtCarry.endpoint = ModelLocator.END_POINT;
+				rtCarry.showBusyCursor = true;
+				rtCarry.getCarryBusinessByFibercode(fibercode,start,end); 
+			}
+			
+			private function faultCallBack(event:FaultEvent):void{
+				Alert.show(event.message.toString(),"错误");
+			}
+			
+			public function resultCarryHandler(event:ResultEvent):void{
+				var result=event.result as ResultModel;
+				this.datanumbers = result.totalCount;
+				if(this.datanumbers == 0)
+					Alert.show("该光纤没有承载业务！","提示");
+				onResult(result);
+			}
+			
+			
+			private function showAllDataHandler(event:Event):void{
+				getStation("0",serverPagingBar.totalRecord.toString());
+			}
+			
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void{
+				this.pageSize=pageSize;
+				getStation((pageIndex*pageSize).toString(),(pageIndex*pageSize+pageSize).toString());
+			}
+			
+			public function onResult(result:ResultModel):void 
+			{	
+				serverPagingBar.orgData=result.orderList;
+				serverPagingBar.totalRecord=result.totalCount;
+				serverPagingBar.dataBind(true);					
+			}
+			
+			private function RefreshStation(event:Event):void{
+				getStation("0",pageSize.toString());
+			}
+			
+			public var titles:Array = new Array("电路名称","电路类型",  "电路速率","A端局站","Z端局站","A端设备端口","Z端设备端口","方式单名称");
+			public function ExportExcel(event:Event = null):void{
+				//Export
+				if(serverPagingBar.totalRecord <= 0){
+					Alert.show("没有数据要导出","提示");
+				}else{
+					var remoteobj2:RemoteObject = new RemoteObject("operaTopo"); 
+					remoteobj2.endpoint = ModelLocator.END_POINT;
+					remoteobj2.showBusyCursor = true;
+					remoteobj2.addEventListener(ResultEvent.RESULT,ExportExcelHandler);
+					remoteobj2.ExportFiberCarryBusiness("光纤承载业务",titles,fibercode); 
+				}
+			}
+			
+			public function ExportExcelHandler(event:ResultEvent):void{
+				var path:String = event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(path))); 
+				navigateToURL(request,"_blank");
+				
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:DataGrid 
+		id ="dg" 
+		width="100%" 
+		height="100%" 
+		editable="false" 
+		wordWrap="true" 
+		variableRowHeight="true"
+		horizontalScrollPolicy="auto" 
+		doubleClickEnabled="true" >
+		<mx:columns>
+			<mx:DataGridColumn headerText="序号" 
+							   dataField="no" 
+							   width="50"
+							  />
+			<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" width="135" visible="false"/>
+			<mx:DataGridColumn headerText="电路名称" dataField="circuitcode"  width="180"/>
+			<mx:DataGridColumn headerText="电路类型" dataField="username"  width="80"/>
+			<mx:DataGridColumn headerText="业务类型" dataField="x_purpose"  width="135" visible="false"/>
+			<mx:DataGridColumn headerText="电路速率" dataField="rate"  width="80"/>
+			<mx:DataGridColumn headerText="A端局站" dataField="station_a"  width="105"/>
+			<mx:DataGridColumn headerText="Z端局站" dataField="station_z"  width="105"/>
+			<mx:DataGridColumn headerText="A端设备端口" dataField="port_a"  width="150"/>
+			<mx:DataGridColumn headerText="Z端设备端口" dataField="port_z"  width="150"/>
+			<mx:DataGridColumn headerText="方式单名称" dataField="remark"  width="150"/>
+		</mx:columns>
+		
+	</mx:DataGrid>
+	
+	<views:pagetoolbar 
+		id="serverPagingBar" 
+		width="100%" />
+	
+	
+</mx:VBox>

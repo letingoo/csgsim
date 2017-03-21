@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="rootDealAlarm">
+
+
+
+
+	<select id="getRootAlarmComboxData" resultClass="java.util.HashMap"
+		parameterClass="String">
+		<![CDATA[	
+
+			select xtbm,xtxx from v_xtbm_foralarm   where  xtype=#xtype#
+		
+		 ]]>
+	</select>
+
+
+
+
+	<select id="findAllunAckedAlarms" resultClass="java.util.HashMap"
+		parameterClass="String">
+		<![CDATA[	
+              select * from VIEW_findAllunAckedAlarms
+		 ]]>
+	</select>
+
+
+	<select id="getsRootAlarmMgrInfo" resultClass="java.util.HashMap"
+		parameterClass="com.metarnet.mnt.rootalarm.model.RootAlarmMgr">
+
+		select * from (
+		select rownum
+		rn,v.objclasszh,v.alarmnumber,v.ackperson,v.carrycircuit,v.specialtyzh,v.flashcount,v.triggeredthreshold,v.isworkcase,v.isworkcasezh,v.belongpackobject,
+		v.bugno,v.isbugno,v.dutyid,v.dealperson,v.dealpart,v.run_unit,v.belongtransys,v.alarmlevel,v.vendor,v.iscleared,v.dealresult,v.companyalarmcnt,
+		v.alarmobjdesc,v.laststarttime,v.isacked,v.isackedzh,v.acktime,v.alarmlevelname,v.belongportobject,v.vendorzh,v.alarmdesc,v.ackcontent,v.belongequip,
+		v.belongframe,v.belongslot,v.belongport,v.belongportcode,v.username,v.dealresultzh
+		from v_rootalarm_all v where <![CDATA[rownum <= #end#]]>
+		<dynamic prepend="and">
+			<isNotEmpty prepend="AND" property="iscleared">
+				v.iscleared=#iscleared#
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isacked">
+				v.isacked=#isacked#
+			</isNotEmpty>
+			<isNotEmpty property="belongtransys" prepend="AND">
+				v.belongtransys=#belongtransys#
+					</isNotEmpty>
+			<isNotEmpty property="vendor" prepend="AND">
+				v.vendor=#vendor#
+			</isNotEmpty>
+			<isNotEmpty property="alarmlevel" prepend="AND">
+				v.alarmlevel=#alarmlevel#
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmobjdesc">
+				v.alarmobjdesc like
+				'%$alarmobjdesc$%'
+					</isNotEmpty>
+			<isNotEmpty property="username" prepend="AND">
+				v.username='$username$'
+					</isNotEmpty>
+			<isNotEmpty property="dealresult" prepend="AND">
+				v.dealresult=#dealresult#
+					</isNotEmpty>
+			<isNotEmpty property="ackperson" prepend="AND">
+				v.ackperson=#ackperson#
+					</isNotEmpty>
+			<isNotEmpty property="belongequip" prepend="AND">
+				v.belongequip='$belongequip$'
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+					</isNotEmpty>
+			<isNotEmpty property="laststarttime" prepend="AND">
+			<![CDATA[	
+				v.laststarttime<=to_date(#laststarttime#,'yyyy-mm-dd hh24:mi:ss')
+				]]>
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmnumber">
+				v.alarmnumber=#alarmnumber#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject='$belongpackobject$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject='$belongportobject$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode='$belongportcode$'
+			</isNotEmpty>
+
+		</dynamic>
+		order by v.acktime desc,v.laststarttime desc
+		) vv where vv.rn >=
+		#start#
+
+	</select>
+
+	<select id="getsRootAlarmMgrCount" resultClass="int"
+		parameterClass="com.metarnet.mnt.rootalarm.model.RootAlarmMgr">
+
+		select count(*) from v_rootalarm_all v
+		<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="iscleared">
+				v.iscleared=#iscleared#
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isacked">
+				v.isacked=#isacked#
+			</isNotEmpty>
+			<isNotEmpty property="belongtransys" prepend="AND">
+				v.belongtransys=#belongtransys#
+					</isNotEmpty>
+			<isNotEmpty property="vendor" prepend="AND">
+				v.vendor=#vendor#
+			</isNotEmpty>
+			<isNotEmpty property="alarmlevel" prepend="AND">
+				v.alarmlevel=#alarmlevel#
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmobjdesc">
+				v.alarmobjdesc like
+				'%$alarmobjdesc$%'
+					</isNotEmpty>
+			<isNotEmpty property="username" prepend="AND">
+				v.username='$username$'
+					</isNotEmpty>
+			<isNotEmpty property="dealresult" prepend="AND">
+				v.dealresult=#dealresult#
+					</isNotEmpty>
+			<isNotEmpty property="ackperson" prepend="AND">
+				v.ackperson='$ackperson$'
+					</isNotEmpty>
+			<isNotEmpty property="belongequip" prepend="AND">
+				v.belongequip='$belongequip$'
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+					</isNotEmpty>
+			<isNotEmpty property="laststarttime" prepend="AND">
+			<![CDATA[	
+				v.laststarttime<=to_date(#laststarttime#,'yyyy-mm-dd hh24:mi:ss')
+			]]>
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmnumber">
+				v.alarmnumber=#alarmnumber#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject='$belongpackobject$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject='$belongportobject$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode='$belongportcode$'
+			</isNotEmpty>
+		</dynamic>
+
+	</select>
+
+
+	<!--取到转普通告警的xtbm编号  -->
+	<select id="getXTBM" resultClass="String" parameterClass="String">
+    	<![CDATA[	
+    	  select x.xtbm from xtbm x  where x.xtxx='$dealresult$'
+    	 ]]>
+	</select>
+
+
+	<!--更新当前根告警为普通告警  -->
+	<update id="changeCurrentAlarmToCommonAlarmMgr" parameterClass="java.util.HashMap">
+    	<![CDATA[	
+			update alarminfo a 
+			set a.belongsubshelf = '0',a.dealresult='$dealresult$',a.ackperson='$operPerson$'
+			where a.alarmnumber='$alarmid$' and belongsubshelf='1'
+			
+    	 ]]>
+	</update>
+
+	<delete id="deleteCurrentAlarmToCommonAlarmMgr" parameterClass="java.util.HashMap">
+    	<![CDATA[	
+			delete from alarm_affection where alm_number=#alarmid# 
+    	 ]]>
+	</delete>
+
+	<insert id="writeDealAlarmLogMgr" parameterClass="java.util.HashMap">
+		<![CDATA[
+			insert into dealalarmlog
+			  select seqnamedealalarmlog.nextval,
+			         alarmnumber,
+			         '编辑确认告警信息' dealtype,
+			         #dealinfo#,
+			         #ackperson#,
+			         sysdate,
+			         '' remark
+			    from (select alarmnumber
+			            from alarminfo a
+			           where alarmnumber in (#alarmnumber#)
+			          union
+			          select alarmnumber
+			            from alarminfo b
+			           where alarmnumber in
+			                 (select alm_company
+			                    from alarm_affection
+			                   where alm_number in (#alarmnumber#))
+			          
+			          )
+
+		]]>
+	</insert>
+
+	<select id="getRootAlarmFlowMgrInfo" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select * from (
+		select rownum rn,
+		v.alarmnumber,v.vendor,v.belongtransys,v.belongequip,v.belongpackobject,v.belongportobject,v.isworkcasezh,
+		v.alarmdesc,v.alarmlevelname,v.alarmobject,v.alarmobjdesc,v.laststarttime,v.isackedzh,v.objclasszh,v.isrootalarmzh,
+		v.vendorzh,v.belongslot,v.belongport,v.belongpack,v.belongportcode,v.ackperson,v.acktime,v.flashcount,v.dealresultzh,v.endtime,
+		'查看告警' as infor
+		from v_alarminfonew v ,xtbm x
+		where
+		v.isrootalarm=1 and
+		v.iscleared=0 and
+		v.isworkcase=x.xtbm(+) and <![CDATA[rownum <= #end#]]>
+		<dynamic prepend="AND">
+			<isNotEmpty property="alarmdesc" prepend="AND">
+				v.alarmdesc=#alarmdesc#
+          </isNotEmpty>
+			<isNotEmpty property="dealresultzh" prepend="AND">
+				v.dealresultzh=#dealresultzh#
+      </isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmobjdesc">
+				v.alarmobjdesc like
+				'%$alarmobjdesc$%'
+      </isNotEmpty>
+		</dynamic>
+		order by v.acktime desc,v.laststarttime desc
+		) vv where vv.rn >=
+		#start#
+
+
+
+	</select>
+	<select id="getsRootAlarmFlowMgrCount" resultClass="int"
+		parameterClass="java.util.HashMap">
+		select count(*)
+		from v_alarminfonew v
+		where v.isrootalarm=1 and
+		v.iscleared=0
+		<dynamic prepend="AND">
+			<isNotEmpty property="alarmdesc" prepend="AND">
+				v.alarmdesc=#alarmdesc#
+					</isNotEmpty>
+			<isNotEmpty property="dealresultzh" prepend="AND">
+				v.dealresultzh=#dealresultzh#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmobjdesc">
+				v.alarmobjdesc like
+				'%$alarmobjdesc$%'
+			</isNotEmpty>
+
+		</dynamic>
+
+	</select>
+
+	<select id="getTransRootAlarmMgrInfo" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select * from(
+		select rownum rn,
+		alarmnumber,
+		isworkcasezh,
+		carrycircuit,
+		alarmtext,
+		alarmobjdesc,
+		vendorzh,
+		firststarttime,
+		laststarttime,
+		isackedzh,
+		ackperson,
+		acktime,
+		objclasszh,
+		dealresultzh,
+		belongtransys,
+		ackcontent,
+		bugno,
+		belongequip,
+		alarmtype,
+		isrootalarm,
+		isacked,
+		iscleared
+		from
+		transferrootalarm v where <![CDATA[rownum <= #end#]]>
+		<dynamic prepend="and">
+			<isNotEmpty prepend="AND" property="alarmobjdesc">
+				v.alarmobjdesc=#alarmobjdesc#
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmtext=#alarmdesc#
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isacked">
+				v.isacked=#isacked#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdealmethod">
+				v.isworkcasezh=#alarmdealmethod#
+					</isNotEmpty>
+		</dynamic>
+		order by v.acktime desc,v.laststarttime desc
+		) vv where vv.rn >=
+		#start#
+	</select>
+
+	<select id="getTransRootAlarmMgrCount" resultClass="int"
+		parameterClass="java.util.HashMap">
+		select count(*) from transferrootalarm v
+		<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="alarmobjdesc">
+				v.alarmobjdesc=#alarmobjdesc#
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmtext=#alarmdesc#
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isacked">
+				v.isacked=#isacked#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdealmethod">
+				v.isworkcasezh=#alarmdealmethod#
+					</isNotEmpty>
+		</dynamic>
+	</select>
+
+
+</sqlMap>
+

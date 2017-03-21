@@ -1,0 +1,351 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="配置虚拟复用段" label="配置虚拟复用段" creationComplete="init();" width="350" height="450"  layout="absolute"  xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import flexunit.utils.ArrayList;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+
+			
+			import sourceCode.channelRoute.model.Circuit;
+			import sourceCode.packGraph.views.checkedEquipPack;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			
+			public var equip_a_code:String;
+			//以下4个参数做为传值时使用，暂时无用，但别删！
+			public var equip_z_name:String;//z端设备
+			public var equip_z_slot:String;//机槽序号
+			public var equip_z_packname:String;//机盘类型
+			public var equip_z_port:String;//端口序号
+			//end
+			public var port_a_code:String;
+			public var parent_page:selectEquipment;
+			public var link:Link;
+			public var delLink:String="N";
+			private function init():void
+			{
+				//Alert.show(link.getClient("hasVirtualTopolinkValue").toString());
+				if(link.getClient("hasVirtualTopolinkValue")!="1"){
+					if(equip_z_slot==null||equip_z_slot==""){
+						slot_z.text="1";
+					}else{
+						slot_z.text=equip_z_slot;
+					}
+					if(equip_z_port==null||equip_z_port==""){
+						port_z.text="1";
+					}else{
+						port_z.text=equip_z_port;
+					}
+					if(equip_z_packname==null||equip_z_packname==""){
+						pack_z_name.text="1";
+					}else{
+						pack_z_name.text=equip_z_packname;
+					}
+					
+					equip_z.text=equip_z_name;
+					//slot_z.text = equip_z_slot;
+				}else if(link.getClient("hasVirtualTopolinkValue")=="1" && this.parent_page.changeOrNot=="change"){
+					slot_z.text = link.getClient("slot_z");
+					port_z.text = link.getClient("port_z");
+					pack_z_name.text = link.getClient("pack_z_name");
+					port_a_label.text = link.getClient("port_a");
+					equip_z.text = link.getClient("equip_z");
+					systemcode.selectedItem = new XML("<name label =\""+link.getClient("systemcode")+"\" code=\""+link.getClient("systemcode")+"\" />");
+					linerate.selectedItem = new XML("<name label =\""+link.getClient("linerateName")+"\" code=\""+link.getClient("linerate")+"\" />");
+					
+				}
+			//	Alert.show(link.getClient("virtualTopoLinkProperty").equip_a+"#2$");
+				
+				if(link.getClient("virtualTopoLinkProperty")!=null && this.parent_page.changeOrNot!="change" ){
+					var obj:Object= link.getClient("virtualTopoLinkProperty") as Object;
+					equip_a.text = obj.equip_a;
+					equip_a_code = obj.equip_a_code;
+					port_a_label.text = obj.port_a;
+					port_a_code = obj.port_a_code;
+					slot_z.text= obj.slot_z;
+					port_z.text = obj.port_z;
+					equip_z.text = obj.equip_z;
+					pack_z_name.text = obj.pack_z_name;
+				}
+				if(this.parent_page.changeOrNot=="change"){
+					var ppobj1:RemoteObject = new RemoteObject("businessDispatch");
+					ppobj1.endpoint=ModelLocator.END_POINT;
+					ppobj1.showBusyCursor=true;
+					ppobj1.getSystemcode();
+					ppobj1.addEventListener(ResultEvent.RESULT, function (e: ResultEvent):void{
+						
+						var XMLData:XMLList = new XMLList(e.result.toString());
+						systemcode.dataProvider = XMLData.children();
+						systemcode.labelField = "@label";
+						if(link.getClient("virtualTopoLinkProperty")!=null){
+							var obj:Object= link.getClient("virtualTopoLinkProperty") as Object;
+							systemcode.selectedItem = new XML("<name label =\""+link.getClient("systemcode")+"\" code=\""+link.getClient("systemcode")+"\" />");
+						}
+					});
+					
+					var rtobj11:RemoteObject = new RemoteObject("equInfo");
+					rtobj11.endpoint = ModelLocator.END_POINT;
+					rtobj11.showBusyCursor = true;
+					rtobj11.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率)
+					rtobj11.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+						var XMLData_Rate:XMLList = new XMLList(e.result.toString())
+						linerate.dataProvider = XMLData_Rate.children();
+						linerate.labelField = "@label";
+						if(link.getClient("virtualTopoLinkProperty")!=null){
+							var obj:Object= link.getClient("virtualTopoLinkProperty") as Object;
+							linerate.selectedItem = new XML("<name label =\""+link.getClient("linerateName")+"\" code=\""+link.getClient("linerate")+"\" />");
+						}
+						
+					})	
+				}else{
+				
+				
+				var ppobj1:RemoteObject = new RemoteObject("businessDispatch");
+				ppobj1.endpoint=ModelLocator.END_POINT;
+				ppobj1.showBusyCursor=true;
+				ppobj1.getSystemcode();
+				ppobj1.addEventListener(ResultEvent.RESULT, function (e: ResultEvent):void{
+				
+					var XMLData:XMLList = new XMLList(e.result.toString());
+					systemcode.dataProvider = XMLData.children();
+					systemcode.labelField = "@label";
+					if(link.getClient("virtualTopoLinkProperty")!=null){
+						var obj:Object= link.getClient("virtualTopoLinkProperty") as Object;
+						systemcode.selectedItem = new XML("<name label =\""+obj.systemcode+"\" code=\""+obj.systemcode+"\" />");
+					}
+				});
+				
+				var rtobj11:RemoteObject = new RemoteObject("equInfo");
+				rtobj11.endpoint = ModelLocator.END_POINT;
+				rtobj11.showBusyCursor = true;
+				rtobj11.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率)
+				rtobj11.addEventListener(ResultEvent.RESULT, function(e:ResultEvent){
+					var XMLData_Rate:XMLList = new XMLList(e.result.toString())
+					linerate.dataProvider = XMLData_Rate.children();
+					linerate.labelField = "@label";
+					if(link.getClient("virtualTopoLinkProperty")!=null){
+						var obj:Object= link.getClient("virtualTopoLinkProperty") as Object;
+						linerate.selectedItem = new XML("<name label =\""+obj.linerateName+"\" code=\""+obj.linerate+"\" />");
+					}
+					
+				})	
+				
+				}
+			}
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);
+				if(this.delLink == "Y"){
+					this.dispatchEvent(new Event("delLink"));
+				}
+			}
+			private function save():void
+			{
+				if(equip_a.text==""||equip_a.text==null){
+					Alert.show("A端设备不能为空","温馨提示");
+				}else if(port_a_label.text==""||port_a_label.text==null){
+					Alert.show("A端端口不能为空","温馨提示");
+				}else if(equip_z.text==""||equip_z.text==null){
+					Alert.show("Z端设备不能为空","温馨提示");
+				}else if(slot_z.text==""||slot_z.text==null){
+					Alert.show("Z端机槽序号不能为空","温馨提示");
+				}else if(pack_z_name.text==""||pack_z_name.text==null){
+					Alert.show("Z端机盘类型不能为空","温馨提示");
+				}else if(port_z.text==""||port_z.text==null){
+					Alert.show("Z端端口序号不能为空","温馨提示");
+				}else if(systemcode.text==""||systemcode.text==null){
+					Alert.show("系统名称不能为空","温馨提示");
+				}else if(linerate.text==""||linerate.text==null){
+					Alert.show("速率不能为空","温馨提示");
+				}else if(linerate.text!="2Mb/s" && linerate.text!="其它" && linerate.text!="64K"){
+					if(timeSlot.text==""||timeSlot.text==null){
+					Alert.show("该速率下时隙不能为空","温馨提示");
+					}else{
+						this.saveDataIntoNode();
+						this.close();
+					}
+				}else{
+					this.saveDataIntoNode();
+		            this.close();
+				}
+			}
+			public function saveDataIntoNode():void{
+				var obj:Object = new Object();
+				obj.equip_a = equip_a.text;
+				obj.equip_a_code = equip_a_code;
+				obj.port_a = port_a_label.text;
+				obj.port_a_code = port_a_code;
+				obj.systemcode = systemcode.text;
+				obj.linerate = new String(linerate.selectedItem.@code);
+				obj.linerateName = linerate.text;
+				obj.slot_z= slot_z.text;
+				obj.port_z = port_z.text;
+				obj.equip_z = equip_z.text;
+				obj.frame_z = '1';
+				obj.pack_z_name = pack_z_name.text;
+				obj.pack_z_serial = '1';
+				obj.hasVirtualTopolinkValue = true;
+				if(link.fromNode.getClient("flag")=='virtualEquipment'){
+					
+					link.fromNode.name=equip_z.text;
+					obj.vendor = link.fromNode.getClient('x_vendor');
+					obj.equip_a_code = link.fromNode.getClient("equipcode");
+					
+					link.name="【" + link.toNode.name + "】"+port_a_label.text+'\n'+"【"+link.fromNode.name+"】"+':'+ slot_z.text+'槽-'+pack_z_name.text+'盘-'+port_z.text+'端口';
+					
+				}
+				if(link.toNode.getClient("flag")=='virtualEquipment'){
+					
+					link.toNode.name=equip_z.text;
+					obj.vendor = link.toNode.getClient('x_vendor');
+					obj.equip_a_code = link.toNode.getClient("equipcode");
+					link.name="【"+link.fromNode.name +"】"+port_a_label.text+'\n'+"【"+link.toNode.name+"】"+':'+ slot_z.text+'槽-'+pack_z_name.text+'盘-'+port_z.text+'端口';
+					
+				}
+				if(timeSlot.text!=null&&timeSlot.text!=""){
+					link.name = link.name+"\n【时隙】"+timeSlot.text;
+				}
+				
+				link.setClient("equip_a",equip_a.text);
+				link.setClient("equip_a_code",equip_a_code);
+				link.setClient("port_a",port_a_label.text);
+				link.setClient("port_a_code",port_a_code);
+				link.setClient("systemcode",systemcode.text);
+				link.setClient("linerate",new String(linerate.selectedItem.@code));
+				link.setClient("linerateName",linerate.text);
+				link.setClient("slot_z",slot_z.text);
+				link.setClient("port_z",port_z.text);
+				link.setClient("equip_z",equip_z.text);
+				link.setClient("frame_z","1");
+				link.setClient("pack_z_name",pack_z_name.text);
+				link.setClient("pack_z_serial","1");
+				
+				link.setClient("virtualTopoLinkProperty",obj);
+				link.setClient("hasVirtualTopolinkValue","1");
+			}
+			private function getPort(e:Event){
+			
+				var ptree:porttreeForVirtual = new porttreeForVirtual();
+				ptree.equipcode =equip_a_code;
+				ptree.rate = "YW010201";
+				ptree.virtual = this;
+				PopUpManager.addPopUp(ptree, this, true);
+				PopUpManager.centerPopUp(ptree);
+				
+			}
+			private function controlTimeSlotDisplay(e:ListEvent):void{
+				 var xml:XML = linerate.selectedItem as XML;
+				 var code = xml.@code;
+				if (code == 'ZY110601' || code == 'ZY110602' || code == 'ZY110603' || code == 'ZY110604') {
+					timeSlot.enabled = true;
+				}else{
+				timeSlot.enabled = false;
+				}
+				
+				
+			}
+			private function getVirtualSlot(e:Event):void{
+				if(timeSlot.enabled==true){
+				var slot_tree:virtualslottree = new virtualslottree();
+				slot_tree.rate = "YW010201";
+				slot_tree.linerate=linerate.selectedItem.@code;
+				slot_tree.parent_page = this;
+				slot_tree.flag = 'virtualtopo';
+				slot_tree.e_link = link;
+				PopUpManager.addPopUp(slot_tree, this, true);
+				PopUpManager.centerPopUp(slot_tree);
+				}
+			
+			}
+		
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+			 backgroundSize="100%">
+		
+	
+	<mx:Canvas width="100%" height="342">
+		
+	
+	<mx:Label text="A端设备"  y="43" height="25" fontFamily="宋体" x="26" textAlign="center" fontSize="12"/>  
+	<mx:TextInput id="equip_a" width="120" x="126" y="41" fontFamily="宋体" fontSize="12"/> 
+	
+	
+	<mx:Label text="A端端口"  y="75" x="10" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="126" y="73" editable="false" id="port_a_label" click="getPort(event)" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="Z端设备"  y="107" x="14" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="73"/>
+	<mx:TextInput id="equip_z" width="120" x="125" y="105" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="Z端机槽序号"  y="137" x="26" height="25" fontFamily="宋体" fontSize="12" width="72"/>
+	<mx:TextInput x="125" y="141" editable="true" id="slot_z" width="120" fontFamily="宋体" fontSize="12"></mx:TextInput>
+	
+	
+	<mx:Label text="Z端机盘类型"  y="172" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput id='pack_z_name' width="120" x="124" y="172" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="Z端端口序号"  y="207" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput x="124" y="205"  id="port_z" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	
+	<mx:Label text="系统名称"  y="237" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:ComboBox x="124" y="237" id="systemcode" width="120"  fontFamily="宋体" fontSize="12" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0" />
+
+	
+	<mx:Label text="速    率"  y="267" x="26" height="25" fontFamily="宋体" fontSize="12" width="53"/>
+	<mx:ComboBox id="linerate"  width="120" change="controlTimeSlotDisplay(event)" x="124" y="267"  fontFamily="宋体" fontSize="12" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"  />
+	
+	
+	<mx:Label text="时    隙"    y="297" x="26" height="25" fontFamily="宋体" fontSize="12" width="56" enabled="true"/>
+	<mx:TextInput x="124" y="297" width="120" editable="false"   click="getVirtualSlot(event)" id="timeSlot" enabled="true"/>
+	
+	</mx:Canvas>
+		
+	<mx:Canvas width="100%" height="100%" backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+		
+	<mx:Button label="保存" click="save()"  styleName="loginprimary" x="46" y="17" height="22" textAlign="center" fontFamily="宋体" fontSize="12"   width="80"/>
+	<mx:Button label="关闭" click="close()" styleName="loginsecondary"  x="166" y="17" height="22" textAlign="center" fontFamily="宋体" fontSize="12" width="80"/> 
+	
+	</mx:Canvas>
+	</mx:VBox>
+	<mx:Validator source="{equip_a}" property="text" requiredFieldError="该项不能为空" />
+	<mx:Validator source="{port_a_label}" property="text" requiredFieldError="该项不能为空" />
+	<mx:Validator source="{equip_z}" property="text" requiredFieldError="该项不能为空" />
+	<mx:Validator source="{slot_z}" property="text" requiredFieldError="该项不能为空" />
+	<mx:Validator source="{pack_z_name}" property="text" requiredFieldError="该项不能为空" />
+	<mx:Validator source="{port_z}" property="text" requiredFieldError="该项不能为空" />
+	<mx:Validator source="{systemcode}" property="text" requiredFieldError="该项不能为空" />
+	<mx:Validator source="{linerate}" property="text" requiredFieldError="该项不能为空" />
+	<mx:Validator source="{timeSlot}" property="text" requiredFieldError="该项不能为空" />
+</mx:TitleWindow>  

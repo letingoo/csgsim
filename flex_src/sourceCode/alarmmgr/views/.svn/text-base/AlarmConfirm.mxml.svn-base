@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--告警详细信息-->
+
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" 
+				creationComplete="init();" 
+				title="确认告警" x="200" y="0"
+				width="300" height="200"  
+				showCloseButton="true"
+				close="titleWindow_close(event);"
+				horizontalScrollPolicy="off" verticalScrollPolicy="off"
+				>
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.controls.Text;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.alarmmgr.views.PopUpKeyBusiness;
+			import sourceCode.flashalarm.ShowFlashAlarmDetail;
+			
+			
+			public var am:AlarmManager;
+			private var rootAlarmWin:TitleWindow;
+			public var alarmid:String="";
+			public var operPerson:String ="";
+			public var ackcontent:String="";
+			private var param:ArrayCollection =new ArrayCollection();
+			[Embed(source="assets/images/rootalarm/alarm_message.png")]
+			public var AlarmIcon:Class; 
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			public function init():void{
+				getAlarmConfirm();
+				getUserName();
+				
+			}
+			public function getUserName():void{
+				var rtobj:RemoteObject = new RemoteObject("RootAlarmMgrDwr");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.getusername();
+				rtobj.addEventListener(ResultEvent.RESULT,function(e:ResultEvent){
+					if(e.result!=null){
+						operPerson = e.result.toString();
+					}
+					
+				})
+				
+			}
+			protected function saveAlarmConfirm():void
+			{
+				ackcontent=talarmobjdesc.text+'';
+				if(ackcontent=='' || ackcontent==null)
+				{
+					Alert.show('是否不填写确认内容直接确认？','提示',3,this,alertClickHandler,iconClass);
+				}else{
+					var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+					rtobj.endpoint= ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.addEventListener(ResultEvent.RESULT,getcommonresult);
+					rtobj.addEventListener(FaultEvent.FAULT,fault);
+					rtobj.updateAlarmConfirm(alarmid,operPerson,ackcontent);
+				}
+			}
+			private function alertClickHandler(event:CloseEvent){
+				if(event.detail==Alert.YES){
+					var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+					rtobj.endpoint= ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.addEventListener(ResultEvent.RESULT,getcommonresult);
+					rtobj.addEventListener(FaultEvent.FAULT,fault);
+					rtobj.updateAlarmConfirm(alarmid,operPerson,ackcontent);
+				}
+				else{					
+					return;
+				}
+			}
+			private function getcommonresult(event:ResultEvent):void{
+				
+				if(event.result=="成功"){
+					Alert.show("保存成功，告警已确认。","提示信息",4,this,null,iconClass);
+					am.pagingFunction(0,50);
+					PopUpManager.removePopUp(this);
+				}else{
+					Alert.show("保存失败，告警未确认。","提示信息",4,this,null,iconClass);
+				}
+			}
+			
+			
+			private function getAlarmConfirm():void{
+				
+				var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getAlarmConfirm(alarmid);       
+				rtobj.addEventListener(ResultEvent.RESULT,setAlarmConfirm);
+				
+			}
+			private function setAlarmConfirm(event:ResultEvent):void{
+				param.removeAll();
+				param=event.result as ArrayCollection;
+				talarmobjdesc.text=param[0].ACKCONTENT;
+			}
+			private function fault(event:FaultEvent):void
+			{
+				Alert.show(event.fault.toString());
+				
+			}
+			private function titleWindow_close(evt:CloseEvent):void {
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				saveAlarmConfirm();
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				// TODO Auto-generated method stub
+			}
+
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%"   verticalAlign="middle" horizontalAlign="center" horizontalGap="0" verticalGap="0"
+			 horizontalScrollPolicy="off" verticalScrollPolicy="off" paddingTop="10"  >
+		<mx:Label text="告警确认内容："/>
+		<mx:TextArea id="talarmobjdesc" width="95%" height="100%" />
+		<mx:HBox styleName="btnbg" width="100%" height="35">
+			<mx:Button label="确认" styleName="normal" click="button1_clickHandler(event)"/>
+			<mx:Button label="取消" styleName="normal" click="button2_clickHandler(event)" />
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

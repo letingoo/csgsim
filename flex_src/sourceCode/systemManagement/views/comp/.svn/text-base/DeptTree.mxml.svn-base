@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				title="选择部门"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="App(event);"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				layout="absolute" minWidth="955" minHeight="600" width="400" height="400" fontSize="13">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.controls.TextInput;
+			
+			import sourceCode.systemManagement.events.DeptParameterEvent;
+			[Embed('assets/images/file/fileLeaf.gif')]
+			[Bindable]
+			public var leafPic:Class;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager; 
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			public var XMLData:XMLList;
+			private var curIndex:int;
+			private var catalogsid:String; 
+			private var type:String;
+			private var selectedNode:XML;
+			[Bindable]   
+			public var folderList:XMLList= new XMLList(); 
+			
+			[Bindable]   
+			public var folderCollection:XMLList;
+			public var dept_code:String;
+			public var dept_name:String;
+			[Event(name="DeptParameterEvent", type="sourceCode.systemManagement.events.DeptParameterEvent")]
+			protected function App(event:FlexEvent):void
+			{
+				var obj:RemoteObject = new RemoteObject("userManager");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				obj.getDept(1,"");
+				obj.addEventListener(ResultEvent.RESULT,getDeptsTree);
+			}
+			public function getDeptsTree(e:ResultEvent):void{
+				folderList = new XMLList(e.result.toString());
+				folderCollection=new XMLList(folderList); 
+				deptsTree.dataProvider = folderCollection;
+			}
+			public function close():void{
+				PopUpManager.removePopUp(this);
+			}
+			public function deptsTree_doubleClickHandler(event:MouseEvent):void
+			{
+				try
+				{
+					if(deptsTree.selectedItem.@isBranch==false &&deptsTree.selectedItem.@leaf==true){
+					
+					dept_name=deptsTree.selectedItem.@name;
+					dept_code = deptsTree.selectedItem.@code;
+					this.dispatchEvent(new DeptParameterEvent("departmentEvent", dept_code,dept_name));		
+					this.close();
+						
+					}
+				}
+				catch(e:Error)
+				{
+					Alert.show(e.toString());
+				}
+			}
+			
+			private function tree_itemClick(evt:ListEvent):void
+			{
+				var item:Object=Tree(evt.currentTarget).selectedItem;
+				if (deptsTree.dataDescriptor.isBranch(item))
+				{
+					deptsTree.expandItem(item, !deptsTree.isItemOpen(item), true);
+				}
+			}
+		]]>
+	</mx:Script>
+
+	<mx:Tree x="0" y="0" 
+			 width="100%" height="100%" 
+			 dataProvider="{folderCollection}"
+			 labelField="@name"
+			 defaultLeafIcon="{leafPic}" 
+			 borderStyle="none"
+			 doubleClickEnabled="true"
+			 doubleClick="deptsTree_doubleClickHandler(event)"
+			 itemRollOver="curIndex = event.rowIndex"
+			 verticalScrollPolicy="auto"
+			 id="deptsTree"
+			 itemClick="tree_itemClick(event)"/>
+</mx:TitleWindow>

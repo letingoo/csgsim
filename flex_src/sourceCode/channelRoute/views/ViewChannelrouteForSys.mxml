@@ -1,0 +1,365 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				creationComplete="init()"    
+				 paddingLeft="0" 
+				 width="{parentApplication.workspace.width}" 
+				 height="{parentApplication.workspace.height}"  
+				 showCloseButton="true"
+				 close="{PopUpManager.removePopUp(this)}"
+				 title="查看方式单"
+				 paddingRight="0" 
+				 paddingTop="0" 
+				 paddingBottom="0" 
+				 xmlns:demo="demo.*" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+				 xmlns:common="demo.common.*" xmlns:local="*" 
+				 xmlns:code="http://code.google.com/p/flexlib/">   
+	<mx:Style>
+		.textinput{
+			paddingTop : 5;
+			border-style:none;
+		}
+		.banner{
+			color : #000000;
+		}
+		.singleButton{
+			cornerRadius : 10;
+		}
+		.gradientCanvas{
+			backgroundGradientColors : #CFCFCF, #A8A8A8;
+			backgroundGradientAlphas : 1, 1;
+			backgroundGradientRotation : 90;
+		}
+	</mx:Style>
+	<mx:Script source="../actionscript/ViewChannelrouteForSys.as"/>
+		<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:HDividedBox width="100%" height="100%" backgroundColor="0xCCCCCC">
+			
+			
+			
+			<mx:TabNavigator    width="70%" change="changeItems(event)" id="channeltab" height="100%" >
+				<mx:VBox width="70%" id='channelbox' height="100%" label="路由图">
+					
+					<mx:HBox id="toolbar" width="100%" horizontalGap="0"/>
+					<servasoftware:Network  id="channelPic" label="路由图" width="100%"  height="100%" backgroundColor="0xFFFFFF" >
+					</servasoftware:Network>
+				</mx:VBox>
+				
+				<mx:Canvas width="70%"  id="channelbox1"   label="方式单" height="100%" backgroundColor="#EFF3FF" borderStyle="solid" borderThickness="1" borderSides="bottom,right">
+					
+					<mx:Grid y="2" width="100%" height="100%"  verticalGap="0" horizontalGap="0"  borderStyle="solid" x="10" borderSides="left,top,middle,right,bottom"   borderThickness="1" backgroundAlpha="0.06" borderColor="#93B0B7" cornerRadius="0" alpha="0.78" themeColor="#B4BBBB" backgroundColor="#FFFFFF">
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%"  colSpan="4">
+								<mx:VBox id="typename" backgroundSize="100%" backgroundImage="@Embed(source='assets/images/modeDispatcher/main_top.png')"  label="国网信通公司通信调度方式单"   width="100%"  
+										 fontSize="15"  mouseEnabled="false" color="#95D58F" height="35" fontFamily="Arial" fontWeight="bold" horizontalAlign="center" verticalAlign="middle" >
+									<mx:Label text="国网信通公司通信调度方式单" fontWeight="bold" color="#15181C"/>
+								</mx:VBox>
+							</mx:GridItem>	
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%"  height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label     text="方式单编号:"     width="100%" height="24" textAlign="right"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%"  borderStyle="solid" borderSides="left,top"  borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="circuitcode"   styleName="textinput"  width="100%"   height="100%"   />
+							</mx:GridItem>
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label  text="使用单位:" width="100%" textAlign="right" height="24"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="userCom" width="260" styleName="textinput"    height="100%"  />
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="方式单名称:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="remark" width="100%" styleName="textinput"    height="100%" />
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="申请单位:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="requestCom" width="100%" styleName="textinput"  height="100%" />		
+							</mx:GridItem>
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="申请单号:" width="100%" height="24"  textAlign="right" y="86"  x="407" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="requisitionId" width="100%" styleName="textinput"  height="100%" />
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="业务类型:" width="100%" height="24" textAlign="right"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="operationType" width="100%" styleName="textinput"  height="100%" />
+							</mx:GridItem>
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="业务分类:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="userName" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="速率:" width="100%" textAlign="right" height="24"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="rate" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="业务等级:" width="100%" textAlign="right" height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="circuitLevel" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="接口类型:" width="100%" textAlign="right" height="24"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="interfaceType" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="电路状态:" width="100%" textAlign="right"  height="24"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="state" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="A局站:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="station1" width="100%" styleName="textinput"   height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="Z局站:" width="100%" height="24"  textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="station2" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="A端传输设备:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="equipCode1" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="Z端传输设备:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="equipCode2" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="A端终端设备:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="equip_ap" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="Z端终端设备:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="equip_zp" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="A局站负责单位:" width="100%" textAlign="right"  height="24"  fontWeight="bold" />
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="dept_poita" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="Z局站负责单位:" width="100%" textAlign="right"  height="24" fontWeight="bold" />
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="dept_poitz" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="执行人:" width="100%" textAlign="right" height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="mana" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="执行人:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="manz" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="相关网管系统:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="netManagerId" width="100%" styleName="textinput"  height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="网管负责单位:" width="100%" textAlign="right"  height="24"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="system_dept" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="执行人:" width="100%" textAlign="right"  height="24"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="manOfmanger" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="网管标识:" width="100%" textAlign="right"  height="24"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="mark_manager" width="100%" styleName="textinput"  height="100%" />
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="其它操作:" width="100%" textAlign="right" height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="other_op" width="100%"  styleName="textinput" height="100%" />
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="其它操作负责单位:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="dept_other_op" width="100%" styleName="textinput"  height="100%" />
+							</mx:GridItem>
+							
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="执行人:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="peopleOfdept_other_op" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="A端传输设备端口:" width="100%" textAlign="right" height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="portserialno1" width="100%" styleName="textinput"  height="100%" />
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="Z端传输设备端口:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>	
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="portserialno2" width="100%" styleName="textinput"  height="100%"/>
+							</mx:GridItem>
+							
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="A端终端设备端口:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="port_poita" width="100%" styleName="textinput"  height="100%" />
+							</mx:GridItem>
+							
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="Z端终端设备端口:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="port_poitz" width="100%" styleName="textinput"  height="100%"/>
+							</mx:GridItem>
+							
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="制作人:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="leaser" width="100%" styleName="textinput"  height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="制作日期:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="createTime" width="100%" styleName="textinput"  height="100%" />
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="要求完成日期:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="requestFinish_time" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="实际完成时间:" width="100%" height="24" textAlign="right"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="useTime" width="100%" styleName="textinput"  height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="校核人:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="check_personOfRequestFinish" width="100%"  styleName="textinput" height="100%" />
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="校核人:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="k" width="100%"  styleName="textinput" height="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="批准人:" width="100%" height="24" textAlign="right"  fontWeight="bold"/>
+							</mx:GridItem>
+							<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="response_person" width="100%" styleName="textinput" height="100%"/>
+							</mx:GridItem>
+							
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="35">
+							<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:Label text="备注:" width="100%"  height="24" textAlign="right"   fontWeight="bold" />
+							</mx:GridItem>
+							<mx:GridItem width="80%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+								<mx:TextInput id="requiSitionId"  verticalCenter="middle" width="100%"  styleName="textinput"  height="100%"/>
+							</mx:GridItem>
+							
+						</mx:GridRow>
+					</mx:Grid>
+				</mx:Canvas>
+			<mx:Canvas width="70%"  id="shenqingdan"   label="申请单" height="100%" backgroundColor="#EFF3FF" borderStyle="solid" borderThickness="1" borderSides="bottom,right" />
+			</mx:TabNavigator> 
+			
+		</mx:HDividedBox> 
+	</mx:VBox>
+</mx:TitleWindow>  

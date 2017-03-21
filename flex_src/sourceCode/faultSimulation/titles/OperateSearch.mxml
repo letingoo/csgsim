@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="700"
+				height="388"
+				creationComplete="init()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{MyPopupManager.removePopUp(this)}">
+	<mx:Script source="../actionscript/OperateSearch.as" />
+	
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center"
+			 verticalGap="0">
+		
+		<mx:HBox width="100%"
+				 height="80%">
+			<mx:Form width="100%" height="100%">
+				<mx:FormItem label="处理方法" >
+					<mx:TextInput id="operatetype" width="180"  editable="false" click="selectOperateTypeHnadler(event)" />
+				</mx:FormItem>
+		
+				<mx:FormItem label="本端设备类型" >
+					<mx:ComboBox id="a_equiptype"  width="180" editable="false" />
+				</mx:FormItem>
+				
+				<mx:FormItem label="对端设备类型" >
+					<mx:ComboBox id="z_equiptype"  width="180" editable="false" />
+				</mx:FormItem>
+				
+				<mx:FormItem label="操作人">
+					<mx:TextInput id="updateperson" width="180" editable="false" click="selectUserInfo(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="备注" >
+					<mx:TextArea id="remark" width="180" height="50"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+			<mx:Form width="100%" height="100%">
+			
+				<mx:FormItem label="科目名称">
+					<mx:TextInput id="projectname" width="180" editable="false" click="selectPrjNameHandler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="本端设备" >
+					<mx:TextInput id="a_equipname" width="180" editable="false" click="selectAEquipInfoHandler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="对端设备" >
+					<mx:TextInput id="z_equipname" width="180" editable="false" click="selectZEquipInfoHandler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="处理结果">
+					<mx:TextInput id="operateresult" width="180"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+		</mx:HBox>
+		
+		<mx:HBox width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			
+			<mx:Button id="btn"
+					   label="{this.title}"
+					   styleName="loginprimary"
+					   width="80"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="80"/>
+			<mx:Button label="关闭"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="PopUpManager.removePopUp(this)"/>
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+</mx:TitleWindow>

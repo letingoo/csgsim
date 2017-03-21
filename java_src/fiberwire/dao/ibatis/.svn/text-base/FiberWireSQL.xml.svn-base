@@ -1,0 +1,1023 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fiberwire">
+<!--获取当前系统中的所有系统的信息列表-->
+	<select id="selectSystems" resultClass="fiberwire.model.SystemInfoModel">
+		<![CDATA[
+			select t.sysname systemname,
+		       t.systemcode,
+		       t.x_capacity,
+       		   decode(t.projectname,null,' ',t.projectname) projectname,
+       		   t.tranmodel,
+       		   t.vendor,
+		       decode(t.x, null, 50,t.x) x,
+		       decode(t.y, null, 50,t.y) y,
+		       decode(t.remark,null,' ',t.remark) remark
+		  from transsystem t where t.sys_group='未删除'	
+		  and t.systemcode!='广东省网'	
+		 order by t.step
+		 ]]>
+	</select>
+	<select id="getEquipsBySystem" resultClass="fiberwire.model.EquInfoModel" parameterClass="String">
+		<![CDATA[
+			select e.equipcode, e.S_SBMC equipname
+			  from equipment e, re_sys_equip re
+			 where e.equipcode = re.equipcode
+			   and re.systemcode = #systemcode#
+			 order by e.equipcode
+		
+		]]>
+	</select>
+<!--获取当前系统中的设备(不包含对接设备)	-->
+	<select id="getAllEquipsWithoutDocking" resultClass="fiberwire.model.EquInfoModel" parameterClass="java.util.HashMap">
+		
+	select t.systemcode,
+       t.sysname,
+       t.equipcode,
+       x_vendor,
+       x_model,
+       t.equipname,
+       t.equiplabel,
+       x,
+       y,
+       t.stationcode,
+       t.stationname,
+       sum(t.alarmcount) alarmcount,
+       max(t.alarmlevel) alarmlevel
+  from (select t.systemcode,
+               t.sysname,
+               t.equipcode,
+               x_vendor,
+               x_model,
+               t.equipname,
+               t.equiplabel,
+               x,
+               y,
+               t.stationcode,
+               t.stationname,
+               sum(t.alarmcount) alarmcount,
+               max(t.alarmlevel) alarmlevel
+          from v_all_equip_cld_new t
+         where t.systemcode = #systemcode#
+         <isNotEmpty prepend="and" property="alarmman">
+         	(t.alarmman is null or t.alarmman = #alarmman#)
+         </isNotEmpty>
+         group by t.systemcode,
+                  t.sysname,
+                  t.equipcode,
+                  x_vendor,
+                  x_model,
+                  t.equipname,
+                  t.equiplabel,
+                  x,
+                  y,
+                  t.stationcode,
+                  t.stationname
+        union
+        select t.systemcode,
+               t.sysname,
+               t.equipcode,
+               x_vendor,
+               x_model,
+               t.equipname,
+               t.equiplabel,
+               x,
+               y,
+               t.stationcode,
+               t.stationname,
+               0 alarmcount,
+               5 alarmlevel
+          from v_all_equip_cld_new t
+         where t.systemcode = #systemcode#
+           and (t.alarmman = 'root')) t
+ group by t.systemcode,
+          t.sysname,
+          t.equipcode,
+          x_vendor,
+          x_model,
+          t.equipname,
+          t.equiplabel,
+          x,
+          y,
+          t.stationcode,
+          t.stationname
+
+<!--	select distinct a.systemcode,-->
+<!--       a.sysname,-->
+<!--       a.equipcode,-->
+<!--       a.x_vendor,-->
+<!--       a.x_model,-->
+<!--       a.equipname,-->
+<!--       a.equiplabel,-->
+<!--       a.x,-->
+<!--       a.y,-->
+<!--       decode(a.alarmman, #alarmman#, a.alarmlevel,5) alarmlevel,-->
+<!--       a.stationcode,-->
+<!--       a.stationname,-->
+<!--       b.alarmman,-->
+<!--       decode(a.alarmman, #alarmman#, a.alarmcount, 0) alarmcount-->
+<!--  from (select distinct t.systemcode,-->
+<!--                        t.sysname,-->
+<!--                        t.equipcode,-->
+<!--                        x_vendor,-->
+<!--                        x_model,-->
+<!--                        t.equipname,-->
+<!--                        t.equiplabel,-->
+<!--                        x,-->
+<!--                        y,-->
+<!--                        alarmlevel,-->
+<!--                        alarmcount,-->
+<!--                        t.stationcode,-->
+<!--                        t.stationname,-->
+<!--                        t.alarmman-->
+<!--          from v_all_equip_cld_new t-->
+<!--         where t.systemcode = #systemcode#-->
+<!--         and (t.alarmman is null or t.alarmman = #alarmman#)-->
+<!--                 <isNotEmpty prepend="and" property="count">-->
+<!--	     		t.equipcode in(-->
+<!--             select equip from (-->
+<!--            select t.label,getEquipcodeByPortID(t.aendptp) equip from en_topolink t -->
+<!--            union all -->
+<!--            select t.label,getEquipcodeByPortID(t.zendptp) equip from en_topolink t -->
+<!--            ) le -->
+<!--            where le.equip is not null-->
+<!--            and GetSystemByEq(equip)=#systemcode#-->
+<!--            having count(label)>=#count#-->
+<!--            group by equip-->
+<!--         )-->
+<!--	   		</isNotEmpty>-->
+<!--         order by t.equipname, alarmlevel) a,-->
+<!--       (select t.systemcode, t.sysname, t.equipcode, t.alarmman-->
+<!--          from v_all_equip_cld_new t-->
+<!--         where t.systemcode = #systemcode#-->
+<!--              -->
+<!--           and (t.alarmman is null or t.alarmman = #alarmman#)-->
+<!--        -->
+<!--         order by t.equipname, alarmlevel) b-->
+<!-- where a.systemcode = b.systemcode(+)-->
+<!--   and a.equipcode = b.equipcode(+)-->
+				
+	</select>
+<!--查询当前系统中的所有设备(包括对接设备)	-->
+	<select id="selectAllEquips" resultClass="fiberwire.model.EquInfoModel"
+		parameterClass="java.util.HashMap">
+		<![CDATA[
+			select x.systemcode,
+			       x.sysname,
+			       x.equipcode,
+			       x_vendor,
+			       x.x_model,
+			       x.equipname,
+			       x.equiplabel,
+			       decode(l.x, null, '100', l.x) x,
+			       decode(l.y, null, '100', l.y) y,
+			       decode(a.alarmlevel, null, '0', a.alarmlevel) alarmlevel,
+			       decode(a.alarmcount, null, '0', a.alarmcount) alarmcount,
+			       decode(a.rootalarm, null, '0', a.rootalarm) rootalarm
+			  from (select distinct t.systemcode,
+			                        t.sysname,
+			                        e.equipcode,
+			                        decode(e.x_vendor, null, 'ZY0899', e.x_vendor) x_vendor,
+			                        e.x_model,
+			                        e.S_SBMC equipname,
+			                        e.equiplabel
+			          from (select distinct l2.equipcode equipcode
+			                  from en_topolink t, equiplogicport l1, equiplogicport l2
+			                 where t.aendptp = l1.logicport
+			                   and t.zendptp = l2.logicport
+			                   and l1.equipcode in
+			                       (select e.equipcode
+			                          from re_sys_equip r, equipment e
+			                         where r.equipcode = e.equipcode
+			                           and r.systemcode = #systemcode#)
+			                union all
+			                select distinct l1.equipcode equipcode
+			                  from en_topolink t, equiplogicport l1, equiplogicport l2
+			                 where t.aendptp = l1.logicport
+			                   and t.zendptp = l2.logicport
+			                   and l2.equipcode in
+			                       (select e.equipcode
+			                          from re_sys_equip r, equipment e
+			                         where r.equipcode = e.equipcode
+			                           and r.systemcode = #systemcode#)
+			                union all
+			                select e.equipcode equipcode
+			                  from re_sys_equip r, equipment e
+			                 where r.equipcode = e.equipcode
+			                   and r.systemcode = #systemcode#) a,
+			               equipment e,
+			               re_sys_equip r,
+			               transsystem t
+			         where e.equipcode = r.equipcode
+			           and r.systemcode = t.systemcode
+			           and a.equipcode = e.equipcode) x,
+			       v_mnt_alarm_sys_equipment a,
+			       equip_sys_location l
+			 where a.belongequip(+) = x.equipcode
+			   and l.equipcode(+) = x.equipcode
+			   and l.systemcode(+) = #systemcode#
+			   and a.belongtransys(+) = #systemcode#
+			   and l.visible(+) = 1
+		 ]]>
+	</select>
+	<select id="selectSystemOcablesWithoutDocking" resultClass="java.util.HashMap"
+		parameterClass="String">
+		<![CDATA[
+					select l1.equipcode equip_a,
+			       decode(getequipsystem(l1.equipcode),
+			              null,
+			              ' ',
+			              getequipsystem(l1.equipcode)) system_a,
+			       l2.equipcode equip_z,
+			       decode(getequipsystem(l2.equipcode),
+			              null,
+			              ' ',
+			              getequipsystem(l2.equipcode)) system_z,
+			       e.label,
+			       e.aendptp,
+			       e.zendptp,
+			       getportlabel(e.aendptp) aendptpxx,
+			       getportlabel(e.zendptp) zendptpxx,
+			       e.linerate,
+			       a.type_count
+			  from en_topolink e,
+			       equiplogicport l1,
+			       equiplogicport l2,
+			       (select t.label, count(b.id) type_count
+			          from en_topolink t, bpl b
+			         where t.label = b.label(+)
+			         group by t.label) a
+			 where (l1.equipcode in
+			       (select m.equipcode
+			           from re_sys_equip n, equipment m
+			          where n.equipcode = m.equipcode
+			            and n.systemcode = #systemcode#) and
+			       l2.equipcode in
+			       (select m.equipcode
+			           from re_sys_equip n, equipment m
+			          where n.equipcode = m.equipcode
+			            and n.systemcode = #systemcode#))
+			   and e.aendptp = l1.logicport
+			   and e.zendptp = l2.logicport
+			   and e.label = a.label
+			 order by e.equip_a, e.equip_z asc
+		
+		]]>
+		</select>
+<!--获取当前系统中的所有复用段	system_a or system_z  改为and	-->
+	<select id="selectSystemOcables" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		<![CDATA[
+		select t.equip_a,
+		       t.system_a,
+		       t.equip_z,
+		       t.system_z,
+		       t.label,
+		       t.aendptp,
+		       t.zendptp,
+		       t.aendptpxx,
+		       t.zendptpxx,
+		       t.linerate,
+		       t.linktype,
+		       t.linkcolor,
+		       o.topolinkid
+  		from v_all_topolink_cls t,optical_topolink o
+ 		where t.system_a = #systemcode#
+ 		and t.resid=o.topolinkid(+)
+		 ]]>
+		   <isNotEmpty prepend="and" property="count">
+	     		t.equip_a in(
+             select equip from (
+             select en.label, getEquipcodeByPortID(en.aendptp) equip
+                  from en_topolink en
+                union all
+                select en.label, getEquipcodeByPortID(en.zendptp) equip
+                  from en_topolink en) le
+            where le.equip is not null
+             and GetSystemByEq(equip)=#systemcode#
+            having count(label)>=#count#
+            group by equip
+         )
+	   		</isNotEmpty>
+	</select>
+	<select id="getSystemEquipsWithEquip" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		 <![CDATA[      
+         select 
+	         getequipsystem(e.equip_a) system_a,	      
+	       l1.equipcode equip_a,
+	       getequipsystem(e.equip_z) system_z,	      
+	       l2.equipcode equip_z,
+	       e.label,
+	       e.linerate,
+	       e.aendptp,
+	       e.zendptp,
+	       e.systemcode,
+	       getportlabel(e.aendptp) aendptpxx,
+	       getportlabel(e.zendptp) zendptpxx,
+	         decode(r1.ringid,null,' ',r1.ringid) ringid,
+         from en_topolink e ,equiplogicport l1,equiplogicport l2
+     	 where  ((select r.systemcode
+                 from re_sys_equip r
+	          where r.equipcode = l1.equipcode
+	          and r.systemcode in(#system1#, #system2#)) <>
+             (select r.systemcode
+                 from re_sys_equip r
+	          where r.equipcode = l2.equipcode
+	            and r.systemcode in (#system1#, #system2#)))
+         and e.aendptp=l1.logicport
+         and e.zendptp=l2.logicport
+       
+		 ]]>
+	</select>
+	<select id="getEquipTypeXtxx" resultClass="java.util.HashMap">
+		<![CDATA[
+		select * from xtbm x where x.xtbm  = 'ZY03070201'
+		 ]]>
+	</select>
+	<select id="getXtbmXtxx" resultClass="java.util.HashMap"
+		parameterClass="int">
+
+		select num,xtbm, xtxx from (select rownum as num,
+		x.xtbm,x.xtxx from xtbm x
+		where rownum &lt;=#tid# and x.xtbm like
+		'ZY030702_%') where num
+		&gt;=#tid#
+		
+	</select>
+	<select id="getDistinctXtxx" resultClass="java.util.HashMap"
+		parameterClass="String">
+		<![CDATA[
+		select distinct(x.xtxx) as xtxx, x.xtbm from equipment e, xtbm x where x.xtbm = e.x_vendor and x.xtbm <> 'ZY0816'
+		 ]]>
+	</select>
+	<select id="getEquip" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		<![CDATA[
+  select e.S_SBMC equipname,
+         e.x_vendor,
+         e.x_model,
+         e.equipcode,
+         e.equiplabel,
+         getequipconnequip(equipcode) as newequipcode
+    from equipment e
+   where e.x_vendor = #vendor#
+     and e.equipcode not in (select equipcode from re_sys_equip)
+   order by S_SBMC
+		 ]]>
+	</select>
+	
+	<select id="getDeviceModelList" resultClass="java.util.HashMap">
+		select model_name x_model, getxtxx(x_vendor) xtxx, x_vendor xtbm
+		  from equip_panel_model p
+		 order by x_vendor
+    </select>
+
+	<insert id="addSysFlex" parameterClass="fiberwire.model.SystemInfoModel">
+
+		insert into transsystem
+		(systemcode,
+		sysname,	
+		x_capacity,
+		projectname,
+		tranmodel,	
+		vendor,
+		remark,
+		x,
+		y)
+		values
+		(#systemcode#,
+		#systemname#,		
+		#x_capacity#,
+		#projectname#,
+		#tranmodel#,
+		#vendor#,
+		#remark#,
+		50,
+		50)    
+    </insert>
+	<update id="modSysFlex" parameterClass="fiberwire.model.SystemInfoModel">
+		update transsystem
+		set
+		sysname = #systemname#,
+		x_capacity=#x_capacity#,
+		projectname=#projectname#,
+		tranmodel=#tranmodel#,
+		vendor=#vendor#,
+		remark=#remark#
+		where systemcode = #systemcode#
+    </update>
+	<delete id="delSysFlex" parameterClass="String">
+<!--		delete from transsystem-->
+<!--		where systemcode = #systemcode#-->
+		update transsystem t set t.sys_group='已删除' 
+		where systemcode = #systemcode#
+    </delete>
+
+
+
+
+
+	
+	<select id="getSystemVendor" resultClass="java.util.HashMap">
+		select distinct vendor
+		xtbm, getxtxx(vendor) xtxx from transsystem 
+    </select>
+	<select id="getSystemByVendor" resultClass="fiberwire.model.SystemInfoModel"
+		parameterClass="String">
+		<![CDATA[
+			select t.sysname systemname,
+			       t.systemcode,
+			       t.x_capacity,
+	       		   t.projectname,
+	       		   t.tranmodel,
+	       		   t.vendor,
+			       decode(t.x, null, 50, t.x) x,
+			       decode(t.y, null, 50, t.y) y,
+			       decode(t.remark,null,' ',t.remark) remark
+			  from transsystem t
+			 where t.vendor = #vendor#			 
+			 order by t.sysname
+		 ]]>
+	</select>
+	<select id="getChanRoutNameByTopolinkID" resultClass="fiberwire.model.ChannelRoutResultModel"
+		parameterClass="String">
+		<![CDATA[
+			select t.fiberchannelcode, e.systemcode
+			from fiberchannel t, en_topolink e
+			where (t.topolink = '$topolinkID$' or
+			t.fiberchannelcode = '$topolinkID$')
+			and t.topolink = e.label
+		 ]]>
+	</select>
+	<select id="getOcableRoutInfoByFiber" resultClass="fiberwire.model.ChannelRoutResultModel"
+		parameterClass="fiberwire.model.ChannelRoutModel">
+<!--		<![CDATA[-->
+		
+<!--			 select f.fiberchannelcode, e.systemcode-->
+<!--			 from fiberchannel f, en_topolink e-->
+<!--			 where f.fiberchannelcode =-->
+<!--			       (select fiberchannelcode-->
+<!--			          from fiberchannelroute t-->
+<!--			         where (t.ocable1 = '$OCABLE1$' and t.fiberserial1 = '$FIBERSERIAL1$')-->
+<!--			            or (t.ocable2 = '$OCABLE1$' and t.fiberserial2 = '$FIBERSERIAL1$'))-->
+<!--			   and f.topolink = e.label-->
+<!--		 ]]>-->
+		select o.name_std fiberchannelcode,'' as systemcode  from optical o where instr(o.ocablecode,'$OCABLE1$')>0 and o.fiberserial='$FIBERSERIAL1$'
+	</select>
+
+	<select id="getChannelRoutDataByCRName" resultClass="fiberwire.model.ChannelRoutModel"
+		parameterClass="String">
+		<![CDATA[
+			   select decode(t.nodetype1,
+		              '1',
+		              getequipnamebyportid(t.nodecode1),
+		              '2',
+		              getodfportname(t.nodecode1),
+		              '3',
+		              gettnodelabel(t.nodecode1),
+		              null) as equipname,
+		       t.fiberchannelcode,
+		       to_number(t.serial) serial,
+		       t.nodetype1,
+		       t.nodecode1,
+		       t.nodetype2,
+		       t.nodecode2,
+		       t.ocable1,
+		       t.fiberserial1,
+		       t.ocable2,
+		       t.fiberserial2,
+		       getPortLabelForFiber(t.nodecode1) name_node1,
+		       getPortLabelForFiber(t.nodecode2) name_node2,
+		       b.ocablesectionname,
+		       b.fibercount,
+		       s.stationname
+			   from fiberchannelroute t, en_ocablesection b, station s
+			   where t.nodetype1 = '1'
+			   and t.ocable1 = b.sectioncode(+)
+			   and t.fiberchannelcode = '$channelroutname$'
+			   and t.station = s.stationcode
+		       union
+		       select decode(t.nodetype1,
+		              '1',
+		              getequipnamebyportid(t.nodecode1),
+		              '2',
+		              getodfportname(t.nodecode1),
+		              '3',
+		              gettnodelabel(t.nodecode1),
+		              null),
+		       t.fiberchannelcode,
+		       to_number(t.serial) serial,
+		       t.nodetype1,
+		       t.nodecode1,
+		       t.nodetype2,
+		       t.nodecode2,
+		       t.ocable1,
+		       t.fiberserial1,
+		       t.ocable2,
+		       t.fiberserial2,
+		       getodfname(t.nodecode1) name_node1,
+		       getodfname(t.nodecode2) name_node2,
+		       b.ocablesectionname,
+		       b.fibercount,
+		       s.stationname
+		   from fiberchannelroute t, en_ocablesection b, station s
+		   where t.nodetype1 = '2'
+		   and t.ocable1 = b.sectioncode(+)
+		   and t.fiberchannelcode = '$channelroutname$'
+		   and t.station = s.stationcode
+		   union
+		   select decode(t.nodetype1,
+		              '1',
+		              getequipnamebyportid(t.nodecode1),
+		              '2',
+		              getodfportname(t.nodecode1),
+		              '3',
+		              gettnodelabel(t.nodecode1),
+		              null),
+	       t.fiberchannelcode,
+	       to_number(t.serial) serial,
+	       t.nodetype1,
+	       t.nodecode1,
+	       t.nodetype2,
+	       t.nodecode2,
+	       t.ocable1,
+	       t.fiberserial1,
+	       t.ocable2,
+	       t.fiberserial2,
+	       c.name_std name_node1,
+	       c.name_std name_node2,
+	       b.ocablesectionname,
+	       b.fibercount,
+	       c.name_std stationname
+		   from fiberchannelroute t, en_ocablesection b, tnode c
+		   where t.nodetype1 = '3'
+		   and t.nodecode1 = c.tnodecode
+		   and t.ocable1 = b.sectioncode(+)
+		   and t.fiberchannelcode = '$channelroutname$'
+		   order by serial
+		 ]]>
+	</select>
+	<select id="getStationNamesByByCRName" resultClass="String"
+		parameterClass="String">
+<!--		<![CDATA[-->
+<!--		  select name-->
+<!--		  from (select a.stationname name, to_number(b.serial) serial-->
+<!--		          from station a, fiberchannelroute b-->
+<!--		         where a.stationcode = b.station-->
+<!--		           and b.nodetype1 = '1'-->
+<!--		           and b.fiberchannelcode = '$channelroutname$'-->
+<!--		           and b.serial <> '1'-->
+<!--		        union-->
+<!--		        select a.stationname name, to_number(b.serial) serial-->
+<!--		          from station a, fiberchannelroute b-->
+<!--		         where a.stationcode = b.station-->
+<!--		           and b.nodetype1 = '2'-->
+<!--		           and b.ocable1 is not null-->
+<!--		           and b.fiberchannelcode = '$channelroutname$'-->
+<!--		        union-->
+<!--		        select a.name_std name, to_number(b.serial) serial-->
+<!--		          from tnode a, fiberchannelroute b-->
+<!--		         where a.tnodecode = b.station-->
+<!--		           and b.nodetype1 = '3'-->
+<!--		           and b.fiberchannelcode = '$channelroutname$')-->
+<!--		  order by serial-->
+<!--		 ]]>-->
+			select getstationbycode(o.b_equipcode) name
+  				from optical o
+ 				where o.name_std = '$channelroutname$'
+			union
+			select getstationbycode(o.e_equipcode) name
+ 			 from optical o
+ 			where o.name_std = '$channelroutname$'
+	</select>
+	<delete id="deleteEquipReSys" parameterClass="java.util.HashMap">
+		delete from
+		re_sys_equip
+		where equipcode = #equipcode#
+		and systemcode = #systemcode#
+	</delete>
+	<select id="getCountBySystemAndEquip" resultClass="int"	parameterClass="java.util.HashMap">
+		<![CDATA[
+			select count(*)  from re_sys_equip where systemcode = #systemcode#  and equipcode = #equipcode#
+			
+		 ]]>
+	</select>
+	<insert id="insertRe_Sys_Equip" parameterClass="java.util.HashMap">
+		insert into re_sys_equip(systemcode,equipcode,x,y) values(#systemcode#,#equipcode#,#x#,#y#)
+	</insert>
+	<update id="updateRe_Sys_Equip" parameterClass="java.util.HashMap">
+		update
+		re_sys_equip
+		set x = #x#, y = #y#
+		where equipcode = #equipcode#
+		and
+		systemcode = #systemcode#
+	</update>
+	<!--  
+	<select id="getFiberDetailsByOdfPort" resultClass="mapResourcesInfo.model.FiberDetails"
+		parameterClass="String">
+		<![CDATA[
+			   select t.z_point     x_point,
+		       t.z_pointName x_pointname,
+		       t.z_pointtype x_pointtype,
+		       t.zendodfport xendodfport,
+		       t.ocablecode,
+		       t.fibercount,
+		       t.fiberserial
+		     from v_fiberinfo_channle t
+		    where t.aendodfport = '$odfport$'
+		    union
+		    select s.a_point     x_point,
+		       s.a_pointName x_pointname,
+		       s.a_pointtype x_pointtype,
+		       s.aendodfport xendodfport,
+		       s.ocablecode,
+		       s.fibercount,
+		       s.fiberserial
+		   from v_fiberinfo_channle s
+		   where s.zendodfport = '$odfport$'
+		 ]]>
+	</select>-->
+	<insert id="addEquipToSystem" parameterClass="java.util.HashMap">
+		insert into re_sys_equip(systemcode,equipcode) values(#systemcode#,#equipcode#)
+	</insert>
+	<select id="getPortsByLabel"  parameterClass="String"  resultClass="java.util.HashMap">
+	select aendptp,getportlabelbycode(aendptp) aendptpxx ,zendptp,getportlabelbycode(zendptp) zendptpxx  from en_topolink  where label=#label#
+	</select>
+	<select id="getEquipCcCount" resultClass="int"
+		parameterClass="String">
+		select count(*) from cc t where t.pid=#belongequip#
+	</select>
+	
+	<select id="getEquipCc" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+<!--	<![CDATA[	-->
+<!--		   select *-->
+<!--  from (SELECT ROW_NUMBER() OVER(ORDER BY T.UPDATEDATE) RN,-->
+<!--  			   T.Id,-->
+<!--               T1.S_SBMC EQUIPNAME,-->
+<!--               T.RATE,-->
+<!--               T.APTP,-->
+<!--               gettimeslotvc4_vc12(T.ASLOT,t.rate) ASLOT,-->
+<!--               T.ZPTP,-->
+<!--               gettimeslotvc4_vc12(T.ZSLOT,t.rate) ZSLOT,-->
+<!--               TO_CHAR(T.UPDATEDATE, 'yyyy-mm-dd hh24:mi:ss') UPDATEDATE,-->
+<!--               T1.S_SBMC || '-' || P1.SLOTSERIAL || '槽-' ||getpackmodelBylogicport(P1.LOGICPORT)||'-'|| P1.PORTSERIAL || '端口' AENDPTPXX,-->
+<!--               T1.S_SBMC || '-' || P2.SLOTSERIAL || '槽-' ||getpackmodelBylogicport(P2.LOGICPORT)||'-'|| P2.PORTSERIAL || '端口' ZENDPTPXX,-->
+<!--               c.circuitcode -->
+<!--          FROM CC T, EQUIPLOGICPORT P1, EQUIPLOGICPORT P2, EQUIPMENT T1,CIRCUIT_CC  C -->
+<!--         WHERE T.PID = T1.EQUIPCODE(+)-->
+<!--           AND T.APTP = P1.LOGICPORT-->
+<!--           AND T.ZPTP = P2.LOGICPORT-->
+<!--           AND T.ID = C.CCID(+) -->
+<!--           and t.pid = #belongequip#-->
+<!--        	 ]]>-->
+		select  *
+  from (SELECT ROW_NUMBER() OVER(ORDER BY T.UPDATEDATE) RN,
+               T.Id,
+               getequipnamewithoutsystem(t.pid) EQUIPNAME,
+               T.RATE,
+               T.APTP,
+               gettimeslotvc4_vc12(T.ASLOT, t.rate) ASLOT,
+               T.ZPTP,
+               gettimeslotvc4_vc12(T.ZSLOT, t.rate) ZSLOT,
+               TO_CHAR(T.UPDATEDATE, 'yyyy-mm-dd hh24:mi:ss') UPDATEDATE,
+               getequipnamewithoutsystem(t.pid)||'-'||getportlabelnew(t.aptp) AENDPTPXX,
+              
+               getequipnamewithoutsystem(t.pid)||'-'||getportlabelnew(t.zptp) ZENDPTPXX,
+                getCircuitcodeByCCID(t.id) circuitcode
+          FROM CC             T
+         WHERE  t.pid =#belongequip#
+        ) vv
+ where vv.rn &gt;= #start#  and vv.rn &lt;= #end#
+		  
+	</select>
+	
+	<select id="getPortByEquip1" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[
+			select t.logicport,getportlabel(t.logicport) label,t.slotserial solt from equiplogicport t where t.equipcode=#equip# order by t.logicport
+		]]>
+	</select>
+	
+	
+	<select id="searchTasks" resultClass="java.util.HashMap" >
+	 		   select *
+  from (select rownum row_id,
+               t.task_id,
+	       t.task_name,
+	       t.task_period,
+	       case when t.isactivated=1 then '启动'
+	            when t.isactivated='0'then '未启动'
+	            end isactivated
+	 from timed_task  t
+        ) vv
+ 
+	 
+	 
+	 
+	 
+	</select>
+	
+	<select id="searchTaskCount" resultClass="int">
+	  select count(*) from timed_task
+	</select>
+	<insert id="insertTask" parameterClass="java.util.HashMap">
+		<selectKey resultClass="String" keyProperty="task_id">
+			select lpad(task_id.nextval,21,0) as task_id from dual
+        </selectKey>
+        insert into timed_task (task_id,task_name,task_period,isactivated)
+        values(#task_id#,#task_name#,#task_period#,#isactivated#)
+	</insert>
+	<insert id="insertTaskObject" parameterClass="java.util.HashMap">
+		<selectKey resultClass="String" keyProperty="task_object">
+			select lpad(task_task_object.nextval,21,0) as task_object from dual
+        </selectKey>
+        insert into timed_task_object (mon_id,task_id,eq_code,eq_port,eq_ts)
+        values(#task_object#,#task_id#,#eq_code#,#eq_port#,#eq_ts#)
+	</insert>
+	<delete id="delTask" parameterClass="String">
+		delete from timed_task
+		where task_id = #id#
+    </delete>
+    <delete id="delTaskObject" parameterClass="String">
+		delete from timed_task_object
+		where task_id = #objId#
+    </delete>
+    <update id="updateTask" parameterClass="java.util.HashMap">
+		update timed_task
+		set
+		task_name = #task_name#,
+		task_period=#task_period#,
+		isactivated=#isactivated#
+		where task_id = #task_id#
+    </update>
+    <select id="getTypeBycircuitCode" resultClass="java.util.HashMap" parameterClass="String">
+	  <![CDATA[ select *  from circuit t where t.circuitcode='$circuitCode$']]>
+	</select>
+    <select id="getPortsByEquipcodeCount" resultClass="int" parameterClass="String">
+    select count(*) from equiplogicport_fiber t where t.EQUIPCODE=#equipcode#
+    </select>
+    <select id="getPortsByEquipcodeInfo" parameterClass="java.util.HashMap" resultClass="fiberwire.model.ShowDatasModel">
+ 	select * from (
+	 		SELECT ROWNUM no, T.* FROM (select t.equipname,'端口性能分析'oper,
+			 t.port ,t.rate,t.logicport as portcode from equiplogicport_fiber t where t.EQUIPCODE=#equipcode#
+			)T
+		) vv 
+		where vv.no &gt;= #start#  and vv.no &lt;= #end#
+    </select>
+   <!--select id="getPortsPerTrend" parameterClass="java.util.HashMap" resultClass = "fiberwire.model.PerfDatasModel">
+   	select * from perf_data_trans t where t.eq_port =#logicport# and t.pf_period = #time# and to_char(t.pf_time,'YYYY-MM-DD')=#date#
+   </select-->
+   <!--select id="getPortsPerTrend_h" parameterClass="java.util.HashMap" resultClass = "fiberwire.model.PerfDatasModel">
+	   select * from perf_data_trans t where t.eq_port =#logicport# and t.pf_period = #time# and (t.pf_time &gt;=TRUNC(SYSDATE, 'MM') 
+		and t.pf_time &lt;=last_day(SYSDATE))
+   </select-->
+
+   <select id="getPortsPerTrend" parameterClass="java.util.HashMap" resultClass = "fiberwire.model.PerfDatasModel">
+	SELECT t1.pf_time,t1.pf_value as pf_valueiop ,t2.pf_value  as pf_valueoop FROM PERF_DATA_TRANS t1  inner join PERF_DATA_TRANS t2 
+	on  (t1.eq_port=t2.eq_port and t1.pf_period=t2.pf_period and t1.pf_time=t2.pf_time) 
+	and t1.eq_port = #logicport# and t1.pf_period=#time# and t1.name_en='IOP.' and t2.name_en='OOP' 
+   	and to_char(t1.pf_time,'YYYY-MM-DD')=#date#
+   </select>
+   <select id="getPortsPerTrend_h" parameterClass="java.util.HashMap" resultClass = "fiberwire.model.PerfDatasModel">
+	SELECT t1.pf_time,t1.pf_value as pf_valueiop ,t2.pf_value  as pf_valueoop FROM PERF_DATA_TRANS t1  inner join PERF_DATA_TRANS t2 
+	on  (t1.eq_port=t2.eq_port and t1.pf_period=t2.pf_period and t1.pf_time=t2.pf_time) 
+	and t1.eq_port = #logicport# and t1.pf_period=#time# and t1.name_en='IOP.' and t2.name_en='OOP' 
+	and (t1.pf_time &gt;=TRUNC(SYSDATE, 'MM') 
+		and t1.pf_time &lt;=last_day(SYSDATE))
+   </select>   
+   <select id="getPortsByEquipcodeInfoBylotCount" parameterClass="java.util.HashMap" resultClass="int">
+   select count(*) from equiplogicport_fiber t where t.EQUIPCODE=#equipcode# and t.FRAMESERIAL =#frameserial# and t.SLOTSERIAL=#slotserial# and t.PACKSERIAL=#packserial#
+   </select>
+   <select id="getPortsByEquipcodeInfoBylot" parameterClass="java.util.HashMap" resultClass="fiberwire.model.ShowDatasModel">
+ 	select * from (
+	 		 SELECT ROWNUM no, T.* FROM (select t.equipname,'端口性能分析'oper,
+			t.port,t.rate,t.logicport as portcode from equiplogicport_fiber t where t.EQUIPCODE=#equipcode#
+	  and t.FRAMESERIAL =#frameserial# and t.SLOTSERIAL=#slotserial# and t.PACKSERIAL=#packserial#
+	  )T
+		) vv 
+		where vv.no &gt;= #start#  and vv.no &lt;= #end#
+   </select>
+   
+   <!--找出前台进入光路路由图时，选中的设备端口	-->
+	<select id="selectEQUIPMENTPortInfoByPortCode" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select
+		q.logicport as port,
+		l.equipcode as code,
+		getNewShortPortLabel(q.logicport) as portlabel,
+		 DECODE(INSTR(getequipnamewithoutsystem(l.equipcode), '-'),
+              0,
+              getequipnamewithoutsystem(l.equipcode),
+              substr(getequipnamewithoutsystem(l.equipcode),
+                     1,
+                     INSTR(getequipnamewithoutsystem(l.equipcode), '-') - 1)) as equipname,
+		getxtxx(l.x_vendor) as x_vendor,
+		decode(l.x_model,null,'',l.x_model) x_model,
+		getsystembyeq(l.equipcode) as systemcode,
+		getstationname(l.stationcode) as stationname,
+    	l.equiptype,
+		getportlabelwithoutequipname(q.logicport) as portdetail
+		from equipment l, equiplogicport q
+		where q.equipcode = l.equipcode
+    	<isNotEmpty prepend="and" property="portlst">
+ 		q.logicport in 
+		<iterate property="portlst" open="(" close=")" conjunction=",">
+			#portlst[]#
+		</iterate>
+ 	</isNotEmpty>
+	</select>
+	
+	<!--
+		找出前台进入光路路由图时，select出所有与选中的ODF端口有关联的站内的设备端口或者模块端口类似于电路路由图中的交叉
+		matrix_stos表相当于CC表
+	-->
+	<select id="selectMatrixForFiberRoute" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select port,code,stationcode,portlabel,equipname,portdetail,
+		porttype,x_vendor,x_model,systemcode,equiptype,stationname,
+		aptp,portshow
+		from
+		(
+<!--		select v.port port,v.code code,v.stationcode stationcode,-->
+<!--		v.portlabel portlabel,v.equipname equipname,v.portdetail portdetail,-->
+<!--		v.porttype porttype,v.x_vendor x_vendor,v.x_model x_model,-->
+<!--		v.systemcode systemcode,v.equiptype equiptype,v.stationname stationname,-->
+<!--		v.aptp aptp,v.portshow portshow-->
+<!--		  from v_matrix_equip v-->
+<!--		 where v.selectport = '$portcode$'-->
+<!--		union-->
+		select  o.port port,o.code code,o.stationcode stationcode,
+		o.portlabel portlabel,o.equipname equipname,o.portdetail portdetail,
+		o.porttype porttype,o.x_vendor x_vendor,o.x_model x_model,
+		o.systemcode systemcode,o.equiptype equiptype,o.stationname stationname,
+		o.aptp aptp,o.portshow portshow
+		  from v_matrix_odf o
+		 where o.selectport ='$portcode$')
+<!--		union-->
+<!--		select d.port port,d.code code,d.stationcode stationcode,-->
+<!--		d.portlabel portlabel,d.equipname equipname,d.portdetail portdetail,-->
+<!--		d.porttype porttype,d.x_vendor x_vendor,d.x_model x_model,-->
+<!--		d.systemcode systemcode,d.equiptype equiptype,d.stationname stationname,-->
+<!--		d.aptp aptp,d.portshow portshow-->
+<!--		  from v_matrix_ddf d-->
+<!--		 where d.selectport = '$portcode$')-->
+	</select>
+	
+	<!--
+		找出前台进入光路路由图时，select出所有与选中的ODF端口有关联的站内的设备端口或者模块端口类似于电路路由图中的交叉
+		matrix_stos表相当于CC表
+	-->
+	<select id="selectTopoForBaseDataForFiberRoute" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select
+		    f.fibercode as label,
+		    decode(f.zendodfport,null,f.zendeqport,f.zendodfport)  port,
+		    o.frameserial|| '[' || o.portserial || ']' as portlabel,
+		    getequipnamewithoutsysbyport(decode(f.zendodfport,null,f.zendeqport,f.zendodfport)) as equipname,
+		    '模块'||o.frameserial||'-端口'||o.portserial as portdetail,
+		    'odf' as porttype,
+		    '' as x_vendor,
+		    '' as x_model,
+		    '' as systemcode,
+		    getstationnamebyequipcode(o.equipcode) as stationname,
+		    decode(f.zendodfport,null,f.zendeqport,f.zendodfport) ENDPTP,
+		    o.equipcode odfodmcode
+		    from en_fiber f, equiplogicport o
+		    where f.zendeqport=o.logicport
+		    and f.aendeqport = '$portcode$'
+		    union
+		    select
+		    f.fibercode as label,
+		    f.aendeqport as port,
+		    o.frameserial|| '[' || o.portserial || ']' as portlabel,
+		    getequipnamewithoutsysbyport(f.aendeqport) as equipname,
+		    '模块'||o.frameserial||'-端口'||o.portserial as portdetail,
+		    'odf' as porttype,
+		    '' as x_vendor,
+		    '' as x_model,
+		    '' as systemcode,
+		    getstationnamebyequipcode(o.equipcode) as stationname,
+		    f.aendeqport as ENDPTP,
+		    o.equipcode as odfodmcode
+		    from en_fiber f, equiplogicport o
+		    where f.aendeqport=o.logicport
+		    and f.zendeqport = '$portcode$'
+	</select>
+	 <select id="getFiberCodePort" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+       select * from en_fiber t where t.fibercode=#fibercode# 
+    </select>
+    
+    <select id="getPortCodeByOpticalcode" parameterClass="string" resultClass="string">
+    	select t.aendptp
+	  from en_topolink t
+	 where t.resid =
+       (select decode(t.topolinkid,null,'',t.topolinkid)
+          from optical_topolink t
+         where t.opticalcode =
+               (select decode(t.resid,null,'',t.resid)
+                  from optical t
+                 where t.opticalcode = #opticalcode#))
+    	
+    </select>
+    
+    <select id="getPortcodelstByOpticalid" parameterClass="string" resultClass="string">
+    	select o.portcode
+	  from optical_route o
+	 where o.optical_id = #opticalcode#
+	   and o.serial = '1'
+    </select>
+    
+    <select id="getPortCodeByToplinkid" parameterClass="string" resultClass="string">
+<!--    	select decode(t.aendeqport, null, '', t.aendeqport) aendeqport-->
+<!--	  from optical t-->
+<!--	 where t.resid =-->
+<!--	       (select decode(t.opticalcode, null, '', t.opticalcode) opticalcode-->
+<!--	          from optical_topolink t-->
+<!--	         where t.topolinkid =-->
+<!--	               (select decode(t.resid, null, '', t.resid) resid-->
+<!--	                  from en_topolink t-->
+<!--	                 where t.label = #toplinkid#))-->
+	select t.aendptp from en_topolink t where t.label=#toplinkid#
+	    	
+    </select>
+    
+    <select id="getEquiptypeByPort" parameterClass="string" resultClass="string">
+    	select t.equiptype
+		  from equipment t
+		 where t.equipcode =
+       (select e.equipcode from equiplogicport e where e.logicport = #port#)
+    </select>
+    <select id="getOpticalIDByFiber" parameterClass="map" resultClass="string">
+    	select t.opticalid from en_fiber t where t.ocablecode=#ocableid# and t.fiberserial=#fiberserial#
+    </select>
+    
+    <select id="getOpticalPortcodeAByID" parameterClass="string" resultClass="string" >
+    	select t.aendeqport from optical t where t.resid=#opticalids#
+    </select>
+    
+    <select id="getAportcodeByResid" parameterClass="string" resultClass="string">
+    	select t.topolinkid from optical_topolink t where t.opticalcode=#opticalids#
+    </select>
+    <select id="getPortCodeByResid" parameterClass="string" resultClass="string">
+    	select t.aendptp from en_topolink t where t.resid=#opticalids#
+    </select>
+    <select id="getOpticalResidByToplink" parameterClass="string" resultClass="string">
+    	select t.opticalcode from optical_topolink t where t.topolinkid=#resid#
+    </select>
+    <select id="getToplinkResid" parameterClass="string" resultClass="string">
+    	select t.resid from en_topolink t where t.aendptp=#portcode# or t.zendptp=#portcode#
+    </select>
+    
+    <select id="getOpticalIdLst" resultClass="string">
+    	select distinct t.optical_id from optical_route t
+    </select>
+    <select id="getOpticalRoutelst" parameterClass="map" resultClass="string">
+    	select decode(t.portcode,null,'',t.portcode) portcode from optical_route t where t.logo=#logo#
+    	 and t.equiptype='ODF设备' 
+    	 and t.optical_id=#opticalid#
+    	  order by t.serial
+    </select>
+    <insert id="insertMatrix_stosInfo" parameterClass="map">
+    	insert into matrix_stos(portserialno1,portserialno2,porttype1,porttype2) 
+    	values(#portcode1#,#portcode2#,#porttype1#,#porttype2#)
+    </insert>
+    <select id="getToplinkIDByOpticalCode" parameterClass="string" resultClass="string">
+    	select t.topolinkid
+  from optical_topolink t
+ where t.opticalcode =
+       (select o.resid
+          from optical o
+         where o.opticalcode = #opticalid#)
+    </select>
+    
+    <select id="getPortcodesByResid" parameterClass="string" resultClass="string">
+    	select t.aendptp||';'||t.zendptp from en_topolink t where t.resid=#toplink#
+    </select>
+    
+    <procedure id="insertopticalroute" parameterClass="string">
+    	call insertopticalroute(#opticalcode#)
+    </procedure>
+    
+    <update id="updateCircuitX_PURPOSEByMap" parameterClass="string">
+    	update circuit c  set c.x_purpose='其它业务' where c.circuitcode=#circuitCode#
+    </update>
+    
+    <select id="selectresid" resultClass="String" parameterClass="String">
+		<![CDATA[
+		  select RESID from EN_TOPOLINK where LABEL=#label#
+		 ]]>
+	 </select> 
+     <select id="selectOptical" resultClass="String" parameterClass="String">
+		<![CDATA[
+		  select OPTICALCODE from optical_topolink where TOPOLINKID=#resid#
+		 ]]>
+	</select>
+     <select id="selectOcables" resultClass="String" parameterClass="String">
+		<![CDATA[
+		  select OCABLECODE from OPTICAL where resid=#opticalcode#
+		 ]]>
+	</select>
+  
+</sqlMap>

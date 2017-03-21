@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+				xmlns:code="http://code.google.com/p/flexlib/"
+				xmlns:common="twaver.common.*"
+				fontSize="12" verticalGap="0"
+				width="100%" 
+				height="100%"
+				creationComplete="initEvent()" xmlns:component="common.component.*">
+	
+	<mx:Script source="../actionscript/devicepanel.as"/>
+
+	<mx:RemoteObject  destination="devicePanel"  
+					  showBusyCursor="true" 
+					  id="devicetreeremote" 
+					  endpoint="{ModelLocator.END_POINT}" 
+					  fault="DealFault(event)"/>
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="设备面板图" imgName="devicepanel"/>
+	<mx:HDividedBox id="hd" width="100%" height="100%" verticalScrollPolicy="off">
+			<mx:Tree id="treedevice" dataProvider="{folderCollection}" 
+					 itemRenderer="twaver.PermissionsTreeItemRenderer" 	
+					 backgroundImage="assets/images/treebg.png"
+					 backgroundSize="100%"
+					 labelField="@name"
+					 width="200" 
+					 iconFunction="deviceiconFun"
+					 height="100%" 
+					 defaultLeafIcon="{null}" 
+					 borderStyle="none"
+					 itemOpen="treeChange()" 
+					 change="treeChange()"
+					 itemRollOver="curIndex = event.rowIndex"
+					 click="treeCheck(event)"
+					 itemClick="tree_itemClick(event)">
+			</mx:Tree>
+			<code:SuperTabNavigator id="tabDevices" 
+									width="100%" 
+									height="100%"
+									tabClose="deleteTab(event)"/>
+		</mx:HDividedBox>   
+</mx:VBox>

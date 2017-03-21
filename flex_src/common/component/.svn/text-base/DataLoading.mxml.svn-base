@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="200" height="100" keyDown="load_keyDown(event)">
+	<mx:SWFLoader source="assets/swf/DataLoad.swf" y="10" x="12" click="close()"/>
+<mx:Script>
+	<![CDATA[
+		import common.actionscript.MyPopupManager;
+		
+		import mx.managers.PopUpManager;
+	
+	private function load_keyDown(event:KeyboardEvent):void{
+		if(event.keyCode == 13){
+			close();
+		}
+	}
+	private function close():void{
+		MyPopupManager.removePopUp(this);
+	}
+	
+	]]>
+</mx:Script>
+</mx:Canvas>

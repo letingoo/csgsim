@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="autoGrid">
+  <select id="getShowPropertyByDictionaryAndTableNameForSearch" parameterClass="String" resultClass="java.util.HashMap">
+    select * from tabledictionarynew where tablename=#tablename# and isrogatory='Y' order by serial
+    </select>
+	 <select id="getShowPropertyByDictionaryAndTableName" parameterClass="String" resultClass="java.util.HashMap">
+    select * from tabledictionarynew where tablename=#tablename# order by serial
+    </select>
+    <select id="setPropertyValueByTableName" parameterClass="java.util.HashMap" resultClass="java.util.HashMap" remapResults="true">
+    select $content$ from $tablename$ where $pkey$ = #value#
+    </select>
+    
+    <select id="getSqlByRule" parameterClass="String" resultClass="java.util.HashMap" remapResults="true">
+     $sql$
+    </select>
+    <update id="updateBySql" parameterClass="String">
+     $sql$
+    </update>
+    <insert id="insertBySql" parameterClass="java.util.HashMap" >
+    <selectKey resultClass="java.lang.String" keyProperty="returnValue">
+            $returnKey$ 
+     </selectKey>
+     $sql$  
+    </insert>
+    <select id="getSqlByRuleTree" parameterClass="java.util.HashMap" resultClass="java.util.HashMap" remapResults="true">
+     $sql$
+    </select>
+     <select id="getShowPropertyByDictionaryAndTableNameAndEnField" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+    select getrule,relate from tabledictionarynew where tablename=#tablename# and enfield=#enfield#
+    </select>
+     <select id="getIsNotAllowUpdateByTableName" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+    select enfield,updatetable from tabledictionarynew where tablename=#tablename# and isupdate !='Y'
+    </select>
+    <select id="getPkeySequences" parameterClass="java.util.HashMap" resultClass="java.lang.String">
+      select SEQUENCES from tabledictionarynew where tablename  =  #tablename# and iskey= 'Y'  and enfield=#key#
+    </select>
+    <delete id="deleteData" parameterClass="String">
+     $sql$
+    </delete>  
+</sqlMap>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="140" height="56" fontSize="12" verticalGap="0">
+	<mx:Label width="100%" height="20" text="承载业务:" fontWeight="bold" textAlign="left"/> 
+	<mx:TextArea id="bearer_service" backgroundAlpha="0" text="23333333333sada 33333333333155" width="100%" height="36" editable="false" borderThickness="0"/>
+</mx:VBox>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="650" height="350"  
+				title="端口属性"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12" creationComplete="titlewindow1_creationCompleteHandler(event)"> 
+	
+	<mx:Script>  
+		<![CDATA[  			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.wireConfiguration.model.DdfPort;
+			[Bindable]
+			private var _ddfport:DdfPort=new DdfPort();
+			
+ 
+			public function get ddfport():DdfPort
+			{
+				return _ddfport;
+			}
+
+			public function set ddfport(value:DdfPort):void
+			{
+				_ddfport = value;
+			}
+
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				var rtobj1:RemoteObject = new RemoteObject("wireConfiguration");
+				rtobj1.endpoint = ModelLocator.END_POINT;	
+				rtobj1.getDDFPortData(this._ddfport.ddfportcode);
+				rtobj1.addEventListener(ResultEvent.RESULT, portDataHandler); 
+			}
+			
+			private function portDataHandler(event:ResultEvent):void{
+				var data:ArrayCollection = event.result as ArrayCollection;
+				this._ddfport = data.getItemAt(0) as DdfPort;
+			
+				
+				
+			
+			}
+
+		]]>  
+	</mx:Script>
+		
+			<mx:Label text="标准名称:"     textAlign="left" width="80" x="27" y="33"/>  
+			<mx:TextInput id="port_name_std" width="180" editable="false" text="{this._ddfport.port_name_std}"  x="129" y="31"/> 				
+		
+			<mx:Label text="所属局站:"    textAlign="left" width="80"  x="317" y="33"/>
+			<mx:TextInput id="station_name_std" width="180" editable="false" text="{this._ddfport.station_name_std}" x="405" y="31"/>
+		
+			<mx:Label text="所属机房:"   textAlign="left" width="80" x="27" y="63"/>
+			<mx:TextInput id="room_name_std" width="180" editable="false" text="{this._ddfport.room_name_std}"    x="129" y="63"/>
+		
+			<mx:Label text="机架序号:" textAlign="left" width="80"     x="317" y="65"/>
+			<mx:TextInput id="shelfserial"  width="180"  editable="false" text="{this._ddfport.shelfserial}" x="405" y="63"/>
+		
+			<mx:Label text="DDM模块号:" textAlign="left" width="80"    x="27" y="97"/>
+			<mx:TextInput id="ddfddmserial"  width="180" editable="false" text="{this._ddfport.ddfddmserial}" x="129" y="95"/>
+		
+			<mx:Label text="DDF端子号:" textAlign="left" width="80"    x="317" y="97"/>
+			<mx:TextInput id="portserial"  width="180" editable="false" text="{this._ddfport.portserial}" x="405" y="95"/>
+		
+			<mx:Label text="端子类型:" textAlign="left" width="80"    x="27" y="129"/>
+			<mx:TextInput id="porttype_x"  width="180" editable="false" text="{this._ddfport.porttype_x}" x="129" y="127"/>
+		
+			<mx:Label text="端子状态:"   textAlign="left" width="80"  x="317" y="129"/>
+			<mx:TextInput id="status_x"  width="180"  editable="false" text="{this._ddfport.status_x}" x="405" y="127"/>
+		
+			<mx:Label text="上排标签:"  textAlign="left" width="80"   x="27" y="159"/>
+			<mx:TextInput id="upport"  width="180" editable="false" text="{this._ddfport.upport}" x="129" y="157"/>
+		
+			<mx:Label text="下排标签:"  textAlign="left" width="80"   x="317" y="161"/>
+			<mx:TextInput id="downport"  width="180" editable="false" text="{this._ddfport.downport}" x="405" y="159"/>
+		
+			<mx:Label text="业务名称:"  textAlign="left" width="80"   x="27" y="193"/>
+			<mx:TextInput id="circuit"  width="180" editable="false" text="{this._ddfport.circuit}" x="129" y="191"/>
+		
+			<mx:Label text="备注:"  textAlign="left" width="80"   x="317" y="193"/>
+			<mx:TextInput id="remark"  width="180"  editable="false" text="{this._ddfport.remark}" x="405" y="191"/>
+	
+			<mx:Label text="更新人:"  textAlign="left" width="80"   x="27" y="225"/>
+			<mx:TextInput id="updateperson"  width="180" editable="false" text="{this._ddfport.updateperson}" x="129" y="223"/>
+	
+			<mx:Label text="更新时间:"  textAlign="left" width="80"   x="317" y="225"/>
+			<mx:TextInput id="updatedate"  width="180"  editable="false" text="{this._ddfport.updatedate}" x="405" y="223"/>
+		
+	<!--	<mx:HBox width="100%" height="30"  horizontalAlign="center"  verticalAlign="bottom">
+			<mx:Button label="保存" click="save()" width="65" height="22" textAlign="center" />
+			<mx:Button label="关闭" click="btnCloseHandler()" width="65" height="22" textAlign="center" /> 
+		</mx:HBox>-->
+
+</mx:TitleWindow>  

@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/csgsim/!svn/ver/1/flex_src/common/component/EI_Follower
+END
+Electrical_Interface_Follower_UI.as
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/csgsim/!svn/ver/1/flex_src/common/component/EI_Follower/Electrical_Interface_Follower_UI.as
+END
+Electrical_Interface_Attachment.as
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/csgsim/!svn/ver/1/flex_src/common/component/EI_Follower/Electrical_Interface_Attachment.as
+END
+Electrical_Interface_Follower.as
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/csgsim/!svn/ver/1/flex_src/common/component/EI_Follower/Electrical_Interface_Follower.as
+END
+Attachment_Electrical_Interface.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/csgsim/!svn/ver/1/flex_src/common/component/EI_Follower/Attachment_Electrical_Interface.mxml
+END

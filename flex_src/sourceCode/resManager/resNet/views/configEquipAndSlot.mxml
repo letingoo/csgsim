@@ -1,0 +1,127 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="配置交叉" label="配置交叉" creationComplete="init();" width="338" height="224"  layout="absolute"  xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import flexunit.utils.ArrayList;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.packGraph.views.checkedEquipPack;
+			import sourceCode.sysGraph.views.configEquipSlot;
+			import sourceCode.sysGraph.views.configEquipSlotNew;
+			import sourceCode.sysGraph.views.porttreeForConfigSlot;
+			import sourceCode.tableResurces.model.Circuit;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			
+			[Bindable]
+			public var slotView:configEquipSlotNew ;
+			public var equipcode:String="";
+			public var flag:String;
+			public var parentPage:Object;
+			public var portA_code:String;
+			public var portZ_code:String;
+			public var rateA:String;
+			public var rateZ:String;
+			private function init():void
+			{
+				
+			}
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);  
+			}
+			private function save():void
+			{
+				
+				
+				
+				if(portA_code!=null||portZ_code!=null){
+					slotView.portA = portA_code;
+					slotView.portZ = portZ_code;
+					slotView.equipcode = equipcode;
+					slotView.drawPic();
+//					dispatchEvent(new Event("configSlotComplete")); 
+					this.close();
+//					parentApplication.openModel("配置交叉",false,slotView);
+				}else{
+					Alert.show("A端端口和Z端端口不能为空","提示");
+				}
+				
+				slotView.addEventListener("configSucess",function():void{
+					dispatchEvent(new Event("configSlotSucess")); 
+				});
+				
+			}
+			private function clickPort(e:MouseEvent,port:TextInput,flag:String ,from:String):void{
+				if(equipcode == ""){
+					Alert.show("请先选择设备");
+				}else{
+					var treeport:porttreeForConfigSlot = new porttreeForConfigSlot();
+					treeport.equipAndSlotconfig = this;
+					treeport.port = port;
+					treeport.equipcode = equipcode;
+					treeport.flag = flag;
+					treeport.from = from;
+					
+					MyPopupManager.addPopUp(treeport, true);
+				}
+			}
+			
+			protected function equip_clickHandler(event:MouseEvent,equip:TextInput):void
+			{
+				var treeport:porttreeForEquipcode = new porttreeForEquipcode();
+				treeport.configequipAndSlot = this;
+				treeport.equip = equip;
+				MyPopupManager.addPopUp(treeport, true);
+				
+			}
+			
+		]]>
+	</mx:Script>
+	
+	
+	<mx:Label text=" 设备名称：" fontWeight="bold"  y="28" height="25" fontFamily="宋体" x="25.5" textAlign="center" fontSize="12"/>  
+	<mx:TextInput id="equip" width="134" x="117" editable="false" y="26" fontFamily="宋体" fontSize="12" click="equip_clickHandler(event,equip)"/> 
+	
+	<mx:Label text="A端口名称：" fontWeight="bold"  y="61" x="25.5" height="25" fontFamily="宋体" fontSize="12" textAlign="center" />
+	<mx:TextInput x="117" y="59"  id="ports_a" editable="false" click="clickPort(event,ports_a,'A','Equip')"  width="134" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="Z端口名称：" fontWeight="bold"  y="94" x="25.5" height="25" fontFamily="宋体" fontSize="12" textAlign="center" />
+	<mx:TextInput x="117" y="92"  id="ports_z" editable="false" click="clickPort(event,ports_z,'Z','Equip')"  width="134" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Button label="确定" click="save()"  x="83.5" y="157" height="22" textAlign="center" fontFamily="宋体" fontSize="12"/>
+	<mx:Button label="关闭" click="close()"  x="173.5" y="157" height="22" textAlign="center" fontFamily="宋体" fontSize="12"/> 
+	
+	
+	
+	
+	
+</mx:TitleWindow>  

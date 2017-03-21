@@ -1,0 +1,32 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" 
+				title="任务关联资源" label="资源选择树" 
+				creationComplete="init();initEvent()" 
+				width="400" height="400"  layout="horizontal" 
+		
+				>
+
+	
+
+	<mx:Script source="../../actionscript/popup/ConnectSourceWin.as"/>	
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:Tree id="treeTaskSoure" dataProvider="{folderCollection}" 
+				
+				 backgroundImage="@Embed(source='assets/images/treebg.png')"
+				 backgroundSize="100%"
+				 labelField="@name"
+				 width="100%" 
+				 iconFunction="deviceiconFun"
+				 height="100%" 
+				 defaultLeafIcon="{null}" 
+				 borderStyle="none"
+				 itemOpen="treeChange()" 
+				 change="treeChange()"
+				 itemRollOver="curIndex = event.rowIndex"				
+				 doubleClick="treeCheck(event)" 
+				 doubleClickEnabled="true"
+				 itemClick="tree_itemClick(event)">
+		</mx:Tree>
+	</mx:VBox>
+</mx:TitleWindow>  

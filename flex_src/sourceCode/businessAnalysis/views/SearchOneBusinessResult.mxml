@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="1000"
+				height="500"
+				creationComplete="init()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="close()">
+	<mx:Script source="../actionscript/SearchOneBusinessResult.as" />
+	<mx:VBox width="100%" height="100%" paddingTop="5" paddingBottom="5" paddingLeft="5" paddingRight="5">
+		<mx:HBox width="100%" height="10%"  verticalAlign="middle">
+			<mx:HBox width="20%" height="100%" verticalAlign="middle">
+				<mx:Label text="业务名称：" width="100" />
+				<mx:TextInput id="resname" width="280" />
+			</mx:HBox>
+			
+			<mx:Button id="query" label="查询" width="80" click="queryData();" styleName="loginprimary"/>
+			
+		</mx:HBox>
+		<mx:HBox>
+			<mx:Button id="n1Analysis" label="选中业务N-1分析" click="analysisN1()"/> 
+			<mx:Button id="n2Analysis" label="选中业务N-2分析" click="analysisN2()"/>
+			<mx:Button id="clearCheck" label="清空选项" click="clearSelected()"/>
+		</mx:HBox>
+		
+		<mx:VBox id="h" width="100%" height="100%" paddingBottom="0" 
+				 paddingLeft="0" paddingRight="0" paddingTop="0"  
+				 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+			<mx:DataGrid id ="dg" 
+						 width="100%" 
+						 height="100%" 
+						 editable="false" 
+						 horizontalScrollPolicy="auto" 
+						 doubleClickEnabled="true" dataProvider="{allSearchBusiness}"
+						 allowMultipleSelection="true">
+				<mx:columns>
+					<mx:DataGridColumn headerText="选择" editable="false"  textAlign="center" width="40"> 
+						<mx:itemRenderer> 
+							<mx:Component> 
+								<mx:HBox horizontalAlign="center">
+									
+									<mx:CheckBox id="abox" label="" selected="{data.available}" textAlign="center"
+												 click="data.available = !data.available" />
+								</mx:HBox>
+							</mx:Component> 
+						</mx:itemRenderer> 
+					</mx:DataGridColumn> 
+					<mx:DataGridColumn headerText="业务名称" width="200" dataField="BUSINESS_NAME"/>
+					<mx:DataGridColumn headerText="使用单位" dataField="BUSINESS_USEUNIT" width="200"/>
+					<mx:DataGridColumn headerText="业务类别" dataField="BUSINESS_TYPE" width="200"/>
+					<mx:DataGridColumn headerText="业务状态" dataField="BUSINESS_STATE" width="100"/>
+					<mx:DataGridColumn headerText="开通日期" dataField="BUSINESS_OPENDATE" width="200"/>
+					
+				</mx:columns> 
+			</mx:DataGrid>
+			
+		</mx:VBox>
+	</mx:VBox>
+</mx:TitleWindow>

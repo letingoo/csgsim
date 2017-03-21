@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" fontSize="12"    
+				width="100%"
+				height="100%"
+				xmlns:common="twaver.common.*"
+				xmlns:code="http://code.google.com/p/flexlib/" 
+				xmlns:custom="common.component.*">
+
+	<mx:Script source="../actionscript/EquipPack.as"/>
+	
+	<mx:RemoteObject  destination="equipPack"  showBusyCursor="true" id="packtreeremote" endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" result="resultHandler(event)" />
+	<mx:RemoteObject  destination="equipPack"  showBusyCursor="true" id="treeremote" endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" result="treeResultHandler(event)">
+	</mx:RemoteObject>
+		<mx:HDividedBox id="hd" width="100%" height="100%" backgroundColor="0xFFFFFF" >
+			<mx:VBox width="200" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+				<mx:Tree id="treepower" dataProvider="{folderCollection}" itemRenderer="twaver.EquipPackTreeCheckbox"	
+						 backgroundImage="assets/images/treebg.png"
+						 backgroundSize="100%"
+						 labelField="@label"
+						 width="100%" 
+						 height="100%" 
+						 defaultLeafIcon="{null}" 
+						 borderStyle="none"
+						 showRoot="true"
+						 click="treeCheck(event)"
+						 itemClick="tree_itemClick(event)"
+						 />
+			</mx:VBox>
+			<code:SuperTabNavigator id="tabPanel"  tabClose="deleteTab(event)"  width="100%"  height="100%">
+			</code:SuperTabNavigator> 	
+		</mx:HDividedBox>   
+	<!--</mx:VBox>-->
+</mx:VBox>

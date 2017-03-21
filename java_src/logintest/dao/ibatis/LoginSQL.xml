@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="logintest">
+    <select id="selectLogintest" resultClass="sysManager.user.model.UserModel" parameterClass="sysManager.user.model.UserModel">
+        <![CDATA[
+           select t.username as  user_id,t.truename as user_name,t.userpassword as user_pwd  from sec_userinfo t where t.username='$user_name$' and t.userpassword='$user_pwd$' 
+        ]]> 
+    </select>
+
+</sqlMap>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--系统组织图-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+		 width="100%"
+		 height="100%"
+		 verticalGap="0"
+		 horizontalGap="0"
+		 creationComplete="init();initEvent()" 
+		 preinitialize="preinitialize()"
+		 xmlns:views="sourceCode.sysGraph.views.*" 
+		 xmlns:actionscript="sourceCode.sysGraph.actionscript.*"
+		 xmlns:base="base.*"
+		 xmlns:component="common.component.*" 
+		 xmlns:h="sourceCode.sysGraph.actionscript.*">
+
+
+
+	<mx:NumberValidator id="numValid"  source="{ddd}" property="text" required="true" domain="real" allowNegative="false"  
+						requiredFieldError="不能为空，请输入！" integerError="请输入正整数！"  trigger="{diClick}" triggerEvent="click" valid="diClickHandler();"/>
+	<mx:Script source="../actionscript/sysGraph.as"/>
+	
+	<mx:ArrayCollection id="linkItems">
+		<actionscript:ActionTile label="flexional link" imageName="link_flexional_icon" 
+								 action="{function():void{
+								 createLinkInteraction(Link,Consts.LINK_TYPE_PARALLEL,createLinkCallBack);
+								 }}" />
+	</mx:ArrayCollection>
+	
+	<mx:RemoteObject id="fw"  destination="fiberWire" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"
+					 fault="DealFault(event)" result="resultHandler(event)"/>
+	
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="网络拓扑图" imgName="sysorgmap"/>
+	<mx:HDividedBox width="100%" height="100%" >
+		<mx:VBox id="leftpanel" width="200" height="100%" verticalGap="0">
+				<component:SearchTextInput id="searchText" height="35" width="100%" searchEnter="{enter()}"
+										   clickButton="searchText_clickHandler(event)" />
+				<h:CheckTree id="tree" 
+							 width="100%" 
+							 height="100%"
+							 rowHeight="20"
+							 dataProvider="{XMLData}" 
+							 labelField="@name"
+							 iconFunction="iconFun" 
+							 checkBoxOpenItemsOnCheck="true"
+							 checkBoxStateField="@checked"							 
+							 backgroundImage="@Embed(source='assets/images/treebg.png')"
+							 backgroundSize="100%"									
+							 click="showSystemMap(event)" 
+							 doubleClickEnabled="true"
+							 doubleClick="tree_doubleClickHandler(event)"/>					
+		</mx:VBox>	
+		<mx:Canvas id="cvs" width="100%" height="100%" >
+			<mx:VBox width="100%" height="100%" horizontalGap="0" verticalGap="0">
+				<mx:HBox id="toolbar" width="100%" horizontalGap="0" visible="true"  verticalAlign="middle">
+					<mx:ComboBox id="cob" dataProvider="{arr_cb}" labelField="label"  width="150"  change="cob_changeHandler(event)" 
+												 click="cob_clickHandler(event)"/><!--	prompt="请选择"-->
+					<mx:ComboBox id="cob_add" dataProvider="{arr_cb_add}" labelField="label"  width="0"  change="cob_changeHandler(event)" visible="false"/>
+				</mx:HBox>
+				<tw:Network id="systemorgmap" 
+							width="100%" 
+							height="100%"  
+							backgroundColor="0xffffff"   							
+							dragEnter="onDragEnter(event)" 
+							dragOver="onDragOver(event)"
+							dragDrop="onGridDragDrop(event)"
+							dragExit="onDragExit(event)"
+							keyboardRemoveEnabled="false" 
+							keyDown="sysNetwork_keyDownHandler(event)"	
+							doubleClick="doubleChickHandler(event)"
+							visible="true"
+							/>
+			</mx:VBox>
+			<mx:VBox label="设备" width="100%" height="100%" horizontalGap="0" borderStyle="solid" visible="false" includeInLayout="false">
+				<mx:Tree id="deviceTree" width="100%" height="100%" dataProvider="{DeviceXML}"	
+						 verticalScrollPolicy="auto"
+						 iconFunction="deviceiconFun"
+						 change="treeChange()" 
+						 labelField="@label"						
+						 defaultLeafIcon="{null}" 
+						 borderStyle="none"
+						 dropEnabled="false"
+						 dragEnabled="true"
+						 dragMoveEnabled="false"
+						 itemClick="tree_itemClick(event)" 
+						 itemOpen="treeChange()"
+						 itemRollOver="curIndex = event.rowIndex"/>
+			</mx:VBox>			
+			<mx:Accordion id="acc" change="accordionChange()"  height="{vb.height}" styleName="myAccordion"
+						  width="220" paddingBottom="0" paddingTop="0" right="40" top="0">
+
+				<mx:VBox label="设备模板" width="100%" height="100%" horizontalGap="0" borderStyle="solid" 
+						 horizontalAlign="center" verticalAlign="middle">
+					<mx:TileList id="tileList" dragEnabled="true" borderThickness="0" 
+								 width="100%" height="100%"
+								 rowHeight="70" columnWidth="100"
+								 columnCount="1" dataProvider="{xmlListColl}">
+						<mx:itemRenderer>
+							<mx:Component>
+								<views:EquipModelRenderer left="10" right="10" />
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:TileList>
+				</mx:VBox>
+				<mx:VBox label="复用段" width="100%" height="100%" borderStyle="solid">
+					<mx:TileList id="tileTopoLink" borderThickness="0" rowHeight="30" columnWidth="35"
+								 width="100%" height="100%" columnCount="3" dataProvider="{linkItems}"
+								 itemClick="onItemClick(event)">
+						<mx:itemRenderer>
+							<views:ActionTileRenderer left="10" right="10" />
+						</mx:itemRenderer>
+					</mx:TileList>
+				</mx:VBox>
+				<mx:VBox label="搜索" width="100%" height="100%" horizontalGap="0" borderStyle="solid" 
+						 horizontalAlign="center" verticalAlign="middle" verticalGap="0">
+					<component:SearchTextInput id="searchText1" height="35" width="100%" clickButton="searchText_clickHandler1(event)" searchEnter="{enter1()}"/>
+					<mx:List id="tileSearch" dragEnabled="true" borderThickness="0" 
+								 width="100%" height="100%"
+								 rowHeight="40" columnWidth="100"
+								 columnCount="1" labelField="@label" itemClick="tileSearch_itemDoubleClickHandler(event)" doubleClickEnabled="true">
+					</mx:List>
+				</mx:VBox>
+				
+				<!--分析-->
+				<mx:VBox id="vbox" label="分析"
+						 width="100%" height="100%" horizontalGap="0" borderStyle="solid" 
+						 horizontalAlign="center" verticalAlign="middle" verticalGap="0">
+							<!-- Start 成环率分析-->	
+							<mx:Label id="lab" text="" visible="false"/>
+							
+							<mx:HBox id="diInput" visible="false" horizontalAlign="center">
+								<mx:Label id="dl" text="直径" />
+								<mx:TextInput width="30%" id="ddd" />
+								<mx:Button id="diClick" label="提交" />
+							</mx:HBox>
+							<!--ShowData-->
+							<mx:DataGrid id="equipGrid" width="100%" height="100%" sortableColumns="false"
+										 dataProvider="{Shared.equips}" itemClick="equipGridList_itemClickHandler(event)"
+										 paddingTop="0">
+								<mx:columns>
+									<mx:DataGridColumn dataField="NODE_NAME" headerText="未成环设备" id="no" showDataTips="true" dataTipField="TIPINFO" visible="false"/>
+									<mx:DataGridColumn dataField="Path" headerText="直径路径" id="di" visible="false" showDataTips="true" dataTipField="Path"/>
+									<mx:DataGridColumn dataField="G_Point" headerText="割点" id="su" showDataTips="true" visible="false"/>	
+								</mx:columns> 
+							</mx:DataGrid>
+							<!--  End  -->	
+						
+				</mx:VBox>
+				<!--分析-->
+			</mx:Accordion>
+			<base:VButtonBar id="vb" visible="true" Vdata="{ac}" accordion="{acc}" width="30"
+							 paddingBottom="0" paddingTop="0" right="10" top="0"
+							 selectedItemEvent="vb_selectedItemEventHandler(event)"/>
+		</mx:Canvas>					
+		
+	</mx:HDividedBox>
+</mx:VBox>

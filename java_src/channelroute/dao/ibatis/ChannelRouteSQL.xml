@@ -1,0 +1,1076 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="channelRouteDAO">
+	<typeAlias alias="channelRouteDetailModel" type="channelroute.model.ChannelRouteDetailModel" />
+	<resultMap id="getChannelRouteDetailModel" class="channelRouteDetailModel">
+		<result column="userCom" property="userCom" />
+		<result column="remark" property="remark" />
+		<result column="requestCom" property="requestCom" />
+		<result column="requisitionId" property="requisitionId" />
+		<result column="userName" property="userName" />
+		<result column="operationType" property="operationType" />
+		<result column="rate" property="rate" />
+		<result column="circuitLevel" property="circuitLevel" />
+		<result column="interfaceType" property="interfaceType" />
+		<result column="state" property="state" />
+		<result column="station1" property="station1" />
+		<result column="station2" property="station2" />
+		<result column="equipcode1" property="equipCode1" />
+		<result column="equipcode2" property="equipCode2" />
+		<result column="beizhu" property="beiZhu" />
+		<result column="netmanagerId" property="netManagerId" />
+		<result column="portserialno1" property="portserialno1" />
+		<result column="portserialno2" property="portserialno2" />
+		<result column="leaser" property="leaser" />
+		<result column="createtime" property="createTime" />
+		<result column="usetime" property="useTime" />
+		<result column="requiSitionIdz" property="requiSitionId" />
+		<result column="implementation_units" property="implementation_units" /><!-- 
+			add by sjt -->
+		<result column="form_name" property="form_name" />
+		<result column="portcodeA" property="portcodeA" />
+		<result column="portcodeZ" property="portcodeZ" />
+		<result column="check1" property="check1" />
+		<result column="check2" property="check2" />
+		<result column="newcircuitcode" property="newcircuitcode" />
+		<result column="powerline" property="powerline" />
+		<result column="protectdevicetype" property="protectdevicetype" />
+		<result column="requestfinish_time" property="requestfinish_time" />
+		<result column="approver" property="approver" />
+		<result column="addfport" property="addfport" />
+		<result column="zddfport" property="zddfport" />
+	</resultMap>
+	<resultMap id="positionMap" class="channelroute.model.PositionModel">
+		<result column="circuitcode" property="circuitcode" />
+		<result column="equipcode" property="equipcode" />
+		<result column="logicport" property="logicport" />
+		<result column="x" property="x" />
+		<result column="y" property="y" />
+		<result column="slot" property="slot" />
+		<result column="flag" property="flag" />
+		<result column="position" property="position" />
+	</resultMap>
+	<select id="getName"  parameterClass="String"    resultClass="String"  >
+ select s_sbmc from equipment where equipcode in(select equipcode from equiplogicport where logicport in(select  portserialno1 from circuit where circuitcode=#circuitcode#))
+  </select>
+  
+<select id="getNamer"  parameterClass="String"  resultClass="String"  >
+  select s_sbmc from equipment where equipcode in(select equipcode from equiplogicport where logicport in(select  portserialno2 from circuit where circuitcode=#circuitcode#))
+ </select>
+ 
+ <!--  取得业务的具体信息  -->
+ <select id="getHBusiness"  resultClass="java.util.HashMap"  parameterClass="String" >
+<!--  select business_name,business_useunit,business_type,business_state,business_opendate from business where business_state='占用' -->
+select business.business_name,business_useunit,business_type,business_state from business where business_state='在役' and business_type=#type# and business.business_name in(select business_name from business_circuit)
+ </select>
+ 
+  <!--  取得业务的电路编号  -->
+  <select id="getYid"  parameterClass="String"  resultClass="java.util.HashMap" >
+       select circuitcode from business_circuit where business_name=#name#
+ </select>
+<!--  <select id="getYid"  parameterClass="String"  resultClass="String" >
+       select circuitcode from business_circuit where business_name=#name#
+ </select>  -->
+ <select id="getEver"  parameterClass="String"  resultClass="java.util.HashMap">
+       select circuitcode,portserialno1,slot1 from circuit where circuitcode=#code#
+   </select>
+   <select id="getopoequipname"  parameterClass="String"  resultClass="String">
+        select s_sbmc from equipment where equipcode in(select equipcode from equiplogicport where logicport =#topo#)
+   </select>
+	
+	<select id="getChannelRouteDetailModel" parameterClass="java.lang.String"
+		resultMap="getChannelRouteDetailModel">
+
+		select c.usercom,
+		c.remark,
+		c.requestcom,
+		c.requisitionid requisitionId,
+		c.username,
+		c.x_purpose operationtype,
+		c.rate||'b/s' rate,
+		c.circuitlevel,
+		c.interfacetype,
+		c.state,
+		getstationname(c.station1) as
+		station1,
+		getstationname(c.station2) as station2,
+		getequipnamebyportid(c.portcode1) as equipcode1,
+		getequipnamebyportid(c.portcode2) as equipcode2,
+		<!-- decode(c.beizhu, null, ' ', beizhu) as beizhu, -->
+		decode(c.remark, null, ' ', remark) as beizhu,
+		c.netmanagerid,
+		c.portcode1 as portcodeA,
+		c.portcode2 as portcodeZ,
+		getportlabelbycode(c.portcode1) as portserialno1,
+		getportlabelbycode(c.portcode2) as portserialno2,
+		c.leaser,
+		c.updateperson as updateperson,
+		decode(c.createtime, null, ' ',
+		to_char(c.createtime, 'YYYY-MM-DD')) as createtime,
+		decode(c.usetime,
+		null, ' ', to_char(c.usetime, 'YYYY-MM-DD')) as
+		usetime,
+		c.requisitionid as requiSitionIdz,
+		'' implementation_units,
+		''
+		form_name,
+		<!-- decode(c.check1,null,'',c.check1) as check1, -->
+		'' check1,
+		<!-- decode(c.check2,null,'',c.check2) as check2, -->
+		'' check2,
+		<!-- decode(c.newcircuitcode,null,'',c.newcircuitcode) as newcircuitcode, -->
+		'' newcircuitcode,
+		'' powerline,
+		'' protectdevicetype,
+		<!-- decode(c.requestfinish_time, null, ' ', to_char(c.requestfinish_time, 
+			'YYYY-MM-DD')) as requestfinish_time, -->
+		decode(c.circuitfinlishtime, null, ' ', to_char(c.circuitfinlishtime,
+		'YYYY-MM-DD')) as requestfinish_time,
+		getlogicportconnddfport(c.portcode1) as addfport,
+		getlogicportconnddfport(c.portcode2) as zddfport,
+		approver
+		from circuit
+		c
+		where c.circuitcode = '$itemid$'
+	</select>
+	<!-- <select id="getTopoPort" resultClass="java.util.HashMap" parameterClass="map"> -->
+	<!-- select * from en_topolink t where t.equip_a=#equip_a# and t.equip_z=#equip_z# -->
+	<!-- union select * from en_topolink t where t.equip_z=#equip_a# and t.equip_a=#equip_z# -->
+	<!-- </select> -->
+
+
+	<insert id="insertCCTmpflex" parameterClass="channelroute.model.CCTmpModel">
+		insert into cctmp t
+		(t.id,t.circuitcode,t.pid,t.rate,t.direction,t.aptp,t.aslot,t.zptp,t.zslot,t.type,t.updateperson,real_rate,real_aslot,real_zslot)
+		values
+		(cctmp_seq.nextval,#circuitcode#,#pid#,#rate#,#direction#,#aptp#,#aslot#,#zptp#,#zslot#,#type#,#updateperson#,#real_rate#,#real_aslot#,#real_zslot#)
+	</insert>
+
+	<delete id="deleteCCTmp" parameterClass="map">
+		delete cctmp t where
+		t.circuitcode=#circuitcode#
+	</delete>
+
+<!---->
+	<!-- <select id="selectCCTmpByCircuitCode" resultClass="java.util.HashMap" 
+		parameterClass="map"> -->
+	<!-- select * from cctmp t where t.circuitcode=#circuitcode# -->
+	<!-- </select> -->
+
+	<!-- <select id="selectTopoLinkForChannelRoute" resultClass="java.util.HashMap" 
+		parameterClass="map"> -->
+	<!-- select t.*,to_char(t.updatedate,'YYYY-MM-DD') as updatetime,getxtxx(t.linerate) 
+		as -->
+	<!-- ratename,getequipname(t.equip_a) as equipname_a,getequipname(t.equip_z) 
+		as -->
+	<!-- equipname_z,getstationname(t.station_a) as stationname_a,getstationname(t.station_z) 
+		as -->
+	<!-- stationname_z,getportlabelwithoutequipname(t.aendptp) as portname_a,getportlabelwithoutequipname(t.zendptp) 
+		as -->
+	<!-- portname_z from en_topolink t where t.label=#label# -->
+	<!-- </select> -->
+
+
+	<!-- <select id="selectLogicPortForChannel" resultClass="java.util.HashMap" 
+		parameterClass="map"> -->
+	<!-- select t.*,to_char(t.updatedate,'YYYY-MM-DD') as updatetime from view_equiplogicportnew 
+		t where -->
+	<!-- t.logicport=lpad(#logicport#,20,'0') -->
+	<!-- </select> -->
+
+	<!-- <select id="getRealRateByPortAndSlot" resultClass="java.lang.String" 
+		parameterClass="map"> -->
+	<!-- select rate from cc t where t.aptp=#port# and t.aslot=#slot# and t.rate=#rate# 
+		union select rate from cc t where -->
+	<!-- t.zptp=#port# and t.zslot=#slot# and t.rate=#rate# -->
+	<!-- select rate from circuit_cc t where t.tp_id_z=#port# and t.ts_a=#slot# 
+		and t.rate=#rate# union select rate from circuit_cc t where -->
+	<!-- t.tp_id_z=#port# and t.ts_z=#slot# and t.rate=#rate# -->
+	<!-- </select> -->
+
+	<insert id="insertChannelrouteContentflex" parameterClass="channelroute.model.ChannelRouteContent">
+		<selectKey resultClass="int" keyProperty="id">
+			select
+			CHANNELROUTE_CONTENT_SEQ.nextval as id from dual
+		</selectKey>
+		insert into $table$ (id,circuitcode,content,user_id,type)
+		values
+		($id$,#circuitcode#,$content$,#userid#,#type#)
+	</insert>
+	<!--查询当前电路的电路路由图xml内容 -->
+	<!-- <select id="selectChannelRouteContentByCircuitcode" parameterClass="map" 
+		resultClass="java.util.HashMap" remapResults="true"> -->
+	<!-- select * from $table$ where circuitcode=#circuitcode# -->
+	<!-- </select> -->
+	<delete id="deleteChannelRouteByCircuitcodeflex" parameterClass="map">
+		delete $table$ where circuitcode=#circuitcode#
+	</delete>
+	<!-- <select id="selectAlarmInfoForChannleRoute" parameterClass="map" resultClass="java.util.HashMap"> -->
+	<!-- <![CDATA[ -->
+	<!-- select decode(alarmlevel, -->
+	<!-- 'critical', -->
+	<!-- '紧急', -->
+	<!-- 'major', -->
+	<!-- '主要', -->
+	<!-- 'minor', -->
+	<!-- '次要', -->
+	<!-- 'warning', -->
+	<!-- '提示', -->
+	<!-- '其它') as alarmlevel, -->
+	<!-- objectinfo, -->
+	<!-- alarmdesc, -->
+	<!-- alarmtext, -->
+	<!-- decode(starttime, null, ' ',to_char(starttime, 'YYYY-mm-dd hh:mi:ss')) 
+		starttime, -->
+	<!-- isacked, -->
+	<!-- decode(acktime, null, ' ', to_char(acktime, 'YYYY-mm-dd hh:mi:ss')) 
+		acktime, -->
+	<!-- ackperson, -->
+	<!-- decode(arrivetime, null, ' ', to_char(arrivetime, 'YYYY-mm-dd hh:mi:ss')) 
+		arrivetime, -->
+	<!-- alarmnumber -->
+	<!-- from (select rownum num, -->
+	<!-- alarmlevel, -->
+	<!-- objectinfo, -->
+	<!-- decode(alarmdesc,null,' ',alarmdesc) alarmdesc, -->
+	<!-- decode(alarmtext,null,' ',alarmtext) alarmtext, -->
+	<!-- starttime, -->
+	<!-- decode(isacked,0,'否 ',1,'是',isacked) isacked, -->
+	<!-- acktime, -->
+	<!-- decode(ackperson,null,' ',ackperson) ackperson, -->
+	<!-- arrivetime, -->
+	<!-- alarmnumber, -->
+	<!-- alarmobject -->
+	<!-- from (select a.*,getequipname(split(objectcode, 1, '=')) || -->
+	<!-- decode(split(objectcode, 3, '='), null, '', '-') || -->
+	<!-- split(objectcode, 3, '=') || -->
+	<!-- decode(split(objectcode, 3, '='), null, '', '槽') || -->
+	<!-- split(objectcode, 4, '=') || -->
+	<!-- decode(split(objectcode, 4, '='), null, '', '盘') || -->
+	<!-- split(objectcode, 5, '=') || -->
+	<!-- decode(split(objectcode, 5, '='), null, '', '端口') || -->
+	<!-- decode(split(objectcode, 7, '='), null, '', '(') || -->
+	<!-- split(objectcode, 7, '=') || -->
+	<!-- decode(split(objectcode, 7, '='), null, '', '-') || -->
+	<!-- split(objectcode, 6, '=') || -->
+	<!-- decode(split(objectcode, 7, '='), null, '', ')') objectinfo from alarminfo_bak 
+		a,cctmp t where a.belongequip=t.pid and t.circuitcode=#circuitcode# order 
+		by alarmlevel asc)) -->
+	<!-- -->
+	<!-- where -->
+	<!-- num > $start$ -->
+	<!-- and -->
+	<!-- num <= $end$ -->
+	<!-- ]]> -->
+	<!-- </select> -->
+
+	<!-- <select id="countAlarmTotalByCircuitcode" resultClass="java.lang.Integer" 
+		parameterClass="map"> -->
+	<!-- select count(*) from alarminfo_bak a,cctmp t where a.belongequip=t.pid 
+		and t.circuitcode=#circuitcode# -->
+	<!-- </select> -->
+	<!--获取当前端口的详细信息 -->
+	<select id="selectPortInfoByPortCode" parameterClass="map"
+		resultClass="java.util.HashMap" remapResults="true">
+		select a.*,p.x,p.y from 
+       (select
+		getxtxx(q.x_capability) as portrate,
+		q.logicport as port,
+		#vc# as
+		ccrate,
+		l.equipcode as equip,
+		q.slotserial||'.'|| q.portserial as
+		portlabel,
+		l.s_sbmc as equipname,
+		#slot# as timeslot,
+		getxtxx(l.x_vendor) as x_vendor,
+		l.x_model,
+		getsystembyeq(l.equipcode)
+		as systemcode,
+		q.frameserial || '框-' || q.slotserial || '槽-' ||
+		q.packserial || '盘-' ||
+		q.portserial || '端口' as portdetail,
+        l.equipcode
+		from
+		equipment l, equiplogicport q
+		where q.equipcode = l.equipcode
+		and
+		q.logicport = #logicport#) a left outer join channel_element_position p
+   		on( a.equipcode=p.equipcode and  p.circuitcode=#v_name#)
+	</select>
+
+	<select id="getCircuitCodeByPortCodeForTandem" parameterClass="map"
+		resultClass="java.lang.String">
+		select t.circuitcode from circuit t where
+		t.portserialno1=#logicport# or
+		t.portserialno2=#logicport#
+	</select>
+	<!-- <select id="selectCircuitInfoForTandem" parameterClass="map" resultClass="java.util.HashMap"> -->
+	<!-- select t.*,to_char(t.usetime,'YYYY-MM-DD') as startdate , to_char(t.createtime,'YYYY-MM-DD') 
+		as makedate -->
+	<!-- ,getxtxx(t.requestcom) as requestcomname,getxtxx(t.usercom) as usercomname,getxtxx(t.rate) 
+		as ratename from -->
+	<!-- circuit t where t.circuitcode=#circuitcode# -->
+	<!-- </select> -->
+
+	<!-- <delete id="deleteCircuitCompareByCircuitCode" parameterClass="java.util.HashMap"> -->
+	<!-- delete CIRCUIT_WATCH where circuitcode=#circuitcode# -->
+	<!-- </delete> -->
+	<!-- <insert id="insertIntoCircuitCompare" parameterClass="java.util.HashMap"> -->
+	<!-- insert into CIRCUIT_WATCH (circuitcode,flag) values(#circuitcode#,#flag#) -->
+	<!-- </insert> -->
+	<select id="getCircuitChangeNum" parameterClass="java.util.HashMap"
+		resultClass="java.lang.String">
+		select count(*) as num from circuit_watch where
+		flag=#flag#
+	</select>
+	<select id="getCircuitInfoflex" resultClass="java.util.HashMap"
+		parameterClass="String">
+        <![CDATA[
+	       select c.circuitcode, 
+	       decode(getxtxx(c.usercom), null, ' ', getxtxx(c.usercom)) as usercom, 
+	       c.usercom as usercomcode,
+	       decode(c.remark, null, ' ', c.remark) as remark, 
+	       decode(c.requestcom,null,'',c.requestcom) as requestcom, 
+	       c.requestcom as requestcomcode,
+	       decode(c.requisitionid, null, ' ', c.requisitionid) as requisitionid, 
+	       getxtxx(c.username) username, 
+	        c.rate,
+       		getxtbm(c.rate,'YW0102__') ratecode,
+       		c.x_purpose busitype,
+      	 getxtbm(c.x_purpose,'YW120915__') busitypecode,
+	       c.circuitlevel,
+	       decode(c.interfacetype, null, ' ', interfacetype) as interfacetypecode,
+	       getxtxx(c.interfacetype) interfacetype,
+	       portserialno1,
+	       portserialno2,
+	       slot1,
+	       slot2,
+	       decode(c.createtime, null, ' ', to_char(c.createtime, 'YYYY-MM-DD')) as createtime,
+	       decode(c.usetime, null, ' ', to_char(c.usetime, 'YYYY-MM-DD')) as usetime,
+	       c.leaser
+  		from circuit c, xtbm t
+ 		where c.circuitcode = #circuitcode#
+   		and c.username || '-' || c.operationtype = t.xtxx(+)
+        ]]>
+	</select>
+	<!-- decode(c.beizhu, null, ' ', beizhu) as beizhu, c.implementation_units, 
+		c.form_name, c.check1, c.check2, c.newcircuitcode,c.protectdevicetype, decode(c.requestfinish_time, 
+		null, ' ', to_char(c.requestfinish_time, 'YYYY-MM-DD')) as requestfinish_time -->
+	<select id="getMaxCircuitCode" resultClass="java.lang.String"
+		parameterClass="map">
+		select max(circuitcode) from circuit t where
+		t.circuitcode like
+		'%$circuitcode$%'
+	</select>
+	<insert id="insert_updateCircuitForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		insert into circuit(circuitcode,username,createtime,rate,interfacetype,X_PURPOSE,leaser,remark,usetime,
+		SCHEDULERID,requisitionid,requestcom,usercom,circuitlevel,portserialno1,portserialno2,portcode1,portcode2,slot1,slot2)
+		values(#circuitcode#,#remark#,to_date(#createtime:TIMESTAMP#,'YYYY-MM-DD'),#rate#,#interfacetype#,#username#,
+		#leaser:VARCHAR#,#beizhu:VARCHAR#,to_date(#usetime#,'YYYY-MM-DD'),#requisitionid#,#requisitionid#,
+		#requestcom:VARCHAR#,#usercom:VARCHAR#,#circuitLevel:VARCHAR#,#portserialno1#,#portserialno2#,
+		#portserialno1#,#portserialno2#,#slot1#,#slot2#)
+	</insert>
+	<insert id="insertBusinessForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		<selectKey keyProperty="circuitcode_bak" resultClass="string">
+			select lpad(seq_business.nextval,20,0) as circuitcode_bak from dual
+		</selectKey>
+		insert into 
+		BUSINESS ( 
+			BUSINESS_ID,BUSINESS_NAME,BUSINESS_USEUNIT,BUSINESS_TYPE,VERSION_ID,BUSINESS_STATE,BUSINESS_OPENDATE 
+ 		) values (#circuitcode_bak#,#remark#,#usercom:VARCHAR#,#x_purpose#,'','BUS00001',to_date(#usetime#,'YYYY-MM-DD'))
+	</insert>
+	
+	<update id="updateBusinessForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		update BUSINESS t set 
+<!--		t.BUSINESS_NAME = #remark#,-->
+		t.BUSINESS_USEUNIT = #usercom:VARCHAR#,
+		t.BUSINESS_TYPE = #username#,
+		t.BUSINESS_OPENDATE = to_date(#usetime#,'YYYY-MM-DD')
+		where t.BUSINESS_NAME = #remark#
+	</update>
+	
+	<insert id="insertBusi_circuitForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		insert into business_circuit(business_id,circuitcode,business_name,username,updateperson)
+		values(#circuitcode_bak#,#circuitcode#,#remark#,#remark#,'')
+	</insert>
+	
+	<update id="updateBusi_circuitForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		update business_circuit s
+		   set s.business_name = #remark#, s.username = #remark#
+		 where s.business_id = （  select distinct t.business_id
+	          from business t
+	         where t.business_name =#remark# ）
+	</update>
+	
+	<update id="updateCircuit_ccForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		update circuit_cc t 
+		set 
+		t.circuitcode = #circuitcode#
+		where t.circuitcode = #powerline#
+	</update>
+	
+	<update id="updateCircuitForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		update circuit t
+		set
+		t.username=#remark#,
+		  t.createtime=to_date(#createtime:TIMESTAMP#,'YYYY-MM-DD'),
+		t.rate=#rate#,
+		t.interfacetype=#interfacetype#,
+    	t.X_PURPOSE = #username#,
+		t.leaser=#leaser:VARCHAR#,
+		t.remark=#beizhu:VARCHAR#,
+		t.usetime=to_date(#usetime#,'YYYY-MM-DD'),
+    	t.SCHEDULERID = #requisitionid#,
+		t.requisitionid=#requisitionid#,
+		t.requestcom=#requestcom:VARCHAR#,
+		t.usercom=#usercom:VARCHAR#,
+		t.circuitlevel=$circuitLevel$,
+		t.portserialno1=#portserialno1#,
+		t.portserialno2=#portserialno2#,
+    	t.portcode1=#portserialno1#,
+    	t.portcode2=#portserialno2#,
+    	t.slot1=#slot1#,
+    	t.slot2=#slot2#
+		where t.circuitcode=#circuitcode#
+	</update>
+	<update id="updateCircuitForRelateCircuitIsReplace"
+		parameterClass="channelroute.model.Circuit">
+		update circuit t
+		set
+		t.username=#username#,
+		t.createtime=to_date(#createtime#,'YYYY-MM-DD'),
+		t.rate=#rate#,
+		t.interfacetype=#interfacetype#,
+		t.leaser=#leaser#,
+		t.remark=#remark#,
+		t.usetime=to_date(#usetime#,'YYYY-MM-DD'),
+		t.requisitionid=#requisitionid#,
+		t.check1=#check1#,
+		t.check2=#check2#,
+		t.beizhu=#beizhu#,
+		t.requestcom=#requestcom#,
+		t.usercom=#usercom#,
+		t.operationtype=#operationtype#,
+		t.circuitlevel=$circuitLevel$,
+		t.powerline=#powerline#,
+		t.protectdevicetype=#protectdevicetype#,
+		t.portserialno1=#portserialno1#,
+		t.portserialno2=#portserialno2#
+		where
+		t.circuitcode=#circuitcode#
+	</update>
+	<update id="updateCircuitForChannelRoute" parameterClass="channelroute.model.Circuit">
+		update
+		circuit t
+		set
+		t.username=#username#,
+		t.createtime=to_date(#createtime#,'YYYY-MM-DD'),
+		t.rate=#rate#,
+		t.interfacetype=#interfacetype#,
+		t.leaser=#leaser#,
+		t.remark=#remark#,
+		t.usetime=to_date(#usetime#,'YYYY-MM-DD'),
+		t.requisitionid=#requisitionid#,
+		t.check1=#check1#,
+		t.check2=#check2#,
+		t.beizhu=#beizhu#,
+		t.requestcom=#requestcom#,
+		t.usercom=#usercom#,
+		t.operationtype=#operationtype#,
+		t.circuitlevel=$circuitLevel$,
+		t.powerline = #powerline#,
+		t.protectdevicetype = #protectdevicetype#,
+		t.implementation_units=#implementation_units#,
+		t.requestfinish_time=to_date(#requestfinish_time#,'YYYY-MM-DD'),
+		t.approver=#approver#
+		where t.circuitcode=#circuitcode#
+	</update>
+	<insert id="insertCircuitForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		insert into circuit t
+		(t.circuitcode,t.username,t.station1,t.station2,t.city1,t.city2,t.serial,t.x_purpose,t.createtime,t.usetime,t.rate,t.property,t.portserialno1,slot1,portserialno2,slot2,area,leaser,requisitionid,state,remark,operationtype,usercom,requestcom,check1,check2,beizhu,circuitlevel,interfacetype,newcircuitcode,powerline,protectdevicetype,form_id)
+		values
+		(#circuitcode#,#username#,getstationcodebyequipcode(getequipcodebyportid(#portserialno1#)),getstationcodebyequipcode(getequipcodebyportid(#portserialno2#)),getequipcodebyportid(#portserialno1#),getequipcodebyportid(#portserialno2#),#serial#,#x_purpose#,to_date(#createtime#,'YYYY-MM-DD'),to_date(#usetime#,'YYYY-MM-DD'),#rate#,#property#,#portserialno1#,#slot1#,#portserialno2#,#slot2#,#area#,#leaser#,#requisitionid#,#state#,#remark#,#operationtype#,#usercom#,#requestcom#,#check1#,#check2#,#beizhu#,$circuitLevel$,#interfacetype#,#newcircuitcode#,#powerline#,#protectdevicetype#,#form_id#)
+	</insert>
+	<select id="selectCircuitCodeAndName" parameterClass="java.util.HashMap"
+		resultClass="java.util.HashMap">
+<!--		select c.circuitcode, c.username-->
+<!--		from circuit c, circuit_cc-->
+<!--		cc-->
+<!--		where cc.circuitcode = c.circuitcode-->
+<!--		and cc.tp_id_a = '$logicport$'-->
+<!--		and cc.ts_a = '$slot$'-->
+<!--		and cc.rate = '$vc$'-->
+<!--		and c.sync_status !='ZT03'-->
+<!--		union-->
+<!--		select c1.circuitcode, c1.username-->
+<!--		from circuit c1, circuit_cc cc1-->
+<!--		where cc1.circuitcode = c1.circuitcode-->
+<!--		and cc1.tp_id_z ='$logicport$'-->
+<!--		and cc1.ts_z = '$slot$'-->
+<!--		and cc1.rate = '$vc$'-->
+<!--		and c1.sync_status-->
+<!--		!='ZT03'-->
+         <!-- liqinming -->
+	   <!--  select c.circuitcode, c.username   from circuit c 
+		where (c.portcode1='$logicport$' or c.portcode2='$logicport$')
+		 and c.circuitcode=#v_name#  -->
+	 select c.circuitcode, c.username   from circuit c 
+		where (c.portcode1='$logicport$' or c.portcode2='$logicport$') 
+	</select>
+	<!--从交叉表中获得终止端口的信息 -->
+	<select id="selectCCForBaseData" parameterClass="map"
+		resultClass="java.util.HashMap">
+
+		<!-- select getxtxx(getportrate_nw(t.zptp)) as portrate, getxtxx(p.x_vendor) 
+			as x_vendor, p.x_model, getequipname(t.pid) as equipname, getShortPortLabel(t.zptp) 
+			as portlabel, '-' || t.direction as direction, t.zPTP as aptp, t.RATE, t.zSLOT 
+			as aslot, t.pid, getVirtualSystemCode(t.pid) as isvirtual, getportlabelwithoutequipname(t.zptp) 
+			as portdetail, getShortPortLabelNew(t.zptp) as portshow, getsystembyeq(t.pid) 
+			as systemcode from cc t, equipment p where t.aptp = #port# and t.pid = p.equipcode 
+			and t.rate = #rate# and t.aslot = #slot# and t.sync_status !='ZT03' union 
+			select getxtxx(getportrate_nw(t.aptp)) as portrate, getxtxx(p.x_vendor) as 
+			x_vendor, p.x_model, getequipname(t.pid) as equipname, getShortPortLabel(t.aptp) 
+			as portlabel, t.direction, t.aPTP as aptp, t.RATE, t.aSLOT as aslot, t.pid, 
+			getVirtualSystemCode(t.pid) as isvirtual, getportlabelwithoutequipname(t.aptp) 
+			as portdetail, getShortPortLabelNew(t.aptp) as portshow, getsystembyeq(t.pid) 
+			as systemcode from cc t, equipment p where t.zptp = #port# and t.pid = p.equipcode 
+			and t.rate = #rate# and t.zslot = #slot# -->
+		<!-- and t.sync_status !='ZT03' -->
+		
+		select ccid,
+		circuitcode,
+		getxtxx(getportrate_nw(t.tp_id_z)) as
+		portrate,
+		getxtxx(p.x_vendor) as x_vendor,
+		p.x_model,
+		p.s_sbmc as
+		equipname,
+		getShortPortLabel(t.tp_id_z) as portlabel,
+		'-' || t.direction
+		as direction,
+		t.tp_id_z as aptp,
+		t.RATE,
+		t.ts_z as aslot,
+		t.equipcode pid,
+		getVirtualSystemCode(t.equipcode) as isvirtual,
+		getportlabelwithoutequipname(t.tp_id_z) as portdetail,
+		getShortPortLabelNew(t.tp_id_z) as portshow,
+		getsystembyeq(t.equipcode) as systemcode
+		from circuit_cc t, equipment p
+		where t.tp_id_a = #port#
+		and t.equipcode = p.equipcode
+		and t.rate =
+		#rate#
+		and t.ts_a = #slot#
+		union
+		select ccid,
+		circuitcode,
+		getxtxx(getportrate_nw(t.tp_id_a)) as portrate,
+		getxtxx(p.x_vendor) as
+		x_vendor,
+		p.x_model,
+		p.s_sbmc as equipname,
+		getShortPortLabel(t.tp_id_a)
+		as portlabel,
+		t.direction,
+		t.tp_id_a as aptp,
+		t.RATE,
+		t.ts_a as aslot,
+		t.equipcode pid,
+		getVirtualSystemCode(t.equipcode) as isvirtual,
+		getportlabelwithoutequipname(t.tp_id_a) as portdetail,
+		getShortPortLabelNew(t.tp_id_a) as portshow,
+		getsystembyeq(t.equipcode) as systemcode
+		from circuit_cc t, equipment p
+		where t.tp_id_z = #port#
+		and t.equipcode = p.equipcode
+		and t.rate =
+		#rate#
+		and t.ts_z = #slot# 
+
+	</select>
+	<!--获取某端口相关的复用段及对端端口的信息 -->
+	<select id="selectTopoForBaseData" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select getxtxx(getportrate_nw(t.zendptp)) as portrate,
+		t.label,
+		getxtxx(p.x_vendor) as x_vendor,
+		p.x_model,
+		p.s_sbmc as
+		equipname,
+		t.systemcode,
+		getShortPortLabel(t.zendptp) as portlabel,
+		t.ZENDPTP as endptp,
+		t.EQUIP_Z as equip,
+		getVirtualSystemCode(t.equip_z) as isvirtual,
+		getportlabelwithoutequipname(t.zendptp) as portdetail,
+		getShortPortLabelNew(t.zendptp) as portshow,
+		getsystembyeq(t.equip_z)
+		as systemcode
+		from en_topolink t, equipment p
+		where t.equip_z =
+		p.equipcode
+		and t.aendptp = #port#
+		union
+		select
+		getxtxx(getportrate_nw(t.aendptp)) as
+		portrate,
+		t.label,
+		getxtxx(p.x_vendor) as x_vendor,
+		p.x_model,
+		p.s_sbmc as equipname,
+		t.systemcode,
+		getShortPortLabel(t.AENDPTP) as portlable,
+		t.AENDPTP as
+		endptp,
+		t.EQUIP_A as equip,
+		getVirtualSystemCode(t.EQUIP_A) as
+		isvirtual,
+		getportlabelwithoutequipname(t.AENDPTP) as portdetail,
+		getShortPortLabelNew(t.AENDPTP) as portshow,
+		getsystembyeq(t.equip_a)
+		as systemcode
+		from en_topolink t, equipment p
+		where t.equip_a =
+		p.equipcode
+		and t.zendptp = #port#
+
+	</select>
+	<!--获取当前电路编号的电路起始端口信息 -->
+	<select id="selectAllChannelRouteByCircuitCode" parameterClass="map"
+		resultClass="java.util.HashMap">
+	     <![CDATA[
+		 select getxtxx(getportrate_nw(n.portcode1)) as portrate,
+		        n.portcode1 as port,
+		          decode(n.rate,'YW010203','VC4','YW010201','VC12','YW010204','STM4','YW010210','64K','YW010207','10M-100M','VC12') AS ccrate,
+		        l.equipcode as equip,
+		        getShortPortLabel(n.portcode1) as portlabel,
+		        l.s_sbmc as equipname,
+		        n.circuitcode,
+		        n.slot1 as timeslot,
+		        getxtxx(l.x_vendor) as x_vendor,
+		        l.x_model,
+		        getportlabelwithoutequipname(n.portcode1) as portdetail,
+		        getShortPortLabelNew(n.portcode1) as portshow,
+		        getsystembyeq(l.equipcode) as systemcode
+		      from circuit n, equipment l, equiplogicport q
+		      where n.circuitcode like '%$circuitcode$%'
+		      and q.equipcode = l.equipcode
+		      and n.portcode1 = q.logicport
+		      order by n.circuitcode
+	     
+	  ]]>
+	</select>
+	
+	<select id="selectAllChannelRouteByPortCode1" parameterClass="map"
+		resultClass="java.util.HashMap">
+		<![CDATA[
+			select getxtxx(getportrate_nw(n.portserialno1)) as portrate,
+		        n.portserialno1 as port,
+		        'VC12' AS ccrate,
+            l.equipcode as equip,
+            getShortPortLabel(n.portserialno1) as portlabel,
+            l.s_sbmc as equipname,
+            n.circuitcode,
+            n.slot1 as timeslot,
+            getxtxx(l.x_vendor) as x_vendor,
+            l.x_model,
+            getportlabelwithoutequipname(n.portserialno1) as portdetail,
+            getShortPortLabelNew(n.portserialno1) as portshow,
+            getsystembyeq(l.equipcode) as systemcode
+          from v_channel_tmp n, equipment l, equiplogicport q
+          where n.portserialno1 =#portcode1#
+          and q.equipcode = l.equipcode
+          and n.portserialno1 = q.logicport
+          and n.slot1=#slot1#
+          order by n.circuitcode
+		]]>
+	</select>
+
+	<select id="getCircuitcodeForPackGraphvc12" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select distinct circuitcode from cctmp t where
+		t.aptp=#portcode# and
+		t.aslot=#slot# union select distinct circuitcode
+		from cctmp t where
+		t.zptp=#portcode# and t.zslot=#slot#
+	</select>
+	<select id="getCircuitcodeForPackGraphvc4" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select distinct circuitcode from cctmp t where
+		t.aptp=#portcode# and
+		t.real_aslot=#slot# and real_rate='VC4' union
+		select distinct
+		circuitcode from cctmp t where t.zptp=#portcode# and
+		t.real_zslot=#slot# and real_rate='VC4'
+	</select>
+	<select id="selectXtbmByName" parameterClass="map" resultClass="java.lang.String">
+		select xtbm from xtbm where xtxx=#xtxx# and type=#type#
+	</select>
+	<select id="getCircuitLevel1" parameterClass="map" resultClass="java.lang.String">
+		select getxtxx(description) as circuitLevel from xtbm where xtxx
+		=#operationType#
+	</select>
+	<select id="getFormIdByCircuitcode1" parameterClass="map"
+		resultClass="java.lang.String">
+		select form_id from circuit where
+		circuitcode=#circuitcode#
+	</select>
+	<select id="getSlotDetailByPortAAndPortZ" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select * from (
+		select c.*,
+		getxtxx(getportrate_nw(c.aptp)) as
+		arate,
+		getxtxx(getportrate_nw(c.zptp)) as zrate,
+		gettimeslot373(c.aslot,c.rate) as aslot373,
+		gettimeslot373(c.zslot,c.rate) as zslot373,
+		getportlabelwithoutequipname(c.aptp) as porta_label,
+		getportlabelwithoutequipname(c.zptp) as portz_label
+		from cc c
+		where
+		c.aptp = #portA#
+		and c.zptp = #portZ#
+		union
+		select c.*,
+		getxtxx(getportrate_nw(c.aptp)) as arate,
+		getxtxx(getportrate_nw(c.zptp)) as
+		zrate,
+		gettimeslot373(c.aslot,c.rate) as aslot373,
+		gettimeslot373(c.zslot,c.rate) as zslot373,
+		getportlabelwithoutequipname(c.aptp) as porta_label,
+		getportlabelwithoutequipname(c.zptp) as portz_label
+		from cc c
+		where
+		c.aptp = #portZ#
+		and c.zptp = #portA# ) order by rate desc, aslot
+	</select>
+	<insert id="insertIntoCCNative" parameterClass="map">
+		insert into cc (id,pid,rate,direction,aptp,aslot,zptp,zslot,type,updateperson,updatedate,isdefault) values (#id#,getequipcodebyportid(#aptp#),#rate#,'BI',#aptp#,#aslot#,#zptp#,#zslot#,'0','config',sysdate,'1')
+	</insert>
+	<select id="getPortAZDetailForSlot" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select
+		getequipnamebyportid(t.logicport) as pname,
+		getequipcodebyportid(t.logicport) as pid,
+		t.logicport as portA,
+		t1.logicport as portZ,
+		getxtxx(t.x_capability) as rateA,
+		getxtxx(t1.x_capability) as rateZ,
+		getportlabelwithoutequipname(t.logicport) as portA_label,
+		getportlabelwithoutequipname(t1.logicport) as portZ_label
+		from
+		equiplogicport t, equiplogicport t1
+		where t.logicport = #portA#
+		and
+		t1.logicport = #portZ#
+	</select>
+	<select id="selectPortVc4SlotForConfigSlot" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select t.*
+		from cc t
+		where t.aptp = #port#
+		and t.rate =
+		#rate#
+		and t.aslot = #slot#
+		union
+		select t.*
+		from cc t
+		where t.zptp =
+		#port#
+		and t.rate = #rate#
+		and t.zslot = #slot#
+	</select>
+	<select id="selectPortVc4SlotBreakUpForConfigSlot"
+		parameterClass="map" resultClass="java.util.HashMap">
+		select t.*
+		from cc t
+		where t.aptp =
+		#port#
+		and t.rate = #rate#
+		and t.aslot between $begin$ and $end$
+		union
+		select t.*
+		from cc t
+		where t.zptp = #port#
+		and t.rate = #rate#
+		and t.zslot
+		between $begin$ and $end$
+	</select>
+	<select id="getPlink" parameterClass="map" resultClass="java.util.HashMap">
+		select
+		GetPlink(#topoid#) as linkarray, GetPlink(#topoid1#) as linkarray1
+		from dual
+	</select>
+	<select id="getportdetail" parameterClass="map" resultClass="java.util.HashMap">
+		select t.*,getshortportlabel(t.logicport) as portlabel,
+		getportlabelwithoutequipname(t.logicport) as labeldetail from
+		equiplogicport t where t.logicport=#portcode#
+	</select>
+	<delete id="deletePositionByCircuitcode" parameterClass="map">
+		delete
+		from $table$ where circuitcode=#circuitcode#
+	</delete>
+	<insert id="inertChannelPosition" parameterClass="channelroute.model.PositionModel">
+		insert into
+		$table$ (circuitcode,equipcode,logicport,slot,x,y,flag,position)
+		values
+		(#circuitcode#,#equipcode#,#logicport#,#slot#,#x#,#y#,#flag#,#position#)
+	</insert>
+	<select id="selectPositionByCircuitcode" parameterClass="map"
+		resultMap="positionMap" remapResults="true">
+		select
+		circuitcode,flag,equipcode,logicport,slot,x,y,position from $table$
+		where circuitcode=#circuitcode# and flag=#flag#
+	</select>
+	<insert id="insertChannelConfig" parameterClass="map">
+		insert into
+		CHANNELROUTE_CONFIG (userid,content) values (#userid#,#content#)
+	</insert>
+	<delete id="deleteChannelConfigByUserid" parameterClass="map">
+		delete
+		from channelroute_config where userid=#userid#
+	</delete>
+	<select id="selectChannelConfigByUserid" parameterClass="map"
+		resultClass="java.lang.String">
+		select content from channelroute_config where
+		userid=#userid#
+	</select>
+	<!--获取电路所有业务类型 -->
+	<select id="getChannelTreeData" parameterClass="map"
+		resultClass="java.util.HashMap">
+		select distinct xtbm, xtxx from v_circuit_topolink_type
+	</select>
+	<!--获取电路路由图的业务类型(查询条件) -->
+	<select id="getNewTree" parameterClass="map" resultClass="java.util.HashMap">
+		select distinct xtbm, xtxx from v_circuit_topolink_type_nw where xtbm
+		like 'YW120915__'
+		<dynamic prepend="and">
+			<isNotEmpty prepend="and" property="username">
+				xtxx =
+				'$username$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="circuitcode">
+				circuitcode like
+				'%$circuitcode$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="requisitionid">
+				schedulerid like
+				'%$requisitionid$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="rate">
+				getxtbm(decode(rate,'64K',rate||'/s',
+				'128K',rate||'/s',rate||'b/s'),'YW') =
+				'$rate$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="operationtype">
+				xtxx =
+				'$operationtype$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="state">
+				state =
+				'$state$'
+			</isNotEmpty>
+		</dynamic>
+		order by xtbm
+	</select>
+	<select id="getNewTreeData" parameterClass="map" resultClass="java.util.HashMap">
+		select t.*, w.flag from circuit t, circuit_watch w
+		<dynamic prepend="where">
+			<isNotEmpty prepend="and" property="username">
+				t.username like
+				'%$username$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="circuitcode">
+				t.circuitcode like
+				'%$circuitcode$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="requisitionid">
+				t.requisitionid like
+				'%$requisitionid$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="operationtype">
+				t.operationtype like
+				'%$operationtype$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="rate">
+				t.rate like
+				'%$rate$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="state">
+				t.state like
+				'%$state$%'
+			</isNotEmpty>
+		</dynamic>
+		and t.circuitcode = w.circuitcode(+)
+		and t.circuitcode not in (select
+		circuitcode from circuit_content)
+		order by t.circuitcode
+	</select>
+	<select id="getChannelBiaoSHi" parameterClass="map" resultClass="java.lang.String">
+		select xtxx from xtbm where xtbm = 'DLBS'
+	</select>
+	<select id="getEquipForChannel" resultClass="java.util.HashMap"
+		parameterClass="String">
+		<![CDATA[
+	  select e.S_SBMC equipname,
+	         e.x_vendor,
+	         e.x_model,
+	         e.equipcode,
+	         getstationname(e.stationcode) as stationname
+	  from equipment e
+	  where e.x_vendor = '$tid$'
+	  order by S_SBMC
+		 ]]>
+	</select>
+	<select id="getMaxNewCircuitCode" resultClass="java.lang.String"
+		parameterClass="String">
+		select max(newcircuitcode) from circuit where
+		newcircuitcode like
+		'$newcircuitcode$%'
+	</select>
+	<!-- -->
+	<update id="setCircuitPortNull" parameterClass="String">
+		update circuit t
+		set t.portserialno1 = '',t.portserialno2 = '' where
+		t.portserialno1=#port# or t.portserialno2=#port#
+	</update>
+	<!--将电路添加为重点监控 -->
+	<update id='addCircuitmonitoring' parameterClass="String">
+		update circuit
+		set ismonitored='1'where circuitcode='$circuitcode$'
+	</update>
+	<!--将电路从重点监控电路中移除 -->
+	<update id='delCircuitmonitoring' parameterClass="String">
+		update circuit
+		set ismonitored='0'where circuitcode='$circuitcode$'
+	</update>
+	<delete id="releasePortCircuit" parameterClass="String">
+		call
+		releaseportcircuit('$circuitcode$')
+	</delete>
+	<!--更新电路的起始端口 -->
+	<update id="updateCircuitStartPort" parameterClass="java.util.HashMap">
+		update
+		circuit set
+		PORTSERIALNO1='$portcode$',slot1='$slot$',station1=getstationcodebyport('$portcode$'),city1=getequipcodebyportid('$portcode$')
+		where circuitcode = '$circuitcode$'
+	</update>
+	<!--更新电路的终止端口 -->
+	<update id="updateCircuitEndPort" parameterClass="java.util.HashMap">
+		update circuit
+		set
+		PORTSERIALNO2='$portcode$',slot2='$slot$',station2=getstationcodebyport('$portcode$'),city2=getequipcodebyportid('$portcode$')
+		where circuitcode = '$circuitcode$'
+	</update>
+	<delete id="deleteSlotLink" parameterClass="java.util.HashMap">
+		call
+		deleteSlotLink('$aptp$','$aslot$','$zptp$','$zslot$','$rate$')
+	</delete>
+
+	<procedure id="callRouteGenerate" parameterClass="java.util.HashMap">
+		call
+		TRANS_CIRCUIT.ROUTE_GENERATE('$v_name$','$logicport$'
+		,'$slot$','$vc$'
+		)
+	</procedure>
+	
+	<delete id="deleteCircuitRoutByCircuitcode" parameterClass="map">
+		delete from circuit_cc t where t.circuitcode=#v_name#
+	</delete>
+	
+	<!-- 获取当前电路中有告警的端口 -->
+	<select id="getFixAlarmPort" parameterClass="String"
+		resultClass="java.util.HashMap">
+		select v.portcode from v_mnt_circuit_alarmportlist v where
+		v.circuitcode=#circuitcode#
+	</select>
+
+	<select id="getPersonCCID" parameterClass="java.util.HashMap"
+		resultClass="String">
+		SELECT t.Id FROM cc t
+		WHERE (t.aptp = '$aptp$' AND t.aslot
+		= '$aslot$' AND t.zptp = '$zptp$' AND
+		t.zslot = '$zslot$' AND
+		t.Isdefault = '$isdefault$')
+		OR (t.zptp = '$aptp$' AND t.zslot =
+		'$aslot$' AND t.aptp = '$zptp$' AND
+		t.aslot = '$zslot$' AND t.Isdefault
+		= '$isdefault$')
+	</select>
+	<delete id="deleteCCByID" parameterClass="String">
+		delete from cc where id
+		= '$id$'
+	</delete>
+	<select id="selectXtxxByXtbm" parameterClass="String"
+		resultClass="String">
+		select xtxx from xtbm where xtbm = '$rate$'
+	</select>
+	<select id="getCircuitState" resultClass="java.util.HashMap">
+      <![CDATA[	
+       		select distinct decode(state,null,'未知',state)as xtxx,decode(state,null,'未知',state)as xtbm from circuit  
+        ]]>
+	</select>
+	<select id="getRateForNW" parameterClass="String" resultClass="java.util.HashMap">
+    	<![CDATA[
+    	select distinct rate as xtxx, rate as xtbm from v_circuit_topolink_type_nw
+    	]]>
+	</select>
+	
+	<select id="selectXYByCircuitCodeAndEquipCode" parameterClass="map"
+		resultClass="java.util.HashMap" remapResults="true">
+		select p.x,p.y from 
+        channel_element_position p
+   		where p.equipcode=#equipcode# and  p.circuitcode=#cir_code#
+	</select>
+	
+	<select id="checkCircuitIdIsUse" parameterClass="string" resultClass="string">
+		select t.circuitcode from circuit t where t.circuitcode=#circuitCode#
+	</select>
+    
+    <select id="checkCircuitNameIsUse" parameterClass="string" resultClass="string">
+		select t.business_name from business t where t.business_name=#busName#
+	</select>
+	<select id="getCircuitLstByCode" parameterClass="string" resultClass="channelroute.model.Circuit">
+		select t.tp_id_a  portserialno1,t.tp_id_z portserialno2,t.ts_a slot1,t.ts_z slot2 from circuit_cc t 
+		where circuitcode=#circuitcode#
+		order by t.id asc
+	</select>
+	<select id="getX_purposeCode" parameterClass="string" resultClass="string">
+		select t.xtbm from xtbm t where t.xtxx=#X_purpose# and t.xtbm like 'YW%'
+	</select>
+	
+	<update id="updateEquiplogicportForRelateCircuit" parameterClass="channelroute.model.Circuit">
+		update equiplogicport t set t.circuit=#circuitcode# where t.logicport=#portserialno1# or t.logicport=#portserialno2#
+	</update>
+	
+	<select id="getCircuitcodeByCircuitcode" parameterClass="string" resultClass="string">
+		select circuitcode from circuit t where t.circuitcode=#native_circuitcode#
+	</select>
+	
+	<update id="updateCircuitRouteByMap" parameterClass="map">
+		update circuit set 
+		path = #path#,
+		remark = #remark#
+		where circuitcode=#circuitcode#
+	</update>
+	<select id="selectCircuitroutLstByCircuitcode" parameterClass="string" resultClass="channelroute.model.CircuitroutModel">
+		select t.circuitcode,
+       getequipsbmc(t.equipcode) equipname,
+       t.equipcode,
+       t.id,
+       t.tp_id_a a_portcode,
+       t.ts_a a_slot,
+       t.tp_id_z z_portcode,
+       t.ts_z z_slot,
+       t.ccid
+  from circuit_cc t
+ where t.circuitcode = #circuitcode#
+ order by id asc
+	
+	</select>
+	
+	
+</sqlMap>

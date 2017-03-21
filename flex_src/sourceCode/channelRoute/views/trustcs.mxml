@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 creationComplete="init()"
+		 xmlns:views="sourceCode.tableResurces.views.*" 
+		 xmlns:component="common.component.*"
+		 xmlns:SuperPanelControl="common.other.SuperPanelControl.*"
+		 verticalGap="0">
+	<mx:Script>
+		<![CDATA[  
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import flash.events.ContextMenuEvent;
+			import flash.events.Event;
+			import flash.ui.ContextMenu;
+			import flash.ui.ContextMenuItem;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.DataGridEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.channelRoute.views.trustover;
+			import sourceCode.sysGraph.views.SysOrgMap;
+			import sourceCode.sysGraph.views.SysOrgMapL;
+			import sourceCode.systemManagement.model.PermissionControlModel;
+			import sourceCode.systemManagement.views.UserOnline;
+			import sourceCode.tableResurces.Events.ToopEvent;
+			import sourceCode.tableResurces.model.ResultModel;
+			import sourceCode.tableResurces.views.DataImportFirstStep;
+			import sourceCode.tableResurces.views.FileExportFirstStep;
+			public var sysOrgMap:SysOrgMapL = new SysOrgMapL();			
+			import twaver.DemoUtils;
+			import main;
+			import sourceCode.systemManagement.views.UserManager;
+			import common.component.PopupMenu;
+			import sourceCode.systemManagement.views.RoleManager;
+			import common.other.SuperPanelControl.nl.PanelIcon;
+			import common.other.SuperPanelControl.nl.wv.extenders.panel.PanelWindow;
+			import mx.core.UIComponent;
+			/*  var Business:String=null; */
+			import common.component.PopupMenu;
+			public var userOnLine:UserOnline;
+			public var userManager:UserManager;
+			public var popMenu:PopupMenu = new PopupMenu();
+			public var roleMananger:RoleManager;
+			private var createdWindows:Number = 0;
+			private var mi:main;
+			[Bindable]
+			private     var	Business:ArrayCollection = new ArrayCollection();
+			import mx.graphics.Stroke;
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			[Bindable]
+			//折线图数据绑定
+			private function getConditons(event:ResultEvent):void{
+				
+			//Business=event.result as String;
+				Business=event.result as ArrayCollection;
+
+			}
+			public var modelName:String="网络拓扑图分析";
+			public  function liqinmings():void{
+				
+					var ro:RemoteObject = new RemoteObject("topolink");
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.showBusyCursor = true;
+				ro.addEventListener(ResultEvent.RESULT,getConditons);
+				ro.birthroute();  
+		/* 		sysOrgMap = new SysOrgMapL();
+				//interpose.title = "通道预警门限值";
+				MyPopupManager.addPopUp(sysOrgMap,true); */
+			
+			}
+			public static var s:int=1;
+			
+			public  function liqinmingss():void{
+	    
+		
+				 
+				//(new URLRequest(ModelLocator.getURL()+"main.html"),"_parent");
+            mi=this.parentApplication as main;
+	
+			mi.addPanel(modelName,sysOrgMap,0,0,popMenu.userIcon);	
+			}
+			
+			public function init():void
+			{
+				
+			}					
+		]]>
+	</mx:Script>
+	<SuperPanelControl:WindowContainer id="windowContainer"/>
+	<mx:Button id="as2"  label="业务2" click="liqinmings()" />
+	<mx:Button id="as3"  label="业务3" click="liqinmingss()" />
+	<mx:HBox id="workspace" width="100%" height="100%" paddingLeft="20" paddingTop="20">
+	</mx:HBox>
+</mx:VBox>

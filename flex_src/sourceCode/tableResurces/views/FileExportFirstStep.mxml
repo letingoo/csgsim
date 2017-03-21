@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="530" height="276"  
+				title="海量数据导出向导 :第一步"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12" x="323" y="204" creationComplete="titlewindow1_creationCompleteHandler(event)"> 
+	
+	<mx:Script>  
+		<![CDATA[  			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.alarmmgr.model.AlarmMangerModel;
+			import sourceCode.faultSimulation.model.InterposeLogModel;
+			import sourceCode.faultSimulation.model.InterposeModel;
+			import sourceCode.faultSimulation.model.OperateListModel;
+			import sourceCode.faultSimulation.model.StdMaintainProModel;
+			import sourceCode.resManager.resBusiness.model.BusinessRessModel;
+			import sourceCode.resManager.resBusiness.model.Circuit;
+			import sourceCode.resManager.resBusiness.model.CircuitBusinessModel;
+			import sourceCode.resManager.resNet.model.CCModel;
+			import sourceCode.resManager.resNet.model.Equipment;
+			import sourceCode.resManager.resNet.model.LogicPort;
+			import sourceCode.resManager.resNet.model.TopoLink;
+			import sourceCode.resManager.resNode.model.Fiber;
+			import sourceCode.resManager.resNode.model.Frame;
+			import sourceCode.resManager.resNode.model.FrameSlot;
+			import sourceCode.resManager.resNode.model.Ocable;
+			import sourceCode.resManager.resNode.model.Pack;
+			import sourceCode.resManager.resNode.model.Station;
+			import sourceCode.systemManagement.model.LogModel;
+			import sourceCode.systemManagement.model.VersionModel;
+			
+		    public var dataNumber:int;
+			public var exportTypes:String;
+			public var labels:String;
+			public var titles:Array = null;
+			public var model:Object;
+		
+			
+			
+			public var selectItem:ArrayCollection = new ArrayCollection();
+			/**
+			 * 
+			 * 关闭界面
+			 * 
+			 * */
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+			
+			/**
+			 * 
+			 * 退出
+			 * 
+			 * */
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				this.close();
+			}
+			/**
+			 * 
+			 * 数据量过多，会进行下一步的操作
+			 * 
+			 * */
+			protected function NEXT_clickHandler(event:MouseEvent):void
+			{
+				if(event.target.label=="下一步")
+				{
+						this.close();
+						var fess:FileExportSecStep = new FileExportSecStep();
+						fess.exportTypes = this.exportTypes;
+						fess.titles = this.titles;
+						fess.labels = this.labels;
+						fess.dataNumber = this.dataNumber;
+						fess.model = this.model;
+						MyPopupManager.addPopUp(fess, true);
+				}else if(event.target.label=="导出")
+				{
+					if(this.exportTypes == "站点")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.StationExportEXCEL(labels,titles,"站点",model as Station);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}else if(this.exportTypes == "光缆")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.OcableExportEXCEL(labels,titles,"光缆",model as Ocable);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}else if(this.exportTypes == "光纤")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.FiberExportEXCEL(labels,titles,"光纤",model as Fiber);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}else if(this.exportTypes == "机盘")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.EquipPackExportEXCEL(labels,titles,"机盘",model as Pack);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="设备")
+					{
+							var remote:RemoteObject = new RemoteObject("resNetDwr");
+							remote.endpoint = ModelLocator.END_POINT;
+							remote.showBusyCursor = true;
+							remote.equipExportEXCEL(labels,titles,"设备",model as Equipment);
+							remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="机框")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.frameExportEXCEL(labels,titles,"equipFrame",model as Frame);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="机槽")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.slotExportEXCEL(labels,titles,"机槽",model as FrameSlot);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="端口")
+					{
+						var remote:RemoteObject = new RemoteObject("resNetDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.LogicPortExportEXCEL(labels,titles,"逻辑端口",model as LogicPort);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}else if(this.exportTypes=="复用段")
+					{
+						var remote:RemoteObject = new RemoteObject("resNetDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.TopoLinkExportEXCEL(labels,titles,"复用段",model as TopoLink);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="业务")
+					{
+						var remote:RemoteObject = new RemoteObject("resBusinessDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.businessExportEXCEL(labels,titles,"业务",model as BusinessRessModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="电路")
+					{
+						var remote:RemoteObject = new RemoteObject("resBusinessDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.circuitExportEXCEL(labels,titles,"电路",model as Circuit);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="交叉连接")
+					{
+						var remote:RemoteObject = new RemoteObject("resNetDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.ccExportEXCEL(labels,titles,"交叉连接",model as CCModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="电路业务")
+					{
+						var remote:RemoteObject = new RemoteObject("resBusinessDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.circuitBusinessExportEXCEL(labels,titles,"电路业务",model as CircuitBusinessModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes == "告警查询"){
+						var remote:RemoteObject = new RemoteObject("AlarmManagerComboboxDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+//						if(selectItem.length != 0){
+//							remote.AlarmManageResSelectExportEXCEL(labels,titles,"告警查询",selectItem);
+//							remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+//						}else{
+							remote.AlarmManageResExportEXCEL(labels,titles,"告警查询",model as AlarmMangerModel);
+							remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+//						}
+					}
+					else if(this.exportTypes == "历史告警查询"){
+						var remote:RemoteObject = new RemoteObject("AlarmManagerComboboxDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						if(selectItem.length != 0){
+							remote.AlarmManageResSelectExportEXCEL(labels,titles,"历史告警查询",selectItem);
+							remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+						}else{
+							remote.AlarmManageResExportEXCEL(labels,titles,"历史告警查询",model as AlarmMangerModel);
+							remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+						}
+					}
+					else if(this.exportTypes=="科目维护操作")
+					{
+						var remote:RemoteObject = new RemoteObject("faultSimulation");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.exportExcelOperate(labels,titles,"科目维护操作",model as OperateListModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="演习科目管理")
+					{
+						var remote:RemoteObject = new RemoteObject("faultSimulation");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.exportExcelInterpose(labels,titles,"演习科目管理",model as InterposeModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="处理方法管理")
+					{
+						var remote:RemoteObject = new RemoteObject("faultSimulation");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.exportExcelMantain(labels,titles,"处理方法管理",model as StdMaintainProModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="电力通信网风险指标评估")
+					{
+						var remote:RemoteObject = new RemoteObject("indexEvaluation");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.exportExcelQualityEva(labels,titles,"电力通信网风险指标评估",selectItem);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="资源版本")
+					{
+						var remote:RemoteObject = new RemoteObject("login");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.exportVersionExcel(labels,titles,"资源版本信息列表",model as VersionModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="仿真日志管理")
+					{
+						var remote:RemoteObject = new RemoteObject("faultSimulation");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.exportInterposeLogExcel(labels,titles,"仿真日志信息列表",model as InterposeLogModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes=="同步日志")
+					{
+						var remote:RemoteObject = new RemoteObject("logManager");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.syncLogExportEXCEL(labels,titles,"同步日志信息列表",model as LogModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+				}
+			}
+			/**
+			 * 
+			 * 获取导出路径
+			 * 
+			 * */
+			private static function getURL():String{
+				var currSwfUrl:String;
+				var doMain:String = Application.application.stage.loaderInfo.url;  
+				var doMainArray:Array = doMain.split("/");  
+				
+				if (doMainArray[0] == "file:") {  
+					if(doMainArray.length<=3){  
+						currSwfUrl = doMainArray[2];  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf(currSwfUrl.charAt(2)));  
+					}else{  
+						currSwfUrl = doMain;  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+					}  
+				}else{  
+					currSwfUrl = doMain;  
+					currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+				}  
+				currSwfUrl += "/";
+				return currSwfUrl;
+			}
+			/**
+			 * 
+			 * 获取了要导出的数据后的处理函数 
+			 * 
+			 * */
+			public function ResultHandler(event:ResultEvent):void{
+				var url:String = getURL();
+//				Alert.show("---"+url+"=="+event.result.toString());
+				var path:String = url+event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(path)); 
+				navigateToURL(request,"_blank");
+			}
+
+			/**
+			 * 
+			 * 初始化，进入
+			 * 
+			 * */
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				if(this.dataNumber<20000||1==1)
+				{
+					btn_confirm.label ="导出";
+				}else
+				{
+					btn_confirm.label = "下一步";
+				}
+				var remote:RemoteObject = new RemoteObject("resNodeDwr");
+				remote.endpoint = ModelLocator.END_POINT;
+				remote.showBusyCursor = true;
+				remote.ClearDir("exportExcel");
+			}
+
+		]]>  
+	</mx:Script>
+	<mx:Button id="btn_confirm" x="329" y="164" width="75" click="NEXT_clickHandler(event)"/>
+	<mx:Button x="412" y="163" label="退出" width="75" click="button1_clickHandler(event)"/>
+	<mx:Label x="10" y="28" text="数据导出向导为您提供大数据量的EXCEL数据导出服务，请您按照提示操作。" width="475" height="33"/>
+	<mx:Label x="10" y="78" text="数据量：" width="75" height="28"/>
+	<mx:RemoteObject id="upRM" destination="netresDao" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"/>
+	<mx:Label x="10" y="165" text="注：当数据量过大时，系统将自动分EXCEL的多个sheet也导出" width="298"/>
+	<mx:Label x="67" y="78" text="{dataNumber.toString()}" width="93"/>
+	<mx:Label x="168" y="78" text="条"/>
+</mx:TitleWindow>  

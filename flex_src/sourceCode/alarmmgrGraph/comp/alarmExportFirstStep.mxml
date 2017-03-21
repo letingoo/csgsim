@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="530" height="276"  
+				title="海量数据导出向导 :第一步"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12" x="323" y="204" creationComplete="titlewindow1_creationCompleteHandler(event)"> 
+	
+	<mx:Script>  
+		<![CDATA[  			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.systemManagement.views.SysLogManager;
+		    public var dataNumber:int;
+			public var exportTypes:String;
+			public var labels:String;
+			public var titles:Array = null;
+			[Bindable]
+			public var alarmObject:Object;			
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+			
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.close();
+			}
+         
+			protected function NEXT_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.target.label=="下一步")
+				{
+					this.close();
+					var fess:alarmExportSecStep = new alarmExportSecStep();
+					fess.dataNumber = this.dataNumber;
+					fess.alarmObjectSec = this.alarmObject;
+					MyPopupManager.addPopUp(fess, true);
+				}else if(event.target.label=="导出")
+				{
+					alarmObject.exportExcelBySubPage();
+				}
+			}
+
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(this.dataNumber<20000)
+				{
+					btn_confirm.label ="导出";
+				}else
+				{
+					btn_confirm.label = "下一步";
+				}
+				//清理文件夹。
+				var remote:RemoteObject = new RemoteObject("netresDao");
+				remote.endpoint = ModelLocator.END_POINT;
+				remote.showBusyCursor = true;
+//				//parentApplication.faultEventHandler(remote);
+				remote.ClearDir("exportExcel");
+				//remote.addEventListener(ResultEvent.RESULT,ClearDirHandler);
+			}
+
+		]]>  
+	</mx:Script>
+	<mx:Button id="btn_confirm" x="329" y="164" width="75" click="NEXT_clickHandler(event)"/>
+	<mx:Button x="412" y="163" label="退出" width="75" click="button1_clickHandler(event)"/>
+	<mx:Label x="10" y="28" text="数据导出向导为您提供大数据量的EXCEL数据导出服务，请您按照提示操作。" width="475" height="33"/>
+	<mx:Label x="10" y="78" text="数据量：" width="75" height="28"/>
+	<mx:RemoteObject id="upRM" destination="netresDao" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"/>
+	<mx:Label x="10" y="165" text="注：当数据量过大时，系统将自动分多个EXCEL文件导出" width="298"/>
+	<mx:Label x="67" y="78" text="{dataNumber.toString()}" width="93"/>
+	<mx:Label x="168" y="78" text="条"/>
+</mx:TitleWindow>  

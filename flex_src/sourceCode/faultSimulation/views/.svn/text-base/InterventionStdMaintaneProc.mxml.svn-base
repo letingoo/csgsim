@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100%" 
+		 creationComplete="init()" 
+		 xmlns:views="sourceCode.tableResurces.views.*" xmlns:component="common.component.*">
+	
+	<mx:Script source="../actionscript/InterventionStdMaintainProc.as" />
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off" >
+		
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="标准处理过程" imgName="nowalarm"
+							  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="{isSearch}"
+							  showExportExcelButton="false" showImportButton="false" 
+							  controlAdd="toolbar_toolEventAddHandler(event)" controlEdit="toolbar_toolEventEditHandler(event)" 
+							  controlDel="toolbar_toolEventDeleteHandler(event)" controlSearch="toolbar_toolEventSearchHandler(event)"
+							  controlExportExcel="toolbar_toolEventEmpExcelHandler(event)" controlImport="toolbar_toolEventImpExcelHandler(event)"
+							  />
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true"
+		    headerRelease="dg_headerReleaseHandler(event)">
+			<mx:columns>
+				
+				<mx:DataGridColumn headerText="序号" dataField="no" width="50" sortable="false"/>
+				<mx:DataGridColumn headerText="处理过程id" dataField="maintainprocid"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="科目类型" dataField="interposetype"  width="170" />
+				<mx:DataGridColumn headerText="科目类型id" dataField="interposetypeid"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="故障类型" dataField="faulttype"  width="170" />
+				<mx:DataGridColumn headerText="故障类型id" dataField="faulttypeid"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="处理顺序" dataField="operateorder" width="170"/>
+				<mx:DataGridColumn headerText="处理方法" dataField="operatetype"  width="170" />
+				<mx:DataGridColumn headerText="处理方法ID" dataField="operatetypeid"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="是否最后步骤" dataField="isendoperate"  width="170" />
+				<mx:DataGridColumn headerText="更新人员" dataField="updateperson"  width="170" />
+				<mx:DataGridColumn headerText="更新时间" dataField="updatetime"  width="170" />
+				<mx:DataGridColumn headerText="备注说明" dataField="remark"  width="300"/>
+			</mx:columns>
+			
+		</mx:DataGrid>
+		
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>
+		
+	</mx:VBox>
+	
+	
+</mx:VBox>

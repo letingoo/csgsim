@@ -1,0 +1,161 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:controls="ht.*"
+				xmlns:demo="demo.*"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+				xmlns:common="demo.common.*"
+				xmlns:local="*"
+				xmlns:code="http://code.google.com/p/flexlib/"
+				width="400" height="400" label="端口选择树" close="close()"
+				creationComplete="init();initEvent();" fontSize="12" layout="horizontal"
+				showCloseButton="true" title="端口">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.TextInput;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.packGraph.views.checkedEquipPack;
+			import sourceCode.tableResurces.Titles.CircuitTitle;
+			import sourceCode.tableResurces.model.Circuit;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			public var rate:String;
+			private var XMLData:XMLList;
+			private var selectedNode:XML; 
+			private var curIndex:int;
+			private var catalogsid:String;
+			private var type:String;
+			private var labeltext:String;
+			private var tree_node:String;
+			public var circuitTitle:CircuitTitle;
+			public var port:TextInput;
+			public var flag:String;
+			private function init():void
+			{
+				porttreeRemote.getPort('','','root');
+			}
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);  
+			}
+			private function resultHandler(event:ResultEvent):void {
+				XMLData = new XMLList(event.result.toString());
+				ptree.dataProvider = XMLData;
+			}
+			
+			// 错误处理
+			public function DealFault(event:FaultEvent):void {
+				Alert.show(event.fault.toString());
+				trace(event.fault);
+			}
+			private function tree_itemClick(evt:ListEvent):void {
+				
+				var item:Object = Tree(evt.currentTarget).selectedItem;
+				if (ptree.dataDescriptor.isBranch(item)) {
+					
+					ptree.expandItem(item, !ptree.isItemOpen(item), true);
+				}
+				
+			}
+			private function treeChange():void{ 		
+				
+				
+				ptree.selectedIndex = curIndex;
+				selectedNode = ptree.selectedItem as XML;
+				//if(selectNode.)
+				if(selectedNode.@leaf==false&&(selectedNode.children()==null||selectedNode.children().length()==0))
+				{
+					catalogsid = selectedNode.attribute("id"); 
+					type=selectedNode.attribute("tree");
+					labeltext=selectedNode.attribute("label");
+					dispatchEvent(new Event(EventNames.CATALOGROW));
+				}
+				 
+			}
+			private function initEvent():void{  
+				addEventListener(EventNames.CATALOGROW,gettree);
+			}	
+			private function gettree(e:Event):void{ 
+				removeEventListener(EventNames.CATALOGROW,gettree);
+				var ptTreeRO:RemoteObject = new RemoteObject("channelRouteForm");
+				ptTreeRO.endpoint = ModelLocator.END_POINT;
+				ptTreeRO.showBusyCursor =true;
+				ptTreeRO.getPort('',catalogsid,type);
+				ptTreeRO.addEventListener(ResultEvent.RESULT,getNextTreeNode);
+				ptTreeRO.addEventListener(FaultEvent.FAULT,DealFault);
+			}  
+			private function getNextTreeNode(e:ResultEvent){
+				var str:String = e.result as String;  
+				
+				if(str!=null&&str!="")
+				{  
+					var child:XMLList= new XMLList(str);
+					if(selectedNode.children()==null||selectedNode.children().length()==0)
+					{ 									 
+						selectedNode.appendChild(child);
+						
+						ptree.callLater(openTreeNode,[selectedNode]);
+						
+					}
+					
+				}
+				addEventListener(EventNames.CATALOGROW,gettree);
+			}
+			private function openTreeNode(xml:XML):void{
+				if(ptree.isItemOpen(xml))
+					ptree.expandItem(xml,false);
+				ptree.expandItem(xml,true);
+			}
+			private function selectPort(e:Event){
+				var node:XML = ptree.selectedItem as XML;
+				if(node!=null&&node.@leaf!=null&&node.@leaf=='true'){
+					port.text = node.@label;
+					if(flag!=null&&flag=="A"){
+						circuitTitle.portcode1.data = node.@id;
+					}
+					if(flag!=null&&flag=="Z"){
+						circuitTitle.portcode2.data = node.@id;
+				    }
+				  }
+					this.close();
+				}
+		]]>
+	</mx:Script>
+	<mx:RemoteObject id="porttreeRemote" destination="channelRouteForm"
+					 endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)"
+					 result="resultHandler(event)" showBusyCursor="true">
+	</mx:RemoteObject>
+	<mx:VBox width="100%" height="100%" horizontalGap="0" verticalGap="0">
+		<mx:Tree id="ptree" width="100%" height="100%" change="treeChange()" dataProvider="{XMLData}"
+				 doubleClick="selectPort(event)" doubleClickEnabled="true" dragEnabled="true"
+				 itemClick="tree_itemClick(event)" itemOpen="treeChange()"
+				 itemRollOver="curIndex = event.rowIndex" labelField="@label">
+		</mx:Tree>
+	</mx:VBox>
+	
+	
+</mx:TitleWindow>  

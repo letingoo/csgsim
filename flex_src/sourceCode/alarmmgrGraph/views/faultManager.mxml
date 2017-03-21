@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				width="953" height="535" fontSize="12"
+				close="PopUpManager.removePopUp(this)" 
+				xmlns:views="sourceCode.tableResurces.views.*"
+				xmlns:component="common.component.*" layout="vertical" creationComplete="intApp()"
+				windowContainer="{Application.application.windowContainer}"
+				xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.alarmmgrGraph.model.FaultModel;
+			import sourceCode.alarmmgrGraph.model.FaultResultModel;
+			public var remote:RemoteObject = new RemoteObject("AlarmMgrDAO");
+			public var faultModel:FaultModel = new FaultModel();
+			[Bindable]
+			public var equipcode:String = "";
+			private function intApp():void{
+				serverPagingBar.dataGrid=dg;
+				serverPagingBar.pagingFunction=pagingFunction;
+				serverPagingBar.addEventListener("returnALL",showAllDataHandler);
+				equipcode = Registry.lookup("equipcode");
+				Registry.unregister("equipcode");
+				faultModel.equipcode = equipcode;
+				getFaultModelInfos(faultModel);
+			}
+			
+			private function getFaultModelInfos(faultModel:FaultModel):void{
+				remote.endpoint = ModelLocator.END_POINT;
+				remote.getFaultInfos(faultModel);
+				remote.addEventListener(ResultEvent.RESULT,getFaultInfosHandler);
+			}
+			
+			private function getFaultInfosHandler(event:ResultEvent):void{
+				remote.removeEventListener(ResultEvent.RESULT,getFaultInfosHandler);
+				var result:FaultResultModel = event.result as FaultResultModel;
+				onResult(result);
+			}
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void{
+				faultModel.start =(pageIndex*pageSize).toString();
+				faultModel.end = (pageIndex*pageSize+pageSize).toString();
+				getFaultModelInfos(faultModel);
+			}
+			
+			public function onResult(result:FaultResultModel):void 
+			{	
+				serverPagingBar.orgData=result.faultList;
+				serverPagingBar.totalRecord=result.totalCount;
+				serverPagingBar.dataBind(true);
+				getTimeColumnChart();
+			}
+			private function showAllDataHandler(event:Event):void{
+				faultModel.start="0";
+				faultModel.end = "50";
+				getFaultModelInfos(faultModel);
+			}
+			
+			private function getTimeColumnChart():void{
+				remote.getTimeInfos(equipcode);
+				remote.addEventListener(ResultEvent.RESULT,getTimeInfos);
+			}
+			
+			private function getTimeInfos(event:ResultEvent):void{
+				if(null!=event.result.toString()&&""!=event.result.toString()){
+					var array:Array=(JSON.decode(event.result.toString()) as Array);
+					if(array.length>0){
+						columnChart.dataProvider = array;
+					}
+				}else
+				{
+					this.columnChart.dataProvider=null;
+					this.columnChart.visible=false;
+					column_nodata.visible=true;
+				}
+				remote.removeEventListener(ResultEvent.RESULT,getTimeInfos);
+			}
+			
+			private function ExportExcelHandle():void{
+				var labels:String = this.title;
+				var titles:Array = new Array("序号","运维单位","故障对象","故障描述","故障发生时间","故障恢复时间");
+				remote.addEventListener(ResultEvent.RESULT,getExcelHandle);
+				remote.getExcelForPath(labels,titles,faultModel);
+			}
+			
+			private function getExcelHandle(event:ResultEvent):void{
+				remote.removeEventListener(ResultEvent.RESULT,getExcelHandle);
+				var url:String = Application.application.stage.loaderInfo.url;
+				url=url.substring(0,url.lastIndexOf("/"))+"/";
+				var path:String = url+event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(path)); 
+				navigateToURL(request,"_blank");
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" borderColor="0x6666FF" borderThickness="3" horizontalAlign="center" verticalAlign="middle">
+		<mx:Label text="按月份进行汇总" fontSize="20" color="#0049EE" fontWeight="bold"/>
+		<mx:ColumnChart id="columnChart"
+						width="80%"
+						height="80%"
+						showDataTips="true" 
+						fontSize="12">
+			<mx:horizontalAxis>
+				<mx:CategoryAxis categoryField="year_month"/>
+			</mx:horizontalAxis>
+			<mx:series>
+				<mx:ColumnSeries xField="year_month"
+								 yField="value"
+								 fontSize="15" color="0x00A0E9"
+								 showDataEffect="interpolate"/>
+			</mx:series>
+		</mx:ColumnChart>
+		<mx:Label id="column_nodata" text="无相关数据！" fontSize="15" visible="false"/>
+	</mx:VBox>
+	<mx:DataGrid id="dg" width="100%" height="100%">
+		<mx:columns>
+			<mx:DataGridColumn headerText="序号" dataField="no" width="50"/>
+			<mx:DataGridColumn headerText="运维单位" dataField="dealfaultunit" width="200"/>
+			<mx:DataGridColumn headerText="故障对象" dataField="gjobject" width="200"/>
+			<mx:DataGridColumn headerText="故障描述" dataField="faultresult" width="200"/>
+			<mx:DataGridColumn headerText="故障发生时间" dataField="faulttime" width="200"/>
+			<mx:DataGridColumn headerText="故障恢复时间" dataField="resumetime" width="200"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:HBox>
+		<mx:Spacer width="20%" />
+		<views:pagetoolbar 
+			id="serverPagingBar" 
+			width="50%"/>
+		<mx:LinkButton label="导出Excel" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_export.png')"
+					   click="ExportExcelHandle()"/>
+	</mx:HBox>
+</panel:PanelWindow>

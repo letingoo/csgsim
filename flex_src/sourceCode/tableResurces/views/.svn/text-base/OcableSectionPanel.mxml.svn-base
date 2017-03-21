@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 width="100%"
+		 height="100%"
+		 creationComplete="init()"
+		 preinitialize="preinitialize()"
+		 xmlns:views="sourceCode.tableResurces.views.*" xmlns:component="common.component.*">
+<!--
+	<mx:Script>
+		<![CDATA[
+			protected function dg_doubleClickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var ocableSectionTitle:OcableSectionTitle = new OcableSectionTitle();
+				ocableSectionTitle.title="修改";
+				PopUpManager.addPopUp(ocableSectionTitle,Application.application as DisplayObject,true);
+				PopUpManager.centerPopUp(ocableSectionTitle);
+				ocableSectionTitle.setAPointType(xmlPointType, dg.selectedItem.a_pointtype);
+				ocableSectionTitle.setZPointType(xmlPointType, dg.selectedItem.z_pointtype);
+				ocableSectionTitle.setOcableModel(xmlOcableModel, dg.selectedItem.ocablemodel);
+				ocableSectionTitle.setVoltLevel(xmlVoltLevel, dg.selectedItem.voltlevel);
+				ocableSectionTitle.setProperty(xmlProperty, dg.selectedItem.property);
+				ocableSectionTitle.ocableSectionData=dg.selectedItem;
+				ocableSectionTitle.addEventListener("RefreshDataGrid",refreshOcableSection);
+			}
+		]]>
+	</mx:Script>
+-->
+
+	<mx:Script source="../actionscript/OcableSectionPanel.as" />
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off">
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="光缆段" imgName="equipframe"
+							  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="{isSearch}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}"
+							  controlAdd="toolbar_toolEventAddHandler(event)" controlEdit="toolbar_toolEventEditHandler(event)" 
+							  controlDel="toolbar_toolEventDeleteHandler(event)" controlSearch="toolbar_toolEventSearchHandler(event)"
+							  controlExportExcel="toolbar_toolEventEmpExcelHandler(event)" controlImport="toolbar_toolEventImpExcelHandler(event)"/>
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true"
+		    variableRowHeight="true"
+		 	wordWrap="true"
+			headerRelease="dg_headerReleaseHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn headerText="光缆段编号" dataField="sectioncode" visible="false"/>
+				<mx:DataGridColumn headerText="序号" dataField="no" width="50" sortable="false"/>
+				<mx:DataGridColumn headerText="光缆段名称" dataField="ocablesectionname" width="150"/>
+				<mx:DataGridColumn headerText="起点" dataField="a_pointname"  width="100"/>
+				<mx:DataGridColumn headerText="终点" dataField="z_pointname"  width="100"/>
+				<mx:DataGridColumn headerText="起点类型" dataField="a_pointtype"  width="80"/>
+				<mx:DataGridColumn headerText="终点类型" dataField="z_pointtype"  width="80"/>
+				<mx:DataGridColumn headerText="纤芯数目" dataField="fibercount"  width="80"/>
+				<mx:DataGridColumn headerText="占用纤芯数" dataField="occupyfibercount"  width="80"/>
+				<mx:DataGridColumn headerText="光缆段类型" dataField="ocablemodel"  width="135"/>
+				<mx:DataGridColumn headerText="所属地域" dataField="provincename"  width="135"/>
+				<mx:DataGridColumn headerText="长度" dataField="length"  width="50"/>
+				<mx:DataGridColumn headerText="运行班组" dataField="run_unit" visible="false" width="135"/>
+				<mx:DataGridColumn headerText="敷设方式" dataField="laymode"  width="135"/>
+				<mx:DataGridColumn headerText="产权单位" dataField="property"  width="135"/>
+				<mx:DataGridColumn headerText="维护单位" dataField="function_unit"  width="135"/>
+				<mx:DataGridColumn headerText="一次线路名称" dataField="one_name"  width="135"/>
+				<mx:DataGridColumn headerText="电压等级" dataField="secvolt"  width="100"/>
+				<mx:DataGridColumn headerText="更新时间" dataField="updatedate" width="135" />
+				<mx:DataGridColumn headerText="备注" dataField="remark"  width="135"/>
+				<mx:DataGridColumn headerText="盘长" dataField="platelong"  width="135"/>
+				<mx:DataGridColumn headerText="投运日期" dataField="powerstationdate"  width="135"/>
+				<mx:DataGridColumn headerText="造价" dataField="money"  width="135"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>
+	</mx:VBox>
+</mx:VBox>

@@ -1,0 +1,1284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--根告警弹出界面-->
+<panel:PanelWindow
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" styleName="popwindow"
+	title="当前根告警" width="900" height="520" 
+	xmlns:comp="common.actionscript.*"
+	verticalScrollPolicy="off" horizontalScrollPolicy="off" 
+	showControls="true" enableResize="true"
+	backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+	windowContainer="{Application.application.windowContainer}"
+	creationComplete="init()" removedFromStage="{this.parentApplication.isWinOpen='NO';}" 
+	xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*" 
+	xmlns:actionscript="sourceCode.systemManagement.actionscript.*">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.PopupMenu_AlarmDeal;
+			import common.actionscript.Registry;
+			import common.other.events.LinkParameterEvent;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.core.IFlexDisplayObject;
+			import mx.events.CloseEvent;
+			import mx.events.EffectEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.URLUtil;
+			
+			import sourceCode.alarmSet.views.AlarmConfig;
+			import sourceCode.alarmmgr.actionscript.AlarmAffirmModel;
+			import sourceCode.alarmmgr.actionscript.SequenceItemRenderer;
+			import sourceCode.alarmmgr.views.AckAlarmLogTitle;
+			import sourceCode.alarmmgr.views.AckRootAlarmTitle;
+			import sourceCode.alarmmgr.views.AlarmConfirm;
+			import sourceCode.alarmmgr.views.PopUpKeyBusiness;
+			import sourceCode.businessDispatch.view.OneWay;
+			import sourceCode.flashalarm.ShowFlashAlarmDetail;
+			import sourceCode.rootalarm.model.AckRootAlarmModel;
+			import sourceCode.rootalarm.model.ChangeZDResultModel;
+			import sourceCode.rootalarm.myAlert.AlertCanvas;
+			import sourceCode.rootalarm.myAlert.AlertTip;
+			import sourceCode.subject.main.views.ComhensiveMonitor;
+			
+			import twaver.core.util.h.DG;
+			
+			[Embed(source="assets/images/rootalarm/alarm_message.png")]
+			public var AlarmIcon:Class; 			
+			
+			[Bindable]
+			public var obj:Object = new Object();
+			[Bindable]
+			public var alarmdate:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var alarmnumber:String;
+			[Bindable]
+			public var alarmobjdesc:String;
+			[Bindable]
+			public var belongequip:String;
+			[Bindable]
+			public var alarmdesc:String;
+			[Bindable]
+			public var firststarttime:String;
+			[Bindable]
+			public var objclasszh:String;
+			[Bindable]
+			public var alarmtext:String;
+			[Bindable]
+			public var vendorzh:String;
+			[Bindable]
+			public var carrycircuit:String;
+			[Bindable]
+			public var isacked:String;
+			[Bindable]
+			public var isackedzh:String;
+			[Bindable]
+			public var ackperson:String;
+			[Bindable]
+			public var acktime:String;
+			[Bindable]
+			public var triggeredthreshold:String;
+			[Bindable]
+			public var iswworkcasezh:String;
+			[Bindable]
+			public var belongtransys:String;
+			[Bindable]
+			public var ackcontent:String;
+			[Bindable]
+			public var bugno:String;
+			[Bindable]
+			public var iscleared:String;
+			[Bindable]
+			public var currentGrid:String="unackedrootalarm";
+			public var isworkcase:String;
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			private var paramCause:ArrayCollection= new ArrayCollection();
+			private var paramResult:ArrayCollection= new ArrayCollection();
+			private var alarmWin:TitleWindow;
+			public var operPerson:String=""; 
+			private var alarmExpid:String;
+			private var rootAlarmMgr:TitleWindow;
+			private var rootAlarmWin:TitleWindow;
+			private var alarmHelpEXP:TitleWindow;
+			private var param:ArrayCollection=new ArrayCollection();
+			private var indexRenderer:Class = SequenceItemRenderer;
+			private var chm:ComhensiveMonitor;
+			//			public var isWinOpen:String="NO";
+			private var tw:TitleWindow;
+			public var j:int=0;
+			public var alone:Boolean = false;
+			
+			[Bindable]
+			public var alarmVoice:String="warning";	
+			
+			[Bindable]
+			private var confirm_time:Number=0;
+			
+			
+			private var swithtype:Boolean = true;
+			
+			private var alltype:String = "all";
+			private var contextMeau:ContextMenu=new ContextMenu();
+			
+			private var popupmenu_alarmdeal:PopupMenu_AlarmDeal;
+			
+			public function init():void{
+				carryCircuit.mx_internal::getTextField().wordWrap = true;
+				popupmenu_alarmdeal=new PopupMenu_AlarmDeal();
+			
+				parentApplication.isWinOpen="YES";
+				this.closeButton.addEventListener(MouseEvent.CLICK,closeHandler);
+				getalarmDealWithData("ALD03__");
+				getalarmCauseData();
+				getUserName();
+			
+				
+				if(alone){//单独打开当前根告警add by sjt
+					//					subScriberRootAlarm();
+					this.addEventListener(CloseEvent.CLOSE,panelwindow1_closeHandler);
+				}
+				
+				if(!parentApplication.curUserEnable){//普通用户加载
+					QueryAlarm();
+				}
+				
+				if(!parentApplication.curUserEnable){//为值班员进入系统就启动，普通用户不启动
+					parentApplication.timer.start();
+				}			  
+				
+				//			  this.enabled
+				//			  if(parentApplication.curUserEnable){
+				//				  this.parentApplication.vbView.enabled = false;
+				//			  }
+				
+			}
+			
+			
+			
+			private function QueryAlarm():void{ 
+				var rtobj:RemoteObject = new RemoteObject("RootAlarmMgrDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true; 
+				rtobj.findAllunAckedAlarms();
+				rtobj.addEventListener(ResultEvent.RESULT,doQueryAlarm);
+				rtobj.addEventListener(FaultEvent.FAULT,DealFault);
+			}
+			
+			
+			private function doQueryAlarm(event:ResultEvent):void{
+				var arr:ArrayCollection =	event.result as ArrayCollection;
+				//				Alert.show("未确认条数"+arr.length.toString());
+				this.updateAlarm(arr);
+			}
+			
+			public function DealFault(event:FaultEvent):void 
+			{
+				Alert.show(event.fault.toString());
+			}				
+			
+			//			private function setUserName(event:ResultEvent):void{
+			//				var username:String  = event.result.toString();
+			//				if(parentApplication.curUserName!=username){
+			//					ackalarm.enabled=false;
+			//				}
+			//				
+			//			}
+			
+			public function subScriberRootAlarm():void{
+				DealAlarmUtil.initMessage();
+				//consumers=new Object();
+				subscriberRealRootAlarm("realRootAlarm");
+				
+			}
+			/**
+			 * 实时根告警数据订阅
+			 * 
+			 */
+			private function subscriberRealRootAlarm(subtopic:String):void{				
+				var consumer:Consumer =new Consumer();				
+				var channelSet:ChannelSet = new ChannelSet();   
+				channelSet.addChannel(DealAlarmUtil.streamingAMF);   
+				channelSet.addChannel(DealAlarmUtil.pollingAMF);
+				consumer.destination = DealAlarmUtil.sdestination; 
+				consumer.channelSet = channelSet;
+				consumer.subtopic = subtopic;
+				consumer.addEventListener(MessageEvent.MESSAGE,handleRealRootAlarm);
+				consumer.addEventListener(MessageFaultEvent.FAULT,faultHandlerMsg);
+				consumer.subscribe();
+				//consumers[subtopic] = consumer;
+				DealAlarmUtil.consumers[subtopic] = consumer;
+			}
+			private var ts:ArrayCollection;
+			private function handleRealRootAlarm(msg:MessageEvent):void{
+				if(msg.message.body==null && msg.message.body==""){
+					Alert.show('接到的消息为空',"提示信息",4,this,null,iconClass); return;
+				}
+				ts = msg.message.body as ArrayCollection;
+				if(this.j != ts.length){
+					var obj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+					obj.endpoint = ModelLocator.END_POINT;
+					obj.showBusyCursor = true;
+					obj.WriteLog(ts.length.toString());
+					obj.addEventListener(ResultEvent.RESULT, okHandler);
+					this.updateAlarm(ts);
+				}
+			} 
+			private function okHandler(e:ResultEvent):void{
+				
+			}
+			private function faultHandlerMsg(event:MessageFaultEvent):void{
+				//				Alert.okLabel = "确  定";
+				//				Alert.show("发送请求失败，请检查服务是否启动与数据库连接情况！","提示信息",4,this,null,iconClass);			
+			}
+			
+			private function getalarmCauseData():void{
+				
+				var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getCauseData();
+				rtobj.addEventListener(ResultEvent.RESULT, setalarmCauseData);
+				
+			}
+			
+			private function setalarmCauseData(event:ResultEvent):void{
+				paramCause.removeAll();
+				var alarmCauseValue:ArrayCollection= new ArrayCollection();
+				alarmCauseValue=event.result as ArrayCollection;
+				paramCause.addItem({label:"----请选择----",code:""});
+				for each(var a:Object in alarmCauseValue){
+					paramCause.addItem({label:a.XTXX,code:a.XTBM});
+				}
+				
+				alarmCause.dataProvider=paramCause;
+				
+				if(iscleared=="1"){
+					alarmDealWith.enabled=false;
+					alarmDealWith.selectedIndex=1;
+				}else{
+					alarmDealWith.enabled=true;
+				}
+				
+				
+			}
+			
+			
+			private function getalarmDealWithData(dealwith:String):void{
+				
+				var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				//rtobj.getDealWithData(dealwith);
+				rtobj.getDealWithData(dealwith);
+				rtobj.addEventListener(ResultEvent.RESULT, setalarmDealWithData);
+				rtobj.addEventListener(FaultEvent.FAULT, fault);
+			}
+			
+			private function fault(event:FaultEvent):void{
+				
+				//				Alert.show(event.fault.toString());
+			}
+			
+			
+			private function setalarmDealWithData(event:ResultEvent):void{
+				paramResult.removeAll();
+				var dealResult:ArrayCollection= new ArrayCollection();
+				dealResult=event.result as ArrayCollection;
+				
+				paramResult.addItem({label:"----请选择----",code:""});
+				
+				for each(var a:Object in dealResult){
+					paramResult.addItem({label:a.XTXX,code:a.XTBM});
+				}
+				
+				alarmDealWith.dataProvider=paramResult;
+			}
+			
+			private function getRootAlarmSoundStatus():void{
+				
+				var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getSoundStatus();
+				rtobj.addEventListener(ResultEvent.RESULT, SoundStatus);
+				rtobj.addEventListener(FaultEvent.FAULT, fault);
+			}
+			
+			private function SoundStatus(event:ResultEvent):void{
+				var status:String="";
+				status=event.result.toString();
+				if(status=="Y"){
+					sound(status);
+				}
+				
+			}
+			
+			
+			public function sound(status:String):void{
+				
+				if(status=="Y"){
+					sound_effect.play([sound_effect]);
+				}else{
+					
+					sound_effect.stop();
+				}
+				
+			}
+			
+			private function ackAlarm(event:MouseEvent):void{
+				if(currentGrid=="watchedrootalarm"){
+					Alert.show("待跟踪根告警不许可确认","温馨提示");	
+				}else{
+					//				swithtype = false;//转中调的时候延迟
+					var ackrootalarms:ArrayCollection=new ArrayCollection();
+					if(dg.selectedItems.length==0){
+						Alert.show("请选择要确认的根告警","提示",4,this,null,iconClass);
+					}else{
+						alltype = "确认";
+						confirm_time = (new Date()).time;
+						var isworkcase:String = "";
+						var dealresult:String = "";
+						if(alarmCause.selectedItem.label != "----请选择----"){
+							isworkcase = alarmCause.selectedItem.label;
+						}else{
+							Alert.show("请选择告警原因！","温馨提示");
+							return;
+						}
+						if(alarmDealWith.selectedItem.label != "----请选择----"){
+							dealresult = alarmDealWith.selectedItem.label;
+						}else{
+							Alert.show("请选择处理方式！","温馨提示");
+							return;
+						}
+						if(analyseAndPlan.text==""){
+							Alert.show("告警确认内容不能为空！","温馨提示");
+							return;
+						}
+						for(var i:int=0;i<dg.selectedItems.length;i++)
+						{
+							var ackrootalarm:AckRootAlarmModel=new AckRootAlarmModel();
+							ackrootalarm.alarmnumber = dg.selectedItems[i].alarmnumber;
+							ackrootalarm.ackperson = operPerson;
+							ackrootalarm.alarmtype = dg.selectedItems[i].alarmtype;
+							ackrootalarm.bugno = dg.selectedItems[i].bugno;
+							ackrootalarm.isworkcase = isworkcase;
+							ackrootalarm.dealresult = dealresult;
+							ackrootalarm.ackcontent = analyseAndPlan.text;
+							ackrootalarm.isackedzh = dg.selectedItems[i].acktime==""?'未确认':'已确认';
+							ackrootalarms.addItem(ackrootalarm);
+						}
+						ConfirmAlarm(ackrootalarms);
+					
+						if(dealresult=="转故障流程处理"){
+							toFault(ackrootalarms);
+						}
+					}
+					
+				}
+			}
+			
+			//告警确认
+			private function ConfirmAlarm(acc:ArrayCollection):void{ 
+				var rtobj:RemoteObject=new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.ackRootAlarms(acc);
+				rtobj.addEventListener(ResultEvent.RESULT,getResult);
+			}
+			
+			//转中调处理	
+			private function Setrootalarm():void{ 
+				
+				//				swithtype = false;//转中调的时候延迟
+				var cause:String=cause=alarmCause.selectedItem.label;
+//				if(cause =="----请选择----"){
+//					Alert.show("请选择告警原因！","温馨提示");
+//					return;
+//				}
+//				if(analyseAndPlan.text==""){
+//					Alert.show("告警确认内容不能为空！","温馨提示");
+//					return;
+//				}
+				
+				if(!dg.selectedItems){
+					Alert.show("请选择要转中调的告警!");
+					return;
+				}
+				alltype = "确认";
+				confirm_time = (new Date()).time;
+				//				Alert.show("确认时间"+confirm_time.toString());
+				var alarm_arr:ArrayCollection = new ArrayCollection;
+				for(var i:int=0;i<dg.selectedItems.length;i++)
+				{
+					var ackModel:AlarmAffirmModel = new AlarmAffirmModel();
+					ackModel.alarmnumber =  dg.selectedItems[i].alarmnumber;
+					ackModel.ackperson= operPerson;
+					ackModel.dealresult = "转中调处理";
+					ackModel.isworkcase= cause;
+					ackModel.ackcontent= analyseAndPlan.text;
+					ackModel.isackedzh = dg.selectedItems[i].acktime==""?'未确认':'已确认';
+					alarm_arr.addItem(ackModel);
+				}
+				var rtobjdwr:RemoteObject=new RemoteObject("RealRootAlarmDwr");
+				rtobjdwr.endpoint= ModelLocator.END_POINT;
+				rtobjdwr.showBusyCursor=true;
+				rtobjdwr.setRootAlarms(alarm_arr);
+				rtobjdwr.addEventListener(ResultEvent.RESULT,dogetResult);
+				rtobjdwr.addEventListener(FaultEvent.FAULT,dofault);
+			}
+			
+			private function dofault(event:FaultEvent):void{
+				
+				Alert.show(event.fault.toString());
+			}
+			
+			private function dogetResult(event:ResultEvent):void{
+				var resultModel:ChangeZDResultModel = event.result as ChangeZDResultModel;			
+				var result_:String =resultModel.result;
+				var fault:String =resultModel.fault.toString();
+				if(result_=="成功"&&fault=="0"){ 
+					Alert.show("转中调处理成功！");
+					//					if(chooseAll.selected){
+					//						sound_effect.stop();
+					//					}				
+					for(var i:int=0;i<dg.selectedIndices.length;i++){
+						dg.dataProvider.removeItemAt(dg.selectedIndices[i]);
+						i--;
+					}
+					dg.dataProvider.resfresh();
+//					chooseAll.selected=false;
+					
+					if((dg.dataProvider as ArrayCollection).length>0){
+						dg.selectedIndex=0;
+						firstChoose();
+						sound_effect.stop();
+						alarmVoice = setVoice(dg.dataProvider as ArrayCollection);
+						sound_effect.play([sound_effect]);					
+						
+					}else{
+						sound_effect.stop();
+						reset();
+					}
+				}else if(result_=="成功"&&fault!="0"){
+					var ar:ArrayCollection = resultModel.ac;
+					Alert.show("共转中调处理"+resultModel.sum.toString()+"条，成功"+resultModel.sucess.toString()+"条，其余"+fault+"条不能转中调处理!","温馨提示");
+					for(var j:int=0;j<ar.length;j++){
+						for(var x:int =0 ;x<dg.selectedItems.length;x++){
+							if(dg.selectedItems[x].alarmnumber ==ar.getItemAt(j)){
+								dg.dataProvider.removeItemAt(x);
+								x--;
+							}
+						}
+					}
+					dg.dataProvider.resfresh();
+				}else if(result_=="失败"&&fault!="0"&&resultModel.sucess.toString()=="0"){
+					Alert.show("共转中调处理"+resultModel.sum.toString()+"条，该"+fault+"条不能转中调处理!","温馨提示");
+				}
+				//				setTimeout(delayTime,1500); 
+			}
+			
+			private function delayTime():void{
+				swithtype = true;
+			} 
+			//判断上来的告警类别根据优先级播放声音
+			private function setVoice(arra:ArrayCollection):String{
+				var strt:String ="";
+				for each(var a:Object in arra){
+					var alarmlevel:String = a.alarmlevel as String;
+					if(strt.indexOf(alarmlevel)==-1){
+						strt += alarmlevel;
+					}
+				}		
+				
+				if(strt.indexOf("紧急告警")!=-1){
+					return "critical";
+				}else if(strt.indexOf("主要告警")!=-1){
+					return "major";
+				}else if(strt.indexOf("次要告警")!=-1){
+					return "minor";
+				}else if(strt.indexOf("一般告警")!=-1){
+					return "warning";
+				}else{
+					return "warning";
+				}				 
+				
+			}
+			
+//			private function chooseAllAlarm(event:MouseEvent):void{
+//				if(chooseAll.selected==true){
+//					chooseAll.label="根告警全选";
+//					dg.selectedItems = ArrayCollection(dg.dataProvider).toArray();
+//				}else if(chooseAll.selected==false){
+//					chooseAll.label="取消全选";
+//					dg.selectedItems = [];
+//				}
+//				
+//			}
+			private function getResult(event:ResultEvent):void{
+				if(event.result==null){
+					Alert.show('error',"提示信息",4,this,null,iconClass);return;
+				}else if(event.result=="成功"){
+					//					if(chooseAll.selected){
+					//						sound_effect.stop();
+					//					}
+					for(var i:int=0;i<dg.selectedIndices.length;i++){
+						dg.dataProvider.removeItemAt(dg.selectedIndices[i]);
+						i--;
+					}
+//					Alert.show('确认根告警成功',"提示信息",4,this,null,iconClass);
+					dg.dataProvider.resfresh();
+				}else{
+					//					Alert.show('确认根告警失败',"提示信息",4,this,null,iconClass);
+				}
+//				chooseAll.selected=false;
+				if((dg.dataProvider as ArrayCollection).length>0){
+					dg.selectedIndex=0;
+					firstChoose();
+					
+					sound_effect.stop();
+					alarmVoice = setVoice(dg.dataProvider as ArrayCollection);
+					sound_effect.play([sound_effect]);
+					
+				}else{
+					sound_effect.stop();
+					reset();
+				}				
+				//				setTimeout(delayTime,1000); 
+			}
+			
+			private function toHttp():void
+			{
+				Security.loadPolicyFile(ModelLocator.getURL()+"/WEB-INF/flex/crossdomain.xml");
+				var params:URLVariables = new URLVariables();
+				httpService.url=DealAlarmUtil.getUrl()+"adaptivemsg/receiveRealTimeData";
+				httpService.method="post";
+				params.alarmNo="";
+				params.isCleaned="0";
+				params.isAcked ="1";
+				params.msgsrc ="flexClient";
+				params.biztype ="RootAlarmAcked"; 
+				params.popupWindow="";
+				httpService.send(params);
+				
+				//PopUpManager.removePopUp(this);
+				
+			}
+			
+			
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				if(dg.selectedItems.length != 1){
+					Alert.show("请选择一条根告警","提示",4,this,null,iconClass);
+				}else{
+					var keybusiness:PopUpKeyBusiness =new PopUpKeyBusiness();
+					keybusiness.alarmnumber=dg.selectedItem.alarmnumber;
+					PopUpManager.addPopUp(keybusiness,this,true);
+					PopUpManager.centerPopUp(keybusiness);
+				}
+			}
+			
+			
+			protected function controlDataGrid(event:MouseEvent):void
+			{
+				if(controlDG.label=="告警列表隐藏"){
+					controlDG.label="告警列表显示";
+					this.height=370;
+					grid.height=0;
+				}else{
+					controlDG.label="告警列表隐藏";
+					this.height=600;
+					grid.height=230;
+				}
+				// TODO Auto-generated method stub
+			}
+			
+			
+			protected function selectHisAlarm(event:MouseEvent):void
+			{
+				if(dg.selectedItems.length != 1){
+					Alert.show("请选择一条根告警","提示",4,this,null,iconClass);
+				}else{
+					tw =new TitleWindow();
+					tw.layout="absolute";
+					tw.x=0;tw.y=0;
+					tw.width=Capabilities.screenResolutionX-50;
+					tw.height=Capabilities.screenResolutionY-250;
+					tw.styleName="popwindow";
+					tw.showCloseButton="true";
+					tw.title="历史根告警";
+					var historyRootAlarm:HisRootAlarm=new HisRootAlarm();
+					historyRootAlarm.myflag=1;
+					historyRootAlarm.alarmobj=dg.selectedItem.alarmobjdesc;;
+					tw.addEventListener(CloseEvent.CLOSE,twcolse);
+					tw.addChild(historyRootAlarm);
+					PopUpManager.addPopUp(tw,main(Application.application),true);
+					PopUpManager.centerPopUp(tw);
+				}
+				
+				// TODO Auto-generated method stub
+			}
+			private function twcolse(evt:CloseEvent):void{
+				PopUpManager.removePopUp(tw);
+			}
+			
+			
+			protected function tabbar1_itemClickHandler(event:ItemClickEvent):void
+			{   
+				dg.dataProvider = new ArrayCollection;
+				sound_effect.stop();
+				//				j=0;
+//				chooseAll.label="根告警全选";
+//				chooseAll.selected=false;
+				if(event.item.label.toString()=="待确认根告警"){
+					alltype = "all";
+					swithtype = true;
+					currentGrid="unackedrootalarm";
+				}
+				else if(event.item.label.toString()=="待跟踪根告警"){
+					alltype = "切换";
+					swithtype = false;
+					currentGrid="watchedrootalarm";
+				}
+				else if(event.item.label.toString()=="当前根告警"){
+					alltype = "切换";
+					swithtype = false;
+					currentGrid="currentrootalarm";
+				}
+				else if(event.item.label.toString()=="已确认根告警"){
+					alltype = "切换";
+					swithtype = false;
+					currentGrid="ackedrootalarm";
+				}
+				refreshCurrentAlarm();
+			}
+			public function refreshCurrentAlarm():void
+			{
+				if (currentGrid=="unackedrootalarm"){
+					tb.selectedIndex=1;
+					//					pagingFunction("0","");
+					//					alarmdate.removeAll();
+					QueryAlarm();
+				}
+				else if(currentGrid=="watchedrootalarm"){
+					tb.selectedIndex=2;
+					pagingFunction("1","继续跟踪");
+				}
+				else if(currentGrid=="currentrootalarm"){
+					tb.selectedIndex=0;
+					pagingFunction("","");
+				}
+				else if(currentGrid=="ackedrootalarm"){
+					tb.selectedIndex=3;
+					pagingFunction("1","");
+				}
+				
+			}
+			private function pagingFunction(isacked:String,dealresult:String):void {
+				var rtobj:RemoteObject=new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getRootAlarm(isacked,dealresult);        //表格加载数据
+				rtobj.addEventListener(ResultEvent.RESULT,getAlarmResult);
+			}
+			private function getAlarmResult(event:ResultEvent):void{
+				if(event.result==null){
+					if(currentGrid=="unackedrootalarm"){
+						Alert.show("没有待确认的根告警","提示信息",4,this,null,iconClass);
+					}else if(currentGrid=="currentrootalarm"){
+						Alert.show("没有当前根告警","提示信息",4,this,null,iconClass);
+					}else if(currentGrid=="watchedrootalarm"){
+						Alert.show("没有待跟踪的根告警","提示信息",4,this,null,iconClass);
+					}else if(currentGrid=="ackedrootalarm"){
+						Alert.show("没有已确认的根告警","提示信息",4,this,null,iconClass);
+					}
+				}else{
+					param.removeAll();
+					for each(var a:Object in event.result as ArrayCollection){
+						param.addItem({alarmnumber:a.ALARMNUMBER,carrycircuit:a.CARRYCIRCUIT,alarmobjdesc:a.ALARMOBJDESC,ackperson:a.ACKPERSON,
+							isackedzh:a.ISACKEDZH,firststarttime:df.format(a.FIRSTSTARTTIME),acktime:df.format(a.ACKTIME),objclasszh:a.OBJCLASSZH,dealresultzh:a.DEALRESULTZH,
+							isworkcasezh:a.ISWORKCASEZH,belongtransys:a.BELONGTRANSYS,ackcontent:a.ACKCONTENT,bugno:a.BUGNO,alarmtype:'0',alarmdesc:a.ALARMDESC,alarmlevelname:a.ALARMLEVEL,
+							flashcount:a.FLASHCOUNT,vendor:a.VENDOR,belongportcode:a.BELONGPORTCODE,belongportobject:a.BELONGPORTOBJECT,belongequip:a.BELONGEQUIP,
+							isbugno:a.ISBUGNO,unit:a.UNIT,isfilter:a.ISFILTER,area:a.AREA,vendorzh:a.VENDORZH,belongstation:a.BELONGSTATION,endtime:df.format(a.ENDTIME),dutyid:a.DUTYID,dealperson:a.DEALPERSON,dealpart:a.DEALPART,triggeredthreshold:a.TRIGGEREDTHRESHOLD});							
+						
+						
+						
+					}
+					dg.dataProvider=param;
+					dg.selectedIndex=0;
+					if(param.length!=0){
+						firstChoose();
+					}
+					//					dg.selectedItem = dg.dataProvider[0];
+					//					dg.dispatchEvent(ListEvent);
+				}
+			}
+			
+			/***
+			 * 取得登录人
+			 */
+			public function getUserName():void{
+				operPerson=parentApplication.curUser;
+			}
+			
+			public function onFalutHandler(event:FaultEvent):void
+			{
+				//				Alert.show("发送请求失败，请检查服务是否启动与数据库连接情况！","提示信息",4,this,null,iconClass);
+			}
+			public function onGetResultHandler(event:ResultEvent):void
+			{
+				//				Alert.show("发送成功:" + event.result.toString());
+			}
+			
+			
+			private function reset():void{
+				alarmCause.selectedIndex=0;
+				alarmDealWith.selectedIndex=0;
+				carryCircuit.text="";
+				isAcked.text="";
+				bugNo.text="";
+				alarmDesc.text="";
+				ackPerson.text="";
+				ackTime.text="";
+				vendorZh.text="";
+				firstStarttime.text="";
+				alarmObjdesc.text="";
+				objClasszh.text="";
+				causeAndPropose.text="";
+				analyseAndPlan.text="";
+			}
+			
+			
+			private function closeHandler(event:MouseEvent):void
+			{
+				parentApplication.isWinOpen="NO";
+				//				sound_effect.removeEventListener(EffectEvent.EFFECT_END,remove_end);
+				sound_effect.stop();
+				if(!parentApplication.curUserEnable){//为值班员进入系统就启动，普通用户不启动
+					this.parentApplication.timer.stop();
+				}			
+				//				PopUpManager.removePopUp(this);
+			}
+			
+			public function updateAlarm(updatealarmdate:ArrayCollection):void
+			{   
+				if(!updatealarmdate){
+					return;
+				}
+				//				getRootAlarmSoundStatus();
+				if(alltype == "切换"){
+					if(!swithtype){
+						return;
+					}				
+				}else if(alltype == "确认"){
+					
+					var now_time:Number = (new Date()).time;
+					if((now_time-confirm_time)/1000<=10){
+						//						Alert.show("确认时间--"+confirm_time.toString()+"\n"+
+						//							"当前时间--"+now_time.toString()+"\n"+
+						//							"时间差--"+((now_time-confirm_time)/1000).toString());
+						return;
+					}else{
+						alltype == "all"
+					}				 
+				}
+				
+				
+				currentGrid="unackedrootalarm";
+				alarmdate.removeAll();
+				for each(var a:Object in updatealarmdate){
+					alarmdate.addItem({alarmnumber:a.ALARMNUMBER,carrycircuit:a.CARRYCIRCUIT,alarmobjdesc:a.ALARMOBJDESC,ackperson:a.ACKPERSON,
+						isackedzh:a.ISACKEDZH,firststarttime:df.format(a.FIRSTSTARTTIME),acktime:df.format(a.ACKTIME),objclasszh:a.OBJCLASSZH,dealresultzh:a.DEALRESULTZH,
+						isworkcasezh:a.ISWORKCASEZH,belongtransys:a.BELONGTRANSYS,ackcontent:a.ACKCONTENT,bugno:a.BUGNO,alarmtype:'0',alarmdesc:a.ALARMDESC,alarmlevelname:a.ALARMLEVEL,
+						flashcount:a.FLASHCOUNT,vendor:a.VENDOR,belongportcode:a.BELONGPORTCODE,belongportobject:a.BELONGPORTOBJECT,belongequip:a.BELONGEQUIP,
+						isbugno:a.ISBUGNO,unit:a.UNIT,isfilter:a.ISFILTER,area:a.AREA,vendorzh:a.VENDORZH,belongstation:a.BELONGSTATION,endtime:df.format(a.ENDTIME),dutyid:a.DUTYID,dealperson:a.DEALPERSON,dealpart:a.DEALPART,triggeredthreshold:a.TRIGGEREDTHRESHOLD});							
+					
+				}	 
+				if(alarmdate.length!=0){
+					sound_effect.stop();
+					alarmVoice = setVoice(alarmdate);
+					//					Alert.show(alarmVoice);
+					sound_effect.play([sound_effect]);
+				}else{
+					sound_effect.stop();
+					reset();
+				} 					
+				
+				
+				if(alarmdate.length!=0&&parentApplication.isWinOpen=="YES"){
+					dg.dataProvider = alarmdate;
+					dg.dataProvider.resfresh();
+					dg.selectedIndex=0;
+//					firstChoose();
+				}
+				j = alarmdate.length;
+				
+			}
+			
+			
+			protected function sound_effect_effectEndHandler(event:EffectEvent):void
+			{
+				sound_effect.play([sound_effect]);
+			}
+			
+			protected function remove_end(event:EffectEvent):void
+			{
+				//				sound_effect.stop();
+			}			
+			
+			protected function dg_clickHandler(event:MouseEvent):void
+			{
+				if(dg.selectedItem){
+//					chooseAll.label="根告警全选";
+//					chooseAll.selected=false;
+					analyseAndPlan.text=dg.selectedItem.ackcontent;
+					carryCircuit.text=dg.selectedItem.carrycircuit;
+					isAcked.text=dg.selectedItem.isackedzh;
+					bugNo.text=dg.selectedItem.bugno;
+					alarmDesc.text=dg.selectedItem.alarmdesc;
+					ackPerson.text=dg.selectedItem.ackperson;
+					objClasszh.text=dg.selectedItem.objclasszh;
+					alarmObjdesc.text=dg.selectedItem.alarmobjdesc;
+					ackTime.text=dg.selectedItem.acktime;
+					vendorZh.text=dg.selectedItem.vendorzh;
+					firstStarttime.text=dg.selectedItem.firststarttime;
+					for(var i:int = 0;i<paramCause.length;i++)
+					{ 
+						if(paramCause[i].label==dg.selectedItem.isworkcasezh)
+						{
+							alarmCause.selectedIndex = i;
+							break;
+						}
+					}  
+					for(var i:int = 0;i<paramResult.length;i++)
+					{ 
+						if(paramResult[i].label==dg.selectedItem.dealresultzh)
+						{
+							alarmDealWith.selectedIndex = i;
+							break;
+						}
+					} 
+					
+				}
+				SetContextMenu();//添加右键菜单
+				
+			}
+			protected function firstChoose():void
+			{
+				if(dg.selectedItem){
+					analyseAndPlan.text=dg.selectedItem.ackcontent;
+					carryCircuit.text=dg.selectedItem.carrycircuit;
+					isAcked.text=dg.selectedItem.isackedzh;
+					bugNo.text=dg.selectedItem.bugno;
+					alarmDesc.text=dg.selectedItem.alarmdesc;
+					ackPerson.text=dg.selectedItem.ackperson;
+					objClasszh.text=dg.selectedItem.objclasszh;
+					alarmObjdesc.text=dg.selectedItem.alarmobjdesc;
+					ackTime.text=dg.selectedItem.acktime;
+					vendorZh.text=dg.selectedItem.vendorzh;
+					firstStarttime.text=dg.selectedItem.firststarttime;
+					
+					
+					for(var i:int = 0;i<paramCause.length;i++)
+					{ 
+						if(paramCause[i].label==dg.selectedItem.isworkcasezh)
+						{
+							alarmCause.selectedIndex = i;
+							break;
+						}
+					}  
+					for(var i:int = 0;i<paramResult.length;i++)
+					{ 
+						if(paramResult[i].label==dg.selectedItem.dealresultzh)
+						{
+							alarmDealWith.selectedIndex = i;
+							break;
+						}
+					} 
+				}				
+				
+			}
+			protected function alarmCause_changeHandler(event:ListEvent):void
+			{
+				
+			}
+			
+			private function setColorFunction(item:Object, color:uint):uint 
+			{ 
+				if(item['isackedzh'] == "否"){
+					return 0xC3F2E7;
+				}
+				else if(item['isackedzh'] == "已确认"){
+					return 0xFFFFFF;
+				}
+				return color; 
+			} 
+			//修改告警处理右键操作 by hjl
+			private function SetContextMenu():void{
+				if(dg.selectedItem!=null){
+					contextMeau.hideBuiltInItems();
+					popupmenu_alarmdeal.parent=this;
+					popupmenu_alarmdeal.alarm=changeObject(dg.selectedItem);
+					if(dg.selectedItems.length>1){
+						popupmenu_alarmdeal.alarmList=dg.selectedItems;
+					}else{
+						popupmenu_alarmdeal.alarmList.splice(0);
+					}
+					popupmenu_alarmdeal._refreshFunction=ackrootEvent;
+					popupmenu_alarmdeal.setItemStatus();
+					contextMeau.customItems =popupmenu_alarmdeal.customItems;
+					dg.contextMenu = contextMeau;
+				}				
+				
+			}
+			
+			private function changeObject(selectObj:Object):Object{
+				var obj:Object = new Object;
+				obj.alarmnumber = selectObj.alarmnumber;
+				obj.alarmlevelname = selectObj.alarmlevelname;
+				obj.alarmobjdesc = selectObj.alarmobjdesc;
+				obj.objclasszh = selectObj.objclasszh;
+				obj.laststarttime = selectObj.firststarttime;
+				obj.alarmdesc = selectObj.alarmdesc;
+				obj.belongtransys = selectObj.belongtransys;
+				obj.vendorzh = selectObj.vendorzh;
+				obj.isackedzh = selectObj.acktime==""?'未确认':'已确认';
+				obj.ackperson = selectObj.ackperson;
+				obj.acktime = selectObj.acktime;
+				obj.specialtyzh;
+				obj.flashcount = selectObj.flashcount;
+				obj.isworkcasezh = selectObj.isworkcasezh;
+				obj.bugno = selectObj.bugno;				
+				obj.dealresultzh = selectObj.dealresultzh;
+				obj.triggeredthreshold = selectObj.triggeredthreshold;
+				obj.dutyid = selectObj.dutyid;
+				obj.dealperson = selectObj.dealperson;
+				obj.dealpart = selectObj.dealpart;
+				obj.run_unit = selectObj.run_unit;
+				obj.objclasszh = selectObj.objclasszh;
+				obj.belongportobject = selectObj.belongportobject;
+				obj.belongportcode = selectObj.belongportcode;
+				obj.belongpackobject = selectObj.belongpackobject;
+				obj.belongequip = selectObj.belongequip;
+				obj.isbugno = selectObj.isbugno;
+				return obj;
+			}
+			var changeexistfault:ChangeExistFault;
+			private function toExistFaultHandler(e:ContextMenuEvent):void{
+				var ac:ArrayCollection = new ArrayCollection();
+				if(dg.selectedItems.length!=0){
+					changeexistfault=new ChangeExistFault();
+					changeexistfault.addEventListener("AfterChangeExist", afterChangeExist);
+					MyPopupManager.addPopUp(changeexistfault, true); 
+				}
+			}
+			private function afterChangeExist(event:LinkParameterEvent):void
+			{
+				var dutyid:String=event.parameter.toString();
+				var ac:ArrayCollection = new ArrayCollection();
+				if(dg.selectedItems.length!=0){
+					for(var i:int=0;i<dg.selectedItems.length;i++){
+						var alarmNo:AckRootAlarmModel = new AckRootAlarmModel();
+						alarmNo.alarmnumber = dg.selectedItems[i].alarmnumber;	
+						ac.addItem(alarmNo);	
+					}
+					toExistFault(ac,dutyid);
+				}
+			}
+			private function toExistFault(ac:ArrayCollection,dutyid:String):void{
+				alert = AlertTip.show(this.height-28,this.width,"正在转至已有故障，请稍后……", 
+					100,false,{style:"AlertTip"},null,true);
+				var obj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				obj.toExistFaultHandler(ac,dutyid);
+				obj.addEventListener(ResultEvent.RESULT,toExistFaultHandlerResult);	
+			}
+			private function toExistFaultHandlerResult(e:ResultEvent):void{
+				if(e.result.toString()=="ok"){
+					alert.msg = "转至已有故障成功";
+					alert.visible  = false;
+				}else{
+					Alert.show("转至已有故障失败，请联系管理员！","温馨提示");
+					alert.visible  = false;
+				}
+			}
+			
+			
+			private function ackrootEvent (event:Event) :void{
+				QueryAlarm();
+			}
+			
+			
+			
+			
+			var alert:AlertCanvas;
+			private function toFaultHandler(e:ContextMenuEvent):void{
+				var ac:ArrayCollection = new ArrayCollection();
+				if(dg.selectedItems.length!=0){
+					for(var i:int=0;i<dg.selectedItems.length;i++){
+						var alarmNo:AckRootAlarmModel = new AckRootAlarmModel();
+						alarmNo.alarmnumber = dg.selectedItems[i].alarmnumber;	
+						alarmNo.isackedzh = dg.selectedItems[i].acktime==""?'未确认':'已确认';
+						if(dg.selectedItems[i].bugno==null||dg.selectedItems[i].bugno==""){
+							ac.addItem(alarmNo);	
+						}
+					}
+					if(ac.length==0&&dg.selectedItems.length==1){
+						Alert.show("该告警已经转故障处理了","温馨提示");
+					}/* else if(ac.length<dg.selectedItems.length){
+						Alert.show("选中的告警中已有转故障处理的了");
+						} */
+					else{
+						toFault(ac);
+					}
+					
+					
+				}
+			}
+			private function toFault(ac:ArrayCollection):void{
+				alert = AlertTip.show(this.height-28,this.width,"正在转处理流程中，请稍后……", 
+					100,false,{style:"AlertTip"},null,true);
+				var obj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				obj.toFaultHandler(ac,"0");
+				obj.addEventListener(ResultEvent.RESULT,toFaultHandlerResult);	
+			}
+			private function toFaultHandlerResult(e:ResultEvent):void{
+				if(e.result.toString()=="ok"){
+					//					Alert.show("转处理流程成功","温馨提示");
+					//					AlertCanvas(alert).visible_ = false;
+					alert.msg = "转处理流程成功";
+					alert.visible  = false;
+				}else{
+					Alert.show("转处理流程失败，请联系管理员！","温馨提示");
+					alert.visible  = false;
+				}
+			}
+			
+			protected function panelwindow1_closeHandler(event:CloseEvent):void
+			{
+				if(alone){
+					unsubscribe("realRootAlarm");		
+					PopUpManager.removePopUp(this);
+				}else{
+					PopUpManager.removePopUp(this);	
+				}
+			}
+			private function unsubscribe(subtopic:String):void
+			{
+				//				Alert.show("tuichu");
+				if (DealAlarmUtil.consumers[subtopic])
+				{
+					var consumer:Consumer = DealAlarmUtil.consumers[subtopic];
+					if(subtopic =="realRootAlarm")
+						consumer.removeEventListener(MessageEvent.MESSAGE, handleRealRootAlarm);
+					if (consumer.subscribed)
+					{
+						consumer.unsubscribe();
+					}
+					
+					consumer.channelSet.disconnectAll();
+					DealAlarmUtil.consumers[subtopic] = null;
+				}
+			}
+			
+			
+
+			protected function causeAndPropose_focusOutHandler(event:FocusEvent):void
+			{	 
+//				Alert.show("out");   	
+				parentApplication.FocusOpen = false;
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function analyseAndPlan_focusOutHandler(event:FocusEvent):void
+			{	 
+				parentApplication.FocusOpen = false;
+				// TODO Auto-generated method stub
+			}
+
+            //输入时不弹出
+			protected function causeAndPropose_textInputHandler(event:TextEvent):void
+			{	
+//				Alert.show("test");
+				parentApplication.FocusOpen = true; 
+				// TODO Auto-generated method stub
+			}
+
+			//输入时不弹出
+			protected function analyseAndPlan_textInputHandler(event:TextEvent):void
+			{  parentApplication.FocusOpen = true; 
+				// TODO Auto-generated method stub
+			}
+
+		]]>
+	</mx:Script>
+	
+	
+	<!--HTTPService请求-->
+	<mx:HTTPService id="httpService"  useProxy="false" resultFormat="text" 
+					fault="onFalutHandler(event)" result="onGetResultHandler(event)"/>
+	
+	<!--发出告警的声音-->
+	<mx:SoundEffect id="sound_effect"  repeatCount="0" repeatDelay="1000"
+					source="{'assets/song/'+alarmVoice+'.mp3'}" 
+					useDuration="false" />
+	
+	<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+	<mx:VBox width="100%" height="100%"  borderColor="#b7babc" backgroundColor="#E0EEEE" verticalScrollPolicy="off" horizontalScrollPolicy="off" backgroundAlpha="0.7" >
+		
+		<mx:HBox width="100%" height="70" backgroundImage="@Embed(source='assets/images/alarminfo_banner.png')" backgroundSize="100%" verticalAlign="middle">
+			<mx:Image source="assets/images/title_RealAlarm.png" height="70"/>
+		</mx:HBox>
+		
+		<mx:HBox width="100%" height="20%" horizontalGap="0" verticalScrollPolicy="off" horizontalScrollPolicy="off" borderStyle="solid">
+			<mx:Form width="40%" height="100%" paddingTop="0" paddingLeft="10" paddingRight="0" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+				<mx:FormItem label="告警对象:" width="100%" height="25%" maxWidth="280">
+					<comp:MyLabel  id="carryCircuit" width="280" maxWidth="280" />
+				</mx:FormItem>
+				<mx:FormItem label="告警描述:" width="100%" height="25%" maxWidth="280">
+					<comp:MyLabel   id="alarmDesc" width="280" height="100%" maxWidth="280"/>
+				</mx:FormItem>
+				<mx:FormItem label="告警设备:" width="100%" height="25%" maxWidth="280">
+					<comp:MyLabel  id="alarmObjdesc"  width="280" height="100%" maxWidth="280" />
+				</mx:FormItem>
+				<mx:FormItem label="告警时间:" width="100%" height="25%" maxWidth="280">
+					<mx:Label  id="firstStarttime" width="100%" height="100%"  maxWidth="280"/>
+				</mx:FormItem>
+			</mx:Form>
+			<mx:Form width="30%" height="100%" paddingTop="0" paddingLeft="10" paddingRight="0" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+				<mx:FormItem label="是否确认:" width="100%" height="25%" maxWidth="280" paddingLeft="0" horizontalAlign="left" >
+					<mx:Label  width="100%" id="isAcked" maxWidth="280"/>
+				</mx:FormItem>
+				<mx:FormItem label="确 认人  :" width="100%" height="25%" maxWidth="280" paddingLeft="0" horizontalAlign="left">
+					<mx:Label  width="100%" id="ackPerson" maxWidth="280"/>
+				</mx:FormItem>
+				<mx:FormItem label="确认时间:" width="100%" height="25%" maxWidth="280" paddingLeft="0" horizontalAlign="left">
+					<mx:Label  width="100%" id="ackTime" maxWidth="280"/>
+				</mx:FormItem>
+				<mx:FormItem label="告警原因:" width="100%" height="25%" maxWidth="280"  horizontalAlign="left">
+					<mx:ComboBox id="alarmCause" width="80%" change="alarmCause_changeHandler(event)" maxWidth="200"/>
+				</mx:FormItem>
+			</mx:Form>
+			<mx:Form width="30%" height="100%" paddingTop="0" paddingLeft="0" paddingRight="0" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+				<mx:FormItem label="故障单号:" width="100%" height="25%" maxWidth="280">
+					<mx:Label  width="100%" id="bugNo" maxWidth="280"/>
+				</mx:FormItem>
+				<mx:FormItem label="告警类型:" width="100%" height="25%" maxWidth="280">
+					<mx:Label  width="100%" id="objClasszh" maxWidth="280"/>
+				</mx:FormItem>
+				<mx:FormItem label="厂家名称:" width="100%" height="25%" maxWidth="280">
+					<mx:Label  width="100%" id="vendorZh" maxWidth="280"/>
+				</mx:FormItem>
+				<mx:FormItem label="处理方式:" width="100%" height="25%" maxWidth="280">
+					<mx:ComboBox id="alarmDealWith"  width="80%" maxWidth="200"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:Grid  paddingTop="5" width="100%" height="10%" verticalScrollPolicy="off" horizontalScrollPolicy="off" horizontalGap="10" verticalGap="0" paddingLeft="10" paddingRight="10" backgroundColor="#E0EEEE">
+			<mx:GridRow width="100%" height="40%">
+				<mx:GridItem width="50%" height="100%" verticalAlign="middle" horizontalAlign="left"  verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<mx:Label text="告警可能原因及处理建议（厂家故障手册）"/>
+				</mx:GridItem>
+				<mx:GridItem width="50%" height="100%" verticalAlign="middle" horizontalAlign="left" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<mx:Label text="告警分析与处理方案（此处填写相关故障处理信息）" />
+				</mx:GridItem>
+			</mx:GridRow>
+			<mx:GridRow width="100%" height="60%">
+				<mx:GridItem width="50%" height="100%" verticalAlign="middle" horizontalAlign="left"  verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<mx:TextArea width="100%" height="100%"  id="causeAndPropose" textInput="causeAndPropose_textInputHandler(event)"   focusOut="causeAndPropose_focusOutHandler(event)"  fontSize="12" styleName="input"/>
+				</mx:GridItem>
+				<mx:GridItem width="50%" height="100%" verticalAlign="middle" horizontalAlign="left"  verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<mx:TextArea width="100%" height="100%"  id="analyseAndPlan" textInput="analyseAndPlan_textInputHandler(event)"  focusOut="analyseAndPlan_focusOutHandler(event)" fontSize="12" styleName="input" />
+				</mx:GridItem>
+			</mx:GridRow>
+		</mx:Grid>
+		<mx:HBox width="100%" height="10%" verticalAlign="middle">
+			<mx:Spacer width="100%"/>
+			<mx:Button width="100" height="20" styleName="combox" label="转中调处理" textAlign="center" click="Setrootalarm()" enabled="{this.parentApplication.curUserEnable}"/>
+			<mx:Button width="120" height="20" styleName="combox" label="查看影响业务" textAlign="center" click="button1_clickHandler(event)"/>
+			<mx:Button width="120" id="controlDG" height="20" styleName="combox" label="告警列表隐藏" textAlign="center" click="controlDataGrid(event)"/>
+			<mx:Button width="120" height="20" styleName="combox" label="历史告警显示" textAlign="center" click="selectHisAlarm(event)"/>
+			<mx:Button  id="ackalarm" width="100" height="20" styleName="combox" label="确认根告警" textAlign="center" click="ackAlarm(event)" enabled="{this.parentApplication.curUserEnable}"/>
+			
+		</mx:HBox>
+		<mx:VBox id="grid" height="100%" width="100%" verticalGap="0">
+			<mx:HBox  width="100%" height="5%" paddingBottom="0" paddingLeft="10" paddingRight="10" paddingTop="0" verticalGap="0" backgroundColor="#E0EEEE">
+				<mx:TabBar  id="tb"  width="100%" height="100%" fontSize="12" itemClick="tabbar1_itemClickHandler(event)" selectedIndex="1" >
+					<mx:Object label="当前根告警" id="currentrootalarm"/>
+					<mx:Object label="待确认根告警"  id="unackedrootalarm"/>
+					<mx:Object label="待跟踪根告警" id="watchedrootalarm"/>
+					<!--<mx:Object label="已确认根告警" id="ackedrootalarm"/>-->
+				</mx:TabBar>
+				<mx:Spacer width="100%"/>
+				<!--<mx:CheckBox id="chooseAll" width="0" height="0" label="根告警全选" textAlign="center" click="chooseAllAlarm(event)" selected="false"/>-->
+			</mx:HBox>
+			<mx:VBox width="100%" height="100%" paddingLeft="10" paddingRight="10" paddingBottom="10">
+				<comp:ColorDataGrid id="dg" selectedIndex="0" headerHeight="25" width="100%"  styleName="alarm" height="100%" textAlign="center" verticalAlign="middle" click="dg_clickHandler(event)"
+									dataProvider="{alarmdate}"	 allowMultipleSelection="true" verticalScrollPolicy="auto" horizontalScrollPolicy="auto" rowColorFunction="setColorFunction" horizontalGridLines="true">
+					<comp:columns>
+						<!--<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="50" textAlign="center"/>
+						<mx:DataGridColumn headerText="告警编号" dataField="alarmnumber" visible="false" textAlign="left"/>
+						<mx:DataGridColumn headerText="根告警对象" dataField="alarmobjdesc" width="200" textAlign="left"/>
+						<mx:DataGridColumn headerText="根告警类型" dataField="objclasszh" width="80"  textAlign="left"/>
+						<mx:DataGridColumn headerText="根告警描述" dataField="alarmdesc" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="根告警时间" dataField="firststarttime" width="120" textAlign="left"/>
+						<mx:DataGridColumn headerText="承载业务" dataField="carrycircuit" width="200" textAlign="left"/>
+						<mx:DataGridColumn headerText="是否确认" dataField="isackedzh" width="80" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认时间" dataField="acktime" width="120"  textAlign="left"/>
+						<mx:DataGridColumn headerText="确认人" dataField="ackperson" width="60" textAlign="left"/>
+						<mx:DataGridColumn headerText="处理方式" dataField="dealresultzh" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属系统" dataField="belongtransys" width="80" textAlign="left"/>
+						<mx:DataGridColumn headerText="处理描述" dataField="ackcontent" width="200" textAlign="left"/>
+						<mx:DataGridColumn headerText="故障单号" dataField="bugno" width="80" textAlign="left"/>-->
+						<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="50" textAlign="center"/>
+						<mx:DataGridColumn headerText="告警级别" dataField="alarmlevelname" width="80" textAlign="left" itemRenderer="sourceCode.alarmmgr.actionscript.AlarmlevelcolorItemRender"/>
+						<mx:DataGridColumn headerText="发生时间" dataField="firststarttime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="恢复时间" dataField="endtime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属局站" dataField="belongstation" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警名称" dataField="alarmdesc" width="140" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警对象" dataField="alarmobjdesc" width="200" textAlign="left"/>	
+						<mx:DataGridColumn headerText="承载业务" dataField="carrycircuit" width="200" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属厂家" dataField="vendorzh" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属系统" dataField="belongtransys" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属区域" dataField="area" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="频闪次数" dataField="flashcount" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认时间" dataField="acktime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认人" dataField="ackperson" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警原因" dataField="isworkcasezh" width="200" textAlign="left"/>	
+						<mx:DataGridColumn headerText="故障单号" dataField="isbugno" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认信息" dataField="ackcontent" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="处理方式" dataField="dealresultzh" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="是否过滤" dataField="isfilter" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="运维单位" dataField="unit" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="当值值班员" dataField="dealperson" width="100" textAlign="left"/>
+					</comp:columns>
+				</comp:ColorDataGrid>
+			</mx:VBox>
+		</mx:VBox>
+	</mx:VBox>
+</panel:PanelWindow>

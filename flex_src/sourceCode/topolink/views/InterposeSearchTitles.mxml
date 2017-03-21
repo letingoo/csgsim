@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="300"
+				height="250"
+				creationComplete="init()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{MyPopupManager.removePopUp(this)}">
+	<!--<mx:Script source="../actionscript/InterposeSearchTitle.as" />-->
+	<!--<mx:RemoteObject id="subMessage" destination="RemoteMessage"  endpoint="{ModelLocator.END_POINT}" 
+					 result="subMessage_resultHandler(event)" /> -->
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center"
+			 verticalGap="0">
+	<!--	<mx:HBox width="100%"
+				 height="80%">	
+			<mx:Form width="100%" height="100%">
+				<mx:FormItem id="equipnameform" label="设备名称" >
+					<mx:TextInput id="equipname" width="220" editable="true" />
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>-->
+		<mx:HBox width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			<mx:Button id="btn"
+					   label="确定"
+					   styleName="loginprimary"
+					   width="80"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="80"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.MyPopupManager;
+			import mx.controls.Alert;
+			public   static  var mx:int;
+			public function init():void
+			{
+				
+			}
+			public function btn_clickHandler(event:MouseEvent):void
+			{         
+				
+					MyPopupManager.removePopUp(this);
+			}	
+
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

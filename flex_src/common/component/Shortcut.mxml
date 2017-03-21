@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100"
+		 horizontalAlign="center"
+		 mouseChildren="false"
+		 useHandCursor="true"
+		 buttonMode="true"
+		 fontSize="12"
+		 mouseOut="mouseOutHandler(event)"
+		 mouseOver="mouseOverHandler(event)" 
+		 click="clickHandler(event)" 
+		 verticalScrollPolicy="off" 
+		 horizontalScrollPolicy="off">
+	<mx:Zoom 
+		id="zoomIn" 
+		zoomHeightFrom="1" 
+		zoomHeightTo="1.2" 
+		zoomWidthFrom="1" 
+		zoomWidthTo="1.2" 
+		target="{imgShortcut}" 
+		duration="100"/>
+	<mx:Zoom 
+		id="zoomOut" 
+		zoomHeightTo="1" 
+		zoomWidthTo="1" 
+		target="{imgShortcut}" 
+		duration="100" />
+	<mx:Image  id="imgShortcut" 
+			   source="{_source}"
+			  width="64" 
+			  height="64" x="26"/>
+	<mx:Label id="lblTitle" width="100%" text="{_title}" color="white" textAlign="center"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			[Bindable]private var _source:String;
+			[Bindable]private var _title:String;
+			
+			public function get title():String
+			{
+				return _title;
+			}
+
+			public function set title(value:String):void
+			{
+				_title = value;
+			}
+
+			public function get source():String
+			{
+				return _source;
+			}
+
+			public function set source(value:String):void
+			{
+				_source = value;
+			}
+
+			private function mouseOutHandler(event:MouseEvent):void{
+				lblTitle.setStyle("textDecoration","");
+				zoomIn.stop();
+				zoomOut.play();
+				
+			}
+			
+			private function mouseOverHandler(event:MouseEvent):void{
+				lblTitle.setStyle("textDecoration","underline");
+				zoomIn.play();
+			}
+			
+			private function clickHandler(event:MouseEvent):void{
+				parentApplication.openModel(event.target.getChildAt(1).text,false);
+			}
+
+		]]>
+	</mx:Script>
+</mx:VBox>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+
+<sqlMap>
+
+	
+	
+	<select id="getBusInfozmc" parameterClass="java.lang.String" resultClass="java.lang.String">
+		
+			
+			<!-- select bussiness_name, bussiness_id from VIEW_BUSSINESS_ROUTE 
+			where main_route like '%' || #label# || '%' -->
+			
+			select business_name from topolink_business_cache
+			where main_route like CONCAT('%', #label# ,'%')
+			
+	</select>
+	
+	
+	
+	<select id="getAllTopoZMC" resultClass="PressureLevel.model.TopolinkItem">
+		select label,name from en_topolink
+	</select>
+
+	
+	
+	<delete id="clearTopolinkBusinessCacheTable">
+		delete from topolink_business_cache
+	</delete>
+	
+	
+	
+	<insert id="produceTopolinkBusinessCacheTable">
+		insert into topolink_business_cache(business_name, main_route)
+			select bussiness_name,main_route from VIEW_BUSSINESS_ROUTE
+	</insert>
+
+</sqlMap>

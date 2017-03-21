@@ -1,0 +1,368 @@
+
+import common.actionscript.ModelLocator;
+import common.actionscript.MyPopupManager;
+import common.actionscript.Registry;
+import common.other.events.CustomEvent;
+
+import flash.events.ContextMenuEvent;
+import flash.events.Event;
+import flash.net.registerClassAlias;
+import flash.ui.ContextMenu;
+import flash.ui.ContextMenuItem;
+
+import mx.controls.Alert;
+import mx.core.Application;
+import mx.events.CloseEvent;
+import mx.formatters.DateFormatter;
+import mx.managers.PopUpManager;
+import mx.rpc.events.ResultEvent;
+import mx.rpc.remoting.mxml.RemoteObject;
+
+import sourceCode.autoGrid.view.ShowProperty;
+import sourceCode.resManager.resBusiness.events.CircuitEvent;
+import sourceCode.resManager.resBusiness.model.Circuit;
+import sourceCode.resManager.resBusiness.model.ResultModel;
+import sourceCode.resManager.resBusiness.titles.CircuitTitle;
+import sourceCode.resManager.resBusiness.views.BusinessResources;
+import sourceCode.systemManagement.model.PermissionControlModel;
+import sourceCode.tableResurces.Events.ToopEvent;
+import sourceCode.tableResurces.views.FileExportFirstStep;
+
+import twaver.DemoUtils;
+
+private var pageIndex:int = 0;
+private var pageSize:int = 50;
+/**
+ * 数据总条数
+ **/
+private var dataNumber:int; 
+private var isAdd:Boolean = false;
+private var isDelete:Boolean = false;
+private var isEdit:Boolean = false;
+private var isSearch:Boolean = true;
+private var isImport:Boolean = false;
+private var isExport:Boolean = true;
+private var dir:Boolean = true;              //排序方式   true 升序
+private var sortName:String ="";             //当前排序的列名
+private var circuit:Circuit = new Circuit();
+private var circuitTitle:CircuitTitle;
+private function preinitialize():void
+{
+	if(ModelLocator.permissionList!=null && ModelLocator.permissionList.length>0)
+	{
+		isAdd = false;
+		isEdit = false;
+		isDelete = false;
+		isSearch = true;
+		isImport = false;
+		isExport = true;
+		for(var i:int = 0; i < ModelLocator.permissionList.length; i++)
+		{
+			var model:PermissionControlModel = ModelLocator.permissionList[i];
+			
+			if(model.oper_name!=null&&model.oper_name=="添加操作"){
+				isAdd = true;
+			}
+			if(model.oper_name!=null&&model.oper_name=="修改操作"){
+				isEdit = true;
+			}
+			if(model.oper_name!=null&&model.oper_name=="删除操作"){
+				isDelete = true;
+			}
+			if(model.oper_name!=null&&model.oper_name=="导出操作"){
+				isExport = true;
+			}
+			if(model.oper_name!=null&&model.oper_name=="导入操作"){
+				isImport = true;
+			}
+		}
+	}
+}
+
+private function init():void
+{
+	registerClassAlias("resManager.resBusiness.model.Circuit",Circuit);
+	serverPagingBar.dataGrid = dataGrid;
+	serverPagingBar.pagingFunction = pagingFunction;
+	serverPagingBar.addEventListener("returnALL",showAllDataHandler);
+	getCircuit("0",pageSize.toString());
+	
+	addContextMenu();
+}
+
+private function pagingFunction(pageIndex:uint,pageSize:uint):void
+{
+	this.pageSize = pageSize;
+	this.getCircuit((pageIndex*pageSize).toString(),(pageIndex*pageSize+pageSize).toString());
+}
+
+private function getCircuit(startIndex:String,endIndex:String):void
+{
+	var rmObj:RemoteObject = new RemoteObject("resBusinessDwr");
+	circuit.index = startIndex;
+	circuit.end = endIndex;
+	rmObj.endpoint = ModelLocator.END_POINT;
+	rmObj.showBusyCursor = true;
+	rmObj.addEventListener(ResultEvent.RESULT,resultHandler);
+	rmObj.getCircuit(circuit);
+//	Application.application.faultEventHandler(rmObj);
+}
+
+private function resultHandler(event:ResultEvent):void{
+	var result:ResultModel = event.result as ResultModel;
+	if(null != result){
+		this.dataNumber = result.totalCount;
+		onResult(result);
+	}
+}
+
+/**
+ * 数据绑定
+ */
+private function onResult(result:ResultModel):void{
+	serverPagingBar.orgData = result.orderList;
+	serverPagingBar.totalRecord = result.totalCount;
+	serverPagingBar.dataBind(true);
+}
+
+private function showAllDataHandler(event:ResultEvent):void{
+	getCircuit("0",serverPagingBar.totalRecord.toString());
+}
+
+/**
+ * 增加弹出菜单
+ * */
+private function addContextMenu():void{
+	var contextMenu:ContextMenu = new ContextMenu();
+	dataGrid.contextMenu = contextMenu;
+	dataGrid.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(event:ContextMenuEvent):void{
+		var item1:ContextMenuItem = new ContextMenuItem("添 加", true);
+		item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, controlBar_controlAddHandler);
+		var item2:ContextMenuItem = new ContextMenuItem("修改", true);
+		item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, controlBar_controlEditHandler);
+		var searchItem:ContextMenuItem = new ContextMenuItem("查 询",true);
+		var deleteItem:ContextMenuItem = new ContextMenuItem("删 除",true);
+		searchItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,function(event:ContextMenuEvent):void{
+			toolbar_toolEventSearchHandler(new ToopEvent("toolEventSearch"));
+		});
+		deleteItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,function(event:ContextMenuEvent):void{
+			controlBar_controlDelHandler(new ToopEvent("toolEventSearch"));
+		});
+		var item3:ContextMenuItem = new ContextMenuItem("查看电路路由", true);
+		item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, controlBar_CircuitRouteHandler);
+		
+		item1.visible = isAdd;
+		item2.visible = isEdit;
+		item3.visible = true;
+		searchItem.visible = isSearch;
+		deleteItem.visible = isDelete;
+		
+		var flexVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION,false,false);
+		var playerVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION,false,false);
+		
+		if(dataGrid.selectedItems.length==0){//选中元素个数
+			dataGrid.contextMenu.hideBuiltInItems();
+			dataGrid.contextMenu.customItems = [item1,searchItem];
+		}
+		else{
+			dataGrid.contextMenu.hideBuiltInItems();
+			dataGrid.contextMenu.customItems = [item1,item2,searchItem,deleteItem,item3];
+		}
+	});
+}
+/**
+ * 添加
+ */
+protected function controlBar_controlAddHandler(event:Event):void
+{
+		var cit:CircuitTitle = new CircuitTitle();
+		cit.title ='添加';
+		cit.currentState = 'add';
+		PopUpManager.addPopUp(cit,this,true);
+		PopUpManager.centerPopUp(cit);
+		cit.addEventListener("RefreshDataGrid",refreshHandle);
+		init();
+}
+
+/**
+ *查看电路路由 
+ * 
+ **/
+private function controlBar_CircuitRouteHandler(event:Event):void{
+	if(dataGrid.selectedItems.length>0){
+		Registry.register("para_circuitcode", dataGrid.selectedItem.circuitcode);
+		Registry.register("para_circuitype", dataGrid.selectedItem.x_purpose);
+		Application.application.openModel("方式信息", false);
+	}
+}
+
+/**
+ * 修改
+ * */
+protected function controlBar_controlEditHandler(event:Event):void
+{
+	if(dataGrid.selectedItems.length>0){
+		
+		var cit:CircuitTitle = new CircuitTitle();
+		cit.title ='修改';
+		cit.currentState = "modify";
+		PopUpManager.addPopUp(cit,this,true);
+		PopUpManager.centerPopUp(cit);
+		cit.showcircuit=false;
+		cit.circuitcode.text = dataGrid.selectedItem.circuitcode;
+		cit.username.text = dataGrid.selectedItem.username;
+		cit.station1.text = dataGrid.selectedItem.station1;
+		cit.station2.text = dataGrid.selectedItem.station2;
+//		cit.x_purpose.text = dataGrid.selectedItem.x_purpose;
+		cit.x_purpose1.text = dataGrid.selectedItem.x_purpose;
+		cit.portname1.text = dataGrid.selectedItem.portname1;
+		cit.portname2.text = dataGrid.selectedItem.portname2;
+		cit.slot1.text = dataGrid.selectedItem.slot1;
+		cit.slot2.text = dataGrid.selectedItem.slot2;
+//		cit.rate.text = dataGrid.selectedItem.rate;
+		cit.rate0.text = dataGrid.selectedItem.rate;
+		cit.usetime.text = dataGrid.selectedItem.usetime;
+		cit.portcode1.text = dataGrid.selectedItem.portcode1;
+		cit.portcode2.text = dataGrid.selectedItem.portcode2;
+//		cit.circuitcode_bak = dataGrid.selectedItem.circuitcode;
+		cit.path.text=dataGrid.selectedItem.path;
+		cit.remark.text=dataGrid.selectedItem.remark;
+		cit.delay1.text=dataGrid.selectedItem.delay1;
+		cit.delay2.text=dataGrid.selectedItem.delay2;
+		cit.addEventListener("RefreshDataGrid",refreshHandle);
+		
+	}else{
+		Alert.show("请先选中一条记录！","提示");
+	}
+	init();
+}
+
+/**
+ * 删除
+ * */
+protected function controlBar_controlDelHandler(event:Event):void
+{
+	if(dataGrid.selectedItems.length>0){
+		//					if(parentApplication.isEdit==true){
+		Alert.show("确定要删除这条记录吗？","请您确定",Alert.YES|Alert.NO,this,closeHandler,null,Alert.NO);	
+		//					}else{
+		//						Alert.show("对不起！您没有足够权限删除数据","提示");
+		//					}
+	}else{
+		Alert.show("请先选中一条记录！","提示");
+	}	
+}
+
+/**
+ * 删除处理
+ * */
+private function closeHandler(e:CloseEvent):void{
+	//判断点击按钮为"是"
+	if(e.detail == Alert.YES){
+		var obj1:RemoteObject = new RemoteObject("resBusinessDwr");
+		obj1.endpoint=ModelLocator.END_POINT;
+		obj1.deleteCircuit(dataGrid.selectedItem);
+		obj1.addEventListener(ResultEvent.RESULT,resultsHandler);
+		Application.application.faultEventHandler(obj1);
+	}
+}
+
+private function resultsHandler(e:ResultEvent):void{
+	if(e.result!=null){
+		if(e.result.toString()=="success"){
+			Alert.show("删除成功！","提示");
+			serverPagingBar.navigateButtonClick("firstPage");
+		}else{
+			Alert.show("删除失败！","提示");
+		}
+	}
+}
+
+/**
+ * 查询 
+ */
+private function toolbar_toolEventSearchHandler(event:Event):void
+{
+		var cit:CircuitTitle = new CircuitTitle();
+		cit.title = '查询';
+		cit.currentState = 'search';
+		PopUpManager.addPopUp(cit,this,true);
+		PopUpManager.centerPopUp(cit);
+		
+		//监听查询按钮是否点击确认
+		cit.addEventListener("circuitSearchEvent",searchCircuitHandler);
+}
+
+/**
+ * 导入
+ * */
+protected function controlBar_controlImportHandler(event:Event):void
+{
+	// TODO Auto-generated method stub
+	
+}
+
+/**
+ * 导出
+ */
+private function toolbar_ExportExcelHandler(event:Event):void{
+	var fefs:FileExportFirstStep = new FileExportFirstStep();
+	fefs.dataNumber = this.dataNumber;	
+	circuit.end = this.dataNumber.toString();				
+	fefs.titles = new Array("序号","电路编号","电路名称","起点局站","终点局站","业务类型","A端端口",
+		"Z端端口","A端时隙","Z端时隙","速率","开通时间");				
+	fefs.exportTypes = "电路";
+	fefs.labels = "电路路由信息列表";
+	fefs.model = circuit;
+	MyPopupManager.addPopUp(fefs, this);
+}
+
+
+
+
+/**
+ * 刷新处理
+ */
+private function refreshDataGridHandler(event:Event):void{
+	getCircuit("0",pageSize.toString());
+}
+
+private function searchCircuitHandler(event:CircuitEvent):void
+{
+	circuit = event.model;
+	circuit.index = "0";
+	circuit.end = pageSize.toString();
+	circuit.dir = "asc";
+	serverPagingBar.navigateButtonClick("firstPage");
+}
+
+private function refreshHandle(event:Event):void{
+	serverPagingBar.navigateButtonClick("firstPage");
+}
+
+/**
+ * 在桌面添加快捷方式
+ * */
+protected function toolbar1_toolEventAddShortcutHandler(event:Event):void//添加桌面快捷方式
+{
+	parentApplication.addShorcut('电路','circuitroute');
+}
+
+/**
+ * 删除桌面的快捷方式
+ * */
+protected function toolbar1_toolEventDelShortcutHandler(event:Event):void//删除桌面快捷方式
+{
+	parentApplication.delShortcut('电路');
+}
+
+/**
+ * 获取当前时间
+ */
+protected function getNowTime():String{
+	var dateFormatter:DateFormatter = new DateFormatter();
+	dateFormatter.formatString = "YYYY-MM-DD JJ:NN:SS";
+	var nowDate:String= dateFormatter.format(new Date());
+	return nowDate;
+}
+

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				showCloseButton="true" title="添加告警处理经验"
+				width="640" height="480" layout="absolute" styleName="popwindow"
+				close="PopUpManager.removePopUp(this)" creationComplete="init()"
+				>
+	
+	
+	<mx:Script>
+		<![CDATA[
+			
+			import common.actionscript.DealAlarmUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			public var vendorfactory:ArrayCollection =  new ArrayCollection(); 
+			private var params:ArrayCollection = new ArrayCollection();
+			
+			public var vendor:String = "";
+			public var vendorzh:String = "";
+			public var alarmlevel:String = "";
+			public var alarmlevelzh:String = "";
+			public var localdesc:String = "";
+			public var analyse:String = "";
+			public var alarmdesc:String = "";
+			public var exprience:String = "";
+			public var alarmcause:String = "";
+			
+			private function init():void{
+				
+				factory.dataProvider = vendorfactory;
+				initlevel();
+			}
+			
+			public function initlevel():void{
+				var rtobj:RemoteObject= new RemoteObject("alarmHelp");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.getlevel();
+				rtobj.addEventListener(ResultEvent.RESULT,getlevelresult);
+			}
+			
+			private function getlevelresult(event:ResultEvent):void{
+				if(event.result==null){
+					Alert.show('获取数据失败','提示消息');return;
+				}
+				params.removeAll();
+				var ts:ArrayCollection = new ArrayCollection();
+				ts = event.result as ArrayCollection;
+				for each(var a : Object in ts){
+					params.addItem({label:a.LEVEL_NAME,code:a.ENDESC});
+				}
+				level.dataProvider = params;
+				
+			}
+			
+			private function addtoexperience():void{
+				vendor=factory.selectedItem.data.toString();
+				if(vendor==""){
+					Alert.show('请选择厂家','提示消息');
+					return;
+				} 
+				vendorzh=factory.selectedItem.label.toString();
+				
+				if(level.selectedItem.label.toString()=="不确定告警"){
+					alarmlevel="indeterminacy";
+					alarmlevelzh=level.selectedItem.label.toString();
+				}else{
+					alarmlevel=level.selectedItem.code.toString();
+					alarmlevelzh=level.selectedItem.label.toString();
+				}
+				localdesc =  miaoshu.text.toString();
+				analyse = result.text.toString();
+				alarmdesc = alarmchinese.text.toString();
+				exprience = experience.text.toString();
+				alarmcause =alermenglish.text.toString();
+				var alarmtype:int = 1;
+				
+				var rtobj:RemoteObject= new RemoteObject("alarmHelp");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.insertAlarmExperience(vendor,alarmlevel,localdesc, analyse, alarmdesc, exprience, alarmcause,alarmtype);
+				rtobj.addEventListener(ResultEvent.RESULT,getexperienceresult);
+				rtobj.addEventListener(FaultEvent.FAULT,faultresult)
+			}
+			
+			private function faultresult(fault:FaultEvent):void{
+				Alert.show('新增经验失败','提示消息');
+			}
+			
+			private function getexperienceresult(event:ResultEvent):void{
+					Alert.show('新增经验成功','提示消息');
+					//var update_data:AlarmHelpDisplay = this.owner as AlarmHelpDisplay;
+					
+					var update_data:AlarmHelpEXP = this.owner as AlarmHelpEXP;
+					
+					update_data.obj.alarmcause= alarmcause;
+					update_data.obj.alarmdesc=alarmdesc;
+					update_data.obj.alarmlevelzh=alarmlevelzh;
+					update_data.obj.vendorzh=vendorzh;
+					update_data.obj.localdesc=localdesc;
+					update_data.obj.analyse=analyse;
+					update_data.obj.exprience =exprience;
+					PopUpManager.removePopUp(this);
+					update_data.init();
+			}
+			
+			
+			
+			private function resetexperience():void{
+				
+				alermenglish.text="";
+				alarmchinese.text="";
+				factory.selectedIndex=0;
+				level.selectedIndex=0;
+				miaoshu.text="";
+				result.text="";
+				experience.text="";
+				
+			}
+			
+			
+		]]>
+	</mx:Script>
+					
+		<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+			<mx:VBox width="100%" height="100%" paddingBottom="10" paddingLeft="20"  paddingRight="20" paddingTop="10" verticalGap="0">
+				<mx:HBox width="100%" height="30" verticalAlign="middle">
+					<mx:Label text="基本信息" styleName="blackboldleft"/>
+					<mx:HRule width="100%" strokeWidth="1"/>
+				</mx:HBox>
+				<mx:Grid verticalGap="5" horizontalGap="5" width="100%">
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="80" height="100%"  horizontalAlign="right" verticalAlign="middle">
+							<mx:Label text="告警英文描述"  styleName="blacknormalleft"/>
+						</mx:GridItem>
+						<mx:GridItem width="130" height="100%"  verticalAlign="middle" horizontalAlign="left">
+							<mx:TextInput styleName="input" width="120" id="alermenglish" />
+						</mx:GridItem>
+						<mx:GridItem width="80" height="100%" horizontalAlign="right" verticalAlign="middle">
+							<mx:Label text="告警中文描述" styleName="blacknormalleft"/>
+						</mx:GridItem>
+						<mx:GridItem width="130" height="100%" verticalAlign="middle" horizontalAlign="left">
+							<mx:TextInput styleName="input" width="100%"  id="alarmchinese" />
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="80" height="100%"  horizontalAlign="right" verticalAlign="middle">
+							<mx:Label text="厂家" styleName="blacknormalleft"/>
+						</mx:GridItem>
+						<mx:GridItem width="130" height="100%" verticalAlign="middle" horizontalAlign="left">
+							<mx:ComboBox styleName="combox" id="factory" width="120"></mx:ComboBox>
+						</mx:GridItem>
+						<mx:GridItem width="80" height="100%" horizontalAlign="right" verticalAlign="middle">
+							<mx:Label text="告警级别" styleName="blacknormalleft"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%"  verticalAlign="middle" horizontalAlign="left">
+							<mx:ComboBox styleName="combox" width="120" id="level"></mx:ComboBox>
+						</mx:GridItem>
+					</mx:GridRow>
+				</mx:Grid>
+				<mx:HBox width="100%" height="30" verticalAlign="middle">
+					<mx:Label text="现象描述" styleName="blackboldleft"/>
+					<mx:HRule width="100%" strokeWidth="1"/>
+				</mx:HBox>
+				<mx:TextArea width="100%" height="50" styleName="taxtarea" id="miaoshu"/>
+				<mx:HBox width="100%" height="30" verticalAlign="middle">
+					<mx:Label text="原因分析" styleName="blackboldleft"/>
+					<mx:HRule width="100%" strokeWidth="1"/>
+				</mx:HBox>
+				<mx:TextArea width="100%" height="60" styleName="taxtarea" id="result"/>
+				<mx:HBox width="100%" height="30" verticalAlign="middle">
+					<mx:Label text="处理经验" styleName="blackboldleft"/>
+					<mx:HRule width="100%" strokeWidth="1"/>
+				</mx:HBox>
+				<mx:TextArea width="100%" height="100%" styleName="taxtarea" id="experience"/>
+			</mx:VBox>
+			<mx:HBox width="100%" height="50" styleName="btnbg">
+				<mx:Button label="添加到经验库" styleName="primary" click="addtoexperience()"/>
+				<mx:Button label="重置" styleName="secondary" click="resetexperience()"/>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:TitleWindow>
+	

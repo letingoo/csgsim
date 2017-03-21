@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				width="308"
+				title="配线关系确认"
+			    creationComplete="init()"
+				showCloseButton="true"
+				 close="close()"
+				height="406">
+	<mx:Script source="../actionscript/WireConfigRelationList.as" />
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0">
+		<mx:DataGrid width="100%" height="90%" id="dg" >
+			<mx:columns>
+				<mx:DataGridColumn headerText="{headertextA}" dataField="nameA" width="200" />
+				<mx:DataGridColumn headerText="{headertextZ}" dataField="nameZ" width="200" />
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:HBox id="buttomhbox"
+				 width="100%"
+				 height="10%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%" x="0" y="324">
+			<mx:Button label="确认" styleName="primary" click="save()" width="70"/>
+			<mx:HRule width="16" visible="false"/>
+			<mx:Button label="取消" styleName="secondary" click="close()" width="70"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>
+

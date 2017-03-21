@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%"
+	fontSize="12" fontFamily="宋体"
+	xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"  creationComplete="init()">
+	<mx:VBox id="vbox" width="100%" height="100%">
+		<mx:HBox id="hbox_id" width="600" horizontalCenter="-149" backgroundImage = "{bgimage}"
+				 backgroundSize="100%">
+			<mx:Label text="{label_text}" id = "label_id" contextMenu = "{parentDocument.cm}"  toolTip="点击查看端口详细信息，右键点击查看端口属性" click="showPortDetail()" width="90%" height="39" paddingTop="10" fontSize="14" fontFamily="宋体"  fontWeight="bold"/>
+			<mx:Image id = "button_id" contextMenu = "{parentDocument.cm}" click="showPortDetail()" top="5" left="20" toolTip="点击查看端口详细信息，右键点击查看端口属性"  verticalCenter="-149" verticalAlign="bottom"  source="{viewdetail}" mouseChildren="false" buttonMode="true" useHandCursor="true"/>
+		</mx:HBox>
+		<twaver:Network id="network_id" width="100%" height="100%"
+			creationComplete="creationComplete()"
+			includeInLayout="{network_id.visible}" doubleClickEnabled="true"   doubleClick="getCircuitPic(event)"/>
+	</mx:VBox>
+
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.channelRoute.views.ViewChannelroute;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.Follower;
+			import twaver.IElement;
+			import twaver.Utils;
+			public var box:ElementBox;
+			[Bindable]   
+			public var label_text:String = "";//Label标签显示内容
+			
+			[Bindable]
+			[Embed(source="assets/images/equipPack/viewdetail.jpg")]
+			private var viewdetail:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/equipPack/bgimage.png")]
+			private var bgimage:Class;
+//			
+//			[Bindable]
+//			[Embed(source="images/equipPack/bgpic3.jpg")]
+//			private var bgpic3:Class;
+			
+			
+			private function init():void{
+				network_id.contextMenu = new ContextMenu();
+				network_id.contextMenu.hideBuiltInItems();
+				network_id.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(e:ContextMenuEvent):void{
+					//右键选中网元
+					
+					var p:Point = new Point(e.mouseTarget.mouseX / network_id.zoom, e.mouseTarget.mouseY / network_id.zoom);
+					var datas:ICollection = network_id.getElementsByLocalPoint(p);
+					if (datas.count > 0) 
+					{
+						network_id.selectionModel.setSelection(datas.getItemAt(0));
+					}
+					else
+					{
+						network_id.selectionModel.clearSelection();
+					}		
+					//定制右键菜单
+					var flexVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					var playerVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					
+					if(network_id.selectionModel.count == 0){//选中元素个数
+						network_id.contextMenu.customItems = [flexVersion,playerVersion];
+					}
+					else{
+						
+						
+						if(((Element)(network_id.elementBox.selectionModel.selection.getItemAt(0)).getClient("flag")!= null&&(Element)(network_id.elementBox.selectionModel.selection.getItemAt(0)).getClient("flag")=="VC12"&&(Element)(network_id.elementBox.selectionModel.selection.getItemAt(0)).getClient("hasCC")!=null)||((Element)(network_id.elementBox.selectionModel.selection.getItemAt(0)).getClient("flag")!= null&&(Element)(network_id.elementBox.selectionModel.selection.getItemAt(0)).getClient("flag")== "VC4$100"))
+						{
+							var item1 : ContextMenuItem = new ContextMenuItem("方式信息",true);//电路路由图
+							item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, ContexMenuItemSelect);
+							network_id.contextMenu.customItems = [item1]; 
+						}else
+						{
+							network_id.contextMenu.customItems = [flexVersion,playerVersion];
+						}
+					}
+				});	
+			}
+			private function ContexMenuItemSelect(e:ContextMenuEvent):void{
+				var ielement:IElement = network_id.elementBox.selectionModel.selection.getItemAt(0);
+				if(ielement is Follower){
+					var follower:Follower  = ielement as Follower;
+					if(follower.getClient("flag")!=null&&follower.getClient("flag")=='VC12'){
+						
+						//Alert.show(follower.getClient("flag")+"#"+follower.getClient("VC4")+follower.getClient("portcode")+follower.name);
+						var channel:RemoteObject = new RemoteObject('channelRoute');
+						channel.endpoint = ModelLocator.END_POINT;
+						channel.showBusyCursor = true;
+						channel.getCircuitcodeForPackGraph(follower.getClient("VC4"),follower.getClient("portcode"),follower.name,'VC12');
+						channel.addEventListener(ResultEvent.RESULT,getCircuitcode);
+					}
+					if(follower.getClient("flag")!=null&&follower.getClient("flag")=="VC4$100"){
+						var channel:RemoteObject = new RemoteObject('channelRoute');
+						channel.endpoint = ModelLocator.END_POINT;
+						channel.showBusyCursor = true;
+						channel.getCircuitcodeForPackGraph(follower.getClient("VC4"),follower.getClient("portcode"),follower.name,'VC4');
+						channel.addEventListener(ResultEvent.RESULT,getCircuitcode);
+					}
+					
+				}
+				
+			}
+			
+			private function creationComplete():void{
+				network_id.visible = false; 
+				this.network_id.elementBox =  this.box;
+			}
+			private function showPortDetail():void  
+			{  
+				dispatchEvent(new Event("BtnClick"));
+				network_id.visible = !network_id.visible;
+//				this.dispatchEvent(new Event("showPortDetail")); 
+			} 
+			private function getCircuitPic(e:MouseEvent):void{
+				var ielement:IElement = network_id.elementBox.selectionModel.selection.getItemAt(0);
+				if(ielement is Follower){
+					var follower:Follower  = ielement as Follower;
+					if(follower.getClient("flag")!=null&&follower.getClient("flag")=='VC12'&&follower.getClient("hasCC")!=null&&follower.getClient("hasCC")=='true'){
+						
+						//Alert.show(follower.getClient("flag")+"#"+follower.getClient("VC4")+follower.getClient("portcode")+follower.name);
+						var channel:RemoteObject = new RemoteObject('channelRoute');
+						channel.endpoint = ModelLocator.END_POINT;
+						channel.showBusyCursor = true;
+						channel.getCircuitcodeForPackGraph(follower.getClient("VC4"),follower.getClient("portcode"),follower.name,'VC12');
+						channel.addEventListener(ResultEvent.RESULT,getCircuitcode);
+					}
+					if(follower.getClient("flag")!=null&&follower.getClient("flag")=="VC4$100"){
+						var channel:RemoteObject = new RemoteObject('channelRoute');
+						channel.endpoint = ModelLocator.END_POINT;
+						channel.showBusyCursor = true;
+						channel.getCircuitcodeForPackGraph(follower.getClient("VC4"),follower.getClient("portcode"),follower.name,'VC4');
+						channel.addEventListener(ResultEvent.RESULT,getCircuitcode);
+					}
+					
+				}
+			}
+			private function getCircuitcode(e:ResultEvent):void{
+		//	Alert.show(e.result.toString());
+			if(e.result!=null&&e.result.toString()!=""){
+				Registry.register("para_circuitcode", e.result.toString());
+				Application.application.openModel("方式信息", false);
+			}else{
+			Alert.show("该时隙上的所在的电路未串接！","提示");
+			}
+			}
+			
+		]]>
+	</mx:Script>
+</mx:HBox>

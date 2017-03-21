@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="635"
+				height="362"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{MyPopupManager.removePopUp(this)}">
+	<mx:Script source="../actionscript/EquipmentTitle.as" />
+	<mx:states>
+		<mx:State name="Search">
+			<mx:SetProperty target="{hbox1}"
+							name="height"
+							value="87%"/>
+			<mx:SetProperty target="{buttomhbox}"
+							name="height"
+							value="13%"/>
+			<mx:SetProperty target="{this}"
+							name="height"
+							value="408"/>
+			<mx:SetProperty target="{formEquip}"
+							name ="required"
+							value="false" />
+			<mx:SetProperty target="{formType}"
+							name ="required"
+							value="false" />
+			<mx:SetProperty target="{formNetname}"
+							name ="required"
+							value="false" />
+			<mx:SetProperty target="{formVendor}"
+							name ="required"
+							value="false" />
+			<mx:SetProperty target="{formEquipType}"
+							name ="required"
+							value="false" />
+			<mx:RemoveChild target="{formType}"/>
+			<mx:AddChild relativeTo="{formVendor}" position="before" target="{formType}"/>
+			<mx:RemoveChild target="{formVendor}"/>
+			<mx:AddChild relativeTo="{room_rrE}" position="before" target="{formVendor}"/>
+			<mx:AddChild relativeTo="{room_rrE}" position="before">
+				<mx:FormItem label="设备网管ID" id="Id_rrE" >
+					<mx:TextInput id="txtIId_rrE"
+								  width="180"/>
+				</mx:FormItem>
+			</mx:AddChild>
+			<mx:RemoveChild target="{station_rrE}"/>
+			<mx:AddChild relativeTo="{user_rrE}" position="before" target="{station_rrE}"/>
+		</mx:State>
+	</mx:states>
+	<mx:Binding destination="txtStationName.text"
+				source="equipmentData.stationname"/>
+	<mx:Binding destination="txtRoomName.text"
+				source="equipmentData.roomname"/>
+	<mx:Binding destination="txtEquipName.text"
+				source="equipmentData.equipname"/>
+	<mx:Binding destination="txtNetName.text"
+				source="equipmentData.nename"/>
+	<mx:Binding destination="txtProjectName.text"
+				source="equipmentData.projectname"/>
+	<mx:Binding destination="txtEquiplabel.text"
+				source="equipmentData.equiplabel"/>
+	<mx:Binding destination="txtRemark.text"
+				source="equipmentData.remark"/>
+	<mx:Binding destination="txtVersion.text"
+				source="equipmentData.version" />
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center"
+			 verticalGap="0">
+		<mx:HBox width="100%"
+				 height="80%"
+				 id="hbox1">
+			<mx:Form width="100%"
+					 height="100%">
+				<mx:FormItem label="设备名称" id="formEquip"
+							 required="true">
+					<mx:TextInput id="txtEquipName"
+								  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="所属局站" id="station_rrE" visible="{rrE}">
+					<mx:TextInput id="txtStationName"
+								  editable="false"
+								  click="txtStationName_clickHandler(event)"
+								  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="生产厂家" id="formVendor"
+							 required="true">
+					<mx:ComboBox id="comX_vendor"
+								 labelField="@label"
+								 width="180"
+								 change="comX_vendor_changeHandler(event)"/>
+				</mx:FormItem>
+				<mx:FormItem label="类型" id="formEquipType"
+							 required="true" >
+					<mx:ComboBox id="comEquipType"
+								 labelField="@label"
+								 width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="网管名称">
+					<mx:TextInput id="txtEquiplabel"
+								  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="安装地市" id="formProvince"  visible="{rrE}"
+							 required="false">
+					<mx:ComboBox id="comProvince"
+								 labelField="@label"
+								 width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="软件版本" id="version"  visible="{rrE}">
+					<mx:TextInput id="txtVersion"
+								  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="使用情况"  id="user_rrE"  visible="{rrE}">
+					<mx:ComboBox id="comStatus"
+								 labelField="@label"
+								 width="180"/>
+				</mx:FormItem>
+			</mx:Form>
+			<mx:Form width="100%"
+					 height="100%"
+					 id="form1">
+				<mx:FormItem label="所属系统">
+					<mx:ComboBox id="comSystem" labelField="@label"
+								  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="所属机房" id="room_rrE"  visible="{rrE}">
+					<mx:TextInput id="txtRoomName"
+								  editable="false"
+								  click="comRoomName_clickHandler(event)"
+								  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="型号" id="formType"
+							 required="true">
+					<mx:ComboBox id="comX_model"
+								 labelField="@label"
+								 width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="网元名称" id="formNetname"  visible="{rrE}"
+							 required="true">
+					<mx:TextInput id="txtNetName"
+								  enabled="{o}"
+								  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="工程项目" id="project_name_rrE"  visible="{rrE}">
+					<mx:TextInput id="txtProjectName"
+								  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="维护单位" id="formProperty"  visible="{rrE}">
+					<mx:ComboBox id="comProperty"
+								 labelField="@label"
+								 width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="备注" id="remark_rrE"  visible="{rrE}">
+					<mx:TextArea id="txtRemark"
+								  width="180"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+
+		<mx:HBox id="buttomhbox"
+				 width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			<mx:Button id="btn"
+					   label="{this.title}"
+					   width="80"
+					   styleName="loginprimary"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="80"/>
+			<mx:Button label="关闭"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="PopUpManager.removePopUp(this)"/>
+		</mx:HBox>
+
+	</mx:VBox>
+	<mx:Validator id="a1"
+				  source="{txtNetName}"
+				  enabled="{p}"
+				  requiredFieldError="不能为空"
+				  property="text"/>
+	<mx:Validator id="a2"
+				  source="{txtEquipName}"
+				  enabled="{p}"
+				  requiredFieldError="不能为空"
+				  property="text"/>
+	<mx:Validator id="a3"
+				  source="{comX_model}"
+				  enabled="{p}"
+				  requiredFieldError="不能为空"
+				  property="text"/>
+	<mx:Validator id="a6"
+				  source="{comX_vendor}"
+				  enabled="{p}"
+				  requiredFieldError="不能为空"
+				  property="text"/>
+	<mx:Validator id="a7"
+				  source="{comEquipType}"
+				  enabled="{p}"
+				  requiredFieldError="不能为空"
+				  property="text"/>
+</mx:TitleWindow>

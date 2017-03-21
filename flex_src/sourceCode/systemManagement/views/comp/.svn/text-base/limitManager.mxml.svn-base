@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				close="close()" width="650" height="472"
+				title="用户权限配置" showCloseButton="true"
+				horizontalScrollPolicy="off" verticalScrollPolicy="off"
+				creationComplete="getRoleslimit()">
+	<mx:RemoteObject id="to_userRoles1" destination="userManager" 
+				 showBusyCursor="true"
+				 endpoint="{ModelLocator.END_POINT}"
+				 result="getRoles(event)"/>
+	<mx:RemoteObject id="to_userRoles2" destination="userManager" 
+				 showBusyCursor="true"
+				 endpoint="{ModelLocator.END_POINT}"
+				 result="getRoles2(event)"/>
+	<mx:Script source="../../actionscript/comp/limitManager.as"/>
+		<mx:VBox width="100%" height="80%">
+			<mx:HBox width="100%" height="26" baseline="0" paddingTop="5" paddingBottom="0" >
+				<mx:Label text="未配置权限" width="50%" fontSize="14" fontWeight="bold" fontFamily="黑体" height="22"/>
+				<mx:Label width="50%" fontSize="14" text="已配置权限" fontWeight="bold" fontFamily="黑体"/>
+			</mx:HBox>
+			<mx:HBox width="100%" height="90%" paddingBottom="0" paddingTop="0">
+				<mx:DataGrid id="notResetRole" width="50%" height="85%" dataProvider="{rolesInfos2}" verticalGridLines="false" itemDoubleClick="dgMoveRole2()" doubleClickEnabled="true" alternatingItemColors="white">
+					<mx:columns>
+						<mx:DataGridColumn headerText="角色名" id="role_id2" dataField="role_id" visible="false"/>
+						<mx:DataGridColumn headerText="角色名称" id="role_name2" dataField="role_name"/>
+						<mx:DataGridColumn headerText="角色描述" id="role_desc2" dataField="role_desc"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<mx:DataGrid id="ResetRole" width="50%" height="85%" verticalGridLines="false" dataProvider="{rolesInfos1}" itemDoubleClick="dgMoveRole1()" doubleClickEnabled="true" alternatingItemColors="white">
+					<mx:columns>
+						<mx:DataGridColumn headerText="角色名" id="role_id1" dataField="role_id" visible="false"/>
+						<mx:DataGridColumn headerText="角色名称" id="role_name1" dataField="role_name"/>
+						<mx:DataGridColumn headerText="角色描述" id="role_desc1" dataField="role_desc"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:HBox>		
+		</mx:VBox>
+	<mx:HBox width="100%">
+		<mx:Spacer width="80%"/>
+		<mx:Button label="保存" click="save()" />
+		<mx:Spacer width="2%"/>
+		<mx:Button label="重置" click="Reset()"/>
+		<mx:Spacer width="10%"/>
+	</mx:HBox>
+			<mx:HRule x="0" y="355" width="635" height="0"/>
+</mx:TitleWindow>

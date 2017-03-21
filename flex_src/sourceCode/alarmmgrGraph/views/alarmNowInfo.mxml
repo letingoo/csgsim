@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex" 
+		 xmlns:demo="demo.common.*"
+		 xmlns:component="common.component.*"  creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.charts.events.ChartItemEvent;
+			import mx.charts.series.items.PieSeriesItem;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.effects.easing.*;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.object_proxy;
+			import mx.core.IUIComponent;
+			import sourceCode.alarmmgrGraph.model.AlarmModel;
+			import sourceCode.alarmmgrGraph.model.AlarmResultModel;
+			
+			import twaver.Element;
+			
+			public var toalarmNow:AlarmResultModel;
+			[Embed(source="assets/images/sysManager/show.png")]          //这是图片的相对地址 
+			[Bindable] 
+			public var PointIcon:Class; 
+			[Embed(source="assets/images/sysManager/show.png")]
+			[Bindable] 
+			public var PointRight:Class; 
+			[Embed(source="assets/images/sysManager/hide.png")] 
+			[Bindable]
+			public var PointLeft:Class;
+			
+			[Bindable]
+			public var DataList:ArrayCollection = new ArrayCollection;
+			[Bindable]
+			public var performers:ArrayCollection = new ArrayCollection;
+			
+			public var alarmModel:AlarmModel = new AlarmModel();
+			
+			private function init():void{
+				getAlarmNowInfos(this.alarmModel);
+				this.getAlarmChartInfos();
+				serverPagingBar1.dataGrid=alarmDataGrid;
+				serverPagingBar1.pagingFunction=pagingFunction;
+			}			
+			
+			public function getAlarmNowInfos(alarmModel:AlarmModel):void{
+				var remote:RemoteObject = new RemoteObject("AlarmMgrDAO");
+				remote.endpoint = ModelLocator.END_POINT;
+				remote.getAlarmByConditions(alarmModel);
+				serverPagingBar1.dataGrid =alarmDataGrid;
+				//parentApplication.faultEventHandler(remote);//调用main.mxml页面错误信息提示
+				remote.addEventListener(ResultEvent.RESULT,getAlarmInfoHandler);
+			}
+			
+			public function getAlarmInfoHandler(event:ResultEvent):void{
+				var result:AlarmResultModel = event.result as AlarmResultModel;
+				this.onResult(result);
+			}
+			
+			public function pagingFunction(pageIndex:int,pageSize:int):void
+			{
+				alarmModel.start=(pageIndex*pageSize).toString();
+				alarmModel.end =(pageIndex*pageSize+pageSize).toString();
+				var data:RemoteObject = new RemoteObject("AlarmMgrDAO"); 
+				data.endpoint = ModelLocator.END_POINT;
+				data.showBusyCursor = true;
+				data.getAlarmByConditions(alarmModel);
+				//parentApplication.faultEventHandler(data);//调用main.mxml页面错误信息提示
+				data.addEventListener(ResultEvent.RESULT,dataHandler);
+			}
+			
+			public function dataHandler(event:ResultEvent):void{
+				var result:AlarmResultModel = event.result as AlarmResultModel;
+				this.onResult(result);
+			}
+			
+			public function onResult(result:AlarmResultModel):void 
+			{	
+				serverPagingBar1.orgData=result.alarmList;
+				serverPagingBar1.totalRecord=result.totalCount;
+				serverPagingBar1.dataBind(true);	
+			}
+			//=====
+			
+			public function changeState():void{
+				if(queryVbox.visible){
+					queryVbox.visible=!queryVbox.visible;
+					queryCavas.width=30;
+					PointIcon=PointLeft;
+				}else{
+					queryVbox.visible=!queryVbox.visible;
+					queryCavas.width=320;
+					PointIcon=PointRight;
+				}
+			}
+			
+			private function faultCallBack(event:FaultEvent):void{
+				Alert.show(event.message.toString(),"错误");
+			}
+
+			public function getAlarmChartInfos():void{
+				var toXml:RemoteObject = new RemoteObject("AlarmMgrDAO");
+				toXml.endpoint = ModelLocator.END_POINT;
+				toXml.alarmChartData(null);
+				//parentApplication.faultEventHandler(toXml);//调用main.mxml页面错误信息提示
+				toXml.addEventListener(ResultEvent.RESULT,setPieChart);
+			}
+			public function setPieChart(event:ResultEvent):void{
+				DataList = event.result.obj as ArrayCollection;
+				for each(var a:Object in DataList){  
+					performers.addItem({Country:a.alarmtype,Gold:a.alarmCount});
+				}
+			}
+			private function displayGold(data:Object, field:String, index:Number, percentValue:Number):String {
+				return data.Country +":"+ data.Gold;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%" height="100%" >
+		<mx:VBox height="100%" width="100%" backgroundColor="#effcfe" >
+			<mx:HBox width="100%" height="25" horizontalGap=".5" verticalAlign="middle" >
+				<mx:LinkButton label="加为快捷方式" 
+							   icon="{ModelLocator.addshortcutIcon}"
+							   x="2" y="3" styleName="linkButton"
+							   click="parentApplication.addShorcut('当前告警','alarmInfoNow')" height="24"/>
+				<mx:VRule height="80%"/>
+				<mx:LinkButton label="取消快捷方式" 
+							   icon="{ModelLocator.delshortcutIcon}" 
+							   x="127" y="3" styleName="linkButton"
+							   click="parentApplication.delShortcut('当前告警')" height="26"/>
+				<mx:VRule height="80%"/>
+			</mx:HBox>
+			<mx:DataGrid id="alarmDataGrid" width="100%" height="95%">
+				<mx:columns>
+					<mx:DataGridColumn id="alarmlevel" headerText="告警级别" dataField="alarmlevel" width="80"/>
+					<mx:DataGridColumn id="objectinfo" headerText="告警对象" dataField="objectinfo" width="80"/>
+					<mx:DataGridColumn id="alarmdesc" headerText="告警描述" dataField="alarmdesc" width="80"/>
+					<mx:DataGridColumn id="alarmtext" headerText="告警名称" dataField="alarmtext" width="80"/>
+					<mx:DataGridColumn id="starttime" headerText="发生时间" dataField="starttime" width="80"/>
+					<mx:DataGridColumn id="isacked" headerText="是否确认" dataField="isacked" width="80"/>
+					<mx:DataGridColumn id="ackTime" headerText="确认时间" dataField="ackTime" width="80"/>
+					<mx:DataGridColumn id="ackperson" headerText="确认人" dataField="ackperson" width="80"/>
+					<mx:DataGridColumn id="arrTime" headerText="到达时间" dataField="arrTime" width="80"/>
+					<mx:DataGridColumn id="alarmnumber" headerText="告警号" dataField="alarmnumber" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox width="100%" height="5%" verticalAlign="middle" backgroundColor="#CCDDEE">
+				<component:pagetoolbar id="serverPagingBar1" width="100%" height="10%" />
+			</mx:HBox>
+		</mx:VBox>
+		<!--</mx:Panel>-->
+		<mx:Canvas id="queryCavas" height="100%" width="350" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:VBox id="queryVbox" width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off" visible="true" >
+				<mx:Panel styleName="secondaryPanel" width="100%" height="100%" title="当前告警统计" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+					<!--<twaver:Network id="network" width="100%" height="100%"/>-->
+					<mx:PieChart id="chart" height="261" width="100%" paddingRight="5" paddingLeft="5" color="0x323232"
+								 showDataTips="true" dataProvider="{performers}" >
+						
+						<mx:series>
+							<mx:PieSeries labelPosition="callout" nameField="Country" field="Gold" labelFunction="displayGold" >
+								<mx:calloutStroke>
+									<mx:Stroke weight="1" color="0x888888" alpha="0.5"/>
+								</mx:calloutStroke>
+								<mx:radialStroke>
+									<mx:Stroke weight="2" color="#FFFFFF" alpha="0.20"/>
+								</mx:radialStroke>
+								<mx:stroke>
+									<mx:Stroke color="#FFFFFF" alpha="0.20" weight="1"/>
+								</mx:stroke>
+								<mx:fills>
+									<mx:SolidColor color="red"/>
+									<mx:SolidColor color="haloOrange" />
+									<mx:SolidColor color="yellow"/>
+									<mx:SolidColor color="Blue" />
+									<mx:SolidColor color="haloGreen" />
+								</mx:fills>
+								<!--<mx:filters>
+								<mx:Array />
+								</mx:filters>-->
+							</mx:PieSeries>
+						</mx:series>
+					</mx:PieChart>
+
+				</mx:Panel>
+			</mx:VBox>
+			<mx:Button id="change" icon="{PointIcon}" click="changeState()" width="16" height="15" top="8" right="11" />
+			
+		</mx:Canvas>
+	</mx:HBox>
+</mx:VBox>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:component="common.component.*"
+		   width="100%" height="100%" creationComplete="init()" preinitialize="preinitialize()">
+	
+	<mx:Script source="../actionscript/CircuitResources.as"/>
+	
+	<mx:VBox width="100%" height="100%" horizontalScrollPolicy="off" paddingBottom="0"
+			 paddingLeft="0" paddingRight="0" paddingTop="0" verticalScrollPolicy="off">
+		<component:ControlBar id="controlBar" width="100%" height="38"
+							  controlAdd="controlBar_controlAddHandler(event)"
+							  controlDel="controlBar_controlDelHandler(event)"
+							  controlEdit="controlBar_controlEditHandler(event)"
+							  controlExportExcel="toolbar_ExportExcelHandler(event)"
+							  controlImport="controlBar_controlImportHandler(event)"
+							  controlSearch="toolbar_toolEventSearchHandler(event)"
+							  imgName="circuitroute" modelName="电路" showAddButton="{isAdd}"
+							  showDelButton="{isDelete}" showEditButton="{isEdit}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}"
+							  showSearchButton="{isSearch}"/>
+		<mx:DataGrid id="dataGrid" width="100%" height="100%" editable="false"
+					 horizontalScrollPolicy="auto"> 
+			<mx:columns>
+				<mx:DataGridColumn width="50" dataField="no" headerText="序号"/>
+				<mx:DataGridColumn width="150" dataField="circuitcode" headerText="电路编号"/>
+				<mx:DataGridColumn width="150" dataField="username" headerText="电路名称"/>
+				<mx:DataGridColumn width="135" dataField="station1" headerText="起点局站"/>
+				<mx:DataGridColumn width="135" dataField="station2" headerText="终点局站"/>
+				<mx:DataGridColumn width="135" dataField="x_purpose" headerText="业务类型"/>
+				<!--<mx:DataGridColumn width="130" dataField="portserialno1" headerText="资源A端端口"/>
+				<mx:DataGridColumn width="130" dataField="portserialno2" headerText="资源Z端端口"/>-->
+				<mx:DataGridColumn width="250" dataField="portname1" headerText="网管A端端口 "/>
+				<mx:DataGridColumn width="250" dataField="portname2" headerText="网管Z端端口"/>
+				<mx:DataGridColumn width="120" dataField="slot1" headerText="A端端口时隙"/>
+				<mx:DataGridColumn width="120" dataField="slot2" headerText="Z端端口时隙"/>
+				<mx:DataGridColumn width="80" dataField="rate" headerText="速率"/>
+				<mx:DataGridColumn width="100" dataField="usetime" headerText="开通时间"/>
+				<mx:DataGridColumn width="50" dataField="portcode1" visible="false" headerText="A端端口编号"/>
+				<mx:DataGridColumn width="50" dataField="portcode2" visible="false" headerText="Z端端口编号"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<component:pagetoolbar id="serverPagingBar" width="100%"/>
+	</mx:VBox>
+</mx:Canvas>

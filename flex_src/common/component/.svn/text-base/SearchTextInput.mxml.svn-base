@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="35" 
+		 paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" 
+		 backgroundImage="assets/images/searchtreebg.png" backgroundSize="100%"
+		 verticalAlign="middle" horizontalAlign="center" horizontalGap="0">
+
+	<mx:Image source="assets/images/searchtree_left.png"/>
+	<mx:TextInput id="txt" fontFamily="Arial" width="80%" fontSize="12" borderStyle="none" height="24" focusThickness="0"
+				  backgroundImage="@Embed(source='assets/images/searchtree_inputbg.png')" 
+				  backgroundSize="100%" themeColor="#FFFFFF" borderColor="#FFFFFF"
+				  enter="dispatchEvent(new Event('searchEnter'))"/>
+	<mx:Image source="assets/images/searchtree_btn1.png" click="dispatchEvent(new Event('clickButton'))" useHandCursor="true" buttonMode="true" mouseChildren="false"/>
+	<mx:Metadata>
+		[Event(name="searchEnter",type="flash.events.Event")]
+		[Event(name="clickButton",type="flash.events.Event")]
+	</mx:Metadata>
+</mx:HBox>

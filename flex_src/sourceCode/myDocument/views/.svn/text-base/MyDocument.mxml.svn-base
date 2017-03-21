@@ -1,0 +1,534 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		   width="100%"
+		   height="100%"
+		   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+		   xmlns:component="common.component.*"
+		   creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.MenuEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.myDocument.model.FolderModel;
+			
+			import twaver.DataBox;
+			import twaver.DemoUtils;
+			import twaver.Element;
+			import twaver.ElementBox;
+			import twaver.Follower;
+			import twaver.Grid;
+			import twaver.ICollection;
+			import twaver.IElement;
+			import twaver.SelectionModel;
+			import twaver.Styles;
+			import twaver.Utils;
+			private var iconsize:int=50;//图片显示大小		
+	 		private var _filelocation:String;
+			private var box:ElementBox = new ElementBox();
+			
+			private var _title:String;
+			private var _filepath:String;
+			private var _menuid:String;
+			private var _addItem:AddItem;
+			private var _fileUpLoad:FileUpLoad;
+		
+			private var _shortcutIcon:String;
+			
+			
+			
+          /*   [Bindable]
+			private var viewXML:XML=  */
+
+			public function get shortcutIcon():String
+			{
+				return _shortcutIcon;
+			}
+
+			public function set shortcutIcon(value:String):void
+			{
+				_shortcutIcon = value;
+			}
+
+			public function get filelocation():String
+			{
+				return _filelocation;
+			}
+
+			public function set filelocation(value:String):void
+			{
+				_filelocation = value;
+			}
+
+			public function get menuid():String
+			{
+				return _menuid;
+			}
+
+			public function set menuid(value:String):void
+			{
+				_menuid = value;
+			}
+
+			public function get filepath():String
+			{
+				return _filepath;
+			}
+
+			public function set filepath(value:String):void
+			{
+				_filepath = value;
+			}
+
+			public function get title():String
+			{
+				return _title;
+			}
+
+			public function set title(value:String):void
+			{
+				_title = value;
+			}
+
+			public function get dataBox():DataBox{
+				return box; 
+			}	
+          
+			private function init():void
+			{
+				
+			
+				Utils.registerImageByClass("page",ModelLocator.page);
+				Utils.registerImageByClass("folder",ModelLocator.folder);
+				
+				this.filelocation=path.text;				
+			    this._addItem=new AddItem();
+				this._fileUpLoad=new FileUpLoad();
+				
+				this._addItem.addEventListener("addFileORFolder",addFileORFolder);
+				this._fileUpLoad.addEventListener("RefreshCurrentFolder",enterPath);
+				box.selectionModel.selectionMode= SelectionModel.SINGLE_SELECTION;
+				myDocument.elementBox = box;	
+				box.layerBox.defaultLayer.movable = false;//设置图不能移动	
+				
+				getlist.getlist(path.text,iconsize,this.filepath);
+				getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+				getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+				
+				myDocument.addEventListener(MouseEvent.DOUBLE_CLICK,dbClickFolder);
+				DemoUtils.initNetworkContextMenu(myDocument,null);
+				myDocument.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, function(e:ContextMenuEvent):void{
+					//右键选中网元
+					var p:Point = new Point(e.mouseTarget.mouseX / myDocument.zoom, e.mouseTarget.mouseY / myDocument.zoom);
+					var datas:ICollection = myDocument.getElementsByLocalPoint(p);
+					if (datas.count > 0) {
+						
+						myDocument.selectionModel.setSelection(datas.getItemAt(0));
+					}else{
+						myDocument.selectionModel.clearSelection();
+					}
+					//定制右键菜单
+					var flexVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					var playerVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					
+					if(myDocument.selectionModel.count == 0){//选中元素个数
+					
+						myDocument.contextMenu.customItems = [flexVersion, playerVersion];
+					}
+					else
+					{
+						
+						if ((Element)(myDocument.selectionModel.selection.getItemAt(0)) is Follower ) 
+						{//选中节点  
+							
+							var menu1:ContextMenuItem= new ContextMenuItem("打 开");
+							menu1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,openFolder);
+							var menu2:ContextMenuItem=new ContextMenuItem("删 除");
+							menu2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,deleteFolder);
+							myDocument.contextMenu.hideBuiltInItems();
+							
+							myDocument.contextMenu.customItems = [menu1,menu2];
+							
+						}
+						
+					}
+				});	
+				
+				
+			
+			}
+			private function dbClickFolder(event:MouseEvent):void
+			{
+				if(myDocument.selectionModel.count > 0)//如果当前选中的结点>0
+				{
+					//获取当前选中的结点
+					var element:IElement= myDocument.selectionModel.selection.getItemAt(0);
+					if (element is Follower )//判断选中的元素是不是结点
+					{//选中节点  
+						
+						var follower:Follower=element as Follower;
+						
+						var url:String=	follower.getClient("url");	
+					  //  Alert.show(url);
+						
+						var lastnum:int = url.lastIndexOf("/")+1;
+							
+						var filenametemp:String =url.substring(lastnum); //获取文件名
+						
+					
+						if(filenametemp.indexOf(".")!=-1)//文件,直接打开文件
+						{
+							
+//							Alert.show("1:"+ModelLocator.getURL()+",2:"+this._filepath.substring(1)+",3:"+url);
+							
+								url =ModelLocator.getURL()+this._filepath.substring(1)+url; 
+								
+							
+								var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(url))); 
+								navigateToURL(request,"_blank");
+								
+							
+						}
+						else//文件夹，打开文件夹那一级目录
+						{
+							
+								path.text=url;
+							
+							this.filelocation=path.text;
+						 
+							
+							getlist.getlist(path.text,iconsize,this.filepath);
+							getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+							getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+						
+							
+						}
+					}
+				}
+			}
+			public function openFolder(event:ContextMenuEvent):void
+			{
+				var element:IElement= myDocument.selectionModel.selection.getItemAt(0);
+				var follower:Follower=element as Follower;
+				var url:String=	follower.getClient("url");	
+				
+				var lastnum:int = url.lastIndexOf("/")+1;
+				
+				var filenametemp:String =url.substring(lastnum); //获取文件名
+				
+				
+				if(filenametemp.indexOf(".")!=-1)//文件,直接打开文件
+				{
+					
+					url =ModelLocator.getURL()+this._filepath.substring(1)+url; 
+					var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(url))); 
+					navigateToURL(request,"_blank");
+					
+					
+				}
+				else//文件夹，打开文件夹那一级目录
+				{
+					if(path.text=="/")
+					{
+						path.text=url;
+					}
+					else
+					{
+						path.text=path.text+url;
+					}
+					
+					this.filelocation=path.text;
+					
+					getlist.getlist(path.text,iconsize,this.filepath);
+					getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+					getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+					
+					
+				}
+			}
+			private function deleteFolder(event:ContextMenuEvent):void
+			{
+				Alert.show("您确认要删除吗？", "提示", Alert.YES | Alert.NO, this,confirmDeleteFolder,null,Alert.NO);
+				
+				
+				
+				
+				
+			}
+			private function confirmDeleteFolder(e:CloseEvent):void
+			{
+				if(e.detail == Alert.YES)
+				{
+					var element:IElement= myDocument.selectionModel.selection.getItemAt(0);
+					var follower:Follower=element as Follower;				
+					var url:String=	follower.getClient("url");							
+					var lastnum:int = url.lastIndexOf("/")+1;						
+					var filenametemp:String =url.substring(lastnum); //获取文件名
+//					Alert.show(this.filepath);
+					getlist.deleteFileOrFolder(url,this.filepath);
+					getlist.addEventListener(ResultEvent.RESULT,resultDeleteFolder);
+					getlist.addEventListener(FaultEvent.FAULT,faultDeleteFolder);
+				}
+			}
+			private function resultDeleteFolder(event:ResultEvent):void
+			{
+				Alert.show("删除成功！","提示");
+				getlist.removeEventListener(ResultEvent.RESULT,resultDeleteFolder);
+				getlist.getlist(path.text,iconsize,this.filepath);
+			
+				getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+				getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+				
+		
+			}
+			private function faultDeleteFolder(event:FaultEvent):void
+			{
+				Alert.show("删除失败！","提示");
+				getlist.removeEventListener(FaultEvent.FAULT,faultDeleteFolder);
+			}
+            private function enterFolder(event:MouseEvent):void
+			{
+				getlist.getlist(path.text,iconsize,this.filepath);
+				getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+				getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+				
+			}
+			private function enterPath(event:Event):void
+			{
+				
+				getlist.getlist(path.text,iconsize,this.filepath);
+				getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+				getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+				
+				
+				
+			}
+			private function resultListFileNames(event:ResultEvent):void
+			{
+				
+				this._fileUpLoad.filelocation=this.filepath+this.filelocation;
+
+			   var 	list:ArrayCollection=ArrayCollection(event.result) ;
+			  
+				   myDocument.elementBox.clear();
+				   var col_count:int=(myDocument.width-40)/(iconsize+40)
+				   var row_count:int=0;
+				   if(list.length%col_count==0)
+				   {
+					   row_count=list.length/col_count;
+				   }
+				   else
+				   {
+					   row_count=list.length/col_count+1;
+				   }
+				   
+				 
+				   
+				   var grid:Grid = new Grid();
+				   grid.setStyle(Styles.GRID_BORDER, 0);
+				   grid.setStyle(Styles.GRID_DEEP, 0);
+				   grid.setStyle(Styles.GRID_PADDING,30);
+				   grid.setStyle(Styles.GRID_CELL_DEEP,0);
+				   grid.setStyle(Styles.GRID_FILL,false);
+				   grid.setStyle(Styles.GRID_COLUMN_COUNT, col_count);
+				   grid.setStyle(Styles.GRID_ROW_COUNT, row_count);		
+				   grid.setSize(myDocument.width-40,row_count*(iconsize+40));
+				
+				   grid.setLocation(20, 20);
+				   myDocument.elementBox.add(grid);
+				   var row:int=0;
+				   var col:int=0;
+				   for(var i:int=0;i<list.length;i++)
+				   {
+					   /* folderModel:FolderModel=FolderModel(list.getItemAt(i)) ; */
+					   
+					   row=i/col_count;
+					   col=i%col_count;
+					   var follower:Follower=new Follower();
+					   follower.setStyle(Styles.FOLLOWER_ROW_INDEX, row);
+					   follower.setStyle(Styles.FOLLOWER_COLUMN_INDEX, col);
+					   follower.image=list.getItemAt(i).icon;
+					   follower.name=list.getItemAt(i).shorttext;
+					   follower.setStyle(Styles.LABEL_SIZE, 12 + (iconsize - 50) / 20);
+					   follower.setClient("url",list.getItemAt(i).url);
+					   follower.setSize(list.getItemAt(i).iconsize,list.getItemAt(i).iconsize)
+					   follower.host=grid;
+					   
+					   myDocument.elementBox.add(follower);
+					   
+				 
+			  		}
+				   getlist.removeEventListener(ResultEvent.RESULT,resultListFileNames);
+			   
+			
+			   
+			}
+			private function faultListFileNames(event:FaultEvent):void
+			{
+				Alert.show("转入失败！","提示");
+				getlist.removeEventListener(FaultEvent.FAULT,faultListFileNames);
+				
+			}
+			private function highLevel(event:MouseEvent):void
+			{
+				var index:int=path.text.lastIndexOf("/");
+				if(index==0)
+				{
+					path.text="/";
+					
+				}
+				else
+				{
+					var url:String=path.text.substring(0,index);
+					path.text=url;
+				}
+				this.filelocation=path.text;
+				getlist.getlist(path.text,iconsize,this.filepath);
+				getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+				getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+			
+			}
+			private function viewItemClickHandler(event:MenuEvent):void { 
+				if(event.label=="小图标")
+				{
+					iconsize=50;
+					getlist.getlist(path.text,iconsize,this.filepath);
+				}
+				else if(event.label=="中图标")
+				{
+					iconsize=75;
+					getlist.getlist(path.text,iconsize,this.filepath);
+					
+				}
+				else
+				{
+					iconsize=90;
+					getlist.getlist(path.text,iconsize,this.filepath);
+					
+					
+				}
+				getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+				getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+				
+				
+			}  
+			private function addItemClickHandler(event:MenuEvent):void { 
+				if(event.label=="文件")
+				{
+					this._addItem.title="文件";
+					MyPopupManager.addPopUp(this._addItem, true);  
+					MyPopupManager.bringToFront(this._addItem);
+				}
+				else if(event.label=="文件夹")
+				{
+					this._addItem.title="新增文件夹";
+					MyPopupManager.addPopUp(this._addItem, true);  
+					MyPopupManager.bringToFront(this._addItem);
+				}
+			}  
+			private function fileUpLoad(event:MouseEvent):void
+			{
+				MyPopupManager.addPopUp(this._fileUpLoad, true);  
+				MyPopupManager.bringToFront(this._fileUpLoad);
+				this._fileUpLoad.filelocation=this.filepath+this.filelocation;
+			}
+			private function addFileORFolder(event:Event):void
+			{
+				var filenewlocation:String;
+				if(this._addItem.title=="文件") //当添加文件时
+				{
+					if(path.text=="/")//当文件在根目录
+					{
+						filenewlocation = "/"+this._addItem.fileName+".txt";
+					}
+					else
+					{
+						filenewlocation=path.text+ "/"+this._addItem.fileName+".txt";
+					}
+					getlist.addFileOrFolder(this.filepath,filenewlocation,"txt");	
+				}
+				else//当添加文件夹时
+				{
+					if(path.text=="/")
+					{
+						filenewlocation = "/"+this._addItem.fileName;
+					}
+					else
+					{
+						filenewlocation=path.text+ "/"+this._addItem.fileName;
+					}
+					getlist.addFileOrFolder(this.filepath,filenewlocation,"folder");					
+					
+				}
+				getlist.addEventListener(FaultEvent.FAULT,faultAddFileOrFolder);
+				getlist.addEventListener(ResultEvent.RESULT,resultAddFileOrFolder);
+				MyPopupManager.removePopUp(this._addItem);
+			}
+			private function resultAddFileOrFolder(event:ResultEvent):void
+			{
+				
+				getlist.removeEventListener(ResultEvent.RESULT,resultAddFileOrFolder);
+				getlist.getlist(path.text,iconsize,this.filepath);
+				getlist.addEventListener(FaultEvent.FAULT,faultListFileNames);
+				getlist.addEventListener(ResultEvent.RESULT,resultListFileNames);
+				
+				
+				
+			}
+			private function faultAddFileOrFolder(event:FaultEvent):void
+			{
+				Alert.show("添加文件或文件夹失败！","提示");
+				getlist.removeEventListener(FaultEvent.FAULT,faultAddFileOrFolder);
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:XMLList id="viewXML">  
+		<node label="小图标" icon="{ModelLocator.view}"/>  
+		<node label="中图标" icon="ModelLocator.midview"/>  
+		<node label="大图标" icon="ModelLocator.bigview"/>  
+	</mx:XMLList>  
+	<mx:XMLList id="addXML">  
+		<node label="文件" icon="ModelLocator.add_page"/>  
+		<node label="文件夹" icon="ModelLocator.addfolder"/> 
+	</mx:XMLList>  
+	
+<mx:RemoteObject id="getlist" destination="myDocument" endpoint="{ModelLocator.END_POINT}" showBusyCursor="true" >
+</mx:RemoteObject>
+
+<mx:VBox height="100%" width="100%" verticalGap="0" horizontalGap="0" >
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="{this.title}" imgName="{this.shortcutIcon}" 
+						  showMyDocumentToolbar="true" />
+	
+	<mx:HBox width="100%" height="38" backgroundImage="@Embed(source='assets/images/iconbar_bg.png')" backgroundSize="100%"
+			 paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" borderStyle="none" borderThickness="0" verticalAlign="middle">
+	<!--	<mx:Image source="assets/images/iconbar_left.png" scaleContent="false"/>		<mx:Image source="assets/images/iconbar_line.png"/>-->
+		<mx:Label text="文件路径："/>
+		<mx:TextInput text="/" id="path" width="200"  enter="enterPath(event)"/>		
+		<mx:LinkButton label="转入" toolTip="转入目录" icon="{ModelLocator.enter}" styleName="iconbar" click="enterFolder(event)"/>
+		<mx:LinkButton label="上一级" toolTip="返回到上一目录" icon="{ModelLocator.highlevel}" styleName="iconbar" click="highLevel(event)"/>
+		<mx:Label text="查看"/>
+		<mx:PopUpMenuButton label="查看" height="80%"  icon="{ModelLocator.view}"  dataProvider="{viewXML}" labelField="@label" iconField="@icon" itemClick="viewItemClickHandler(event)">
+		</mx:PopUpMenuButton>	
+		<mx:Label text="新增"/>
+		<mx:PopUpMenuButton label="新增" height="80%"  icon="{ModelLocator.add_page}"  dataProvider="{addXML}" labelField="@label" iconField="@icon" itemClick="addItemClickHandler(event)" >
+		</mx:PopUpMenuButton>	
+		<mx:LinkButton label="上传" toolTip="上传文件"  icon="{ModelLocator.arrow_up}" styleName="iconbar" click="fileUpLoad(event)"/>
+		<mx:Spacer height="38" width="100%"/>
+	<!--	<mx:Image source="assets/images/iconbar_right.png"/>-->
+	</mx:HBox>
+	
+	<servasoftware:Network  id="myDocument" width="100%" height="100%" backgroundColor="white"  >		
+	</servasoftware:Network>
+</mx:VBox>
+
+</mx:VBox>

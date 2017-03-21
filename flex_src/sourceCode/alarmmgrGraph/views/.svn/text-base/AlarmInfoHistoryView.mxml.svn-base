@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="init()" 
+		 xmlns:component="common.component.*">
+	<mx:Style source="assets/css/userStyle.css"/>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.logging.Log;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.alarmmgrGraph.model.AIFResultModel;
+			import sourceCode.alarmmgrGraph.model.AlarmInfoHistory;
+			import sourceCode.systemManagement.model.LogModel;
+			import sourceCode.systemManagement.model.LogResultModel;
+			[Embed(source="assets/images/sysManager/show.png")]          //这是图片的相对地址 
+			[Bindable] 
+			public var PointIcon:Class; 
+			[Embed(source="assets/images/sysManager/show.png")]
+			[Bindable] 
+			public var PointRight:Class; 
+			[Embed(source="assets/images/sysManager/hide.png")] 
+			[Bindable]
+			public var PointLeft:Class;
+			public var aifh:AlarmInfoHistory = new AlarmInfoHistory();
+			[Bindable]
+			public var acLogInfos:LogResultModel;
+			private var arrCbo:Array=[{label:""},{label:"紧急"},{label:"主要"},
+				{label:"次要"},{label:"提示"},{label:"其它"}];
+			[Bindable]
+			private var selectedCollection:ArrayCollection=new ArrayCollection(arrCbo); 
+			private var arrCbo2:Array=[{label:""},{label:"是"},{label:"否"}];
+			[Bindable]
+			private var selectedCollection2:ArrayCollection=new ArrayCollection(arrCbo2); 
+			private function init():void{
+			   this.getAlarmInfoHistory(this.aifh);
+			}
+			
+			public function getAlarmInfoHistory(alarmInfo:AlarmInfoHistory):void{
+				var remote:RemoteObject = new RemoteObject("AlarmMgrDAO");
+				remote.endpoint = ModelLocator.END_POINT;
+				remote.getAlarmInfoHistory(alarmInfo);
+				serverPagingBar1.dataGrid =alarmInfoDataGrid;
+//				//parentApplication.faultEventHandler(remote);
+				remote.addEventListener(ResultEvent.RESULT,getAlarmInfoHistoryHandler);
+			}
+			
+			public function getAlarmInfoHistoryHandler(event:ResultEvent):void{
+				var result:AIFResultModel = event.result as AIFResultModel;
+				this.onResult(result);
+			}
+			
+			public function PagingFunction(pageIndex:int,pageSize:int):void
+			{
+				aifh.start=(pageIndex*pageSize).toString();
+				aifh.end =(pageIndex*pageSize+pageSize).toString();
+				var data:RemoteObject = new RemoteObject("AlarmMgrDAO"); 
+				data.endpoint = ModelLocator.END_POINT;
+				data.showBusyCursor = true;
+				data.getAlarmInfoHistory(aifh);
+				//parentApplication.faultEventHandler(data);//调用main.mxml页面错误信息提示
+				data.addEventListener(ResultEvent.RESULT,dataHandler);
+			}
+			
+			public function dataHandler(event:ResultEvent):void{
+				var result:AIFResultModel = event.result as AIFResultModel;
+				this.onResult(result);
+			}
+			
+			public function onResult(result:AIFResultModel):void 
+			{	
+				serverPagingBar1.orgData=result.orderList;
+				serverPagingBar1.totalRecord=result.totalCount;
+				serverPagingBar1.dataBind(true);	
+			}
+			
+			private function Reset():void{
+				slog_type.selectedIndex=0;
+				slog_type.selectedItem = null;
+				slog_inf.selectedIndex = 0;
+				slog_inf.selectedItem = null;
+				smodule_desc.text="";
+				slog_time_start.text="";
+				slog_time_end.text="";
+				suser_des.text = "";
+				suser_name.text = "";
+				suser_confirmer.text = "";
+				
+			}
+
+			public function changeState():void{
+				if(queryVbox.visible){
+					queryVbox.visible=!queryVbox.visible;
+					queryCavas.width=30;
+					PointIcon=PointLeft;
+				}else{
+					queryVbox.visible=!queryVbox.visible;
+					queryCavas.width=261;
+					PointIcon=PointRight;
+				}
+			}
+
+			protected function userSrh_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var srhobj:AlarmInfoHistory = new AlarmInfoHistory();
+				srhobj.alarmlevel = slog_type.text;
+				srhobj.objectinfo = smodule_desc.text;
+				srhobj.alarmdesc = suser_des.text;
+				srhobj.alarmtext = suser_name.text;
+				srhobj.starttime_start = slog_time_start.text;
+				srhobj.starttime_end = slog_time_end.text;
+				srhobj.isacked = slog_inf.text;
+				srhobj.ackperson = suser_confirmer.text;
+			    this.getAlarmInfoHistory(srhobj);
+			}
+
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%" height="100%" >
+		<!--<mx:Panel styleName="alarminHisMgr" title="历史告警" width="100%" height="100%">-->
+		<mx:VBox height="100%" width="100%" backgroundColor="#effcfe" >
+			<mx:HBox width="100%" height="25" horizontalGap=".5" verticalAlign="middle" >
+				<mx:LinkButton label="加为快捷方式" 
+							   icon="@Embed('assets/images/icons/fam/addshortcut.png')"
+							   x="2" y="3" styleName="linkButton"
+							   click="parentApplication.addShorcut('历史告警','alarmInfoHistory')" height="24"/>
+				<mx:VRule height="80%"/>
+				<mx:LinkButton label="取消快捷方式" 
+							   icon="@Embed('assets/images/icons/fam/delshortcut.png')" 
+							   x="127" y="3" styleName="linkButton"
+							   click="parentApplication.delShortcut('历史告警')" height="26"/>
+				<mx:VRule height="80%"/>
+			</mx:HBox>
+			<mx:DataGrid id="alarmInfoDataGrid" width="100%" height="95%">
+				<mx:columns>
+					<mx:DataGridColumn id="alarmlevel" headerText="告警级别" dataField="alarmlevel" width="80"/>
+					<mx:DataGridColumn id="objectinfo" headerText="告警对象" dataField="objectinfo" width="80"/>
+					<mx:DataGridColumn id="alarmdesc" headerText="告警描述" dataField="alarmdesc" width="80"/>
+					<mx:DataGridColumn id="alarmtext" headerText="告警名称" dataField="alarmtext" width="80"/>
+					<mx:DataGridColumn id="starttime" headerText="发生时间" dataField="starttime" width="80"/>
+					<mx:DataGridColumn id="isacked" headerText="是否确认" dataField="isacked" width="80"/>
+					<mx:DataGridColumn id="acktime" headerText="确认时间" dataField="acktime" width="80"/>
+					<mx:DataGridColumn id="ackperson" headerText="确认人" dataField="ackperson" width="80"/>
+					<mx:DataGridColumn id="arrivetime" headerText="到达时间" dataField="arrivetime" width="80"/>
+					<mx:DataGridColumn id="alarmnumber" headerText="告警号" dataField="alarmnumber" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox width="100%" height="5%" verticalAlign="middle" backgroundColor="#CCDDEE">
+				<component:pagetoolbar id="serverPagingBar1" width="100%" height="10%" />
+			</mx:HBox>
+		</mx:VBox>
+		<!--</mx:Panel>-->
+		<mx:Canvas id="queryCavas" height="100%" width="261" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:VBox id="queryVbox" width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off" visible="true" >
+				<mx:Panel styleName="secondaryPanel" width="100%" height="100%" title="查询" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+					<mx:Canvas id="user_select" width="257" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+						<mx:Label styleName="label" text="告警级别:" width="60" textAlign="right" x="14" y="10"/>
+						<mx:ComboBox id="slog_type" width="135" y="10" x="96" dataProvider="{selectedCollection}"/>				
+						<mx:Label styleName="label" text="告警对象:" width="60" textAlign="right" x="14" y="40" />
+						<mx:TextInput id="smodule_desc" width="135" x="96" y="40"/>				
+						<mx:Label styleName="label" text="告警描述:" width="60" textAlign="right"  x="14" y="100" />
+						<mx:TextInput id="suser_des" width="135" y="70" x="96"/>	
+						<mx:Label styleName="label" text="告警名称:" width="60" textAlign="right"  x="14" y="70" />
+						<mx:TextInput id="suser_name" width="135" y="100" x="96"/>
+						<mx:Label styleName="label" text="是否确认:" width="60" textAlign="right" x="14" y="130"/>
+						<mx:ComboBox id="slog_inf" width="135" y="130" x="96" dataProvider="{selectedCollection2}"/>	
+						<mx:Label styleName="label" text="确认人:" width="60" textAlign="right"  x="14" y="160" />
+						<mx:TextInput id="suser_confirmer" width="135" y="160" x="96"/>
+						<mx:Label styleName="label" text="操作时间: " width="59" textAlign="right" x="15" y="189" />
+						<mx:DateField id="slog_time_start" yearNavigationEnabled="true" dayNames="['日','一','二','三','四','五','六']" 
+									  monthNames="['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']"
+									  fontSize="12" width="135"  y="218" x="96" showToday="true" formatString="YYYY-MM-DD"/>
+						<mx:DateField id="slog_time_end" x="96" y="250" width="135"  dayNames="['日','一','二','三','四','五','六']" 
+									  monthNames="['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']"  showToday="true" formatString="YYYY-MM-DD"/>
+						<mx:Button label="查询" width="56" id="userSelect" x="78" y="311" height="21" click="userSrh_clickHandler(event)"/>
+						<mx:Button label="重置" width="56" id="allReset" x="144" y="311" click="Reset()" height="21"/>
+						<mx:Label x="55" y="250" text="到:" fontSize="12" fontFamily="Arial" styleName="label"/>
+						<mx:Label x="55" y="222" text="从:" fontFamily="Arial" styleName="label"/>
+					</mx:Canvas>
+				</mx:Panel>
+			</mx:VBox>
+			<mx:Button id="change" icon="{PointIcon}" click="changeState()" width="16" height="15" top="8" right="11" />
+		</mx:Canvas>
+	</mx:HBox>
+</mx:VBox>

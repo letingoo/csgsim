@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*"
+			   width="318" height="252"
+			   showControls="true"
+			   enableResize="true"
+			   windowContainer="{Application.application.windowContainer}"
+			   backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+			   backgroundSize="100%">
+	<mx:VBox width="100%" height="100%">
+		<mx:Canvas width="100%" height="80%">
+			<mx:Label x="29" y="6" text="角色名称：&#xd;" width="100%" textAlign="left"/>
+			<mx:TextInput id="txtRoleName" x="29" y="27" width="241" 
+						  text="{_roleModel.role_name}"/>
+			<mx:Label x="30" y="51" text="描述：&#xd;"/>
+			<mx:TextArea id="txtRoleDesc" x="28" y="72" width="241" height="92" 
+						 text="{_roleModel.role_desc}"/>
+		</mx:Canvas>
+		<mx:HBox width="100%" height="20%" verticalAlign="middle" horizontalAlign="center" 
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%" x="0" y="161">
+			<mx:Button x="159" y="168" label="保存" styleName="loginprimary" click="saveRole()"/>
+			<mx:Button x="221" y="168" label="取消" styleName="loginsecondary" click="closeWin()"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:Script source="../../actionscript/popup/WinRole.as"/>
+</panel:PanelWindow>

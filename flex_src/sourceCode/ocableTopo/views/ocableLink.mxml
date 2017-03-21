@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+	paddingLeft="0" 
+	width="100%" 
+	height="100%"  
+	paddingRight="0" 
+	paddingTop="0" 
+	paddingBottom="0"
+	creationComplete="init()" >
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import twaver.Consts;
+			import twaver.Element;
+			import twaver.ElementBox;
+			import twaver.ICollection;
+			import twaver.Link;
+			import twaver.Node;
+			import twaver.ShapeLink;
+			import twaver.Styles;
+			
+			private var box:ElementBox;
+			
+			public var apointcode:String = "";
+			public var zpointcode:String = "";
+			public var ocablecode:String = "";
+			public var apointname:String = "";
+			public var zpointname:String = "";
+			
+			private function init():void
+			{	
+				box = nwOcableLink.elementBox;
+				drawSpanningOcable();
+				addContextMenu();
+				nwOcableLink.addEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler);
+			}
+			
+			private function drawSpanningOcable():void
+			{
+				var anode:Node = new Node(apointcode);
+				var znode:Node = new Node(zpointcode);
+				var link:ShapeLink = new ShapeLink(ocablecode, anode, znode);
+					
+				anode.name = apointname;
+				anode.setStyle(Styles.OUTER_COLOR,0x00ff00);
+				anode.setSize(60,25);
+				anode.centerLocation = new Point(100, 100);
+				box.add(anode);
+				
+				znode.name = zpointname;
+				znode.setStyle(Styles.OUTER_COLOR,0x00ff00);
+				znode.setSize(60,25);
+				znode.centerLocation = new Point(700, 400);
+				box.add(znode);
+				
+				anode.setStyle(Styles.SELECT_STYLE,Consts.SELECT_STYLE_BORDER);
+				anode.setStyle(Styles.SELECT_COLOR,0x0000ff);
+				anode.setStyle(Styles.SELECT_WIDTH,5);
+				znode.setStyle(Styles.SELECT_STYLE,Consts.SELECT_STYLE_BORDER);
+				znode.setStyle(Styles.SELECT_WIDTH,5);
+				znode.setStyle(Styles.SELECT_COLOR,0x0000ff);
+				
+				link.setStyle(Styles.LINK_COLOR,0x800080);
+				link.setStyle(Styles.SELECT_STYLE,Consts.SELECT_STYLE_BORDER);
+				link.setStyle(Styles.SELECT_WIDTH,3);
+				box.add(link);
+				
+			}
+			
+			protected function ro_resultHandler(event:ResultEvent):void
+			{
+//				var lineData:String = event.result.toString();
+//				var lineXML:XMLList = new XMLList(lineData);
+//				
+//				ocableList.dataProvider=lineXML.child("ocable");
+//				getOcableTopoOcableInfo(ocablecode);
+			}
+			
+			private function addContextMenu():void
+			{
+				nwOcableLink.contextMenu = new ContextMenu();
+				nwOcableLink.contextMenu.hideBuiltInItems();
+				nwOcableLink.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, 
+					function(e:ContextMenuEvent):void
+					{
+						var p:Point = new Point(e.mouseTarget.mouseX / nwOcableLink.zoom, e.mouseTarget.mouseY / nwOcableLink.zoom);
+						var data:ICollection = nwOcableLink.getElementsByLocalPoint(p);
+						if (data.count > 0 && ((data.getItemAt(0) is Node) || (data.getItemAt(0) is Link)))
+						{
+							nwOcableLink.selectionModel.setSelection(data.getItemAt(0));
+						}
+						else
+						{
+							nwOcableLink.selectionModel.clearSelection();
+						}
+						
+//						var cmi_room:ContextMenuItem = new ContextMenuItem("机房平面图");
+//						cmi_room.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, popupMenuHandler);
+						var cmi_ocable:ContextMenuItem = new ContextMenuItem("光缆截面图");
+						cmi_ocable.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, popupMenuHandler);
+						
+//						var cmi_business:ContextMenuItem = new ContextMenuItem("影响业务");
+//						cmi_business.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, popupMenuHandler);
+						
+						nwOcableLink.contextMenu.customItems = [cmi_ocable]
+						if (nwOcableLink.selectionModel.count == 0)
+						{
+//							cmi_room.visible = false;
+							cmi_ocable.visible = false;
+//							cmi_business.visible = false;
+						}
+						else
+						{
+							if (data.getItemAt(0) is Node)
+							{
+//								cmi_room.visible = true;
+								cmi_ocable.visible = false;
+//								cmi_business.visible = false;
+							}
+							else if (data.getItemAt(0) is Link)
+							{
+//								cmi_room.visible = false;
+								cmi_ocable.visible = true;
+//								cmi_business.visible = true;
+							}
+						}
+					});
+			}
+			
+			private function popupMenuHandler(e:ContextMenuEvent):void
+			{
+				var element:Element = Element(nwOcableLink.selectionModel.lastData);
+				var item:ContextMenuItem = ContextMenuItem(e.target);
+				
+				if ((item.caption == "机房平面图") && (element is Node))
+				{
+//					var node:Node = nwOcableLink.selectionModel.selection.getItemAt(0);
+//					var stationcode:String = node.id.toString().split("s")[1];
+//					Registry.register("stationcode",stationcode);
+//					Application.application.openModel("机房平面图", false);
+				}
+				else if ((item.caption == "光缆截面图") && (element is Link))
+				{
+					popOcableDetails(element as Link);
+				}
+				else if ((item.caption == "影响业务") && (element is Link))
+				{
+//					popBusinessInfluenced(element as Link);
+				}
+			}
+			
+			private function doubleClickHandler(e:MouseEvent):void{
+				if(nwOcableLink.selectionModel.selection.count>0)
+				{
+					var item:Object = nwOcableLink.selectionModel.selection.getItemAt(0);
+					if (item is Node)
+					{
+//						var node:Node = item as Node;
+//						var stationcode:String = node.id.toString().split("s")[1];
+//						Registry.register("stationcode",stationcode);
+//						Application.application.openModel("机房平面图", false);
+					}
+					else if (item is Link)
+					{
+						popOcableDetails(item as Link);
+					}
+					
+				}
+			}
+			
+			private function popOcableDetails(item:Link):void
+			{
+				var winOcableDetails:ocableDetails = new ocableDetails();
+				
+//				winOcableDetails.apointcode = item.fromNode.id.toString().substr(1,20);
+//				winOcableDetails.zpointcode = item.toNode.id.toString().substr(1,20);
+//				winOcableDetails.ocablecode = item.id.toString().substr(1,20);
+				
+				winOcableDetails.apointcode = apointcode;
+				winOcableDetails.zpointcode = zpointcode;
+				winOcableDetails.ocablecode = ocablecode;
+				
+				parentApplication.openModel("光缆截面图",true,winOcableDetails);
+			}
+			
+			private function popBusinessInfluenced(item:Link):void
+			{
+//				var winBusinessInfluenced:businessInfluenced = new businessInfluenced();
+//				
+//				parentApplication.openModel("影响业务",true,winBusinessInfluenced);
+			}
+			
+			public function DealFault(event:FaultEvent):void {
+				Alert.show(event.fault.toString());
+				trace(event.fault);
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:RemoteObject id="roOcableLink" destination="ocableTopology" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" 
+		fault="DealFault(event)" result="ro_resultHandler(event)"/>
+	<tw:Network id="nwOcableLink" width="100%" height="100%" backgroundColor="0xffffff" />	
+</mx:VBox>

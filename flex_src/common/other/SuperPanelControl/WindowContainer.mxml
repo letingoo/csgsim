@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="28" bottom="0">
+	<mx:Script>
+		<![CDATA[
+			import common.other.SuperPanelControl.nl.PanelIcon;
+			import common.other.SuperPanelControl.nl.wv.extenders.panel.PanelWindow;
+			
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.events.DragEvent;
+			
+			public var icn:PanelIcon;
+			
+			private var childNumber:int = 0;
+			private var childIndex:int = 0;  
+			
+			public function createPanelIcon(panelWindow:PanelWindow):void{
+				icn = new PanelIcon();
+				icn.pnl = panelWindow;
+				if(panelWindow.title.indexOf(":")!=-1){
+					icn.label = panelWindow.title.substring(0,panelWindow.title.indexOf(":"));
+					icn.toolTip=panelWindow.title;
+				}else{
+					icn.label = panelWindow.title;
+					icn.name = childIndex.toString();
+				}
+				childIndex++;
+				mWindowContainer.addChild(icn);
+				panelWindow.panelIcon = icn;
+			}
+			
+			public function createTitleWindow(tw:TitleWindow):void{
+				icn = new PanelIcon();
+				icn.tw = tw;
+				icn.id=tw.title;
+				icn.name=tw.title;
+				icn.label = tw.title;
+				childIndex++;
+				mWindowContainer.addChild(icn);
+				//panelWindow.panelIcon = icn;
+			}
+			
+			public function closeWindow(panelIcon:PanelIcon):void{
+					mWindowContainer.removeChild(panelIcon);
+			}
+			
+			public function closeTitleWindow(tw:TitleWindow):void{
+				var twicon:PanelIcon=mWindowContainer.getChildByName(tw.title) as PanelIcon;
+				mWindowContainer.removeChild(twicon);
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox id="mWindowContainer" left="0" width="100%" height="100%" verticalAlign="middle">
+		
+	</mx:HBox>
+</mx:HBox>

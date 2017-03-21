@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" verticalAlign="middle" horizontalAlign="center" 
+		 creationComplete="init()"  paddingLeft="3" paddingTop="3"
+		 xmlns:actionscript="sourceCode.sysGraph.actionscript.*" xmlns:util="common.other.blogagic.util.*">
+	<mx:RemoteObject id="fw"  destination="fiberWire" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"
+					 fault="DealFault(event)" result="resultHandler(event)"/>
+		 
+	    <mx:VBox width="100%" height="75%" verticalAlign="middle" horizontalAlign="center" paddingTop="5" >
+			<mx:HBox width="100%" height="25%" horizontalAlign="left">
+				<mx:Spacer width="50" />
+				<mx:Label text="系统名称:"/>
+				<mx:ComboBox id="systemName"  dataProvider="{SystemArr}"/>				
+			</mx:HBox>				
+			<mx:HBox width="100%" height="25%" horizontalAlign="left">
+				<mx:Spacer width="50" />
+				<mx:Label text="任务名称:"/>
+				<mx:TextInput id="task_name" />
+				<mx:Spacer width="100%" />
+			</mx:HBox>
+			<mx:HBox width="100%" height="25%" horizontalAlign="left">
+				<mx:Spacer width="50" />
+				<mx:Label text="任务周期:"/>
+				<mx:ComboBox id="dateType"  dataProvider="{TaskCycleArr}"/>
+				<util:TimeNew id="dateTime"  dateDisplay="time" /> 
+			</mx:HBox>
+			<mx:HBox width="100%" height="25%" horizontalAlign="left">
+				<mx:Spacer width="50" />
+				<mx:Label text="任务状态:"/> 
+				<mx:CheckBox id="isactivated" />
+				<mx:Spacer width="30" />
+				<mx:Label text="任务类型:"/>
+				<mx:ComboBox id="task_type" dataProvider="{TaskTypeArr}"/>				
+			</mx:HBox>
+		
+		</mx:VBox>	
+		<mx:HBox verticalAlign="middle" horizontalAlign="center" width="100%" height="25%"  
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+			<mx:Button label="保存"  click="saveTask()" />
+			<mx:Spacer width="30" />
+			<mx:Button label="关闭"  click="close()" />
+		</mx:HBox>		
+
+	
+<mx:Script>
+	<![CDATA[
+		import common.actionscript.ModelLocator;
+		import common.actionscript.Registry;
+		import common.other.SuperPanelControl.nl.wv.extenders.panel.PanelWindow;
+		
+		import mx.collections.ArrayCollection;
+		import mx.collections.XMLListCollection;
+		import mx.controls.Alert;
+		import mx.events.ListEvent;
+		import mx.events.MoveEvent;
+		import mx.managers.PopUpManager;
+		import mx.rpc.events.FaultEvent;
+		import mx.rpc.events.ResultEvent;
+		import mx.utils.StringUtil;
+		
+		import sourceCode.systemManagement.model.TimerTaskModel;
+		
+		
+		/**
+		 *左侧树的数据源 
+		 */
+		public var XMLData:XMLList;		 
+		[Bindable]
+		private var TaskCycleArr:ArrayCollection=new ArrayCollection([{label:"每日"},{label:"每周"},{label:"每月"}]); 		
+		[Bindable]
+		private var TaskTypeArr:ArrayCollection=new ArrayCollection([{label:"告警",tasktype:1},{label:"性能",tasktype:2},{label:"物力资源",tasktype:3},{label:"逻辑资源",tasktype:4}]); 				
+		[Bindable] 
+		public var SystemArr:ArrayCollection=new ArrayCollection();		
+		public var synch:SynchronizationTask ;
+		
+		private function init():void{
+//			fw.getSystemTreeBytimerTask();
+//			QuerytimerTasklist(); 
+		}
+		
+		private function saveTask():void{
+			if(task_name.text==null||task_name.text==""){
+				Alert.show("任务名不能为空！");
+				return;
+			}
+			
+			
+			
+			var timerTaskModel:TimerTaskModel = new TimerTaskModel();
+			timerTaskModel.systemname = systemName.text;
+			timerTaskModel.task_name = StringUtil.trim(task_name.text); 
+			
+			if(isactivated.selected){
+				timerTaskModel.isactivated = "1";
+				
+			}else{
+				timerTaskModel.isactivated = "0";
+			}
+			
+			timerTaskModel.task_type = task_type.selectedItem.tasktype;
+			if(dateType.text =="每日"){
+				timerTaskModel.task_period = timesub(dateTime.secondValue)+" "+timesub(dateTime.minuteValue)+" "+timesub(dateTime.hourValue)+" * * ?";
+				timerTaskModel.time_display = dateType.text+dateTime.text;
+			}else if(dateType.text == "每周"){
+				timerTaskModel.task_period = timesub(dateTime.secondValue)+" "+timesub(dateTime.minuteValue)+" "+timesub(dateTime.hourValue)+" ? * MON";
+				timerTaskModel.time_display = dateType.text+"一"+dateTime.text;
+			
+			}else if(dateType.text == "每月"){
+				timerTaskModel.task_period = timesub(dateTime.secondValue)+" "+timesub(dateTime.minuteValue)+" "+timesub(dateTime.hourValue)+" 1 * ?";
+				timerTaskModel.time_display = dateType.text+"1日"+dateTime.text;
+				
+			}else{}
+			
+			timerTaskModel.datetime = dateTime.text;
+			var timeradd:RemoteObject = new RemoteObject("timerTaskManager");
+			timeradd.endpoint = ModelLocator.END_POINT;
+			timeradd.showBusyCursor = true;
+			timeradd.addEventListener(ResultEvent.RESULT,dosaveTask);
+			timeradd.addEventListener(FaultEvent.FAULT,DealFault);
+			timeradd.insertTimerTask(timerTaskModel);
+		}
+		private  function  timesub(str:String):String{
+		 if(str.substr(0,1)=="0"){
+		   return str.substr(1,1);
+		 }else{
+			 return str;	
+		 }
+		
+		}
+		
+		
+		private function dosaveTask(event:ResultEvent){
+			
+			var resuletype:String  =	event.result as String;
+			if(resuletype=="success"){
+				Alert.show("同步任务添加成功！");
+				this.synch.QuerytimerTasklist();
+			}else if(resuletype=="failed"){
+				Alert.show("任务名称已经存在，请填写其他名称！");
+			}
+			
+		}
+		/**
+		 *加载系统树失败的处理  
+		 * @param event
+		 * 
+		 */
+		public function DealFault(event:FaultEvent):void 
+		{
+			Alert.show(event.fault.toString());
+		}	
+		
+		
+		/**
+		 *对加载树后的处理 
+		 * @param event
+		 * 
+		 */
+		private function resultHandler(event:ResultEvent):void
+		{
+			
+		}
+		private function close():void{
+		
+			PanelWindow(this.parent).closeButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK,false,false));
+		}		
+		
+		
+	]]>
+</mx:Script>	
+</mx:VBox>

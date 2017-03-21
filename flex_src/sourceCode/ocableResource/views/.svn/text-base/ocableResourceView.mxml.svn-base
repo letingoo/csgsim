@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%"  
+		 height="100%" 
+		 xmlns:views="sourceCode.ocableResource.views.*"  
+		 xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"  
+		 creationComplete="init()"  
+		 preinitialize="preinitialize()"
+		 xmlns:link="sourceCode.ocableResource.views.link.*"  
+		 xmlns:comp="sourceCode.ocableResource.other.comp.*" xmlns:base="base.*" 
+		 xmlns:component="common.component.*"
+		 paddingBottom="0" 
+		 paddingLeft="0" 
+		 paddingRight="0" 
+		 paddingTop="0" 
+		 horizontalGap="0" 
+		 verticalGap="0">
+	
+	<mx:Script source="../actionscript/ocableResourceView.as"/>
+	<mx:Style>
+		.myAccordion {
+			headerStyleName: "myaccordionHeader";
+		}
+		
+		.myaccordionHeader {
+			fontSize: 12;
+		}
+		
+		.myStyles{
+			fillAlphas:0.5,0.24,049,0.5;
+			fillColors: #ffff00, #ffff00, #ffff00, #ffff00;
+			borderColor:#7d7f98;
+			themeColor:#999999;
+		}
+		.myButton{
+			fillAlphas:0.5,0.24,049,0.5;
+			fillColors: #ffff00, #ffff00, #ffff00, #ffff00;
+			themeColor:#999999;
+		}
+		
+		.legendPanel {
+			borderStyle: solid;
+			borderAlpha: 0.5;
+			headerColors: #666666, #999999;
+			shadowDistance: 6;
+			shadowDirection: right;
+			titleStyleName: "mypanelTitle";
+		}
+		
+		.mypanelTitle {
+			textAlign: center;
+		}
+		.myButtonBar{
+			fontWeight:normal;
+			paddingLeft:0;
+			paddingRight:0;
+			textAlign:bottom;
+		}
+	</mx:Style>
+	<mx:initialize>
+		<![CDATA[
+		Utils.registerImageByClass("XZ01", ModelLocator.province_XZ01);
+		Utils.registerImageByClass("XZ0101", ModelLocator.province_XZ0101);
+		Utils.registerImageByClass("XZ0102", ModelLocator.province_XZ0102);
+		Utils.registerImageByClass("XZ0103", ModelLocator.province_XZ0103);
+		Utils.registerImageByClass("XZ0104", ModelLocator.province_XZ0104);
+		Utils.registerImageByClass("XZ0105", ModelLocator.province_XZ0105);
+		Utils.registerImageByClass("XZ0106", ModelLocator.province_XZ0106);
+		Utils.registerImageByClass("XZ0107", ModelLocator.province_XZ0107);
+		Utils.registerImageByClass("XZ0108", ModelLocator.province_XZ0108);
+		Utils.registerImageByClass("XZ0109", ModelLocator.province_XZ0109);
+		Utils.registerImageByClass("XZ0110", ModelLocator.province_XZ0110);
+		Utils.registerImageByClass("XZ0111", ModelLocator.province_XZ0111);
+		]]>
+	</mx:initialize>
+	
+	<component:ControlBar id="controlBar" width="120%" height="30"
+						  imgName="ocableRoute" modelName="光缆拓扑图" showAddButton="{false}"
+						  showDelButton="{false}" showEditButton="{false}"
+						  showExportExcelButton="{false}" showImportButton="{false}"
+						  showSearchButton="{false}"/>
+	<mx:Canvas id="cas"
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		backgroundColor="0xeeeeee">
+			
+		<mx:VBox  
+			id="canvas"  
+			width="100%" 
+			height="100%" 
+			horizontalAlign="center" 
+			verticalAlign="middle" 
+			paddingBottom="0" 
+			paddingLeft="0" 
+			paddingRight="0" 
+			paddingTop="0" 
+			horizontalGap="0" 
+			verticalGap="0" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:HBox id="toolbar" width="100%" 
+					 paddingBottom="0" 
+					 paddingLeft="0" 
+					 paddingRight="0" 
+					 paddingTop="0" 
+					 horizontalGap="0" 
+					 verticalGap="0"/>
+			
+			<servasoftware:Network 
+				id="network"  
+				width="100%"  
+				height="100%" 
+				dragEnter="onDragEnter(event)"
+				dragOver="onDragOver(event)"
+				dragDrop="onGridDragDrop(event)"
+				dragExit="onDragExit(event)" 
+				doubleClickEnabled="true" 
+				keyboardRemoveEnabled="false"
+				mouseDown="network_mouseDownHandler(event)"  
+				doubleClick="network_mouseDoubleClickHandler(event)" 
+				visible="true"
+				backgroundColor="0xeeeeee">
+			</servasoftware:Network>
+			
+		</mx:VBox>
+		<mx:Accordion id="acc"  
+					  height="400" 
+					  styleName="myAccordion" 
+					  width="270" 
+					  paddingBottom="0" 
+					  paddingTop="0" 
+					  right="40" 
+					  top="30">
+			
+			<mx:VBox label="局站" width="100%" height="100%" horizontalGap="0" borderStyle="solid">
+				<mx:Tree 
+					id="treeProvince"  
+					labelField="@label" 
+					width="100%" 
+					height="100%"  
+					itemOpen="treeItemOpen(event)"  
+					itemClick="tree_itemClick(event,treeProvince)"
+					defaultLeafIcon="{null}" 
+					borderStyle="none"
+					dropEnabled="false"
+					dragEnabled="true"
+					dragMoveEnabled="true"
+					iconFunction="deviceiconFun">
+				</mx:Tree>
+			</mx:VBox>
+			<mx:VBox label="站点模板" width="100%" height="100%" horizontalGap="0" borderStyle="solid" 
+					 horizontalAlign="center" verticalAlign="middle">
+				<mx:TileList id="tileList" dragEnabled="true" borderThickness="0" 
+							 width="100%" height="100%"
+							 rowHeight="70" columnWidth="100"
+							 columnCount="1" dataProvider="{xmlListColl}">
+					<mx:itemRenderer>
+						<mx:Component>
+							<views:EquipModelRenderer left="10" right="10" />
+						</mx:Component>
+					</mx:itemRenderer>
+				</mx:TileList>
+			</mx:VBox>
+			<mx:VBox label="搜索" width="100%" height="100%" horizontalGap="0" borderStyle="solid" horizontalAlign="center" verticalAlign="middle">
+				<views:stationSearch  
+					id="stationSearchView" 
+					label="搜索" 
+					ApplyFilter="stationsearch1_ApplyFilterHandler(event)"/>
+			</mx:VBox>
+		</mx:Accordion>
+		<base:VButtonBar id="vb" 
+						 visible="true" 
+						 Vdata="{ac}" 
+						 accordion="{acc}" 
+						 width="30" 
+						 paddingBottom="0" 
+						 paddingTop="0" 
+						 right="10" 
+						 top="30" 
+						 currentStateChange="vb_currentStateChangeHandler(event)"
+						 selectedItemEvent="vb_selectedItemEventHandler(event)"/>
+		<mx:Panel id="legendPanel" y="30"
+				 width="200"
+				 height="350" 
+				 visible="true"  
+				 title="图例" 
+				 styleName="legendPanel" >
+			
+			<!--<mx:Label 
+				text="图例" 
+				fontSize="18" 
+				fontWeight="bold" 
+				fontFamily="Arial" 
+				textDecoration="none"  
+				textAlign="center" 
+				width="100%">
+				
+				
+				
+			</mx:Label>-->
+			
+			<servasoftware:Network 
+				id="legendmap" 
+				width="100%" 
+				height="100%" 
+				backgroundColor="0xffffff">
+				
+			</servasoftware:Network>
+			
+		</mx:Panel>
+	</mx:Canvas>
+	
+</mx:VBox>

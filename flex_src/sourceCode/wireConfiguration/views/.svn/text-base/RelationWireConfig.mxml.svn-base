@@ -1,0 +1,65 @@
+<mx:VBox  xmlns:mx="http://www.adobe.com/2006/mxml"  
+		  fontSize="12" xmlns:controls="ht.*"  
+		  width="100%" height="100%"
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+		  xmlns:custom="common.component.*"
+		  xmlns:common="twaver.common.*" creationComplete="initApp()">   
+	<mx:Script source="../actionscript/RelationWireConfig.as" />
+	<mx:Script source="../actionscript/wireConfiguration.as"/>
+	<mx:HDividedBox id="hd" width="100%" height="100%" backgroundColor="0xCCCCCC" >
+		<mx:VBox id="leftpanel" width="25%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:Tree id="reTreeWire" dataProvider="{folderCollection}" itemRenderer="twaver.PermissionsTreeItemRendererV2"				
+					 labelField="@name"
+					 width="100%" 
+					 height="100%" 
+					 defaultLeafIcon="{null}" 
+					 borderStyle="none"
+					 showRoot="true"
+					 click="treeCheck(event)"
+					 itemClick="tree_itemClick(event)"/>			
+		</mx:VBox>
+		<mx:VBox id="rightpanel" width="75%" height="100%" backgroundColor="white">
+			<mx:HBox id="toolbar" width="100%"/>
+			<servasoftware:Network id="network" width="100%" 
+								   height="100%" backgroundColor="0xFFFFFF"
+								   click="networkClickHandler()" doubleClickEnabled="false"/>	
+
+			<mx:DataGrid id="dgPort" width="100%" height="30%" dataProvider="{dgPortData}" wordWrap="true" visible="false" includeInLayout="false">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" textAlign="center" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="机框序号" dataField="@frameserial"/>
+					<mx:DataGridColumn headerText="机槽序号" dataField="@slotserial"/>
+					<mx:DataGridColumn headerText="机盘序号" dataField="@packserial"/>
+					<mx:DataGridColumn headerText="端口序号" dataField="@portserial"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="@y_porttype"/>
+					<mx:DataGridColumn headerText="端口容量" dataField="@x_capability"/>
+					<mx:DataGridColumn headerText="状态" dataField="@status"/>				
+				</mx:columns>
+			</mx:DataGrid>
+			
+			<mx:DataGrid id="dgOdf" width="100%" height="30%" dataProvider="{dgOdfPortData}" wordWrap="true" visible="false" includeInLayout="false">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" textAlign="center" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="标准命名" dataField="@name_std"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="@porttype"/>
+					<mx:DataGridColumn headerText="状态" dataField="@status"/>				
+				</mx:columns>
+			</mx:DataGrid>
+		
+			<mx:DataGrid id="dgDdf" width="100%" height="30%" dataProvider="{dgDdfPortData}" wordWrap="true" visible="false" includeInLayout="false">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" textAlign="center" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="标准命名" dataField="@port_name_std"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="@porttype"/>
+					<mx:DataGridColumn headerText="状态" dataField="@status"/>				
+				</mx:columns>
+			</mx:DataGrid>
+
+			<mx:TextArea  id="text" borderThickness="4" backgroundAlpha="0.6" backgroundColor="0xCCCCCC" borderColor="0xCCCCCC" fontSize="14" text="端口详细信息" width="25" height="100%"  visible="false" includeInLayout="false" />
+			<mx:LinkButton id="linkButton" width="25" label="{btnlabel}" textAlign="right" fontThickness="2"  fontSize="12" click="changeState();" top="4" right="0"  visible="false" includeInLayout="false" />
+			
+			<custom:pagetoolbar id="clientPagingBar1" width="100%" visible="false" includeInLayout="false"/>           
+		</mx:VBox>		
+	</mx:HDividedBox>
+</mx:VBox>  

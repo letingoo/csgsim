@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="530" height="276"  
+				title="海量数据导出向导 :第二步"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12" x="323" y="204"> 
+	
+	<mx:Script>  
+		<![CDATA[  			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.systemManagement.views.SysLogManager;
+		    public var dataNumber:int;
+			public var exportTypes:String;
+			public var labels:String;
+			public var titles:Array = null;
+			[bindable]
+			public var alarmObjectSec:Object;
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+			
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.close();
+			}
+         
+			protected function Confirm_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//PopUpManager.addPopUp(iora, this, true);
+				//PopUpManager.centerPopUp(iora);
+				//iora.intiliz();
+				if(event.target.label=="导出")
+				{
+					alarmObjectSec.exportExcelBySubPage();
+				}
+
+			}
+		]]>  
+	</mx:Script>
+	<mx:Button id="btn_confirm" label="导出"  x="320" y="163" width="75" click="Confirm_clickHandler(event)"/>
+	<mx:Button x="403" y="163" label="退出" width="75" click="button1_clickHandler(event)"/>
+	<mx:Label x="10" y="28" text="由于您的数据量过大，所以导出时间将会相当漫长。请您耐心等待！" width="475" height="33"/>
+	<mx:Label x="10" y="78" text="共：" width="75" height="28"/>
+	<mx:RemoteObject id="upRM" destination="netresDao" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"/>
+	<mx:Label x="10" y="165" text="注：数据文件将被打包为压缩文件" width="298"/>
+	<mx:Label x="67" y="78" text="{dataNumber.toString()}" width="93"/>
+	<mx:Label x="168" y="78" text="条数据，系统将分" width="109"/>
+	<mx:Label x="285" y="78" text="{((int)(dataNumber/20000)+1).toString()}" width="50"/>
+	<mx:Label x="343" y="78" text="个EXCEL文件导出。" width="125"/>
+</mx:TitleWindow>  

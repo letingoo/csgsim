@@ -1,0 +1,640 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="670"
+				height="430"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+			    preinitialize="preinitialize()"	
+				creationComplete="init()"
+				close="close(event)">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.model.ResultModel;
+			
+			import flash.events.Event;
+			
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.tableResurces.model.OcableSection;
+			import sourceCode.tableResurces.views.eRegionTree;
+			import sourceCode.tableResurces.views.eRoomTree;
+			import sourceCode.tableResurces.views.eStationTree;
+			import sourceCode.tableResurces.views.eTnodeTree;			
+			
+			public var days:Array=new Array("日", "一", "二", "三", "四", "五", "六");
+			public var monthNames:Array=new Array("一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月");
+			
+			
+			[Bindable]public var ocableSectionData:OcableSection;
+			public var a_point:String="";
+			public var z_point:String="";
+			public var region:String="";
+			public var titleFlag:String="光缆段"; 
+			public var stationFlag:String=""; //局站标识，用来获取起点或终点局站树
+			public var isShowRoomType:Boolean = false; //起点和终点类型是否显示 '机房'
+			
+			[Bindable]public var a_pointNameEnabled:Boolean = true;
+			[Bindable]public var a_pointTypeEnabled:Boolean = true;
+			[Bindable]public var z_pointNameEnabled:Boolean = true;
+			[Bindable]public var z_pointTypeEnabled:Boolean = true;
+			[Bindable]public var fibercountEnabled:Boolean = true;
+			[Bindable]public var ocablesectionNameEnabled:Boolean = true;
+			
+			[Bindable]public var xmlOcableProperty:XMLList;
+			[Bindable]public var xmlOcableModel:XMLList;
+			[Bindable]public var xmlPointType:XMLList;
+			[Bindable]public var xmlRunUnit:XMLList;
+			[Bindable]public var xmlCheckUnit:XMLList;
+			[Bindable]public var xmlVoltLevel:XMLList;
+			[Bindable]public var xmlFunctionunit:XMLList;
+			[Bindable]public var xmlLaymode:XMLList;
+			[Bindable]public var xmlFibercount:XMLList;
+			
+//			[Bindable]public var ocableCode:String;
+			[Bindable]public var state:String;
+			
+			//----------------------------------------------
+			private function getPointType():void{
+				var rt:RemoteObject =new RemoteObject("netresDao");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getOcablePointType();
+				rt.addEventListener(ResultEvent.RESULT,resultPointType);
+			}
+			
+			private function resultPointType(event:ResultEvent):void{
+				xmlPointType = new XMLList(event.result);
+				if(!isShowRoomType){
+					for(var i:int = 0; i<xmlPointType.length(); i++){
+						if(xmlPointType[i].@id == 'R'){
+							delete xmlPointType[i];
+						}
+					}
+				}
+				this.a_pointType.dataProvider = xmlPointType;
+				this.z_pointType.dataProvider = xmlPointType;
+				
+			    setSelectedItem(xmlPointType, ocableSectionData.a_pointtype, this.a_pointType);
+			    setSelectedItem(xmlPointType, ocableSectionData.z_pointtype, this.z_pointType);
+				
+				var rt:RemoteObject= new RemoteObject("netresDao");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getOcableProperty();
+				rt.addEventListener(ResultEvent.RESULT,getOcableModel);
+			}
+			
+			private function getOcableModel(event:ResultEvent):void{
+				xmlOcableProperty = new XMLList(event.result);
+				this.property.dataProvider = xmlOcableProperty;
+				setSelectedItem(xmlOcableProperty, ocableSectionData.property,this.property);
+				
+				var rt:RemoteObject = new RemoteObject("netresDao");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getOcableModel();
+				rt.addEventListener(ResultEvent.RESULT,getVoltLevel);
+			}
+			
+			private function getVoltLevel(event:ResultEvent):void{
+				xmlOcableModel = new XMLList(event.result);
+				this.ocableModel.dataProvider = xmlOcableModel;
+				setSelectedItem(xmlOcableModel, ocableSectionData.ocablemodel,this.ocableModel);
+//				setSelectedItemById(xmlOcableModel, ocableSectionData.ocablemodel,this.ocableModel);
+				
+				var rt:RemoteObject= new RemoteObject("netresDao");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getVoltLevel();
+				rt.addEventListener(ResultEvent.RESULT,getFunctionunit);
+			}
+			
+			/**
+			 * 获取维护单位 
+			 */
+			private function getFunctionunit(event:ResultEvent):void{
+				xmlVoltLevel = new XMLList(event.result);
+//				this.voltlevel.dataProvider = xmlVoltLevel;
+				this.secvolt.dataProvider = xmlVoltLevel;
+				setSelectedItem(xmlVoltLevel, ocableSectionData.secvolt,this.secvolt);
+//				setSelectedItemById(xmlVoltLevel, ocableSectionData.secvolt,this.secvolt);
+				
+				var rt:RemoteObject= new RemoteObject("netresDao");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getFunctionunit();
+				rt.addEventListener(ResultEvent.RESULT,getLaymode);
+			}
+			
+			private function getLaymode(event:ResultEvent):void{
+				xmlFunctionunit = new XMLList(event.result);
+				this.function_unit.dataProvider = xmlFunctionunit;
+				setSelectedItem(xmlFunctionunit, ocableSectionData.function_unit,this.function_unit);
+//				setSelectedItemById(xmlFunctionunit, ocableSectionData.function_unit,this.function_unit);
+				
+				var rt:RemoteObject= new RemoteObject("netresDao");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getLaymode();
+//				rt.addEventListener(ResultEvent.RESULT,getFibercount);
+				rt.addEventListener(ResultEvent.RESULT,resultFunctionunit);
+			}
+			
+//            private function getFibercount(event:ResultEvent):void{
+//				xmlLaymode = new XMLList(event.result);
+//				this.laymode.dataProvider = xmlLaymode;
+//				setSelectedItem(xmlLaymode,ocableSectionData.laymode,this.laymode);
+//				
+//				var rt:RemoteObject= new RemoteObject("netresDao");
+//				rt.endpoint = ModelLocator.END_POINT;
+//				rt.showBusyCursor = true;
+//				rt.getFibercount();
+//				rt.addEventListener(ResultEvent.RESULT,resultFunctionunit);
+//			}
+			
+			private function resultFunctionunit(event:ResultEvent):void{
+				xmlLaymode = new XMLList(event.result);
+				this.laymode.dataProvider = xmlLaymode;
+				setSelectedItem(xmlLaymode,ocableSectionData.laymode,this.laymode);
+//				setSelectedItemById(xmlLaymode,ocableSectionData.laymode,this.laymode);
+				
+//				xmlFibercount = new XMLList(event.result);
+//				this.fibercount.dataProvider = xmlFibercount;
+//				setSelectedItem(xmlFibercount, ocableSectionData.fibercount,this.fibercount);
+			}
+			
+			//-----------------------------------------
+			private function preinitialize():void{
+				if(null == ocableSectionData){
+					ocableSectionData = new OcableSection();
+				}
+				getPointType();
+			}
+			
+			private function init():void{
+				var ocableSectionName:String = ocableSectionData.ocablesectionname;
+				if((null == ocableSectionName) || ("" == ocableSectionName)){
+					this.title = "光缆属性";
+				}else{
+				    this.title =  ocableSectionName + "-属性";
+				}
+			}
+			
+			/**
+			 * 设置默认选中   
+			 * 
+			 * @param xml 
+			 * @label
+			 * @comboboxId
+			 */
+			public function setSelectedItemById(xml:XMLList,id:String,comboboxId:ComboBox):void{
+				comboboxId.dataProvider = xml;
+				comboboxId.selectedIndex = -1;
+				for each(var item:Object in comboboxId.dataProvider){
+					if(item.@id == id){
+						comboboxId.selectedItem = item;
+					}
+				}
+			}
+			
+			/**
+			 * 设置默认选中   
+			 * 
+			 * @param xml 
+			 * @label
+			 * @comboboxId
+			 */
+			public function setSelectedItemByLabel(xml:XMLList,label:String,comboboxId:ComboBox):void{
+				comboboxId.dataProvider = xml;
+				comboboxId.selectedIndex = -1;
+				for each(var item:Object in comboboxId.dataProvider){
+					if(item.@label == label){
+						comboboxId.selectedItem = item;
+					}
+				}
+			}
+			
+			/**
+			 * 设置默认选中   
+			 * 
+			 * @param xml 
+			 * @label
+			 * @comboboxId
+			 */
+			public function setSelectedItem(xml:XMLList,label:String,comboboxId:ComboBox):void{
+				comboboxId.dataProvider = xml;
+				comboboxId.selectedIndex = -1;
+				for each(var item:Object in comboboxId.dataProvider){
+					if(item.@label == label || item.@id == label){
+						comboboxId.selectedItem = item;
+					}
+				}
+			}
+			
+			protected function btn_clickHandler(event:MouseEvent):void{
+				var ocableSection:OcableSection = new OcableSection();
+				var remoteObject:RemoteObject=new RemoteObject("netresDao");
+				remoteObject.endpoint=ModelLocator.END_POINT;
+				remoteObject.showBusyCursor=true;
+				
+				if(StringUtil.trim(ocablesectionName.text) == ""){
+					Alert.show("光缆段名称不能为空","提示");
+					return;
+				}
+				if(StringUtil.trim(ocableModel.text)==""){
+					Alert.show("光缆段类型不能为空","提示");
+					return;
+				}
+				if(StringUtil.trim(a_pointName.text)==""){
+					Alert.show("起点不能为空","提示");
+					return;
+				}
+				if(StringUtil.trim(z_pointName.text)==""){
+					Alert.show("终点不能为空","提示");
+					return;
+				}
+				if(StringUtil.trim(z_pointName.text) == StringUtil.trim(a_pointName.text)){
+					Alert.show("起点和终点不能相同","提示");
+					return;
+				}
+				if(StringUtil.trim(fibercount.text) == ""){
+					Alert.show("纤芯数目不能为空","提示");
+					return;
+				}
+				if(property.selectedIndex == -1){
+					Alert.show("产权单位不能为空","提示");
+					return;
+				}
+				if(secvolt.selectedItem == null){
+					Alert.show("电压等级不能为空","提示");
+					return;
+				}
+				if(rule.text != ""){
+					ocableSection.rule = rule.text;
+				}else{
+					Alert.show("光缆段序号不能为空");
+					return;
+				}
+				if(this.a_point != ""){
+					ocableSection.a_point=this.a_point;
+				}
+				else{
+					ocableSection.a_point=ocableSectionData.a_point;
+				}
+				if(this.z_point != ""){
+					ocableSection.z_point=this.z_point;
+				}
+				else{
+					ocableSection.z_point=ocableSectionData.z_point;
+				}
+				if(this.region != ""){
+					ocableSection.province=this.region;
+				}
+				else{
+					ocableSection.province=ocableSectionData.province;
+				}
+				if(a_pointType.selectedIndex != -1){
+					ocableSection.a_pointtype = a_pointType.selectedItem.@id;
+				}
+				if(z_pointType.selectedIndex != -1){
+					ocableSection.z_pointtype= z_pointType.selectedItem.@id;
+				}
+
+				if(ocableModel.selectedIndex != -1){
+					ocableSection.ocablemodel = ocableModel.selectedItem.@id;
+				}else if(ocableModel.text != ""){
+					ocableSection.ocablemodel=ocableModel.text;
+				}
+				
+				if(property.selectedIndex != -1){
+					ocableSection.property = property.selectedItem.@id;
+				}
+//				if(voltlevel.selectedIndex != -1){
+//					ocableSection.voltlevel = voltlevel.selectedItem.@id;
+//				}
+				if(secvolt.selectedIndex != -1){
+					ocableSection.secvolt = secvolt.selectedItem.@id;
+				}
+				
+				if(laymode.selectedIndex != -1){
+					ocableSection.laymode = laymode.selectedItem.@id;
+				}
+				
+//				if(fibercount.selectedIndex != -1){
+//					ocableSection.fibercount = fibercount.selectedItem.@id;
+//				}
+				
+				ocableSection.fibercount = fibercount.text;
+				ocableSection.ocablesectionname=ocablesectionName.text;
+				ocableSection.occupyfibercount=occupyfibercount.text;
+				ocableSection.length=ocableLength.text;
+				if(function_unit.selectedIndex != -1){
+					ocableSection.function_unit = function_unit.selectedItem.@id;
+				}
+				ocableSection.one_name = one_name.text;
+				if(StringUtil.trim(updatedate.text) == ""){
+					ocableSection.updatedate="sysdate";
+				}else{
+					ocableSection.updatedate=updatedate.text;
+				}
+				
+				ocableSection.powerstationdate = powerstationdate.text;
+				
+				ocableSection.money = money.text;
+				ocableSection.platelong = platelong.text;
+				
+				ocableSection.remark=remark.text;
+//				if(this.title=="添加"){
+				if(this.state == "添加"){
+					remoteObject.addOcableSection(ocableSection);
+					remoteObject.addEventListener(ResultEvent.RESULT,addOcableSection);
+					Application.application.faultEventHandler(remoteObject);
+				}
+				else{
+					ocableSection.sectioncode=ocableSectionData.sectioncode;
+					remoteObject.modifyOcableSection(ocableSection);
+					remoteObject.addEventListener(ResultEvent.RESULT,modifyOcableSection);
+					Application.application.faultEventHandler(remoteObject);
+				}
+				
+			}
+			
+			private function addOcableSection(event:ResultEvent):void{
+				if (event.result.toString() == "success")
+				{
+					Alert.show("添加成功!", "提示");
+					PopUpManager.removePopUp(this);
+					this.dispatchEvent(new Event("RefreshDataGrid"))
+				}
+				else
+				{
+					Alert.show("请按要求填写数据！", "提示");
+				}
+			}
+			
+			private function modifyOcableSection(event:ResultEvent):void{
+				if (event.result.toString() == "success")
+				{
+					Alert.show("保存成功！", "提示");
+					PopUpManager.removePopUp(this);
+					this.dispatchEvent(new Event("RefreshDataGrid"))
+				}
+				else if (event.result.toString() == "blank")
+				{
+					Alert.show("请按要求修改内容！", "提示");
+				}
+				else if (event.result.toString() == "timeblank")
+				{
+					Alert.show("时间不能为空！", "提示");
+				}
+				else
+				{
+					Alert.show("修改失败！", "提示");
+				}
+			}
+			
+			protected function pointNameClickHandler(event:MouseEvent,flag:String):void
+			{	
+				if(flag != null &&	flag=="apoint"){
+					if(a_pointType.selectedIndex == -1){
+						Alert.show("请选择起点类型","提示");
+					}
+					else if(a_pointType.selectedIndex==0){
+						var treeStation:eStationTree = new eStationTree();
+						treeStation.page_parent = this;
+						this.stationFlag="起点";
+						MyPopupManager.addPopUp(treeStation, true);
+					}
+					else if(a_pointType.selectedIndex==1){
+						var treeTnode:eTnodeTree=new eTnodeTree();
+						treeTnode.page_parent=this;
+						this.stationFlag="起点";
+						MyPopupManager.addPopUp(treeTnode, true);
+					}
+					else if(this.a_pointType.selectedItem.@id == 'R'){
+						var treeRoom:eRoomTree = new eRoomTree();
+						treeRoom.page_parent = this;
+						treeRoom.elabel = "机房";
+						treeRoom.isShowAllRoom = true;
+						this.stationFlag = "起点";
+						MyPopupManager.addPopUp(treeRoom, true);
+					}
+				}
+				else if(flag != null &&	flag=="zpoint"){
+					if(z_pointType.selectedIndex == -1){
+						Alert.show("请选择终点类型","提示");
+					}
+					else if(z_pointType.selectedIndex==0){
+						var treeStation:eStationTree = new eStationTree();
+						treeStation.page_parent = this;
+						this.stationFlag = "终点";
+						MyPopupManager.addPopUp(treeStation, true);
+					}
+					else if(z_pointType.selectedIndex==1){
+						var treeTnode:eTnodeTree = new eTnodeTree();
+						treeTnode.page_parent = this;
+						this.stationFlag = "终点";
+						MyPopupManager.addPopUp(treeTnode, true);
+					}
+					else if(this.z_pointType.selectedItem.@id == 'R'){
+						var treeRoom:eRoomTree = new eRoomTree();
+						treeRoom.page_parent = this;
+						treeRoom.elabel = "机房";
+						treeRoom.isShowAllRoom = true;
+						this.stationFlag = "终点";
+						MyPopupManager.addPopUp(treeRoom, true);
+					}
+				}
+			}
+			
+			protected function pointType_changeHandler(event:ListEvent,pointType:String):void
+			{
+				if(pointType=="a_point"){
+					if(this.a_pointType.selectedIndex == 2 && this.z_pointType.selectedIndex != 2){
+						setSelectedItemById(xmlPointType, 'R', this.z_pointType);	
+						this.z_pointName.text = "";
+					}
+                    if(this.a_pointType.selectedIndex != 2 && this.z_pointType.selectedIndex == 2){
+						this.z_pointType.selectedIndex = -1;
+						this.z_pointName.text = "";
+					}
+					this.a_pointName.text="";
+				}
+				else if(pointType=="z_point"){
+					if(this.z_pointType.selectedIndex == 2 && this.a_pointType.selectedIndex != 2){
+						setSelectedItemById(xmlPointType, 'R', this.a_pointType);	
+						this.a_pointName.text = "";
+					}
+					if(this.z_pointType.selectedIndex != 2 && this.a_pointType.selectedIndex == 2){
+						this.a_pointType.selectedIndex = -1;
+						this.a_pointName.text = "";
+					}
+					this.z_pointName.text="";
+				}
+			}
+			
+			protected function province_clickHandler(event:MouseEvent):void
+			{
+				var region:eRegionTree=new eRegionTree();
+				PopUpManager.addPopUp(region, this, true);
+				region.page_parent=this;
+				PopUpManager.centerPopUp(region);
+			}
+			
+			private function close(event:CloseEvent):void{
+				this.dispatchEvent(new Event('closeOcableSectionTitle'));
+				MyPopupManager.removePopUp(this);
+			}
+			
+			private function clickHandler(event:MouseEvent):void{
+				this.dispatchEvent(new Event('closeOcableSectionTitle'));
+				MyPopupManager.removePopUp(this);
+			}
+			
+			private function change(event:Event):void{
+				this.ocablesectionName.text = 	"光缆段/" + this.fibercount.text + "芯" +  "#" + rule.text + "-" + this.a_pointName.text + "~" + this.z_pointName.text;
+			}
+		]]>
+	</mx:Script>
+	<mx:Binding destination="ocablesectionName.text" source="ocableSectionData.ocablesectionname" />
+	<mx:Binding destination="ocableLength.text" source="ocableSectionData.length" />
+	<mx:Binding destination="remark.text" source="ocableSectionData.remark" />
+	<mx:Binding destination="occupyfibercount.text" source="ocableSectionData.occupyfibercount" />
+	<mx:Binding destination="a_pointName.text" source="ocableSectionData.a_pointname" />
+	<mx:Binding destination="z_pointName.text" source="ocableSectionData.z_pointname" />
+	<mx:Binding destination="province.text" source="ocableSectionData.provincename"/>
+	<mx:Binding destination="one_name.text" source="ocableSectionData.one_name" />
+	<mx:Binding destination="updatedate.text" source="{ocableSectionData.updatedate==null?'':ocableSectionData.updatedate}" />
+	<mx:Binding destination="powerstationdate.text" source="{ocableSectionData.powerstationdate ==null ?'':ocableSectionData.powerstationdate}"/>
+	<mx:Binding destination="rule.text" source="ocableSectionData.rule"/>
+	<mx:Binding destination="fibercount.text" source="ocableSectionData.fibercount"/>
+	<mx:Binding destination="money.text" source="ocableSectionData.money"/>
+	<mx:Binding destination="platelong.text" source="ocableSectionData.platelong"/>
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center"
+			 verticalGap="0">
+		<mx:HBox width="100%"
+				 height="80%"
+				 id="hbox1">
+			<mx:Form width="100%"
+					 height="100%">
+				<mx:FormItem label="光缆段名称" required="true">
+					<mx:TextInput id="ocablesectionName" width="180" />
+				</mx:FormItem>
+				<mx:FormItem label="起点类型" required="true">
+					<mx:ComboBox id="a_pointType" enabled="{a_pointTypeEnabled}"  labelField="@label" change="pointType_changeHandler(event,'a_point')" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="终点类型" required="true">
+					<mx:ComboBox id="z_pointType" enabled="{z_pointTypeEnabled}" labelField="@label" change="pointType_changeHandler(event,'z_point')" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="纤芯数目" required="true">
+					<!--<mx:ComboBox id="fibercount"  enabled="{fibercountEnabled}"  labelField="@label" width="180" updateComplete="change(event)" />-->
+					<mx:TextInput id="fibercount" enabled="{fibercountEnabled}" maxChars="20" restrict="0-9" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="光缆段长度(千米)" >
+					<mx:TextInput id="ocableLength" maxChars="20" restrict="0-9." width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="产权单位" required="true">
+					<mx:ComboBox id="property"  labelField="@label" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="电压等级(kV)" required="true">
+					<!--<mx:ComboBox id="voltlevel"  labelField="@label" width="180"/>-->
+					<mx:ComboBox id="secvolt"  labelField="@label" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="盘长(米)">
+					<mx:TextInput id="platelong" width="180" restrict="0-9."/>
+				</mx:FormItem>
+				<mx:FormItem label="造价(元)">
+					<mx:TextInput id="money" width="180" restrict="0-9."/>
+				</mx:FormItem>
+				<mx:FormItem label="投运日期" >
+					<mx:DateField id="powerstationdate" width="180"
+								  dayNames="{days}"
+								  monthNames="{monthNames}"
+								  formatString="YYYY-MM-DD"
+								  yearNavigationEnabled="true"/>
+				</mx:FormItem>	
+			</mx:Form>
+			<mx:Form width="100%"
+					 height="100%">
+				<mx:FormItem label="光缆段类型" required="true">
+					<mx:ComboBox id="ocableModel"   labelField="@label" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="起点" required="true">
+					<mx:TextInput id="a_pointName" width="180" enabled="{a_pointNameEnabled}" toolTip="点击选择" editable= "false" click="pointNameClickHandler(event,'apoint')"  updateComplete="change(event)"/>
+				</mx:FormItem>
+				<mx:FormItem label="终点" required="true">
+					<mx:TextInput id="z_pointName" width="180" enabled="{z_pointNameEnabled}" toolTip="点击选择" editable="false"  click="pointNameClickHandler(event,'zpoint')"  updateComplete="change(event)"/>
+				</mx:FormItem>
+				<mx:FormItem label="所属地域" required="true">
+					<mx:TextInput id="province" width="180" enabled="true" toolTip="点击选择" editable="false" click="province_clickHandler(event)"/>
+				</mx:FormItem>
+				<mx:FormItem label="光缆段序号" required="true">
+					<mx:TextInput id="rule" maxChars="20" restrict="0-9" width="180" change="change(event)"/>
+				</mx:FormItem>
+				<mx:FormItem label="占用纤芯数" >
+					<mx:TextInput id="occupyfibercount" maxChars="20" restrict="0-9" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="敷设方式" >  
+					<mx:ComboBox id="laymode" labelField="@label" width="180"/>					
+				</mx:FormItem>
+				<mx:FormItem label="维护单位">
+					<mx:ComboBox id="function_unit"  width="180" labelField="@label"/>
+				</mx:FormItem>
+				<mx:FormItem label="一次线路名称" >
+					<mx:TextInput id="one_name" width="180"/>					
+				</mx:FormItem>
+				<mx:FormItem label="更新时间">
+					<mx:DateField id="updatedate" width="180"  
+								  dayNames="{days}"
+								  monthNames="{monthNames}"
+								  formatString="YYYY-MM-DD"
+								  yearNavigationEnabled="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="备注">
+					<mx:TextInput id="remark" width="180"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox id="buttomhbox"
+				 width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			<mx:Button id="btn"
+					   label="{this.state}"
+					   width="80"
+					   styleName="loginprimary"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="80"/>
+			<mx:Button label="关闭"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="clickHandler(event)" />
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="110" height="85" backgroundColor="0xffffff"   borderColor="#1e90ff" borderThickness="1" verticalGap="0"
+		 borderStyle="solid"  paddingLeft="2">
+<mx:Label id="jzname" color="0x1e90ff" textAlign="center" fontWeight="bold"    />
+<mx:Label id="ROOTALARM"   /> 
+<mx:Label id="ACKEDCOUNT"     />	
+<mx:Label id="ACKINGCOUNT"     />	
+
+</mx:VBox>

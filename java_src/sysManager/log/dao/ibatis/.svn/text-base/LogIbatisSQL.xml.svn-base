@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="operation">
+    <insert id="createLogEvent" parameterClass="sysManager.log.model.LogModel">
+           insert into SYS_LOG_EVENT(log_id,log_type,module_desc,func_desc,
+           data_id,user_id,user_name,dept_name,user_ip,log_time)
+           values(sysmgr.nextval,#log_type:VARCHAR#,#module_desc:VARCHAR#,#func_desc:VARCHAR#,#data_id:VARCHAR#,
+           #user_id:VARCHAR#,#user_name:VARCHAR#,#dept_name:VARCHAR#,#user_ip:VARCHAR#,#log_time:VARCHAR#) 
+    </insert>
+    <select id="getLogEvents" parameterClass="sysManager.log.model.LogModel" resultClass="sysManager.log.model.LogModel">
+    	 select * from (select rownum no, a.*
+				        from (select log_id,
+				                     log_type,
+				                     module_desc,
+				                     func_desc,
+				                     data_id,
+				                     user_id,
+				                     user_name,
+				                     getuserdepartment(dept_name) dept_name,
+				                     user_ip,
+				                     log_time
+				              from   sys_log_event
+				              order by log_time desc) a 
+					         <dynamic prepend="where">
+					    	 <isNotEmpty prepend="and" property="module_desc">
+					     		 	a.module_desc like '%$module_desc$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="log_type">
+					     		 	a.log_type like '%$log_type$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="user_name">
+					     		 	a.user_name like '%$user_name$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="log_time">
+					     		 	a.log_time like '%$log_time$%'
+					     		</isNotEmpty>
+								</dynamic>
+     	) b where b.no>#start# and b.no &lt;=#end#   		
+    </select>
+    
+    <select id="getLogEvents_excel" parameterClass="sysManager.log.model.LogModel" resultClass="sysManager.log.model.LogModel">
+    	 select * from (select rownum no, a.*
+				        from (select log_id,
+				                     log_type,
+				                     module_desc,
+				                     func_desc,
+				                     data_id,
+				                     user_id,
+				                     user_name,
+				                     getuserdepartment(dept_name) dept_name,
+				                     user_ip,
+				                     log_time
+				              from   sys_log_event
+				         order by log_time desc) a 
+          where 1>0
+    	 <isNotEmpty prepend="and" property="module_desc">
+     		 	a.module_desc like '%$module_desc$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="log_type">
+     		 	a.log_type like '%$log_type$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_name">
+     		 	a.user_name like '%$user_name$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="log_time">
+     		 	a.log_time like '%$log_time$%'
+     		</isNotEmpty>
+
+    	 ) b
+    		
+    </select>
+    
+    <select id="getCountEvents" resultClass="java.lang.Integer" parameterClass="sysManager.log.model.LogModel">
+    	select count(*) as ecount from SYS_LOG_EVENT 
+    	<dynamic prepend="where">
+    	 <isNotEmpty prepend="and" property="module_desc">
+     		 	module_desc like '%$module_desc$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="log_type">
+     		 	log_type like '%$log_type$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_name">
+     		 	user_name like '%$user_name$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="log_time">
+     		 	log_time like '%$log_time$%'
+     		</isNotEmpty>
+     	</dynamic>
+    </select>
+    <select id="expLogs" parameterClass="sysManager.log.model.LogModel" resultClass="sysManager.log.model.LogModel">
+    	 select 
+    	 log_type,
+    	 decode(module_desc,null,' ',module_desc) as module_desc,
+    	 decode(func_desc,null,' ',func_desc) as func_desc,
+    	 decode(data_id,null,' ',data_id) as data_id,
+    	 user_id,user_name,
+    	 decode(dept_name,null,' ',dept_name) as dept_name,
+    	 user_ip,log_time from SYS_LOG_EVENT
+    	 <dynamic prepend="where">
+    	 <isNotEmpty prepend="and" property="module_desc">
+     		 	module_desc like '%$module_desc$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="log_type">
+     		 	log_type like '%$log_type$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_name">
+     		 	user_name like '%$user_name$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="log_time">
+     		 	log_time like '%$log_time$%'
+     		</isNotEmpty>
+     	</dynamic>
+    </select>
+    
+    <select id="getSyncLogInfosCount" parameterClass="sysManager.log.model.LogModel" resultClass="int">
+    	select count(*) as ecount from SYS_LOG_EVENT where (log_type ='资源手工同步' or log_type='资源自动同步')
+    	 <isNotEmpty prepend="and" property="module_desc">
+     		 	module_desc like '%$module_desc$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="log_type">
+     		 	log_type like '%$log_type$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_name">
+     		 	user_name like '%$user_name$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="log_time">
+     		 	log_time like '%$log_time$%'
+     		</isNotEmpty>
+    </select>
+    
+    <select id="getSyncLogInfos" parameterClass="sysManager.log.model.LogModel" resultClass="sysManager.log.model.LogModel">
+    	select * from (select rownum no, a.*
+				        from (select log_id,
+				                     log_type,
+				                     module_desc,
+				                     func_desc,
+				                     data_id,
+				                     user_id,
+				                     user_name,
+				                     getuserdepartment(dept_name) dept_name,
+				                     user_ip,
+				                     log_time
+				              from   sys_log_event where (log_type ='资源手工同步' or log_type='资源自动同步')
+				              order by log_time desc) a 
+					         <dynamic prepend="where">
+					    	 <isNotEmpty prepend="and" property="module_desc">
+					     		 	a.module_desc like '%$module_desc$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="log_type">
+					     		 	a.log_type like '%$log_type$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="user_name">
+					     		 	a.user_name like '%$user_name$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="log_time">
+					     		 	a.log_time like '%$log_time$%'
+					     		</isNotEmpty>
+								</dynamic>
+     	) b where b.no>#start# and b.no &lt;=#end#  
+    </select>
+    
+</sqlMap>
+

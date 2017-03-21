@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="ResourceSearch">
+	<select id="getStationByKeycode" resultClass="java.util.HashMap"
+		parameterClass="String">
+		 select * from(
+		 select no,
+		 stationcode,
+		 stationname,
+		 x_stationtype,
+		 volt,
+		 province,
+		 provincecode,
+		 property,
+		 lng,
+		 lat,
+		 remark,
+		 updatedate,
+		 updateperson,
+		 detailaddr,
+		 founddate,
+		 name_std
+		 from (select
+		 stationcode,
+		 decode(stationname,null,'',stationname) stationname,
+		 decode(x_stationtype,null,'',x_stationtype) x_stationtype,
+		 decode(volt,null,'',volt) volt,
+		 decode(province,null,'',province) province,provincecode,
+		 decode(property,null,'',property) property,
+		 decode(to_char(lng,'fm9,999,999,990.09999'),null,'',to_char(lng,'fm9,999,999,990.09999')) lng,
+		 decode(to_char(lat,'fm9,999,999,990.09999'),null,'',to_char(lat,'fm9,999,999,990.09999')) lat,
+		 decode(remark,null,'',remark) remark,
+		 decode(detailaddr,null,'',detailaddr) detailaddr,
+<!-- 		 decode(founddate,null,'',to_char(founddate,'yyyy-mm-dd')) -->
+		 founddate,
+		 decode(name_std,null,'',name_std) name_std,
+<!-- 		 decode(updatedate,null,'',to_char(updatedate,'yyyy-mm-dd'))  -->
+		 updatedate,
+		 decode(updateperson,null,'',updateperson),
+		 updateperson,
+		 row_number() over(order by stationname) no
+		 from
+		 view_station
+		 where stationname like '%'||'$keycode$'||'%'
+		))
+	</select>
+	<select id="getEquipmentByKeycode" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[ 
+			select equipname,
+		       rownum no,
+		       x_vendor,
+		       x_model,
+		       equiptype,
+		       systemcode,
+		       projectname,
+		       equiplabel,
+		       shelfinfo,
+		       nsap,
+		       property,
+		       updatedate,
+		       updateperson,
+		       stationname,
+		       stationcode,
+		       roomname,
+		       roomcode,
+		       equipcode,
+		       x_configcapacity,
+		       x_sbcapacity,
+		       status,
+		       remark,
+		       purpose,
+		       province,
+		       version
+		  	from (select decode(equipname, null, '', equipname) equipname,
+		               decode(x_vendor, null, '', getxtxx(x_vendor)) x_vendor,
+		               decode(x_model, null, '', x_model) x_model,
+		               decode(equiptype, null, '', getxtxx(equiptype)) equiptype,
+		               decode(systemcode, null, '', systemcode) systemcode,
+		               decode(projectname, null, '', 'null', '', projectname) projectname,
+		               decode(equiplabel, null, '', equiplabel) equiplabel,
+		               decode(shelfinfo, null, '', shelfinfo) shelfinfo,
+		               decode(nsap, null, '', nsap) nsap,
+		               decode(property, null, '', getxtxx(property)) property,
+		               decode(to_char(updatedate, 'yyyy-mm-dd'),
+		                      null,
+		                      '',
+		                      to_char(updatedate, 'yyyy-mm-dd')) updatedate,
+		               decode(updateperson, null, '', updateperson) updateperson,
+		               decode(stationname, null, '', stationname) stationname,
+		               decode(roomname, null, '', roomname) roomname,
+		               equipcode,
+		               remark,
+		               decode(purpose, null, '', getxtxx(purpose)) as purpose,
+		               decode(province, null, '', getxtxx(province)) as province,
+		               decode(status, null, '', getxtxx(status)) as status,
+		               x_configcapacity,
+		               x_sbcapacity,
+		               roomcode,
+		               stationcode,
+		               version,
+		               row_number() over(order by equipname) no
+		          from view_equipment
+		         where equipname like '%' || '$keycode$' || '%')
+		]]>
+	</select>
+	<select id="getSectionByKeycode" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[ 
+			select * from
+		          (select rownum no,
+		           sectioncode,
+		           ocablesectionname,
+		           a_pointtype,
+		           a_point,
+		           a_pointname,
+		           z_pointtype,
+		           z_point,
+		           z_pointname,
+		           ocablemodel,
+		           length,
+		           run_unit,
+		           property,
+		           laymode,
+		           fibercount,
+		           occupyfibercount,
+		           one_name,
+		           function_unit,
+		           voltlevel,
+		           updateperson,
+		           updatedate,
+		           rule,
+		           propertycode,
+		           remark from (
+		           select e.sectioncode,
+		               e.ocablesectionname,
+		               decode(e.a_pointtype,'1','局站','2','T接','R','机房','') as a_pointtype,
+		               e.a_point,
+		               e.a_pointname,
+		               decode(e.z_pointtype,'1','局站','2','T接','R','机房','') as z_pointtype,
+		               e.z_point,
+		               e.z_pointname,
+		               getxtxx(e.ocablemodel) as ocablemodel,
+		               e.length,
+		               e.run_unit,
+		               getxtxx(e.property)as property,
+		               property as propertycode,
+		               getxtxx(e.laymode) as laymode,
+		               e.fibercount,
+		               e.occupyfibercount,
+		               e.one_name,
+		               getxtxx(e.function_unit) as function_unit,
+		               e.voltlevel,
+		               e.updateperson,
+		               decode(e.updatedate,null,'',to_char(e.updatedate,'yyyy-mm-dd')) updatedate,
+		               e.remark,
+		               e.rule,
+		               row_number() over(order by ocablesectionname) no
+		          from view_en_ocablesection e where ocablesectionname like '%'||'$keycode$'||'%'))
+		 ]]>
+	</select>
+	<select id="getCircuitBykeycode" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[
+			select *
+  			from (select rownum no,t.*
+          	from (select 
+                       cir.circuitcode formNum,
+                       cir.remark formName,
+                       xt.xtxx rate,
+                       getstationname(cir.station1) station1,
+                       getstationname(cir.station2) station2,
+                       getportlabel(cir.portserialno1) port1,
+                       getportlabel(cir.portserialno2) port2,
+                       getchannelpath(cir.circuitcode) channel,
+                       decode(requisitionid, null, ' ', requisitionid) oldFormNum
+                  from circuit cir, xtbm xt
+                 where cir.rate = xt.xtbm and cir.remark like '%'||'$keycode$'||'%'
+                 order by cir.remark) t)
+		]]>
+	</select>
+	
+	<select id="testsql" resultClass="sysManager.resourcesearch.model.Testmodel" parameterClass="String">
+	<![CDATA[
+		select t.label as l1,t.aendptp as a,t.zendptp as z 
+		from en_topolink t 
+		   where t.aendptp='D6D48662-C5CB-45E0-BBFA-9087EA953641-72855' and t.zendptp='D6D48662-C5CB-45E0-BBFA-9087EA953641-74220'
+	]]>
+	</select>
+	
+	
+	
+	
+	
+</sqlMap>

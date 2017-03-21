@@ -1,0 +1,977 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="resNet">
+
+	<typeAlias alias="equipModel" type="resManager.resNet.model.Equipment" />
+	<!-- 查询设备 -->
+	<select id="getEquipmentLst" parameterClass="equipModel"
+		resultClass="equipModel">
+		select * from(
+		select t.equipcode,
+		t.s_sbmc,t.x_model,
+		getxtxx(t.x_vendor) x_vendor,getxtxxbytype(t.equiptype,'SDH_TYPE')
+		equiptype,t.equiplabel,getSystemnameByCode(t.system_name) system_name,
+		t.updateperson,t.updatedate,GetStationByCode(stationcode)  stationname,
+		row_number() over(order by $sort$ $dir$) no
+		from equipment t
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="and" property="s_sbmc">
+				s_sbmc like
+				'%$s_sbmc$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="x_vendor">
+				x_vendor=#x_vendor#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="x_model">
+				x_model like
+				'$x_model$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="roomcode">
+				roomcode=#roomcode#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="status">
+				status=#status#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="province">
+				province=#province#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="equiplabel">
+				equiplabel=#equiplabel#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="check_unit">
+				check_unit=#check_unit#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="equiptype">
+				equiptype=#equiptype#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="system_name">
+				system_name like
+				'$system_name$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="updatedate_start">
+				updatedate >
+				#updatedate_start#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="updatedate_end">
+				updatedate &lt;=
+				#updatedate_end#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="stationcode">
+				stationcode =
+				#stationcode#
+			</isNotEmpty>
+		</dynamic>
+		)
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="start">
+				(no > #start#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="end">
+				(no &lt;=#end# )
+			</isNotEmpty>
+		</dynamic>
+		order by no
+	</select>
+	<!-- 查询设备数目 -->
+	<select id="getEquipmentCount" parameterClass="equipModel"
+		resultClass="int">
+
+		select
+		count(*)
+		from equipment t where 1=1
+		<isNotEmpty prepend="and" property="s_sbmc">
+			s_sbmc like '%$s_sbmc$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="x_vendor">
+			x_vendor=#x_vendor#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="x_model">
+			x_model like '$x_model$'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="roomcode">
+			roomcode=#roomcode#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="status">
+			status=#status#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="province">
+			province=#province#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="equiplabel">
+			equiplabel=#equiplabel#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="check_unit">
+			check_unit=#check_unit#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="equiptype">
+			equiptype=#equiptype#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="system_name">
+			system_name like
+			'$system_name$'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updatedate_start">
+			updatedate >
+			#updatedate_start#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updatedate_end">
+			updatedate &lt;=
+			#updatedate_end#
+		</isNotEmpty>
+			<isNotEmpty prepend="and" property="stationcode">
+				stationcode =
+				#stationcode#
+			</isNotEmpty>
+
+	</select>
+	<procedure id="delEquipmentByModel" parameterClass="string" >
+		call deleteEquipment(#equipcode#)
+	</procedure>
+	<!--  <delete id="delEquipmentByModel" parameterClass="string">
+		delete from
+		equipment t where t.equipcode=#equipcode#
+	</delete>-->
+	<!--<delete id="deleteReSysEquip" parameterClass="String">    		
+		<![CDATA[	
+				delete from re_sys_equip where equipcode=#equipcode# 
+		 ]]>
+	</delete>-->
+	<select id="getX_VendorLst" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			SELECT xtbm id,xtxx label FROM xtbm where xtbm like 'ZY08__' ORDER BY XTXX  
+		]]>
+	</select>
+	<select id="getX_VendorNameById" parameterClass="string"
+		resultClass="string">
+		select xtxx from xtbm where xtbm=#x_vendor#
+	</select>
+	<!-- 获取系统列表 -->
+	<select id="getSysNameLst" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select systemcode id,sysname label from transsystem
+		]]>
+	</select>
+	<!-- 根据ID查找系统名称 -->
+	<select id="getSysNameById" parameterClass="string" resultClass="string">
+		select sysname from transsystem t where t.systemcode=#system_name#
+	</select>
+	<!-- 获取设备型号列表 -->
+	<select id="getEquipmentX_Model" parameterClass="map"
+		resultClass="netres.model.ComboxDataModel">
+		SELECT xtbm id,xtxx label FROM xtbm t where t.description='设备型号'
+		<isNotEmpty prepend="and" property="vendor">
+			substr(t.xtbm,7,length(t.xtbm))=#vendor#
+		</isNotEmpty>
+	</select>
+	<!-- 获取设备类型列表 -->
+	<!-- <select id="getX_equiptypeLst" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select xtbm id,xtxx label FROM xtbm  t  where t.type='SDH_TYPE'
+		]]>
+	</select> -->
+
+	<!-- 获取设备类型BY ID -->
+	<select id="getEquiptypeById" parameterClass="string"
+		resultClass="string">
+		select xtxx from xtbm where xtbm=#equiptype# and
+		type='SDH_TYPE'
+	</select>
+
+	<!-- 端口 start order by yangzhong -->
+
+	<!--获取端口类型 oder by yangzhong -->
+	<select id="getPort_Type" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select t.xtbm as id,t.xtxx as label from xtbm t where xtbm like 'ZY030704__' 
+		]]>
+	</select>
+	<!--获取端口传输率 oder by yangzhong -->
+	<select id="getPort_Rate" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select t.xtbm as id,t.xtxx as label from xtbm t where xtbm like 'ZY0701__' 
+		]]>
+	</select>
+	<!--获取端口状态 oder by yangzhong -->
+	<select id="getPort_Status" resultClass="netres.model.ComboxDataModel">
+		SELECT XTXX as label,
+		XTBM as id FROM XTBM WHERE XTBM LIKE 'ZY131002__' ORDER BY XTBM
+	</select>
+
+	<!--获取全部端口信息数量 oder by yangzhong -->
+	<select id="getAllLogicPort_Count" resultClass="Integer">
+		<![CDATA[
+			select count(*)
+			from (select rownum no,
+			equipcode,
+			decode(equipname,null,'',equipname) equipname,
+			frameserial,
+			slotserial,
+			packserial,
+			portserial,
+			decode(y_porttype,null,'',y_porttype) y_porttype,
+			decode(x_capability,null,'',x_capability)
+			x_capability,
+			decode(status,null,'',status) status,
+			decode(connport,null,'',connport) connport,		
+			decode(updatedate,null,'',to_char(updatedate,'yyyy-mm-dd')) updatedate,
+			logicport
+			from
+			view_equiplogicport)
+		]]>
+	</select>
+
+	<select id="checkPortUse" parameterClass="string" resultClass="resManager.resNet.model.LogicPort">
+		select * from en_topolink t 
+		where (t.aendptp=#portcode# or t.zendptp=#portcode#)
+	</select>
+
+	<!--获取端口信息数量 oder by yangzhong -->
+	<select id="GetLogicPort_Count" resultClass="Integer"
+		parameterClass="resManager.resNet.model.LogicPort">
+		select count(rownum) from view_equiplogicport
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="equipcode">
+				(equipcode =
+				'$equipcode$')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="frameserial">
+				( frameserial
+				=
+				'$frameserial$')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="slotserial">
+				(slotserial =
+				'$slotserial$')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="packserial">
+				( packserial =
+				'$packserial$')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="portserial">
+				(portSerial like
+				'%$portserial$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="y_porttype">
+				( y_porttype
+				=#y_porttype#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="x_capability">
+				(x_capability=#x_capability#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="status">
+				( status
+				=#status#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="connport">
+				(connport like
+				'%$connport$%')
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="logicport">
+				(logicport like
+				'%$logicport$%')
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<!--查询全部端口信息 oder by yangzhong -->
+	<select id="getAllLogic_Port" resultClass="resManager.resNet.model.LogicPort">
+		<![CDATA[
+			select equipcode,
+			equipname,
+			frameserial,
+			slotserial,
+			packserial,
+			portserial,
+			y_porttype,
+			x_capability,
+			status,
+			connport,
+			updatedate,
+			updateperson,
+			logicport
+			from (select rownum no,
+			equipcode,
+			decode(equipname,null,'',equipname) equipname,
+			frameserial,
+			slotserial,
+			packserial,
+			portserial,
+			decode(y_porttype,null,'',y_porttype) y_porttype,
+			decode(x_capability,null,'',x_capability) x_capability,
+			decode(status,null,'',status) status,
+			decode(connport,null,'',connport) connport,		
+			decode(updatedate,null,'',to_char(updatedate,'yyyy-mm-dd')) updatedate,
+			updateperson,
+			logicport
+			from
+			view_equiplogicport
+			)
+		]]>
+	</select>
+
+	<!--查询端口信息 oder by yangzhong -->
+	<select id="GetLogic_Port" resultClass="resManager.resNet.model.LogicPort"
+		parameterClass="resManager.resNet.model.LogicPort">
+		select * from(
+		select equipcode,
+		equipname,
+		frameserial,
+		slotserial,
+		packserial,
+		portserial,
+		y_porttype,
+		x_capability,
+		status,
+		connport,
+		updatedate,updateperson,
+		logicport,
+		remark,
+		no
+		from
+		(select
+		equipcode,
+		equipname,
+		frameserial,
+		slotserial,updateperson,
+		packserial,
+		portserial,
+		decode(y_porttype,null,'',y_porttype)
+		y_porttype,
+		decode(x_capability,null,'',x_capability)
+		x_capability,
+		decode(status,null,'',status)
+		status,
+		decode(connport,null,'',connport) connport,
+		decode(updatedate,null,'',to_char(updatedate,'yyyy-mm-dd'))
+		updatedate,
+		logicport,
+		remark,
+		row_number()over(order by $sort$
+		$dir$,rownum $dir$) no
+		from
+		view_equiplogicport
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="equipcode">
+				(equipcode =
+				#equipcode#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="frameserial">
+				( frameserial
+				=#frameserial#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="slotserial">
+				(slotserial =
+				#slotserial#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="packserial">
+				( packserial =
+				#packserial#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="portserial">
+				(portserial =
+				#portserial#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="y_porttype">
+				( y_porttype
+				=#y_porttype#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="x_capability">
+				(x_capability=#x_capability#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="status">
+				( status
+				=#status#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="connport">
+				(connport like
+				'%$connport$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date(#updatedate_start#,'YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date(#updatedate_end#,'YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="logicport">
+				(logicport like
+				'%$logicport$%')
+			</isNotEmpty>
+		</dynamic>
+
+		) where no &lt;=$end$ )where no > $start$
+	</select>
+	<!-- 导出端口信息 -->
+	<select id="getLogicPortFor_Export" resultClass="resManager.resNet.model.LogicPort"
+		parameterClass="resManager.resNet.model.LogicPort">
+		select equipname,frameserial,slotserial,packserial,portserial,
+		y_porttype,x_capability,updatedate,no
+		from (select
+		equipname,
+		frameserial,
+		slotserial,
+		packserial,
+		portserial,
+		decode(y_porttype,
+		null,
+		'',
+		y_porttype) y_porttype,
+		decode(x_capability,
+		null,
+		'',
+		x_capability)
+		x_capability,
+		decode(updatedate,
+		null,
+		'',
+		to_char(updatedate,
+		'yyyy-mm-dd')) updatedate,
+		row_number() over(order by equipcode asc,
+		rownum asc) no
+		from view_equiplogicport
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="equipcode">
+				(equipcode =
+				#equipcode#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="frameserial">
+				( frameserial
+				=#frameserial$#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="slotserial">
+				(slotserial =
+				#slotserial$#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="packserial">
+				( packserial =
+				#packserial#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="portserial">
+				(portserial like
+				'%$portserial$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="y_porttype">
+				( y_porttype
+				=#y_porttype#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="x_capability">
+				(x_capability=#x_capability#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="status">
+				( status
+				=#status#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="connport">
+				(connport like
+				'%$connport$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date(#updatedate_start#,'YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date(#updatedate_end#,'YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="logicport">
+				(logicport like
+				'%$logicport$%')
+			</isNotEmpty>
+		</dynamic>
+		)
+		where no &lt;=$end$ and no > $start$
+	</select>
+
+	<!-- 添加端口信息 order by yangzhong -->
+	<insert id="addLogic_Port" parameterClass="resManager.resNet.model.LogicPort">  		
+		<![CDATA[ 
+		insert into EquipLogicPort(equipcode,frameserial,slotserial,packserial,portserial, isbind,y_porttype,x_capability,status,connport,updatedate,updateperson,remark,sync_status,logicport)
+			 values('$equipcode$',
+			        '$frameserial$',
+			        '$slotserial$',
+			        '$packserial$',
+			        '$portserial$',
+			        '否',
+			        getxtbm('$y_porttype$','ZY030704'),
+			        getxtbm('$x_capability$','ZY0701'),
+			        getxtbm('$status$','ZY131002'),
+			        '$connport$',			        
+			        to_date('$updatedate$','YYYY-MM-DD'),
+			        '$updateperson$',
+			        '$remark$',
+			        'ZT00',
+			        lpad(en_logicport_seq.nextval,20,0))
+				
+    	]]>
+	</insert>
+	<!-- 删除端口信息 order by yangzhong -->
+	<delete id="deleteLogic_Port" parameterClass="resManager.resNet.model.LogicPort">    		
+		<![CDATA[ 	
+			delete from EquipLogicPort where equipcode='$equipcode$'
+										 and frameserial='$frameserial$'
+										 and slotserial='$slotserial$'
+										 and packserial='$packserial$'
+										 and portserial='$portserial$'
+										 and logicport='$logicport$'		
+						
+		]]>
+	</delete>
+	<!-- 修改端口信息 order by yangzhong -->
+	<update id="ModifyLogic_Port" parameterClass="resManager.resNet.model.LogicPort">
+		update
+		EquipLogicPort set
+		equipcode='$equipcode$',
+		frameserial='$frameserial$',
+		slotserial='$slotserial$',
+		packserial='$packserial$',
+		portserial='$portserial$',
+		y_porttype='$y_porttype$',
+		x_capability='$x_capability$',
+		status='$status$',
+		connport='$connport$',
+		updatedate=to_date('$updatedate$','YYYY-MM-DD'),
+		updateperson='$updateperson$',
+		remark='$remark$'
+		where
+		logicport='$logicport$'
+	</update>
+
+	<select id="checkPortSerial" parameterClass="map" resultClass="resManager.resNet.model.LogicPort">
+		select * from EquipLogicPort where equipcode='$equipcode$'
+		and frameserial='$frameserial$'
+		and slotserial='$slotserial$'
+		and packserial='$packserial$'
+		and portserial='$portserial$'
+		
+	</select>
+
+	<!-- 修改端口状态 -->
+	<update id="updatePortStatus" parameterClass="Map">
+		update
+		EquipLogicPort set status='$status$' where logicport='$logicport$'
+	</update>
+
+	<!-- 端口 end order by yangzhong -->
+
+	<!-- 复用段 start by yangzhong -->
+	<!-- 获取全部复用段数量 oder by yangzhong -->
+	<select id="getAllTopoLinkCount" resultClass="Integer">
+		select
+		count(rownum) from view_topolink
+	</select>
+
+	<!--获取复用段数量 oder by yangzhong -->
+	<select id="getTopoLinkCount" resultClass="int"
+		parameterClass="resManager.resNet.model.TopoLink">
+		select count(rownum) from view_topolink
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="systemcode">
+				(systemcode like
+				'%$systemcode$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="equipcode_a">
+				(equipcode_a like
+				'%$equipcode_a$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="equipcode_z">
+				(equipcode_z like
+				'%$equipcode_z$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="equipname_z">
+				(equipname_z like
+				'%$equipname_z$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="equipname_a">
+				(equipname_a like
+				'%$equipname_a$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="linerate">
+				( linerate =
+				#linerate#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="linelength">
+				 linelength like '%$linelength$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="aendptp">
+				( aendptp like
+				'%$aendptp$%')
+			</isNotEmpty>
+<!--			<isNotEmpty property="mark">-->
+<!--				$mark$-->
+<!--			</isNotEmpty>-->
+			<isNotEmpty prepend="AND" property="zendptp">
+				(zendptp
+				like'%$zendptp$%')
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<!--查询复用段信息 oder by yangzhong -->
+	<select id="getAllTopoLink" resultClass="resManager.resNet.model.TopoLink">
+		select systemcode,
+		aendptpcode,
+		aendptp,
+		zendptpcode,
+		zendptp,
+		linerate,
+		lineratebm as
+		lineratecode,
+		linelength,
+		remark,
+		updatedate,
+		updateperson,
+		label
+		from
+		(select rownum no,
+		decode(systemcode,null,'',systemcode) systemcode,
+		aendptp, aendptpcode ,
+		zendptp , zendptpcode,
+		decode(linerate,null,'',linerate) linerate,lineratebm,
+		decode(linelength,null,'',linelength)
+		linelength,
+		decode(remark,null,'',remark) remark,
+		decode(to_char(updatedate,
+		'yyyy-mm-dd'),null,'',to_char(updatedate,'yyyy-mm-dd')) updatedate,
+		decode(updateperson,null,'',updateperson)
+		updateperson,
+		label
+		from
+		view_topolink)
+	</select>
+
+	<!--查询复用段信息 oder by yangzhong -->
+	<select id="getTopoLink" resultClass="resManager.resNet.model.TopoLink"
+		parameterClass="resManager.resNet.model.TopoLink">
+		select * from(
+		select systemcode, rownum no,
+		aendptpcode,
+		aendptp,
+		zendptpcode,
+		zendptp,
+		linerate,
+		lineratebm as lineratecode,
+		linelength,
+		remark,
+		updatedate,
+		updateperson,
+		equipname_a,
+		equipname_z,
+		equipcode_a,
+		equipcode_z,
+		decode(a_systemcode,'SDH','广州供电局华为A网',a_systemcode) a_systemcode,
+        decode(z_systemcode,'SDH','广州供电局华为A网',z_systemcode) z_systemcode,
+		label
+		from
+		(select
+		decode(systemcode,null,'',systemcode)
+		systemcode,
+		aendptp, aendptpcode ,
+		zendptp , zendptpcode,
+		decode(linerate,null,'',linerate)
+		linerate,lineratebm,
+		decode(linelength,null,'',linelength) linelength,
+		decode(remark,null,'',remark) remark,
+		decode(to_char(updatedate,'yyyy-mm-dd'),null,'',to_char(updatedate,'yyyy-mm-dd'))
+		updatedate,
+		decode(updateperson,null,'',updateperson)
+		updateperson,
+		equipname_a,
+		equipname_z,
+		equipcode_a,
+		equipcode_z,
+		system_a a_systemcode,
+        system_z z_systemcode,
+		label
+		from
+		view_topolink
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="systemcode">
+				(systemcode like
+				'%$systemcode$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="equipcode_a">
+				(equipcode_a like
+				'%$equipcode_a$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="equipcode_z">
+				(equipcode_z like
+				'%$equipcode_z$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="equipname_z">
+				(equipname_z like
+				'%$equipname_z$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="equipname_a">
+				(equipname_a like
+				'%$equipname_a$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="linerate">
+				( linerate =
+				#linerate#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="linelength">
+				linelength like 
+				'%$linelength$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="aendptp">
+				( aendptp like
+				'%$aendptp$%')
+			</isNotEmpty>
+<!--			<isNotEmpty property="mark">-->
+<!--				$mark$-->
+<!--			</isNotEmpty>-->
+			<isNotEmpty prepend="AND" property="zendptp">
+				(zendptp
+				like'%$zendptp$%')
+			</isNotEmpty>
+		</dynamic>
+		order by $sort$ $dir$
+		)) where no > #start# and no &lt;=#end#
+	</select>
+
+	<!--添加复用段信息 oder by yangzhong -->
+	<insert id="addTopoLink" parameterClass="resManager.resNet.model.TopoLink">  		
+		<![CDATA[ 
+			insert into EN_TopoLink(resid,a_systemcode,z_systemcode,aendptp,zendptp,linerate,remark,updatedate,updateperson,label,linelength,equip_a,equip_z,station_a,station_z)
+			 values((select max(t.resid)+1 from EN_TopoLink t),'$a_systemcode$','$z_systemcode$',
+			 		'$aendptpcode$',
+					'$zendptpcode$',
+			        '$Lineratecode$',
+			        '$remark$',
+			        to_date('$updatedate$','YYYY-MM-DD'),
+			        '$updateperson$',
+			        '$aendptpcode$'||'##'||'$zendptpcode$',
+			        '$linelength$',
+			        (select p.equipcode from equiplogicport p where p.logicport = '$aendptpcode$' ),
+			        (select p.equipcode from equiplogicport p where p.logicport = '$zendptpcode$' ),
+			        getStationcodeByEquipCode1(getequipcodebyportid('$aendptpcode$')),
+			        getStationcodeByEquipCode1(getequipcodebyportid('$zendptpcode$'))		        
+			        )
+            
+    	]]>
+	</insert>
+
+	<!--删除复用段信息 oder by yangzhong -->
+	<delete id="deleteTopoLink" parameterClass="String">    		
+		<![CDATA[ 	
+		delete from EN_TopoLink where label='$label$'			
+		]]>
+	</delete>
+
+	<!--修改复用段信息 oder by yangzhong -->
+	<update id="ModifyTopoLink" parameterClass="resManager.resNet.model.TopoLink">
+    	<![CDATA[ 
+    	update EN_TopoLink 
+    	set systemcode='$systemcode$',
+    	linerate='$Lineratecode$',
+    		remark= '$remark$',
+    		updatedate=to_date('$updatedate$','YYYY-MM-DD'),
+    		linelength=#linelength#
+      		where label='$label$'
+    	]]>
+	</update>
+
+	<!--获取传输系统 oder by yangzhong -->
+	<select id="getTranssystem" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select distinct systemcode as id,sysname as label from transsystem  where sys_group='未删除'  
+      and systemcode!='广东省网'  order by sysname asc
+		]]>
+	</select>
+
+	<!--获取复用段速率 oder by yangzhong -->
+	<select id="getLineRate" resultClass="netres.model.ComboxDataModel"
+		parameterClass="String">
+		<![CDATA[
+			select xtbm as id,xtxx as label from xtbm where xtbm like 'ZY1106__'
+		]]>
+	</select>
+
+	<!-- 复用段添加中选择设备 -->
+	<select id="getEquipBytopolinksearch" resultClass="netres.model.ComboxDataModel"
+		parameterClass="java.util.Map">
+		select distinct e.equipcode as id,e.s_sbmc as label from
+		re_sys_equip r,equipment e 
+		where r.equipcode(+) = e.equipcode and e.equiptype='SDH设备'
+		<isNotEmpty prepend="AND" property="systemcode">
+			r.systemcode='$systemcode$' and r.equipcode=e.equipcode
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="topolinkeqsearch">
+			e.s_sbmc like
+			'%$topolinkeqsearch$%'
+		</isNotEmpty>
+		order by e.s_sbmc
+	</select>
+
+	<!-- 获取机盘 -->
+	<select id="getPackseriaByEuipSlot" resultClass="java.util.HashMap"
+		parameterClass="Map">
+		select * from equippack where equipcode=#equipcode# and
+		frameserial=#frameserial# and slotserial=#slotserial#
+		order by
+		length(packserial),packserial
+	</select>
+
+
+	<!-- 复用段 end by yangzhong -->
+
+	<!-- 获取交叉连接数量 -->
+	<select id="getCCCount" parameterClass="resManager.resNet.model.CCModel"
+		resultClass="Integer">
+		select count(distinct c.id) from cc c, equipment t,equiplogicport p1,equiplogicport p2 where
+		t.equipcode(+) = c.pid and c.aptp=p1.logicport(+) and c.zptp=p2.logicport(+)
+		<isNotEmpty prepend="and" property="pid">
+			t.s_sbmc like
+			'%$pid$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="rate">
+			c.rate like '%$rate$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="aslot">
+			c.aslot like '%$aslot$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="zslot">
+			c.zslot like '%$zslot$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updateperson">
+			c.updateperson like
+			'%$updateperson$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="updatedate_start">
+			( c.updatedate >=
+			to_date('$updatedate_start$','YYYY-mm-dd'))
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="updatedate_end">
+			( c.updatedate
+			&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+		</isNotEmpty>
+		<isEqual  property="otherType" compareValue="unused">
+			and  c.id not in    (select ccid from circuit_cc)  
+		</isEqual>
+	</select>
+	<!-- 获取交叉连接列表 -->
+	<select id="getCCList" parameterClass="resManager.resNet.model.CCModel"
+		resultClass="resManager.resNet.model.CCModel">
+		select * from (select row_number() over(order by $sort$
+		$dir$) no,tc.*
+		from (
+		select 
+		distinct	c.id,
+		<!--  t.name_std pid,-->
+		t.system_name||'/'||t.s_sbmc pid,
+		c.rate,
+		decode(c.direction, 'BI', '双向连接',
+		c.direction)
+		direction,
+		p1.slotserial || '槽-' || p1.portserial || '端口' aptp,
+		c.aslot,
+		p2.slotserial || '槽-' || p2.portserial || '端口' zptp,
+		c.zslot,
+		c.type,
+		c.updateperson,
+		decode(c.isdefault, '0', '手动配置', '1', '自动配置',
+		c.isdefault) isdefault,
+		to_char(c.updatedate, 'YYYY-mm-dd
+		hh:mi:ss') updatedate
+		from cc c ,equipment t ,equiplogicport p1,equiplogicport p2 
+		where c.pid = t.equipcode(+) and c.aptp=p1.logicport(+) and c.zptp=p2.logicport(+)
+		<isNotEmpty prepend="and" property="pid"> t.s_sbmc like
+			'%$pid$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="rate"> c.rate like '%$rate$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="aslot"> c.aslot like '%$aslot$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="zslot"> c.zslot like '%$zslot$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updateperson"> c.updateperson
+			like
+			'%$updateperson$%' </isNotEmpty>
+		<isNotEmpty prepend="AND" property="updatedate_start">
+			( c.updatedate >=
+			to_date('$updatedate_start$','YYYY-mm-dd'))
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="updatedate_end"> ( c.updatedate
+			&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+		</isNotEmpty>
+		<isEqual  property="otherType" compareValue="unused">
+			and  c.id not in    (select ccid from circuit_cc)  
+		</isEqual>
+		) tc
+	)
+		where no > $start$ and no &lt;= $end$
+	</select>
+	<delete id="delCCByid" parameterClass="String">
+		delete cc where id = #id#
+	</delete>
+	<select id="getTopolinkByEquipsearch" resultClass="netres.model.ComboxDataModel"
+		parameterClass="java.util.Map">
+		<isEqual property="flag" compareValue="aptp">
+			select aendptp as label,aendptpcode as id from    view_topolink  v where   v.equipcode_a=#equipcode#  
+			<isNotEmpty prepend="AND" property="toposearch">
+				aendptp  like '%$toposearch$%' 
+			</isNotEmpty>
+			order by aendptp
+		</isEqual>
+		<isEqual property="flag" compareValue="zptp">
+			select zendptp as label,zendptpcode as id from    view_topolink  v where   v.equipcode_z=#equipcode#  
+			<isNotEmpty prepend="AND" property="toposearch">
+				zendptp  like '%$toposearch$%' 
+			</isNotEmpty>
+			order by zendptp
+		</isEqual>
+		
+	</select>
+	
+	<select id="getToplinkByID" parameterClass="string" resultClass="resManager.resNet.model.TopoLink">
+		select t.label, t.aendptp aendptpcode,t.zendptp zendptpcode from en_topolink t where t.label=#linkid#
+	</select>
+	
+	<select id="getSystemcodesByEquipcode" parameterClass="string" resultClass="string">
+		select t.system_name from equipment t where t.equipcode=#equipcode#
+	</select>
+	
+</sqlMap>

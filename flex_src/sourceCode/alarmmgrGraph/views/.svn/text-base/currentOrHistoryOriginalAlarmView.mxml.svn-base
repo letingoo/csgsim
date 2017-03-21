@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex" 
+		 xmlns:demo="demo.common.*"
+		 xmlns:component="common.component.*"  creationComplete="init()" xmlns:actionscript="sourceCode.systemManagement.actionscript.*">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import mx.core.Application;
+			import mx.charts.events.ChartItemEvent;
+			import mx.charts.series.items.PieSeriesItem;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.IUIComponent;
+			import mx.effects.easing.*;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.object_proxy;
+			
+			import sourceCode.alarmmgrGraph.comp.alarmExportFirstStep;
+			import sourceCode.alarmmgrGraph.model.AlarmModel;
+			import sourceCode.alarmmgrGraph.model.AlarmResultModel;
+			
+			import twaver.Element;
+			public var toalarmNow:AlarmResultModel;
+			[Embed(source="assets/images/sysManager/hide.png")]          //这是图片的相对地址 
+			[Bindable] 
+			public var PointIcon:Class; 
+			[Embed(source="assets/images/sysManager/show.png")]
+			[Bindable] 
+			public var PointRight:Class; 
+			[Embed(source="assets/images/sysManager/hide.png")] 
+			[Bindable]
+			public var PointLeft:Class;
+			
+			[Bindable]
+			public var DataList:ArrayCollection = new ArrayCollection;
+			[Bindable]
+			public var performers:ArrayCollection = new ArrayCollection;
+			
+			[Bindable] public var titleName:String;
+			
+			[Bindable]
+			private var DataCount:int;
+				
+		
+			public var alarmModel:AlarmModel = new AlarmModel();
+			
+			private function init():void{
+				if(titleName=="查看当前原始告警"){
+					this.alarmModel.iscleared="0";
+				}
+				if(titleName=="查看历史原始告警"){
+					this.alarmModel.iscleared="1";
+				}
+				getAlarmNowInfos(this.alarmModel);
+				this.getAlarmChartInfos();
+				serverPagingBar1.dataGrid=alarmDataGrid;
+				serverPagingBar1.pagingFunction=pagingFunction;
+//				rootalarm.dataProvider=selectedCollection;
+			}	
+			
+			public function getAlarmNowInfos(alarmModel:AlarmModel):void{
+				var remote:RemoteObject = new RemoteObject("AlarmMgrDAO");
+				remote.endpoint = ModelLocator.END_POINT;
+				remote.getAlarmByConditions(alarmModel);
+				serverPagingBar1.dataGrid =alarmDataGrid;
+				//parentApplication.faultEventHandler(remote);//调用main.mxml页面错误信息提示
+				remote.addEventListener(ResultEvent.RESULT,getAlarmInfoHandler);
+			}
+			
+			public function getAlarmInfoHandler(event:ResultEvent):void{
+				var result:AlarmResultModel = event.result as AlarmResultModel;
+				this.onResult(result);
+			}
+			
+			public function pagingFunction(pageIndex:int,pageSize:int):void
+			{
+				alarmModel.start=(pageIndex*pageSize).toString();
+				alarmModel.end =(pageIndex*pageSize+pageSize).toString();
+				var data:RemoteObject = new RemoteObject("AlarmMgrDAO"); 
+				data.endpoint = ModelLocator.END_POINT;
+				data.showBusyCursor = true;
+				data.getAlarmByConditions(alarmModel);
+				//parentApplication.faultEventHandler(data);//调用main.mxml页面错误信息提示
+				data.addEventListener(ResultEvent.RESULT,dataHandler);
+			}
+			
+			public function dataHandler(event:ResultEvent):void{
+				var result:AlarmResultModel = event.result as AlarmResultModel;
+				this.onResult(result);
+			}
+			
+			public function onResult(result:AlarmResultModel):void 
+			{	
+				DataCount = result.totalCount;
+				serverPagingBar1.orgData=result.alarmList;
+				serverPagingBar1.totalRecord=result.totalCount;
+				serverPagingBar1.dataBind(true);	
+			}
+			//=====
+			
+			public function changeState():void{
+				if(queryVbox.visible){
+					queryVbox.visible=!queryVbox.visible;
+					queryCavas.width=30;
+					PointIcon=PointRight;
+				}else{
+					queryVbox.visible=!queryVbox.visible;
+					queryCavas.width=320;
+					PointIcon=PointLeft;
+				}
+			}
+			
+			private function faultCallBack(event:FaultEvent):void{
+				Alert.show(event.message.toString(),"错误");
+			}
+
+			public function getAlarmChartInfos():void{
+				var toXml:RemoteObject = new RemoteObject("AlarmMgrDAO");
+				toXml.endpoint = ModelLocator.END_POINT;
+				toXml.alarmChartData(this.alarmModel);
+				//parentApplication.faultEventHandler(toXml);//调用main.mxml页面错误信息提示
+				toXml.addEventListener(ResultEvent.RESULT,setPieChart);
+			}
+			public function setPieChart(event:ResultEvent):void{
+				performers.removeAll();
+				if(event.result){
+					DataList = event.result.obj as ArrayCollection;
+					for each(var a:Object in DataList){  
+						performers.addItem({Country:a.alarmtype,Gold:a.alarmCount});
+					}
+					if(performers.length==0){
+						nodata.text="			当前没有数据！";
+					}else{
+						nodata.text=null;
+					}
+				}
+			}
+			private function displayGold(data:Object, field:String, index:Number, percentValue:Number):String {
+				return data.Country +":"+ data.Gold;
+			}
+			
+			private function searchAlarm():void{
+				var searchOriginalAlarm:originalAlarmSearch = new originalAlarmSearch();
+				if(titleName=="查看当前原始告警"){
+					searchOriginalAlarm.title = "查询当前原始告警";
+				}
+				if(titleName=="查看历史原始告警"){
+					searchOriginalAlarm.title = "查询历史原始告警";
+				}
+				searchOriginalAlarm.parentpage = this;
+				PopUpManager.addPopUp(searchOriginalAlarm, this.parent, true);  
+				PopUpManager.centerPopUp(searchOriginalAlarm);
+			}
+			
+			public function searchRefresh(model:AlarmModel):void{
+				if(titleName=="查看当前原始告警"){
+					model.iscleared="0";
+				}
+				if(titleName=="查看历史原始告警"){
+					model.iscleared="1";
+				}
+				getAlarmNowInfos(model);
+				
+				var toXml:RemoteObject = new RemoteObject("AlarmMgrDAO");
+				toXml.endpoint = ModelLocator.END_POINT;
+				toXml.alarmChartData(model);
+				//parentApplication.faultEventHandler(toXml);//调用main.mxml页面错误信息提示
+				toXml.addEventListener(ResultEvent.RESULT,setPieChart);
+			}
+			
+			private function export_excel():void{
+				//				con_UserMgr.UserExportEXCEL(labels,titles,getselectedUserModel());
+				var fefs:alarmExportFirstStep = new alarmExportFirstStep();
+				fefs.dataNumber = this.DataCount;
+				fefs.alarmObject = this;
+				MyPopupManager.addPopUp(fefs, true);
+			}
+			
+			public function exportExcelBySubPage():void{
+				var titleArray:Array = new Array("告警级别", "发生时间", "所属局站", "告警名称","告警对象", "承载业务","所属厂家","所属系统","所属区域","频闪次数","确认时间","确认人","告警原因","故障单号","确认信息","处理方式","是否过滤","运维单位","当值值班员");
+				var labels:String = "";
+				var type:String = "原始告警";
+				var expertAlarm:AlarmModel = this.alarmModel;
+				expertAlarm.start="0";
+				expertAlarm.end=DataCount.toString();
+				if(expertAlarm.iscleared=="0"){
+					labels="当前原始告警列表";
+				}else if(expertAlarm.iscleared=="1"){
+					labels="历史原始告警列表";
+				}
+				var expot_obj:RemoteObject = new RemoteObject("AlarmMgrDAO");
+				expot_obj.showBusyCursor = true;
+				expot_obj.endpoint = ModelLocator.END_POINT;
+				expot_obj.addEventListener(ResultEvent.RESULT,expot_obj_result);
+				//parentApplication.faultEventHandler(expot_obj);//调用main.mxml页面错误信息提示
+				expot_obj.alarmExportExcel(type,labels,titleArray,expertAlarm);
+				//Alert.show("导出表格");
+				
+			}
+			
+			protected function expot_obj_result(event:ResultEvent):void
+			{
+				// TODO Auto-generated method stub
+				var url:String = Application.application.stage.loaderInfo.url;
+				url=url.substring(0,url.lastIndexOf("/"))+"/";
+				var path:String =url + event.result.toString();
+				//				Alert.show(path);
+				var request:URLRequest = new URLRequest(encodeURI(path)); 
+				navigateToURL(request,"_blank");
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%" height="100%" >
+		<mx:VBox height="100%" width="100%" backgroundColor="#effcfe" >
+			<!--<mx:HBox id="originalId">
+				<mx:LinkButton id="editButton" label="查询"
+							   icon="@Embed('assets/images/sysManager/user_edit.png')"
+							   click="searchAlarm()" 
+							   styleName="linkButton"/>
+			</mx:HBox>-->
+			<component:ControlBar id="controlBar" height="38" showAddShurtCutButton="false" showDelShurtCutButton="false" 
+								  showCornerImage="false" showSearchButton="true" controlSearch="searchAlarm()"/>
+			<mx:DataGrid id="alarmDataGrid" width="100%" height="100%" horizontalScrollPolicy="auto">
+				<mx:columns>
+					<mx:DataGridColumn id="alarmlevelname" headerText="告警级别" dataField="alarmlevelname" width="80" itemRenderer="sourceCode.alarmmgrGraph.actionscript.AlarmColorRenderer"/>
+					<mx:DataGridColumn id="starttime" headerText="发生时间" dataField="starttime" width="120"/>
+					<mx:DataGridColumn id="stationname" headerText="所属局站" dataField="stationname" width="120"/>
+					<mx:DataGridColumn id="alarmdesc" headerText="告警名称" dataField="alarmdesc" width="120"/>
+					<mx:DataGridColumn id="alarmobjdesc" headerText="告警对象" dataField="alarmobjdesc" width="120"/>
+					<mx:DataGridColumn id="carrycircuit" headerText="承载业务" dataField="carrycircuit" width="120"/>
+					<mx:DataGridColumn id="vendor" headerText="所属厂家" dataField="vendor" width="120"/>
+					<mx:DataGridColumn id="belongtran_sys" headerText="所属系统" dataField="belongtran_sys" width="120"/>
+					<mx:DataGridColumn id="area" headerText="所属区域" dataField="area" width="120"/>
+					<mx:DataGridColumn id="flashcount" headerText="频闪次数" dataField="flashcount" width="50"/>
+					<mx:DataGridColumn id="acktime" headerText="确认时间" dataField="acktime" width="120"/>
+					<mx:DataGridColumn id="ackperson" headerText="确认人" dataField="ackperson" width="120"/>
+					<mx:DataGridColumn id="isworkcase" headerText="告警原因" dataField="isworkcase" width="120"/>
+					<mx:DataGridColumn id="isbugno" headerText="故障单号" dataField="isbugno" width="80"/>
+					<mx:DataGridColumn id="ackcontent" headerText="确认信息" dataField="ackcontent" width="120"/>
+					<mx:DataGridColumn id="dealresult" headerText="处理方式" dataField="dealresult" width="120"/>
+					<mx:DataGridColumn id="isfilter" headerText="是否过滤" dataField="isfilter" width="80"/>
+					<mx:DataGridColumn id="run_unit" headerText="运维单位" dataField="run_unit" width="120"/>
+					<mx:DataGridColumn id="dealperson" headerText="当值值班员" dataField="dealperson" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox width="100%" height="5%" verticalAlign="middle" backgroundColor="#CCDDEE">
+				<mx:Spacer width="20%" height="10%"/>
+				<component:pagetoolbar id="serverPagingBar1" width="50%" height="10%" />
+				<mx:LinkButton id="btnExport" label="导出excel" 
+							   icon="@Embed(source='assets/images/icons/icon_export.png')" 
+							   styleName="linkButton"
+							   click="export_excel()"/>
+			</mx:HBox>
+		</mx:VBox>
+		<!--</mx:Panel>-->
+		<mx:Canvas id="queryCavas" height="100%" width="320" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:VBox id="queryVbox" width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off" visible="true" >
+				<mx:Panel styleName="secondaryPanel" width="100%" height="100%" title="告警统计" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+					<!--<twaver:Network id="network" width="100%" height="100%"/>-->
+					<mx:PieChart id="chart" height="261" width="100%" paddingRight="5" paddingLeft="5" color="0x323232"
+								 showDataTips="true" dataProvider="{performers}" >
+						
+						<mx:series>
+							<mx:PieSeries labelPosition="callout" nameField="Country" field="Gold" labelFunction="displayGold" >
+								<mx:calloutStroke>
+									<mx:Stroke weight="1" color="0x888888" alpha="0.5"/>
+								</mx:calloutStroke>
+								<mx:radialStroke>
+									<mx:Stroke weight="2" color="#FFFFFF" alpha="0.20"/>
+								</mx:radialStroke>
+								<mx:stroke>
+									<mx:Stroke color="#FFFFFF" alpha="0.20" weight="1"/>
+								</mx:stroke>
+								<mx:fills>
+									<mx:SolidColor color="0xFF0000"/><!--红色-->
+									<mx:SolidColor color="0xFFBF00"/><!--橙色 -->
+									<mx:SolidColor color="0xFFFF00"/><!--黄色 -->
+									<mx:SolidColor color="0x00FFFF"/><!--蓝色-->
+									<mx:SolidColor color="0xC800FF"/><!--紫色-->
+								</mx:fills>
+								<!--<mx:filters>
+								<mx:Array />
+								</mx:filters>-->
+							</mx:PieSeries>
+						</mx:series>
+					</mx:PieChart>
+					<mx:Label id="nodata" width="250" height="45"/>
+					<!--</mx:VBox>-->
+				</mx:Panel>
+			</mx:VBox>
+			<mx:Button id="change" icon="{PointIcon}" click="changeState()" width="16" height="15" top="5" right="12" />
+			
+		</mx:Canvas>
+	</mx:HBox>
+</mx:VBox>

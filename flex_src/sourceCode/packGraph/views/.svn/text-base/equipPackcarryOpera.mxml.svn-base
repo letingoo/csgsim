@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="792" height="324"  
+				title="端口业务"
+				showCloseButton="true"	
+				close="{MyPopupManager.removePopUp(this)}" 
+				fontFamily="宋体" 
+				fontSize="12">
+	<mx:Script>  
+		<![CDATA[  	
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import twaver.*;
+			private var indexRenderer = SequenceItemRenderer;	 
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+
+		]]>  
+	</mx:Script>	
+	<mx:DataGrid id = "carryOperaList" x="19" y="10"  width="756" height="270">
+		<mx:columns>
+			<mx:DataGridColumn headerText="序号" width="40" itemRenderer="{new ClassFactory(indexRenderer)}" />
+			<mx:DataGridColumn headerText="电路号" dataField="@circuitcode"  visible="true" width="180"/>
+			<mx:DataGridColumn headerText="速率" dataField="@rate" width="50"/>
+			<mx:DataGridColumn headerText="A端端口" dataField="@portserialno1" width="100"/>			
+			<mx:DataGridColumn headerText="A端时隙" width="80" dataField="@slot1"/>
+			<mx:DataGridColumn headerText="Z端端口" dataField="@portserialno2" width="100"/>
+			<mx:DataGridColumn headerText="Z端时隙" width="80" dataField="@slot2"/>
+		</mx:columns>
+	</mx:DataGrid>
+</mx:TitleWindow>

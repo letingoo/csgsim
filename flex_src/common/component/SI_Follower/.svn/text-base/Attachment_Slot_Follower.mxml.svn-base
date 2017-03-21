@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ProgressBar xmlns:mx="http://www.adobe.com/2006/mxml"
+				mode="manual" labelPlacement="center" borderColor="#273243" trackColors="#5E79A2"
+				label="%3%%" color="0xFFFFFF" width="55" height="15">
+	<mx:Script>
+		<![CDATA[
+			public function setValue(usage:String):void{
+				//label=usage;
+				var n:Number=parseFloat(usage.substr(0,usage.length-1));
+				setProgress(n,100);
+			}
+		]]>
+	</mx:Script>
+</mx:ProgressBar>

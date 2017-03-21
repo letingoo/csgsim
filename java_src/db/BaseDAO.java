@@ -1,0 +1,83 @@
+package db;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Properties;
+
+import javax.servlet.http.HttpServletRequest;
+
+import cn.swjtu.multisource.tools.PasswordDecoder;
+
+import flex.messaging.FlexContext;
+
+// 数据库连接配置都直接从spring-jdbc.properties文件读取
+@SuppressWarnings("deprecation")
+public class BaseDAO {
+	public static String dbUrl;
+	
+	
+	public Connection getConnection(){
+		Connection c = null;
+		HttpServletRequest request = FlexContext.getHttpRequest();
+		try {
+			String path = request.getRealPath("")+"/WEB-INF/spring-jdbc.properties";
+			InputStream is = new BufferedInputStream(new FileInputStream(path));
+            Properties p = new Properties();
+        	p.load(is);
+        	String driver = p.get("jdbc.driver").toString();
+        	String url = p.get("jdbc.url").toString();
+        	String username = p.get("jdbc.username").toString();
+        	String password = p.get("jdbc.password").toString();
+        	PasswordDecoder des = new PasswordDecoder();
+//        	username = des.decrypt(des.decrypt(des.encode(username)));    lian
+//        	password = des.decrypt(des.decrypt(des.encode(password)));
+			Class.forName(driver);
+			c = DriverManager.getConnection(url, username, password);
+			return c;
+		} catch (Exception e) {
+			e.printStackTrace();
+			if(c!=null) try {c.close();} catch (SQLException e1) {}
+		}
+		return null;
+	}
+	/**
+	 * 获得日志文件地址
+	 *@2013-3-4
+	 *@author jtsun
+	 * @return
+	 */
+	public String getLog(){
+		HttpServletRequest request = FlexContext.getHttpRequest();
+		try {
+//			String path = request.getRealPath("")+"/WEB-INF/spring-jdbc.properties";
+			String path = "";
+			System.out.println("=================="+path+"===============");
+			InputStream is = new BufferedInputStream(new FileInputStream(path));
+            Properties p = new Properties();
+        	p.load(is);
+        	String logString= p.get("LogLocation").toString();
+			return logString;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public void closeConnection(Connection c,Statement s,ResultSet r){
+		try {
+			if(r!=null) r.close();
+		} catch (Exception e) {}
+		try {
+			if(s!=null) s.close();
+		} catch (Exception e) {}
+		try {
+			if(c!=null) c.close();
+		} catch (Exception e) {}
+	}
+}

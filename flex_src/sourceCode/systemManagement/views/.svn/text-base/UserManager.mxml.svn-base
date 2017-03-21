@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+		 xmlns:comp="sourceCode.systemManagement.views.comp.*" creationComplete="init()" 
+		 preinitialize="preinitialize()" xmlns:component="common.component.*">
+	<mx:RemoteObject id="con_UserMgr" destination="userManager" 
+					 showBusyCursor="true"
+					 result="con_UserMgr_resultHandler(event)"
+					 endpoint="{ModelLocator.END_POINT}"/>
+	<mx:Style source="assets/css/userStyle.css"/>
+	<mx:Script source="../actionscript/UserManager.as"/>
+		<mx:VBox width="100%" height="100%">
+		    <mx:HBox width="100%" height="100%">
+				<mx:VBox width="100%" height="100%" creationPolicy="all">
+					<component:ControlBar id="controlBar" height="38" width="100%" modelName="用户管理" imgName="user"
+										  showAddButton="{isAdd}" showEditButton="{isEdit}" 
+										  showDelButton="{isDelete}" showExportExcelButton="{isExport}"
+										  controlAdd="add_user()" controlEdit="edit_User()" controlDel="del_User()" controlExportExcel="export_excel()"/>
+					<comp:PaginationDataGrid id="get_userInfos" y="25" x="0"/>
+				</mx:VBox>
+				<mx:Canvas id="queryCavas" height="100%" width="261" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+					<mx:VBox id="queryVbox" width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off" visible="true" >
+						<mx:Panel styleName="secondaryPanel" id="queryPanel" width="260" height="100%" title="查询"
+							  horizontalScrollPolicy="off" verticalScrollPolicy="off">
+							<mx:Canvas id="user_select" width="261" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">	
+								<mx:Label styleName="label" text="用户名:" x="20" y="20" width="78" textAlign="left" height="24" fontWeight="bold"/>
+								<mx:TextInput id="user_id" width="140" x="90" y="20"/>
+								<mx:Label styleName="label" text="真实姓名:" width="78" textAlign="left" x="20" y="49" fontWeight="bold" />
+								<mx:TextInput id="user_name" width="140" x="90" y="49"/>
+								<mx:Label styleName="label" text="性别:" width="78" textAlign="left" fontWeight="bold" x="20" y="78"/>
+								<mx:TextInput id="user_sex" width="140" x="90" y="78"/>
+								<mx:Label styleName="label" text="所属单位:" width="78" textAlign="left" fontWeight="bold" x="20" y="109"/>
+								<mx:TextInput id="user_dept" width="140" x="90" y="107"/>
+								<mx:Label styleName="label" text="职位:" width="78" textAlign="left" fontWeight="bold" x="21" y="136"/>
+								<mx:TextInput id="user_post" width="140" x="90" y="136"/>
+								<mx:Label styleName="label" text="固定电话:" width="78" textAlign="left" fontWeight="bold" x="20" y="166"/>
+								<mx:TextInput id="telephone" width="140" x="90" y="166"/>
+								<mx:Label styleName="label" text="移动电话:" width="78" textAlign="left" fontWeight="bold" x="20" y="195"/>
+								<mx:TextInput id="mobile" width="140" x="90" y="195"/>
+								<mx:Label styleName="label" text="电子邮箱:" width="78" textAlign="left" fontWeight="bold" x="20" y="227"/>
+								<mx:TextInput id="email" width="140" x="90" y="224"/>
+							<mx:Button label="查询" width="56" id="userSelect" x="90" y="259" height="21" click="user_selected()"/>
+							<mx:Button label="重置" width="58" id="allReset" x="161" y="259" click="all_Reset()" height="21"/>
+						</mx:Canvas>
+				</mx:Panel>
+			</mx:VBox>
+			<mx:Button id="change" icon="{PointIcon}" click="changeState()" width="16" height="15" top="8" right="11" />
+			</mx:Canvas>
+		</mx:HBox>
+		</mx:VBox>
+</mx:VBox>

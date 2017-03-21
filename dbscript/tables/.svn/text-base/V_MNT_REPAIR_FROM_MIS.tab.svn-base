@@ -1,0 +1,47 @@
+-- Create table
+create table V_MNT_REPAIR_FROM_MIS
+(
+  ID           VARCHAR2(20) not null,
+  REPAIRID     VARCHAR2(50) not null,
+  REPAIROBJ    VARCHAR2(50),
+  REPAIRTIME   DATE,
+  REPAIRSTATUS VARCHAR2(50),
+  REPAIRPERSON VARCHAR2(50)
+)
+tablespace TSGDDB
+  pctfree 10
+  initrans 1
+  maxtrans 255
+  storage
+  (
+    initial 64
+    minextents 1
+    maxextents unlimited
+  );
+-- Add comments to the columns 
+comment on column V_MNT_REPAIR_FROM_MIS.ID
+  is 'ID';
+comment on column V_MNT_REPAIR_FROM_MIS.REPAIRID
+  is 'ºÏ–ﬁµ•∫≈';
+comment on column V_MNT_REPAIR_FROM_MIS.REPAIROBJ
+  is 'ºÏ–ﬁ…Ë±∏';
+comment on column V_MNT_REPAIR_FROM_MIS.REPAIRTIME
+  is 'ºÏ–ﬁ ±º‰';
+comment on column V_MNT_REPAIR_FROM_MIS.REPAIRSTATUS
+  is 'ºÏ–ﬁ◊¥Ã¨';
+comment on column V_MNT_REPAIR_FROM_MIS.REPAIRPERSON
+  is 'ºÏ–ﬁ»À';
+-- Create/Recreate primary, unique and foreign key constraints 
+alter table V_MNT_REPAIR_FROM_MIS
+  add primary key (ID)
+  using index 
+  tablespace TSGDDB
+  pctfree 10
+  initrans 2
+  maxtrans 255
+  storage
+  (
+    initial 64K
+    minextents 1
+    maxextents unlimited
+  );

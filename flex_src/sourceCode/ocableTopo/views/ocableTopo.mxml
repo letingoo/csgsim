@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+	xmlns:demo="twaver.common.*" 
+	creationComplete="init()" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	width="100%" height="100%">
+	
+	<mx:Script source="../actionscript/ocableTopo.as"/>	
+	
+	<mx:RemoteObject id="fw" destination="ocableTopology" showBusyCursor="true" 
+		endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" 
+		result="getMaxOcablePoint(event)"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:HBox width="100%" height="30" horizontalGap=".9" verticalAlign="middle" backgroundColor="#c4edff" borderStyle="solid">
+			<mx:LinkButton label="加为快捷方式" icon="{ModelLocator.addshortcutIcon}" 
+				styleName="linkButton" click="parentApplication.addShorcut('光缆接线图','sysorgmap')"/>
+			<mx:VRule height="80%"/>
+			<mx:LinkButton label="取消快捷方式" icon="{ModelLocator.delshortcutIcon}" 
+				styleName="linkButton" click="parentApplication.delShortcut('光缆接线图')"/>
+			<mx:VRule height="80%" id="linkrule"/>
+			<mx:LinkButton toolTip="添加光缆段" label="添加光缆段" toggle="true" 
+				skin="sourceCode.businessDispatch.actionscript.ToggleLinkButtonSkin"  
+				icon="@Embed('assets/images/btn/huaxian_.png')" id="drawlinkbutton"   
+				click="drawlinkButton_clickHandler(event)"  />
+		</mx:HBox>
+
+		<mx:HDividedBox width="100%" height="100%">
+			<mx:VBox id="treeCanvas" width="20%" height="100%" horizontalScrollPolicy="auto" verticalScrollPolicy="auto">
+				<mx:HBox width="100%" height="24">
+					<mx:TextInput width="70%" id="searchtext"/>
+					<mx:Button label="搜索" width="30%" id="searchbutton" click="searchbutton_clickHandler(event)"/>
+				</mx:HBox>
+				<mx:List width="100%" height="100%"  id="searchResultList" doubleClickEnabled="true" itemDoubleClick="searchResultList_itemDoubleClickHandler(event)"></mx:List>
+			</mx:VBox>
+			<mx:VBox width="100%" height="100%" horizontalGap="0">
+				<mx:HBox id="toolbar1" width="100%" horizontalGap="0"/>
+				<tw:Network id="systemorgmap1" width="100%" height="100%" backgroundColor="0xffffff"
+					mouseDown="network_clickHandler(event)"/> 
+			</mx:VBox>
+		</mx:HDividedBox>				
+	</mx:VBox>
+	
+</mx:VBox>

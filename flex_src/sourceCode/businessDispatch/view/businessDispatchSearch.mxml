@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="horizontal" width="578"
+				creationComplete="initApp()"
+				title="查询"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				height="300" fontSize="12" xmlns:actionscript="sourceCode.tableResurces.actionscript.*"
+	xmlns:actionscript1="sourceCode.tableResurces.actionscript.*">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.businessDispatch.Event.BusinessDispatchEvent;
+			import sourceCode.businessDispatch.Event.BusinessDispatchEventForOther;
+			import sourceCode.businessDispatch.model.SelectOthersCircuit;
+			import sourceCode.businessDispatch.model.SelectTodoCircuit;
+			private var catalogsid:String; 
+			private var XMLData_Rates:XMLList;//速率下拉框
+			private var XMLData_property:XMLList;//使用单位下拉框
+			private var XMLData_leasers:XMLList;//申请单位下拉框
+			private var XMLData_opTypes:XMLList;//业务类型下拉框
+			private var XMLData_ccLevels:XMLList;//业务等级下拉框
+			private var XMLData_infTypes:XMLList;//接口类型下拉框
+			private var type:String;
+			public var info:String;
+			[Bindable]   
+			public var folderCollection:XMLList;
+			[Bindable]   
+			public var folderList:XMLList= new XMLList(); 
+			
+			[Bindable]private var aStationName:ArrayCollection;
+			[Bindable]private var zStationName:ArrayCollection;
+			private var item:Object;
+			
+			[Event(name="businessDispatchSearch",type="sourceCode.businessDispatch.Event.BusinessDispatchEvent")]
+			[Event(name="businessDispatchSearchforOthers",type="sourceCode.businessDispatch.Event.BusinessDispatchEventForOther")]
+			protected function initApp():void
+			{
+				getStations();
+				addEventListener("getChildNode",getChildNode);
+				var robj7:RemoteObject = new RemoteObject("equInfo");
+				robj7.endpoint = ModelLocator.END_POINT;
+				robj7.showBusyCursor = true;
+				robj7.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率)
+				robj7.addEventListener(ResultEvent.RESULT, select_RatesInfo); 
+				
+				var robj8:RemoteObject = new RemoteObject("businessDispatch");
+				robj8.endpoint = ModelLocator.END_POINT;
+				//robj8.getXTBM('YW010601__');//申请单位
+				robj8.getXTBM('DLDW00__');
+				robj8.addEventListener(ResultEvent.RESULT,select_leaserInfo);
+				
+				var robj14:RemoteObject = new RemoteObject("businessDispatch");
+				robj14.endpoint = ModelLocator.END_POINT;
+				robj14.getXTBM('JK01__');//接口类型
+				robj14.addEventListener(ResultEvent.RESULT,select_infTypeInfo);
+				
+				var robj13:RemoteObject = new RemoteObject("businessDispatch");
+				robj13.endpoint = ModelLocator.END_POINT; 
+				if(info=="待制作申请单"){
+					labelId.text = "申请目的：";
+					robj13.getXTBM('YW120915__');//业务类型
+				}else{
+					labelId.text = "电路编号：";
+					robj13.getXTBMother('YW120915__');//业务类型
+				}
+				robj13.addEventListener(ResultEvent.RESULT,select_opTypeInfo); 
+				
+				var robj:RemoteObject = new RemoteObject("businessDispatch");
+				robj.endpoint = ModelLocator.END_POINT;
+				robj.getAllStations();
+				robj.addEventListener(ResultEvent.RESULT,stationsHandler);
+			}
+			
+			public function stationsHandler(e:ResultEvent):void{
+				var stations_ac:ArrayCollection = e.result as ArrayCollection;
+				stations_ac.addItemAt({STATIONCODE:"",LABEL:""},0);
+				aStationName = stations_ac;
+				zStationName = stations_ac;
+			}
+			
+			public function getChildNode(event:Object):void{
+				var rt:RemoteObject=new RemoteObject("businessDispatch");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				item = event.TreeSelectedItem;
+				if(event.TreeSelectedItem.@type=="domainname"){
+					catalogsid = event.TreeSelectedItem.@label;
+					type="system";
+					rt.getStations(catalogsid,type);
+				}
+				else if(event.TreeSelectedItem.@node=="2"){
+					catalogsid = event.TreeSelectedItem.@code;
+					type="rate";
+					rt.getStations(catalogsid,type);
+				} 
+				
+				rt.addEventListener(ResultEvent.RESULT,getChildNodeResult);
+			}   
+			public function getChildNodeResult(event:ResultEvent):void{
+				var selectedNode:XML = item as XML;
+				var child:XMLList= new XMLList(event.result); 		
+				selectedNode.appendChild(child);
+			}
+			public function select_infTypeInfo(e:ResultEvent):void{
+				XMLData_infTypes = new XMLList(e.result.toString());
+				select_porttype.dataProvider = XMLData_infTypes.children();
+				select_porttype.labelField= "@xtxx";
+				select_porttype.selectedIndex = -1;
+			}
+			public function select_opTypeInfo(e:ResultEvent):void{
+				var XMLData_opTypes:XMLList = new XMLList(e.result.toString());
+				select_operationType.dataProvider =null;
+				select_operationType.initialized = true
+				select_operationType.dataProvider = XMLData_opTypes.children();
+				select_operationType.labelField = "@xtxx";
+				select_operationType.selectedIndex = -1;
+			}
+			private function select_RatesInfo(event:ResultEvent):void{
+				XMLData_Rates = new XMLList(event.result.toString());	
+				select_rate.dataProvider = XMLData_Rates.children();
+				select_rate.labelField = "@label";
+				select_rate.selectedIndex = -1;
+			} 
+			public function select_leaserInfo(e:ResultEvent):void{
+				XMLData_leasers = new XMLList(e.result.toString());
+				select_property.dataProvider = XMLData_leasers.children();
+				select_property.labelField = "@xtxx";
+				select_property.selectedIndex = -1;
+			} 
+			
+			protected function select_clickHandler(event:MouseEvent):void
+			{
+				Application.application.showLoading();
+				if(info=="待制作申请单"){
+					var model:SelectTodoCircuit = new SelectTodoCircuit();
+					model.formname = select_formName.text;
+					model.specialtytype = select_operationType.text;
+					model.specialtyname = select_specialtyname.text;
+					model.speedname = select_rate.text;
+					model.porttype = select_porttype.text;
+					model.appdepartment = select_property.text;
+					model.applier = select_applier.text;
+					model.starttime =select_start_time.text;
+					model.finishtime = select_finish_time.text;
+					model.asite = select_StationA.text;
+					model.zsite = select_StationZ.text;
+					model.purpose = select_purpose.text;
+//					businessDispatchRemote.getItems(model);
+					this.dispatchEvent( new BusinessDispatchEvent("businessDispatchSearch",model));
+				}else{
+					var mode:SelectOthersCircuit = new SelectOthersCircuit();
+					mode.circuitcode = select_purpose.text;
+					mode.createtime = select_start_time.text;
+					mode.usetime = select_finish_time.text;
+					mode.form_name = select_formName.text;
+					mode.interfacetype = select_porttype.text;
+					mode.leaser = select_applier.text;
+					if(select_rate.selectedIndex!=-1)mode.rate = select_rate.selectedItem.@label; //select_rate.text;
+					mode.remark = select_specialtyname.text;
+					if(select_property.selectedIndex!=-1)	mode.requestcom = select_property.selectedItem.@xtxx;
+					mode.station1 = select_StationA.text;
+					mode.station2 = select_StationZ.text;
+					mode.operationtype = select_operationType.text;
+					this.dispatchEvent( new BusinessDispatchEventForOther("businessDispatchSearchforOthers",mode));
+				}
+			}
+			public function getStations():void{
+//				var obj:RemoteObject = new RemoteObject("businessDispatch");
+//				obj.endpoint = ModelLocator.END_POINT;
+//				obj.showBusyCursor=true;
+//				obj.getStations(" ","root");
+//				obj.addEventListener(ResultEvent.RESULT,getStationsTree);
+				
+			}
+			public function getStationsTree(e:ResultEvent):void{
+//				folderList = new XMLList(e.result.toString());
+//				StationA_xml = folderList;
+//				StationZ_xml = StationA_xml.copy();
+//				select_StationA.dataProvider = StationA_xml;
+//				select_StationA.selectedIndex = -1;
+//				select_StationZ.dataProvider = StationZ_xml;
+//				select_StationZ.selectedIndex = -1;
+			}
+			
+			protected function reset_clickHandler(event:MouseEvent):void
+			{
+				select_formName.text = "";
+				select_applier.text = "";
+				select_finish_time.text = "";
+				select_operationType.selectedIndex = -1;
+				select_porttype.selectedIndex = -1;
+				select_property.selectedIndex = -1;
+				select_purpose.text = "";
+				select_rate.selectedIndex = -1;
+				select_specialtyname.text = "";
+				select_start_time.text = "";
+				select_StationA.text = "";
+				select_StationA.selectedIndex = -1;
+				select_StationZ.selectedIndex = -1;
+				select_StationZ.text = "";
+			}
+
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" backgroundImage="@Embed(source='assets/images/popwindowbg.png')" backgroundSize="100%">
+		<mx:Canvas width="100%" height="212">
+			
+	
+	<mx:Label x="10" y="10" text="申请名称："/>
+	<mx:TextInput id="select_formName" x="84" y="11"/>
+	
+	<mx:Label x="10" y="40" text="业务类型："/>
+	<mx:ComboBox id="select_operationType" x="84" y="41" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+	
+	<mx:Label x="10" y="70" text="业务名称："/>
+	<mx:TextInput id="select_specialtyname" x="84" y="71"/>
+	
+	<mx:Label x="10" y="100" text="速率："/>
+	<mx:ComboBox id="select_rate" x="84" y="101" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+	
+	<mx:Label x="10" y="130" text="端口类型："/>
+	<mx:ComboBox id="select_porttype" x="84" y="131" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+	
+	<mx:Label x="10" y="160" text="申请单位："/>
+	<mx:ComboBox id="select_property" x="84" y="161" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+	
+	<mx:Label x="286.5" y="42" text="申请人："/>
+	<mx:TextInput id="select_applier" x="355.5" y="40"/>
+	
+	<mx:Label x="286.5" y="73" text="申请日期："/>
+	<mx:ApplicationControlBar  dock="true" visible="false"> 
+		<mx:Form styleName="plain"> 
+			<mx:FormItem label="yearNavigationEnabled:"> 
+				<mx:CheckBox id="checkBox" selected="true" /> 
+			</mx:FormItem> 
+		</mx:Form> 
+	</mx:ApplicationControlBar> 
+	
+	<mx:DateField id="select_start_time" width="160"  x="355.5" y="69" formatString="YYYY-MM-DD" showToday="true" fontFamily="宋体" fontSize="12" monthNames="{ModelLocator.monthNames}" dayNames="{ModelLocator.days}" yearNavigationEnabled="{checkBox.selected}" />
+	
+	<mx:Label x="286.5" y="102" text="完成日期："/>
+	<mx:DateField id="select_finish_time" width="160" x="355.5" y="102" formatString="YYYY-MM-DD" showToday="true" fontFamily="宋体" fontSize="12" monthNames="{ModelLocator.monthNames}" dayNames="{ModelLocator.days}" yearNavigationEnabled="{checkBox.selected}"/>
+	
+	<mx:Label x="286.5" y="133" text="A端站点："/>
+	<!--<mx:TextInput id="select_StationA" x="84" y="281"/>-->
+	<!--<actionscript1:TreeComboBox id="select_StationA" x="355.5" y="130" width="160"  rowCount="80" labelField="@label"/>--><!--dataProvider="{StationA_xml}"-->
+	<!--fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"-->
+	<mx:ComboBox id="select_StationA" x="355.5" y="130" width="160"  labelField="LABEL" dataProvider="{aStationName}"/>
+	
+	<mx:Label x="286.5" y="164" text="Z端站点："/>
+	<!--<mx:TextInput id="select_StationZ" x="84" y="311"/>-->
+	<!--<actionscript1:TreeComboBox id="select_StationZ" x="355.5" y="161" width="160"   rowCount="80" labelField="@label"/>--><!--dataProvider="{StationZ_xml}"-->
+	<!--fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"-->
+	<mx:ComboBox id="select_StationZ" x="355.5" y="161" width="160" labelField="LABEL" dataProvider="{zStationName}"/>
+	<mx:Label id="labelId" x="286.5" y="13" text="申请目的："/>
+	<mx:TextInput id="select_purpose" x="355.5" y="11"/>
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%"  backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+	<mx:Button id="select" x="166.5" y="5" label="查询" styleName="loginprimary" click="select_clickHandler(event)" width="80"/>
+	<mx:Button id="reset" x="303.5" y="5" label="重置" styleName="loginsecondary" click="reset_clickHandler(event)" width="80"/>
+		</mx:Canvas>
+	</mx:VBox>
+</mx:TitleWindow>

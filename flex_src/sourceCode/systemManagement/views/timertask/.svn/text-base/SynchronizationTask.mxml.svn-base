@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" verticalAlign="middle" horizontalAlign="center" 
+		 creationComplete="init()" paddingTop="5" paddingLeft="0" 
+		 xmlns:actionscript="sourceCode.sysGraph.actionscript.*" xmlns:util="common.other.blogagic.util.*" xmlns:component="common.component.*">
+	<mx:RemoteObject id="fw"  destination="fiberWire" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"
+					 fault="DealFault(event)" result="resultHandler(event)"/>
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="同步任务" imgName="refresh" />
+ <mx:HDividedBox width="100%" height="100%" >
+	<actionscript:CheckTree id="tree"  
+				 width="25%" 
+				 height="100%"
+				 rowHeight="20"
+				 dataProvider="{XMLData}" 
+				 iconFunction="iconFun"    
+				 labelField="@name" 
+				 checkBoxOpenItemsOnCheck="true"
+				 checkBoxStateField="@checked"		
+				 click="treeclick(event)"
+				 backgroundImage="@Embed(source='assets/images/treebg.png')"
+				 backgroundSize="100%" />	
+	
+	<mx:VBox width="75%" height="100%" verticalAlign="middle" horizontalAlign="center" verticalGap="0">
+	    <mx:VBox width="100%" height="120" verticalAlign="middle" horizontalAlign="center" paddingTop="2" cornerRadius="5"  borderStyle="solid" borderThickness="2"  borderColor="#999999">
+			<mx:HBox width="100%" height="33%" horizontalAlign="left">
+				<mx:Label text="任务名称:"/>
+				<mx:Text id="taskName" />
+				<mx:Spacer width="100%" />
+			</mx:HBox>
+			<mx:HBox width="100%" height="33%" horizontalAlign="left">
+				<mx:Label text="任务周期:"/>
+				<mx:ComboBox id="taskCycle" dataProvider="{TaskCycleArr}"/>
+				<util:TimeNew id="taskdate" dateDisplay="time"   /> 
+			</mx:HBox>
+			<mx:HBox width="100%" height="33%" horizontalAlign="left">
+				<mx:Label text="任务状态:"/>
+				<mx:CheckBox id="taskSwitch"/>
+				<mx:Spacer width="50" />
+				<mx:Label text="任务类型:"/>
+				<mx:ComboBox id="taskType" dataProvider="{TaskTypeArr}"/>				
+			</mx:HBox>
+		</mx:VBox>	
+		<mx:DataGrid id="timertask" width="100%" height="100%" doubleClick="true" itemClick="selectTask(event)"
+					 contextMenu="{cm}"  	itemRollOver="{lastRollOverIndex = event.rowIndex}">	 
+			<mx:columns>
+				<mx:DataGridColumn headerText="任务名称"  dataField="task_name"/>
+				<mx:DataGridColumn headerText="任务类型" dataField="task_type" />
+				<mx:DataGridColumn headerText="是否启动" dataField="isactivated" />
+				<mx:DataGridColumn headerText="系统" dataField="systemname" />
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:HBox horizontalAlign="right" verticalAlign="middle" width="100%" height="35">
+			<mx:Button label="新增任务" click="addtask()" />
+			<mx:Spacer width="30" />
+			<mx:Button label="更新任务"  click="updateTask()"/>
+			<mx:Spacer width="30" /> 
+			<mx:Button label="删除任务"  click="c_delUser()"  />
+			<mx:Spacer width="30" /> 
+		</mx:HBox>		
+	 </mx:VBox>
+ </mx:HDividedBox>	
+<mx:Script>
+	<![CDATA[
+		import common.actionscript.ModelLocator;
+		import common.actionscript.Registry;
+		
+		import mx.collections.ArrayCollection;
+		import mx.collections.XMLListCollection;
+		import mx.controls.Alert;
+		import mx.events.CloseEvent;
+		import mx.events.ListEvent;
+		import mx.events.MoveEvent;
+		import mx.rpc.events.FaultEvent;
+		import mx.rpc.events.ResultEvent;
+		
+		import sourceCode.systemManagement.model.TimerTaskModel;
+		
+		/**
+		 *左侧树的数据源 
+		 */
+		public var XMLData:XMLList;		 
+		[Bindable]
+		private var TaskCycleArr:ArrayCollection=new ArrayCollection([{label:"每日"},{label:"每周"},{label:"每月"}]); 		
+		[Bindable]
+		private var TaskTypeArr:ArrayCollection=new ArrayCollection([{label:"告警",tasktype:1},{label:"性能",tasktype:2},{label:"物力资源",tasktype:3},{label:"逻辑资源",tasktype:4}]); 				
+		private var SystemArr:ArrayCollection=new ArrayCollection();	
+		[Bindable]			
+		private var cm:ContextMenu;
+		private var lastRollOverIndex:int;
+		
+		
+		
+		private function init():void{
+			fw.getSystemTreeBytimerTask();
+			QuerytimerTasklist(); 
+			
+			
+			var cmi_update:ContextMenuItem=new ContextMenuItem("添加",true);
+			cmi_update.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,addtaskC);
+//			cmi_update.visible = isEdit;
+			
+			var cmi_delete:ContextMenuItem=new ContextMenuItem("删 除",true);
+			cmi_delete.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,deltaskC);
+//			cmi_delete.visible = isDelete;
+			cm = new ContextMenu();
+			cm.hideBuiltInItems();
+			cm.customItems = [cmi_update,cmi_delete];
+			cm.addEventListener(ContextMenuEvent.MENU_SELECT, contextMenu_menuSelect);
+			
+		}
+		private function contextMenu_menuSelect(evt:ContextMenuEvent):void {	
+			timertask.selectedIndex = lastRollOverIndex;
+		}	
+		
+		//右键修改用户
+		private function addtaskC(evt:ContextMenuEvent):void  
+		{  
+			addtask();
+		}		
+		//右键删除用户
+		private function deltaskC(event:ContextMenuEvent):void{
+			c_delUser();
+		}		
+		
+		
+		
+		private function cleanTask():void{
+			taskName.text = "";
+			taskSwitch.selected = false;
+			taskCycle.selectedIndex = 0;
+			taskType.selectedIndex = 0;
+			treeclear();
+		}
+		
+		
+		private var addtimerTask:AddTimerTask = new AddTimerTask();
+		private function addtask():void{
+			parentApplication.openModel("同步任务配置",true,addtimerTask);
+			addtimerTask.SystemArr = this.SystemArr;
+			addtimerTask.synch = this;
+		}		
+		
+		//树的点击事件
+		private function treeclick(event:MouseEvent):void{
+			var xml:XML = tree.selectedItem as XML;
+			if(event.target is CheckBox){
+				if(xml.@type == "system"){
+					for each (var element:XML in XMLData)
+					{
+						for each(var ele:XML in element.children()){
+							if(ele.@name!=xml.@name){
+								ele.@checked="0";
+							}
+							
+						}
+					}
+				}
+			}
+			
+		}	
+		
+		private function treeclear():void{
+			if(tree.selectedItem){//取消选中
+				var xml:XML = tree.selectedItem as XML;
+				if(xml.@type == "system"){
+					for each (var element:XML in XMLData)
+					{
+						for each(var ele:XML in element.children()){
+							ele.@checked="0";
+							
+						}
+					}
+				}
+				
+			}			
+		}
+		
+		private function selectTask(event:ListEvent):void{
+			
+			treeclear();
+			
+			if(timertask.selectedItem){
+				//选中树
+				for each (var element:XML in XMLData)
+				{
+					for each(var ele:XML in element.children()){
+					 if(ele.@name == timertask.selectedItem.systemname){
+						 ele.@checked="1";
+					 	tree.selectedItem = ele;
+					 }
+						
+					}
+				}
+				//列表显示
+				var obj:TimerTaskModel = timertask.selectedItem as TimerTaskModel;
+				taskName.text = obj.task_name;
+				//选中周期
+				var j:int=0;
+				var str:String = (obj.time_display as String).substr(0,2);
+//				Alert.show(str);
+				for each(var object:Object in TaskCycleArr){
+					if(object.label == str){
+//						Alert.show(j.toString());
+						taskCycle.selectedIndex = j;
+						break;
+					}
+					j++;
+				}	
+//				taskdate.text = obj.datetime;
+//				Alert.show(obj.time_display);
+				var timearr:Array = (obj.task_period as String).split(" ");
+//				Alert.show(timearr.length.toString()+timearr[2].toString());
+				taskdate.text = timeSet(timearr[2] as String)+":"+timeSet(timearr[1] as String)+":"+timeSet(timearr[0] as String);
+				
+				//是否启动
+				if(obj.isactivated == "是"){
+					taskSwitch.selected = true;
+				}else{
+					taskSwitch.selected = false;
+				}
+				//选择任务类型
+				var i:int=0;
+				for each(var object:Object in TaskTypeArr){
+				  if(object.label == obj.task_type){
+					  taskType.selectedIndex = i;
+				      break;
+				  }
+				 i++;
+				}
+				
+				
+				
+				
+			}
+		
+		}
+
+		
+		private  function  timeSet(str:String):String{
+			if(str.length==1){
+				return "0"+str;
+			}else{
+				return str;	
+			}
+			
+		}		
+
+		//菜单删除用户信息
+		public function c_delUser():void{
+			if(!timertask.selectedItem){
+				Alert.show("请选择要删除的任务！");
+				return;
+			}			
+			Alert.yesLabel = "是";
+			Alert.noLabel = "否";
+			Alert.show("是否要删除，请确认！","提示",3,this,deltask);
+			Alert.yesLabel = "Yes";
+			Alert.noLabel = "No";
+		}
+		
+		private function deltask(event:CloseEvent):void{
+//			if(!timertask.selectedItem){
+//				Alert.show("请选择要删除的任务！");
+//				return;
+//			}
+			if(event.detail == Alert.YES){
+				var timerdel:RemoteObject = new RemoteObject("timerTaskManager");
+				timerdel.endpoint = ModelLocator.END_POINT;
+				timerdel.showBusyCursor = false;
+				timerdel.addEventListener(ResultEvent.RESULT,dodeltask);
+				timerdel.addEventListener(FaultEvent.FAULT,DealFault);
+				timerdel.delTimerTask(timertask.selectedItem.task_id as String);
+			}	
+			
+		}		
+		
+		private function dodeltask(event:ResultEvent){	
+			var resuletype:String  =	event.result as String;
+			if(resuletype=="success"){
+				Alert.show("同步任务删除成功！");
+				cleanTask();
+				QuerytimerTasklist();
+			}else if(resuletype=="failed"){
+				Alert.show("同步任务删除失败！");
+			}			
+			
+		}	
+		//查询任务列表
+        public function QuerytimerTasklist(){
+			var timerRem:RemoteObject = new RemoteObject("timerTaskManager");
+			timerRem.endpoint = ModelLocator.END_POINT;
+			timerRem.showBusyCursor = true;
+			timerRem.addEventListener(ResultEvent.RESULT,doQuerytimerTasklist);
+			timerRem.addEventListener(FaultEvent.FAULT,DealFault);
+			timerRem.queryTimerTasklist();
+		}
+		
+		private function doQuerytimerTasklist(event:ResultEvent){
+			
+			var tasklist:ArrayCollection  =	event.result as ArrayCollection;
+			
+			timertask.dataProvider = tasklist;
+		}
+		/**
+		 *加载系统树失败的处理 
+		 * @param event
+		 * 
+		 */
+		public function DealFault(event:FaultEvent):void 
+		{
+			Alert.show(event.fault.toString());
+		}		
+		
+		/**
+		 *对加载树后的处理 
+		 * @param event
+		 * 
+		 */
+		private function resultHandler(event:ResultEvent):void
+		{
+			XMLData=new XMLList(event.result.toString());
+			tree.dataProvider=XMLData;  
+			var xmllist:*=tree.dataProvider;
+			var xmlcollection:XMLListCollection=xmllist;		
+			for each (var element:XML in xmlcollection)
+			{
+				if (element.@type ==  "all")
+				{
+					tree.selectedItem=element;
+				}
+				for each(var ele:XML in element.children()){
+					var obj:Object = new Object();
+					obj.systemname = ele.@name;
+					obj.label = ele.@name;
+					SystemArr.addItem(obj);
+				}				
+				
+			}
+			tree.callLater(expandTree);
+		}
+		/**
+		 *为传输系统树的结点设置图标 
+		 * @param item
+		 * @return 
+		 * 
+		 */
+		private function iconFun(item:Object):*
+		{ 
+			return ModelLocator.systemIcon;
+		}		
+		/**
+		 *展开当前选中结点 
+		 * 
+		 */
+		private function expandTree():void
+		{
+			
+			tree.expandItem(tree.selectedItem,true);
+		}		
+		
+
+	
+		
+		private function updateTask():void{
+			if(!timertask.selectedItem){
+				Alert.show("请选择要修改的任务！");
+				return;
+			}
+			var timerTaskModel:TimerTaskModel = new TimerTaskModel();
+//			Alert.show(timertask.selectedItem.task_id);
+			timerTaskModel.task_id = timertask.selectedItem.task_id;
+			timerTaskModel.systemname = tree.selectedItem.@name;
+//			timerTaskModel.task_name = StringUtil.trim(task_name.text); 
+			
+			if(taskSwitch.selected){
+				timerTaskModel.isactivated = "1";
+				
+			}else{
+				timerTaskModel.isactivated = "0";
+			}
+			
+			timerTaskModel.task_type = taskType.selectedItem.tasktype;
+			
+			if(taskCycle.text =="每日"){
+				timerTaskModel.task_period = timesub(taskdate.secondValue)+" "+timesub(taskdate.minuteValue)+" "+timesub(taskdate.hourValue)+" * * ?";
+				timerTaskModel.time_display = taskCycle.text+taskdate.text;
+			}else if(taskCycle.text == "每周"){
+				timerTaskModel.task_period = timesub(taskdate.secondValue)+" "+timesub(taskdate.minuteValue)+" "+timesub(taskdate.hourValue)+" ? * MON";
+				timerTaskModel.time_display = taskCycle.text+"一"+taskdate.text;
+				
+			}else if(taskCycle.text == "每月"){
+				timerTaskModel.task_period = timesub(taskdate.secondValue)+" "+timesub(taskdate.minuteValue)+" "+timesub(taskdate.hourValue)+" 1 * ?";
+				timerTaskModel.time_display = taskCycle.text+"1日"+taskdate.text;
+				
+			}else{}
+//			Alert.show(timerTaskModel.task_period.toString());
+//			timerTaskModel.datetime = taskdate.text;
+			var timerupdate:RemoteObject = new RemoteObject("timerTaskManager");
+			timerupdate.endpoint = ModelLocator.END_POINT;
+			timerupdate.showBusyCursor = false;
+			timerupdate.addEventListener(ResultEvent.RESULT,doupdateTask);
+			timerupdate.addEventListener(FaultEvent.FAULT,DealFault);
+			timerupdate.updateTimerTask(timerTaskModel);
+		}
+		private  function  timesub(str:String):String{
+			if(str.substr(0,1)=="0"){
+				return str.substr(1,1);
+			}else{
+				return str;	
+			}
+			
+		}
+		
+		
+		private function doupdateTask(event:ResultEvent){
+			
+			var resuletype:String  =	event.result as String;
+			if(resuletype=="success"){
+				Alert.show("同步任务修改成功！");
+				this.QuerytimerTasklist();
+			}else if(resuletype=="failed"){
+				Alert.show("同步任务修改失败！");
+			}
+			
+		}		
+		
+
+
+	]]>
+</mx:Script>	
+</mx:VBox>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+		 xmlns:code="http://code.google.com/p/flexlib/"
+		 xmlns:common="twaver.common.*"
+		 fontSize="12" verticalGap="0"
+		 width="100%" 
+		 height="100%"
+		 creationComplete="initApp(event)" xmlns:component="common.component.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import sourceCode.sysGraph.views.configEquipSlotNew;
+			
+			protected function initApp(event:FlexEvent):void
+			{
+				var child1:CcConnectResources = new CcConnectResources();
+				child1.label = "显示交叉连接";
+				tabCcConect.addChild(child1);
+				
+				var child2:configEquipSlotNew = new configEquipSlotNew();
+				child2.label = "配置交叉连接";
+				tabCcConect.addChild(child2);
+				
+				var index:int = tabCcConect.getChildIndex(child1);
+				tabCcConect.selectedIndex=index;	
+			}
+			
+//			private function deleteTab(event:flexlib.events.SuperTabEvent):void{
+//				var child:checkdevicepanelchild = tabDevices.getChildAt(event.tabIndex) as checkdevicepanelchild;
+//				var equipcode:String = child.equipcode;
+//				var systemcode:String=child.systemcode;
+//				var xmllist= treedevice.dataProvider;
+//				var xml:XMLListCollection = xmllist;
+//				readXMLCollection(xml,systemcode,equipcode);
+//			}
+			
+
+			
+		]]>
+	</mx:Script>
+	<code:SuperTabNavigator id="tabCcConect" 
+							width="100%" 
+							height="100%"
+							>
+		
+	</code:SuperTabNavigator>
+</mx:VBox>

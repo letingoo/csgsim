@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" height="100%" 
+		 xmlns:degrafa="http://www.degrafa.com/2007"
+		 xmlns:flash.filters='flash.filters.*'  
+		 xmlns:local="*" 
+		 xmlns:component="common.component.*"
+		 xmlns:ns1="com.fusionwidgets.components.*"
+		 xmlns:controls="common.other.gauges.brightPoint.controls.*">
+	<mx:Script source="../actionscript/UserOnline.as"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" horizontalScrollPolicy="off">		
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="在线用户" imgName="online"/>
+		<mx:HBox width="100%" height="100%" horizontalGap=".5" verticalGap="0"  horizontalScrollPolicy="off">
+			<mx:HDividedBox width="100%" height="100%">
+				<mx:VBox width="35%" height="100%" horizontalScrollPolicy="off">
+					<mx:VBox id="userContent" doubleClick="doubleClickHandle(event)" doubleClickEnabled="true" width="100%" height="95%"/>
+				</mx:VBox>
+				<mx:VBox width="65%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off" backgroundColor="#FFFFFF">
+					<ns1:FusionWidgets width="100%" height="100%" FCFolder="FusionWidgets" FCDataXML="{dataXML}" FCChartType="AngularGauge" />
+				</mx:VBox>
+			</mx:HDividedBox>
+		</mx:HBox>   
+	</mx:VBox>
+	<mx:NumberFormatter precision="0" id="formatter"/>
+</mx:VBox>

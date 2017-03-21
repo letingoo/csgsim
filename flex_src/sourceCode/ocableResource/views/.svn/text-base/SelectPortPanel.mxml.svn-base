@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" title="添加端口" 
+				width="400" height="500" 
+				showCloseButton="true" close="this_closeHandler(event)" 
+				creationComplete="initApp()">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import twaver.Consts;
+			import twaver.DemoImages;
+			import twaver.ElementBox;
+			import twaver.Follower;
+			import twaver.Node;
+			import twaver.Styles;
+			
+			public var equipcode:String;
+			public var node:Node;
+			public var box:ElementBox;
+			
+			protected function initApp():void
+			{
+				gettree();
+			}
+			
+			protected function this_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function gettree():void
+			{
+				var ro:RemoteObject = new RemoteObject("ocableResources");
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.showBusyCursor = true;
+				ro.addEventListener(ResultEvent.RESULT, resultHandler);
+				ro.addEventListener(FaultEvent.FAULT, faultHandler);
+				ro.getPortInfo(equipcode);
+			}
+			
+			private function resultHandler(event:ResultEvent):void {
+				if(event.result.toString()!=null || event.result.toString()!=""){
+				var xmldata:XMLList = new XMLList(event.result.toString());
+				porttree.dataProvider = xmldata;
+				}else{
+					Alert.show("端口信息不存在，请添加虚拟端口","提示");
+				}
+			}
+			
+			public function faultHandler(event:FaultEvent):void {
+				Alert.show(event.fault.toString(), "错误提示");
+			}
+			
+			private function selectPort(event:MouseEvent):void{
+				var obj:Object = porttree.selectedItem;
+				var flag:String = obj.@type;
+				if(flag == "portinfo"){
+					var str:String = obj.@name;
+					//端口
+					var fo:Follower = new Follower();
+					fo.host = node;
+					fo.image = null;
+					fo.name = str;
+					fo.setStyle(Styles.LABEL_SIZE,9);
+					fo.setClient("portcode", obj.@code);
+					fo.setClient("flag", "port");
+					if(node.getClient("isStart") != null && node.getClient("isStart") == "true"){
+						fo.setCenterLocation(node.centerLocation.x+5 , node.centerLocation.y);
+					}else if(node.getClient("isEnd") != null && node.getClient("isEnd") == "true"){
+						fo.setCenterLocation(node.centerLocation.x-5, node.centerLocation.y);
+					}else{
+						fo.setCenterLocation(node.centerLocation.x, node.centerLocation.y);
+					}
+					fo.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+					box.add(fo);
+					//速率
+					var ratefo:Follower = new Follower();
+					ratefo.host = node;
+					ratefo.image = null;
+					ratefo.name = obj.@rate;
+					ratefo.setStyle(Styles.LABEL_SIZE,9);
+					ratefo.setClient("flag", "ratelabel");
+					ratefo.setCenterLocation(node.centerLocation.x, node.centerLocation.y + 33);
+					ratefo.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+					box.add(ratefo);
+					PopUpManager.removePopUp(this);
+				}
+			}
+			
+			private function deviceiconFun(item:Object):*{
+				if(item.@isBranch == "false")
+					return ModelLocator.port;
+				else
+					return DemoImages.file;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:Tree id="porttree" 
+				 width="100%" height="100%"
+				 defaultLeafIcon="{null}"
+				 iconFunction="deviceiconFun"
+				 labelField="@label" 
+				 doubleClickEnabled="true" 
+				 doubleClick="selectPort(event)" 
+				 itemClick="ModelLocator.tree_itemClick(event, porttree)"/>
+	</mx:VBox>
+</mx:TitleWindow>

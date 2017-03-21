@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/csgsim/!svn/ver/1/dbscript/initdata
+END
+sec_operation_res.sql
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/csgsim/!svn/ver/1/dbscript/initdata/sec_operation_res.sql
+END
+initdata.sql
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/csgsim/!svn/ver/1/dbscript/initdata/initdata.sql
+END

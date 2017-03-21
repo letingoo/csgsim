@@ -1,0 +1,26 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="关联方式" creationComplete="init()" width="900" height="500"  layout="horizontal" xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/" xmlns:view="sourceCode.businessDispatch.view.*">   
+	<mx:Script source="../actionscript/circuitReq.as"/>
+	<mx:RemoteObject destination="businessDispatch"  showBusyCursor="false" id="businessDispatchRemote"  endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)"/>
+    <mx:VBox width="100%" height="100%" label="待制作方式申请单" fontSize="12" id="vbox1"  horizontalScrollPolicy="auto" verticalScrollPolicy="auto">
+	<mx:DataGrid width="100%" height="100%" fontSize="12" id="todobusinessGrid" doubleClickEnabled="true"  doubleClick="selectData(event)"  itemRollOver="{lastRollOverIndex = event.rowIndex}" horizontalScrollPolicy="auto" verticalScrollPolicy="auto">
+		<mx:columns>
+			<mx:DataGridColumn headerText="序号" width="60" itemRenderer="{new ClassFactory(indexRenderer)}" />
+			<mx:DataGridColumn headerText="申请名称" dataField="@specialtyname" width="170"/>
+			<mx:DataGridColumn headerText="业务类型" dataField="@type" width="150"/>
+			<mx:DataGridColumn headerText="业务名称" dataField="@specialtyname" width="200"/>
+			<mx:DataGridColumn headerText="速率" dataField="@speedname" width="150"/>
+			<mx:DataGridColumn headerText="端口类型" dataField="@porttype"/>
+			<mx:DataGridColumn headerText="申请单位" dataField="@appdepartment" width="150"/>
+			<mx:DataGridColumn headerText="申请人" dataField="@applier"/>
+			<mx:DataGridColumn headerText="申请日期" dataField="@start_time" width="150"/>
+			<mx:DataGridColumn headerText="完成日期" dataField="@finish_time" width="150"/>
+			<mx:DataGridColumn headerText="A端站点" dataField="@station_a" width="150"/>
+			<mx:DataGridColumn headerText="Z端站点" dataField="@station_z" width="150"/>
+			<mx:DataGridColumn headerText="申请目的" dataField="@purpose"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<!--<view:pagetoolbarforWay id="todobusinessGridPagingBar" width="100%"/>-->
+</mx:VBox>
+</mx:TitleWindow>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 width="100%" 
+		 height="100%"
+		 verticalGap="0"
+		 creationComplete="init()" xmlns:component="common.component.*">
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="功能管理" imgName="oper"/>
+	<mx:Tree id="treeFunc"
+			 x="0" 
+			 y="0" 
+			 width="100%" 
+			 height="100%" 
+			 rowHeight="20"
+			 labelField="@name"
+			 iconFunction="iconFunction" 
+			 dataProvider="{_treeXML}"
+			 itemRollOver="{lastRollIndex = event.rowIndex}" borderStyle="strokeWidth:1px;"
+			 itemClick="tree_itemClick(event)"/>
+		<mx:RemoteObject id="roFuncMgr" 
+						destination="faultSimulation"
+						showBusyCursor="true"
+						endpoint="{ModelLocator.END_POINT}"
+						result="funcResult(event)"/>
+	<mx:RemoteObject id="subMessage" destination="RemoteMessage"  endpoint="{ModelLocator.END_POINT}" 
+					 result="subMessage_resultHandler(event)" /> 
+	<mx:Script source="../actionscript/ClassicFaultManager.as"/>
+</mx:VBox>

@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:MecGrid="com.mechan.MecGrid.*"
+		 xmlns:ns1="com.fusioncharts.components.*"
+		 width="100%" height="100%" verticalScrollPolicy="auto" horizontalAlign="center">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.mechan.MecGrid.mecGridClasses.CellOp;
+			import com.mechan.export.MecExporter;
+			
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.*;
+			import sourceCode.indexEvaluation.model.IndexEvaluation;
+			
+			public var days:Array = new Array("日", "一", "二", "三", "四", "五","六");
+			public var monthNames:Array = new Array("一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月");	
+
+			[Bindable] public var deptLst:XMLList;
+			
+			public var indexModel:IndexEvaluation = new IndexEvaluation();
+			//import sourceCode.customCharts.actionscript.ImageUtil;
+			//import sourceCode.customCharts.model.ChartData;
+			//import sourceCode.customCharts.model.ColInfo;
+			//import sourceCode.customCharts.model.HeaderFont;
+//			import sourceCode.indexEvaluation.model.IndexEvaluation;
+//			public var modelname:String;
+//			private var statis:IndexEvaluation; 
+			private var res:XML=<List>
+							<option cols="5" fixedrows="1" fixedcols="0" merge_option="5" merge_option_fixedcolumn="0" merge_option_fixedrow="2" showspreadsheet="F" selectionmode="16" sortoption="0" treeview="T" treeColumn="0" textalignment="6" textalignment_fixed="5"/>
+							<columns>
+								<column name="col_1" datafield="network" visible="T" editable="F" colindex="0" autowidth="F" width="15%" datatype="5" textalign="4" textalign_fixed="10" formatstring="" merge="T" style="" header="网络名称"/>
+								<column name="col_2" datafield="type" visible="T" editable="F" colindex="1" autowidth="F" width="15%" datatype="5" textalign="4" textalign_fixed="10" formatstring="" merge="T" style="" header="指标类别"/>
+								<column name="col_3" datafield="name" visible="T" editable="F" colindex="2" autowidth="F" width="49%" datatype="5" textalign="4" textalign_fixed="10" formatstring="" merge="T" style="" header="指标名称"/>
+								<column name="col_4" datafield="value" visible="T" editable="F" colindex="3" autowidth="F" width="12%" datatype="5" textalign="4" textalign_fixed="10" formatstring="" merge="T" style="" header="指标评价值"/>
+								<column name="col_5" datafield="unit" visible="T" editable="F" colindex="4" autowidth="F" width="8%" datatype="5" textalign="4" textalign_fixed="10" formatstring="" merge="F" style="" header="单位"/>
+							</columns>
+							<styles>
+								<style name="normal" backcolor1="16777215" backcolor2="16777215" bordercolor="3394815" borderthickness="1" fontsize="12" fontstyle="0" forecolor="3355443"/>
+								<style name="fixedrow" backcolor1="52428" backcolor2="15066597" backalpha1="1" backalpha2="1" bordercolor="6710886" borderthickness="1" bt_top="1" bt_bottom="1" bt_left="1" bt_right="1" fontstyle="1" forecolor="16777215" fontsize="12"/>
+								<style name="fixedcolumn" backcolor1="16317653" backcolor2="15066597" bordercolor="3394815" borderthickness="1" fontsize="20" fontstyle="0" forecolor="0"/>
+								<style name="spreadsheet" backcolor1="16317653" backcolor2="15066597" bordercolor="3394815" borderthickness="1" fontsize="12" fontstyle="0" forecolor="0"/>
+								<style name="subtotal" backcolor1="16317653" backcolor2="15066597" bordercolor="3394815" borderthickness="1" fontsize="12" fontstyle="2" forecolor="0"/>
+							</styles>
+						</List>;
+			public function init():void{
+				var w:int=mgrid.width/5;
+				res.columns.children()[0].@width=0.5*w;
+				res.columns.children()[1].@width=w;
+				res.columns.children()[2].@width=2.49*w;
+				res.columns.children()[3].@width=0.5*w;
+				res.columns.children()[4].@width=0.5*w;
+				mgrid.ResourceXML=res;
+				
+				var rtReport1:RemoteObject = new RemoteObject("indexEvaluation");
+				rtReport1.showBusyCursor = true;
+				rtReport1.endpoint = ModelLocator.END_POINT;
+				rtReport1.addEventListener(ResultEvent.RESULT,getDataResult);
+				Application.application.faultEventHandler(rtReport1);
+				//rtReport1.getSETChartData();
+				rtReport1.getOperationQualityData(indexModel);
+			}
+			
+//			private function getSETChartDataResult(event:ResultEvent):void{
+//				var oriData:ArrayCollection=event.result as ArrayCollection;
+//				var chartData:String="";
+//				chartData="<chart caption='业务支撑度指标' " 
+//					+"subcaption=' ' "
+//					+"xAxisName=' ' yAxisName=' ' showValues='1' numberPrefix=' ' " 
+//					+"showBorder='1' baseFontSize='14' canvasBorderColor='3366FF,3366FF'"
+//					+" canvasBorderThickness='20' canvasBgColor='FFFFFF,FFFFFF' bgColor='3366FF,FFFFFF'>" ;
+//				if(fc.FCChartType.indexOf("MS")<0){
+//					for each(var cd:ChartData in oriData){
+//						chartData+="<set label='"+cd.label+"'"+" value='"+cd.value+"'/>";
+//					}
+//					chartData+="</chart>"
+//				}else if(this.statis.charttype.indexOf("MS")>-1){
+//					chartData+="<categories> "
+//					for each(var cd:ChartData in oriData){
+//						chartData+="<category label='"+cd.label+"'/>"
+//					}
+//					chartData+="</categories>";
+//					var seriesName:String="";
+//					for each(var cd:ChartData in oriData){
+//						if(seriesName!=cd.seriesName){
+//							if(seriesName!=""){
+//								chartData+="</dataset>"
+//							}
+//							seriesName=cd.seriesName;
+//							chartData+="<dataset seriesName='"+seriesName+"'>";
+//						}
+//						chartData+="<set value='"+cd.value+"'/>";
+//					}
+//					chartData+="</dataset></chart>"
+//				}
+//				var rtReport2:RemoteObject = new RemoteObject("indexEvaluation");
+//				rtReport2.showBusyCursor = true;
+//				rtReport2.endpoint = ModelLocator.END_POINT;
+//				rtReport2.addEventListener(ResultEvent.RESULT,getXmlFile);
+//				rtReport2.getdata(chartData,"sta_equiptable");
+//				
+////				mgrid.redraw=false;
+////				mgrid.set_cell(CellOp.HTML_TEXT,font.rowindex,font.colindex,font.setting);
+////				mgrid.redraw=true;
+//				
+//				var rtReport3:RemoteObject = new RemoteObject("indexEvaluation");
+//				rtReport3.showBusyCursor = true;
+//				rtReport3.endpoint = ModelLocator.END_POINT;
+//				rtReport3.addEventListener(ResultEvent.RESULT,getDataResult);
+//				Application.application.faultEventHandler(rtReport3);
+//				rtReport3.getSETData();
+//			}
+			
+//			private function getXmlFile(event:ResultEvent):void{
+//				fc.FCChartType=fc.FCChartType;
+//				fc.FCDataURL=event.result.toString();
+//				fc.FCRender();
+//			}
+			
+			private function getDataResult(event:ResultEvent):void{
+				mgrid.dataProvider=event.result as ArrayCollection;
+				bgbox.height=mgrid.Rows.item(0).height;
+				
+				//查找单位列表
+				var re:RemoteObject = new RemoteObject("indexEvaluation");
+				re.showBusyCursor = true;
+				re.endpoint = ModelLocator.END_POINT;
+				re.addEventListener(ResultEvent.RESULT,getDeptLstResult);
+				Application.application.faultEventHandler(re);
+				re.getDeptLst();
+			}
+			private function getDeptLstResult(event:ResultEvent):void{
+				deptLst = new XMLList(event.result);
+				dept.dataProvider = deptLst;
+				dept.dropdown.dataProvider = deptLst;
+				dept.labelField="@label";
+				dept.text="";
+				dept.selectedIndex=-1;
+			}
+			
+			private function queryData():void{
+				if(dfstartUpdateDate.text!=""){
+					indexModel.start=dfstartUpdateDate.text+" 00:00:00";
+				}else{
+					indexModel.start=dfstartUpdateDate.text
+				}
+				if(dfendUpdateDate.text!=""){
+					indexModel.end = dfendUpdateDate.text+" 24:00:00";
+				}else{
+					indexModel.end = dfendUpdateDate.text
+				}
+				
+				indexModel.dept = dept.text;
+				var re:RemoteObject = new RemoteObject("indexEvaluation");
+				re.showBusyCursor = true;
+				re.endpoint = ModelLocator.END_POINT;
+				re.addEventListener(ResultEvent.RESULT,getQueryResult);
+				Application.application.faultEventHandler(re);
+				re.getOperationQualityData(indexModel);
+			}
+			
+			private function getQueryResult(event:ResultEvent):void{
+				mgrid.dataProvider=event.result as ArrayCollection;
+				bgbox.height=mgrid.Rows.item(0).height;
+			}
+			
+			private function reSet():void{
+				dept.selectedIndex=-1;
+				dept.text="";
+				dfstartUpdateDate.text="";
+				dfendUpdateDate.text = "";
+			}
+			
+			private function saveAsExcel():void{
+				var exp:MecExporter=new MecExporter();
+				exp.AddDataGrid(mgrid,"");
+				var ebt:Object=exp.Export2HTML();
+				var tabledata:String=ebt.table.toString();
+//				var ixp:ImageUtil=new ImageUtil();
+//				var ibt:ByteArray=ixp.getUIComponentByteArray(fc);
+				var ibt:ByteArray= new ByteArray();
+				var rtReport4:RemoteObject = new RemoteObject("indexEvaluation");
+				rtReport4.showBusyCursor = true;
+				rtReport4.endpoint = ModelLocator.END_POINT;
+				rtReport4.addEventListener(ResultEvent.RESULT,saveResult);
+				Application.application.faultEventHandler(rtReport4);
+				rtReport4.getExcel("通信网络运行质量指标",tabledata,ibt,4);
+			}
+			
+			
+			private function saveResult(event:ResultEvent):void{
+				
+				var date:String = event.result.toString();
+				if(date!=null&&date.split(";").length==2){
+					var path = getURL()+"assets/excels/expfiles/"+date.split(";")[1]+".xls";
+					
+					var request:URLRequest = new URLRequest(encodeURI(path));
+					
+					navigateToURL(request);	
+				}
+			}
+			private function getURL():String{
+				var currSwfUrl:String; 
+				var doMain:String = Application.application.stage.loaderInfo.url;  
+				var doMainArray:Array = doMain.split("/");  
+				
+				if (doMainArray[0] == "file:") {  
+					if(doMainArray.length<=3){  
+						currSwfUrl = doMainArray[2];  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf(currSwfUrl.charAt(2)));  
+					}else{  
+						currSwfUrl = doMain;  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+					}  
+				}else{  
+					currSwfUrl = doMain;  
+					currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+				}  
+				currSwfUrl += "/";
+				return currSwfUrl;
+			}
+			
+		]]>
+	</mx:Script>
+		<mx:VBox width="70%" height="100%" borderColor="0x6666FF" borderThickness="3" >
+			<mx:HBox width="100%" height="25">
+				<mx:Button label="导出Excel" click="saveAsExcel()"/>
+			</mx:HBox>
+			<!--<ns1:FusionCharts id="fc" width="100%" height="40%" FCFolder="FusionCharts" FCChartType="Pie2D" creationComplete="init()">
+			</ns1:FusionCharts>-->
+			<mx:HBox width="80%" height="25"  verticalAlign="middle">
+				<mx:HBox width="20%" height="100%" verticalAlign="middle">
+					<mx:Label text="单位" width="60" />
+					<mx:ComboBox id="dept" width="120" />
+				</mx:HBox>
+				<mx:HBox width="20%" height="100%" verticalAlign="middle">
+					<mx:Label text="时间从" width="60" />
+					<mx:DateField id="dfstartUpdateDate" 
+								  width="120" 
+								  dayNames="{days}" 
+								  monthNames="{monthNames}" 
+								  yearNavigationEnabled="true" 
+								  formatString="YYYY-MM-DD"/>
+				</mx:HBox>
+				<mx:HBox width="20%" height="100%" verticalAlign="middle">
+					<mx:Label text="至" width="60" />
+					<mx:DateField  id="dfendUpdateDate"  
+								   width="120" 
+								   dayNames="{days}" 
+								   monthNames="{monthNames}" 
+								   yearNavigationEnabled="true" 
+								   formatString="YYYY-MM-DD"/>
+				</mx:HBox>
+				<mx:Spacer height="10"/>
+				
+				<mx:Button id="query" label="查询" width="80" click="queryData()" styleName="loginprimary"/>
+				<mx:Button id="closeBtn"
+						   label="清空"
+						   styleName="loginsecondary"
+						   width="80"
+						   click="reSet();"/>
+			</mx:HBox>
+			<mx:VBox width="100%" height="100%" verticalGap="0" borderColor="3394815" borderThickness="1">
+				<mx:HBox  borderColor="3394815" borderThickness="1" backgroundColor="52428" height="25" width="{mgrid.width}" verticalAlign="middle" horizontalAlign="center">
+					<mx:Label text="通信网络运行质量指标" textAlign="center" color="16777215" fontWeight="bold" fontSize="22"/>
+				</mx:HBox>
+				<mx:Canvas width="100%" height="100%" borderThickness="0">
+					<mx:HBox id="bgbox" width="100%" height="20" borderThickness="0" backgroundColor="52428"/>
+					<MecGrid:MecGrid id="mgrid" width="100%" height="100%" >
+					</MecGrid:MecGrid>
+				</mx:Canvas>
+			</mx:VBox>
+		</mx:VBox>
+</mx:VBox>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--频闪处理窗口-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		 backgroundImage="@Embed(source='assets/images/mntsubject/main_r8_c2.png')"
+		 x="0" y="0"
+		 xmlns:views="com.metarnet.mnt.common.views.*" width="315" height="45">
+	
+	<mx:Script>
+		<![CDATA[
+			
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			
+			
+			
+			public var fm:FlashAlarmMonitor;
+			public var aid:String="";
+			
+			public var Icon:Class; 
+			
+			
+			
+			
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				fm.FollowAlarm(aid);
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				fm.changeOrdinaryAlarm(aid);
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function button3_clickHandler(event:MouseEvent):void
+			{
+				fm.IgnoreAlarm(aid);
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function button4_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%"  verticalAlign="middle" horizontalAlign="center" >
+		<mx:Grid verticalAlign="middle" horizontalAlign="center" horizontalGap="3">
+			<mx:GridRow width="100%" height="100%">
+				<mx:GridItem width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+					<mx:LinkButton   click="button2_clickHandler(event)"  skin="@Embed(source='assets/images/mntsubject/Standard_alarm.png')"
+									 overSkin="@Embed(source='assets/images/mntsubject/mouseover_alarm.png')" 
+									 downSkin="@Embed(source='assets/images/mntsubject/mousedown_alarm.png')"/>
+				</mx:GridItem>
+				<mx:GridItem width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+					<mx:LinkButton  click="button1_clickHandler(event)" skin="@Embed(source='assets/images/mntsubject/Standard_Atte.png')"
+									overSkin="@Embed(source='assets/images/mntsubject/mouseover_Atte.png')" 
+									downSkin="@Embed(source='assets/images/mntsubject/mousedown_Atte.png')"/>
+				</mx:GridItem>
+				<mx:GridItem width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+					<mx:LinkButton   click="button3_clickHandler(event)"  skin="@Embed(source='assets/images/mntsubject/Standerd_Ignore.png')"
+									 overSkin="@Embed(source='assets/images/mntsubject/mouseover_Ignore.png')" 
+									 downSkin="@Embed(source='assets/images/mntsubject/mousedown_Ignore.png')"/>
+				</mx:GridItem>
+				<mx:GridItem width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+					<mx:LinkButton  click="button4_clickHandler(event)"  skin="@Embed(source='assets/images/mntsubject/Standerd_cancel.png')"
+									overSkin="@Embed(source='assets/images/mntsubject/mouseover_cancel.png')" 
+									downSkin="@Embed(source='assets/images/mntsubject/mousedown_cancel.png')"/>
+				</mx:GridItem>
+			</mx:GridRow>
+		</mx:Grid>
+	</mx:VBox>
+</mx:VBox>
+			

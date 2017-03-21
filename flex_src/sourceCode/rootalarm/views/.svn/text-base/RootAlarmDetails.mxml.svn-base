@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--告警详细信息-->
+
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" 
+				creationComplete="init();" 
+				title="告警详细信息" x="200" y="0"
+				width="710" height="480"  
+				showCloseButton="true"
+				close="titleWindow_close(event);"
+				horizontalScrollPolicy="off" verticalScrollPolicy="off"
+				backgroundImage="assets/images/rootalarm/RootAlarmDetail.png">
+	
+	<mx:Script>
+		<![CDATA[
+			import sourceCode.alarmmgr.views.PopUpKeyBusiness;
+			import sourceCode.flashalarm.ShowFlashAlarmDetail;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.core.Application;
+			import mx.formatters.DateFormatter;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			public var show_RootAlarmID:String;
+			import mx.controls.Text;
+			import mx.events.CloseEvent;
+			import common.actionscript.ModelLocator;
+			import mx.collections.ArrayCollection;
+			private var rootAlarmWin:TitleWindow;
+			private var alarmnu:String="";
+			[Embed(source="assets/images/rootalarm/alarm_message.png")]
+			public var AlarmIcon:Class; 
+			private var arr:ArrayCollection =new ArrayCollection( [{label:'-----请选择-----',data:null}]);
+			
+			[Bindable]
+			public var obj:Object = new Object();
+			
+			private var params:ArrayCollection = new ArrayCollection();
+			private function init():void{  
+				
+				alarmnu=obj.alarmnumber;
+				getCircuit(alarmnu);
+				
+				ALARMLEVELNAME.text = obj.alarmlevelname;
+				ALARMOBJDESC.text = obj.alarmobjdesc;
+				OBJCLASSZH.text = obj.objclasszh;
+				LASTSTARTTIME.text =obj.laststarttime;
+				ALARMDESC.text = obj.alarmdesc;
+				BELONGTRANSYS.text = obj.belongtransys;
+				VENDORZH.text = obj.vendorzh;
+				ISACKEDZH.text = obj.isackedzh;
+				ACKPERSON.text = obj.ackperson;
+				ACKTIME.text = obj.acktime;
+				SPECIALTYZH.text = obj.specialtyzh;
+				FLASHCOUNT.text = obj.flashcount;
+				TRIGGEREDTHRESHOLD.text = obj.triggeredthreshold;
+				ISWORKCASE.text = obj.isworkcasezh;
+				BUGNO.text = obj.bugno;
+				ISBUGNO.text = obj.isbugno;
+				DUTYID.text = obj.dutyid;
+				DEALPERSON.text = obj.dealperson;
+				DEALPART.text = obj.dealpart;
+				DEALRESULT.text = obj.dealresultzh;
+				RUN_UNIT.text = obj.run_unit;
+				
+				if(ISBUGNO.text=="无"){
+					
+					ISBUGNO.text="否";
+				}else{
+					ISBUGNO.text="是";
+				}
+				
+			}
+			
+			private function getCircuit(alarmnu:String):void{
+			
+				var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getCircuitCount(alarmnu);       
+				rtobj.addEventListener(ResultEvent.RESULT,setCircuitCount);
+			
+			}
+			
+			private function setCircuitCount(event:ResultEvent):void{
+			
+				CARRYCIRCUIT.text = event.result.toString();
+			
+			}
+			
+			
+			private function titleWindow_close(evt:CloseEvent):void {
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function FLASHCOUNT_clickHandler(event:MouseEvent):void
+			{
+				
+				if(FLASHCOUNT.text=="0"){
+					//Alert.show("没有影响电路","消息提示");
+					FLASHCOUNT.useHandCursor=false;
+					
+				}else{
+					rootAlarmWin =new TitleWindow();
+					rootAlarmWin.layout="absolute";
+					rootAlarmWin.x=0;
+					rootAlarmWin.y=0;
+					
+					rootAlarmWin.styleName="popwindow";
+					rootAlarmWin.showCloseButton="true";
+					rootAlarmWin.title="频闪告警分析";
+					rootAlarmWin.titleIcon=AlarmIcon;
+					var ram:ShowFlashAlarmDetail = new ShowFlashAlarmDetail();
+					ram.alarmNumber =alarmnu ;
+					rootAlarmWin.addEventListener(CloseEvent.CLOSE,rootAlarmWinClose);
+					rootAlarmWin.addChild(ram);
+					PopUpManager.addPopUp(rootAlarmWin,main(Application.application),true);
+					PopUpManager.centerPopUp(rootAlarmWin);
+					
+				}
+				// TODO Auto-generated method stub
+			}
+
+			private function rootAlarmWinClose(evt:CloseEvent):void{
+				PopUpManager.removePopUp(rootAlarmWin);
+			}
+			
+			
+
+			protected function CARRYCIRCUIT_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				if(CARRYCIRCUIT.text=="0"){
+					CARRYCIRCUIT.useHandCursor=false;
+					CARRYCIRCUIT.buttonMode=false;
+				}else{
+					var keybusiness:PopUpKeyBusiness =new PopUpKeyBusiness();
+					keybusiness.circuitname =""; 
+					keybusiness.isacked = "";
+					keybusiness.alarmnumber=alarmnu;
+					PopUpManager.addPopUp(keybusiness,this,true);
+					PopUpManager.centerPopUp(keybusiness);
+				}
+			}
+
+		]]>
+	</mx:Script>
+	<mx:VBox width="700"  paddingTop="23"
+			 horizontalScrollPolicy="off" verticalScrollPolicy="off" paddingLeft="20" >
+		<mx:HBox width="700" height="198" >
+			<mx:VBox width="340" height="100%">
+				<mx:Form width="100%" height="100%" >
+					<mx:FormItem label="告警级别:">
+						<mx:Text id="ALARMLEVELNAME" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="告警类型:">
+						<mx:Text id="OBJCLASSZH" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="是否频闪监控:">
+						<mx:Text id="TRIGGEREDTHRESHOLD" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="所属厂家:">
+						<mx:Text id="VENDORZH" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="所属专业:">
+						<mx:Text id="SPECIALTYZH" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="告警描述:">
+						<mx:Text id="ALARMDESC" width="200"  />
+					</mx:FormItem>
+				</mx:Form>
+			</mx:VBox>
+			<mx:VBox width="340" height="100%">
+				<mx:Form width="100%" height="100%" >
+					<mx:FormItem label="       告警时间:">
+						<mx:Text id="LASTSTARTTIME" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="       缺陷单ID:">
+						<mx:Text id="DUTYID" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="       频闪次数:">
+						<mx:Text id="FLASHCOUNT" width="200" fontWeight="bold" useHandCursor="true" buttonMode="true" mouseChildren="false" textDecoration="underline" click="FLASHCOUNT_clickHandler(event)"/>
+					</mx:FormItem>
+					<mx:FormItem label="       所属系统:">
+						<mx:Text id="BELONGTRANSYS" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="       告警对象:">
+						<mx:Text id="ALARMOBJDESC" width="200"   />
+					</mx:FormItem>
+				</mx:Form>
+			</mx:VBox>
+		</mx:HBox>
+		<mx:HBox width="700" height="200">
+			<mx:VBox width="340" height="100%">
+				<mx:Form width="100%" height="100%">
+					<mx:FormItem label="告警可能原因:">
+						<mx:Text id="ISWORKCASE" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="是否确认:">
+						<mx:Text id="ISACKEDZH" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="确认人:">
+						<mx:Text id="ACKPERSON" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="确认时间:"> 
+						<mx:Text id="ACKTIME" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="确认内容:">
+						<mx:Text id="ACKCONTENT" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="影响电路:">
+						<mx:Text id="CARRYCIRCUIT" width="200" fontWeight="bold" useHandCursor="true" buttonMode="true" mouseChildren="false" textDecoration="underline" click="CARRYCIRCUIT_clickHandler(event)" />
+					</mx:FormItem>
+				</mx:Form>
+			</mx:VBox>
+			<mx:VBox width="340" height="100%">
+				<mx:Form width="100%" height="100%">
+					<mx:FormItem label="是否转故障单:">
+						<mx:Text id="ISBUGNO" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="故障单号:">
+						<mx:Text id="BUGNO" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="告警处理部门:">
+						<mx:Text id="DEALPART" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="当前值班员:">
+						<mx:Text id="DEALPERSON" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="处理方式:">
+						<mx:Text id="DEALRESULT" width="200"  />
+					</mx:FormItem>
+					<mx:FormItem label="运维单位:">
+						<mx:Text id="RUN_UNIT" width="200"  />
+					</mx:FormItem>
+				</mx:Form>
+			</mx:VBox>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				title="选择区域"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="App(event)"
+				layout="absolute" minWidth="955" minHeight="600" width="400" height="400" fontSize="13">
+	
+	<mx:Script source="../actionscript/eRegionTree.as" />	
+	<mx:Tree x="0" y="0" 
+			 width="100%" height="100%" 
+			 dataProvider="{folderCollection}"
+			 labelField="@name"
+			 defaultLeafIcon="{leafPic}" 
+			 borderStyle="none"
+			 doubleClickEnabled="true"
+			 doubleClick="regionTree_doubleClickHandler(event)"
+			 itemClick="tree_itemClick(event)"
+			 verticalScrollPolicy="auto"
+			 id="regionTree"/>
+	
+</mx:TitleWindow>

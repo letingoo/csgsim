@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/**
+* Web App Solution Confidential Information
+* Copyright 2010, Web App Solution
+*
+* Created 2010.12.14
+* @author 王金山
+*
+* Maintenance list:
+*/
+-->
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" 
+	height="100%" 
+	xmlns:views="sourceCode.ocableResource.views.*" 
+	xmlns:component="common.component.*" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			private var _modelName:String;
+			[Bindable]
+			public function get modelName():String {return _modelName;}
+			public function set modelName(value:String):void {_modelName = value;}
+			
+			private var _province:String;
+			[Bindable]
+			public function get province():String {return _province;}
+			public function set province(value:String):void {_province = value;}
+			
+			private var _setoperDesc:String;
+			[Bindable]
+			public function get setoperDesc():String {return _setoperDesc;}
+			public function set setoperDesc(value:String):void {_setoperDesc = value;}
+			
+			private function changeState(event:Event):void{
+				/* if(ocableview.rightBox.visible){
+					ocableview.rightBox.includeInLayout = false;
+					ocableview.rightBox.visible = false;
+					ModelLocator.PointIcon=ModelLocator.PointRight;
+				}else{
+					ocableview.rightBox.includeInLayout = true;
+					ocableview.rightBox.visible = true;
+					ModelLocator.PointIcon=ModelLocator.PointLeft;
+				}   */
+			}
+			
+		]]>
+	</mx:Script>
+	<component:ControlBar id="controlBar" width="0" height="0" modelName="{modelName}"  imgName="cablewiring"/>
+		
+	<views:ocableResourceView id="ocableview"  modelName="{modelName}" province="{province}"  setoperDesc="{setoperDesc}" width="100%" height="100%"/>
+			
+		
+	
+</mx:VBox>

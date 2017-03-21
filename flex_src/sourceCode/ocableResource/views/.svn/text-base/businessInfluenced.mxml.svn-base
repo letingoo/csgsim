@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+	xmlns:ns1="com.fusioncharts.components.*"
+	xmlns:views="sourceCode.ocableResource.views.*"
+	paddingLeft="0" 
+	width="100%" 
+	height="100%"  
+	paddingRight="0" 
+	paddingTop="0" 
+	paddingBottom="0"
+	creationComplete="init()" >
+	
+	<mx:Style>
+		.ChineseFont{ 
+			fontFamily:"Verdana","宋体"; 
+			fontSize:12; 
+		}
+	</mx:Style>
+	
+	<mx:Script source="../actionscript/businessInfluenced.as"/>	
+	
+	<mx:Number id="lastRollOverIndex" /> 
+	<mx:TabNavigator width="100%" height="100%" id="tabnavigator" creationPolicy="all">
+		<mx:VBox width="100%" id="vbAll" height="100%" verticalGap="0" horizontalGap="0" label="全部业务">
+			<mx:HBox width="100%" height="100%" borderColor="0x6666FF" borderThickness="3" >
+				<mx:VBox width="50%" height="100%" borderColor="0x6666FF" borderThickness="3" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label text="按类型统计全部业务" fontSize="20" color="#0049EE"  fontWeight="bold"/> 
+					<mx:HBox width="100%" height="100%" visible="true" >
+						<mx:Legend dataProvider="{pieChart}"
+							width="100"
+							height="100%"
+							direction="horizontal"						   				   
+							horizontalGap="4" legendItemClass="sourceCode.ocableResource.actionscript.FontLegendItem" />	
+						<mx:PieChart id="pieChart"
+							width="100%"
+							height="100%" fontSize="15"
+							showDataTips="true"
+							selectionMode="single"
+							change="explode(event)"
+							innerRadius="0">
+							<mx:series>
+								<mx:PieSeries id="pieSeries"
+									field="value" 
+									nameField="name"
+									fontSize="12"
+									labelPosition="callout"									 							  
+									innerRadius="0"	
+									showDataEffect="interpolate"/>
+							</mx:series>
+						</mx:PieChart>
+						
+					</mx:HBox>
+					<mx:Label id="pie_nodata" text="无相关数据！" fontSize="15" visible="false" horizontalCenter="true"/>
+				</mx:VBox>
+				<mx:VBox width="50%" height="100%" borderColor="0x6666FF" borderThickness="3" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label text="按速率统计全部业务" fontSize="20" color="#0049EE" fontWeight="bold"/>
+					<mx:ColumnChart id="columnChart"
+						width="80%"
+						height="80%"
+						showDataTips="true" 
+						fontSize="12">
+						<mx:horizontalAxis>
+							<mx:CategoryAxis categoryField="name"/>
+						</mx:horizontalAxis>
+						<mx:series>
+							<mx:ColumnSeries xField="name"
+								yField="value"
+								fontSize="15" color="0x00A0E9"
+								showDataEffect="interpolate"/>
+						</mx:series>
+					</mx:ColumnChart>
+					<mx:Label id="column_nodata" text="无相关数据！" fontSize="15" visible="false"/>
+				</mx:VBox>
+			</mx:HBox>
+			<mx:DataGrid id = "dgAll"  width="100%" height="100%"  itemRollOver="lastRollOverIndex = event.rowIndex" contextMenu="{cm}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="30" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="影响程度" dataField="inflevel" width="80" itemRenderer="sourceCode.ocableResource.actionscript.InfluenceColorRenderer"/>
+					<mx:DataGridColumn headerText="电路号" dataField="circuitcode"/>		
+					<mx:DataGridColumn headerText="速率" width="60" dataField="rate"/>
+					<mx:DataGridColumn headerText="业务类型" width="60" dataField="username"/>
+					<mx:DataGridColumn headerText="业务名称" width="60" dataField="remark"/>
+					<mx:DataGridColumn headerText="起始端口" dataField="portserialno1"/>
+					<mx:DataGridColumn headerText="终止端口" dataField="portserialno2"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox width="100%" height="30" verticalAlign="middle" horizontalAlign="right" backgroundColor="#CCDDEE">
+				<views:pagetoolbar id="serverPagingBar1" width="100%" height="100%" dataGrid="{dgAll}" pagingFunction="{pagingFunction}"  />
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox width="100%" id="vbInf" height="100%" verticalGap="0" horizontalGap="0" label="影响业务">
+			<mx:HBox width="100%" height="100%" borderColor="0x6666FF" borderThickness="3" >
+				<mx:VBox width="50%" height="100%" borderColor="0x6666FF" borderThickness="3" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label text="按类型统计影响业务" fontSize="20" color="#0049EE"  fontWeight="bold"/> 
+					<mx:HBox width="100%" height="100%" visible="true" >
+						<mx:Legend dataProvider="{pieChartInf}"
+							width="100"
+							height="100%"
+							direction="horizontal"						   				   
+							horizontalGap="4" legendItemClass="sourceCode.ocableResource.actionscript.FontLegendItem" />	
+						<mx:PieChart id="pieChartInf"
+							width="100%"
+							height="100%" fontSize="15"
+							showDataTips="true"
+							selectionMode="single"
+							change="explode(event)"
+							innerRadius="0">
+							<mx:series>
+								<mx:PieSeries id="pieSeriesInf"
+									field="value" 
+									nameField="name"
+									fontSize="12"
+									labelPosition="callout"									 							  
+									innerRadius="0"	
+									showDataEffect="interpolate"/>
+							</mx:series>
+						</mx:PieChart>
+						
+					</mx:HBox>
+					<mx:Label id="pie_nodatainf" text="无相关数据！" fontSize="15" visible="false" horizontalCenter="true"/>
+				</mx:VBox>
+				<mx:VBox width="50%" height="100%" borderColor="0x6666FF" borderThickness="3" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label text="按速率统计影响业务" fontSize="20" color="#0049EE" fontWeight="bold"/>
+					<mx:ColumnChart id="columnChartInf"
+						width="80%"
+						height="80%"
+						showDataTips="true" 
+						fontSize="12">
+						<mx:horizontalAxis>
+							<mx:CategoryAxis categoryField="name"/>
+						</mx:horizontalAxis>
+						<mx:series>
+							<mx:ColumnSeries xField="name"
+								yField="value"
+								fontSize="15" color="0x00A0E9"
+								showDataEffect="interpolate"/>
+						</mx:series>
+					</mx:ColumnChart>
+					<mx:Label id="column_nodatainf" text="无相关数据！" fontSize="15" visible="false"/>
+				</mx:VBox>
+			</mx:HBox>
+			<mx:DataGrid id = "dgInf"  width="100%" height="100%"  itemRollOver="lastRollOverIndex = event.rowIndex" contextMenu="{cm}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="30" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="电路号" dataField="circuitcode"/>		
+					<mx:DataGridColumn headerText="速率" width="60" dataField="rate"/>
+					<mx:DataGridColumn headerText="业务类型" width="60" dataField="username"/>
+					<mx:DataGridColumn headerText="业务名称" width="60" dataField="remark"/>
+					<mx:DataGridColumn headerText="起始端口" dataField="portserialno1"/>
+					<mx:DataGridColumn headerText="终止端口" dataField="portserialno2"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox width="100%" height="30" verticalAlign="middle" horizontalAlign="right" backgroundColor="#CCDDEE">
+				<views:pagetoolbar id="serverPagingBarInf" width="100%" height="100%" dataGrid="{dgInf}" pagingFunction="{pagingFunctionInf}"  />
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox width="100%" id="vbInt" height="100%" verticalGap="0" horizontalGap="0" label="中断业务">
+			<mx:HBox width="100%" height="100%" borderColor="0x6666FF" borderThickness="3" >
+				<mx:VBox width="50%" height="100%" borderColor="0x6666FF" borderThickness="3" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label text="按类型统计中断业务" fontSize="20" color="#0049EE"  fontWeight="bold"/> 
+					<mx:HBox width="100%" height="100%" visible="true" >
+						<mx:Legend dataProvider="{pieChartInt}"
+							width="100"
+							height="100%"
+							direction="horizontal"						   				   
+							horizontalGap="4" legendItemClass="sourceCode.ocableResource.actionscript.FontLegendItem" />	
+						<mx:PieChart id="pieChartInt"
+							width="100%"
+							height="100%" fontSize="15"
+							showDataTips="true"
+							selectionMode="single"
+							change="explode(event)"
+							innerRadius="0">
+							<mx:series>
+								<mx:PieSeries id="pieSeriesInt"
+									field="value" 
+									nameField="name"
+									fontSize="12"
+									labelPosition="callout"									 							  
+									innerRadius="0"	
+									showDataEffect="interpolate"/>
+							</mx:series>
+						</mx:PieChart>
+						
+					</mx:HBox>
+					<mx:Label id="pie_nodataint" text="无相关数据！" fontSize="15" visible="false" horizontalCenter="true"/>
+				</mx:VBox>
+				<mx:VBox width="50%" height="100%" borderColor="0x6666FF" borderThickness="3" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label text="按速率统计中断业务" fontSize="20" color="#0049EE" fontWeight="bold"/>
+					<mx:ColumnChart id="columnChartInt"
+						width="80%"
+						height="80%"
+						showDataTips="true" 
+						fontSize="12">
+						<mx:horizontalAxis>
+							<mx:CategoryAxis categoryField="name"/>
+						</mx:horizontalAxis>
+						<mx:series>
+							<mx:ColumnSeries xField="name"
+								yField="value"
+								fontSize="15" color="0x00A0E9"
+								showDataEffect="interpolate"/>
+						</mx:series>
+					</mx:ColumnChart>
+					<mx:Label id="column_nodataint" text="无相关数据！" fontSize="15" visible="false"/>
+				</mx:VBox>
+			</mx:HBox>
+			<mx:DataGrid id = "dgInt"  width="100%" height="100%"  itemRollOver="lastRollOverIndex = event.rowIndex" contextMenu="{cm}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="30" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="电路号" dataField="circuitcode"/>		
+					<mx:DataGridColumn headerText="速率" width="60" dataField="rate"/>
+					<mx:DataGridColumn headerText="业务类型" width="60" dataField="username"/>
+					<mx:DataGridColumn headerText="业务名称" width="60" dataField="remark"/>
+					<mx:DataGridColumn headerText="起始端口" dataField="portserialno1"/>
+					<mx:DataGridColumn headerText="终止端口" dataField="portserialno2"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox width="100%" height="30" verticalAlign="middle" horizontalAlign="right" backgroundColor="#CCDDEE">
+				<views:pagetoolbar id="serverPagingBarInt" width="100%" height="100%" dataGrid="{dgInt}" pagingFunction="{pagingFunctionInt}"  />
+			</mx:HBox>
+		</mx:VBox>
+		
+	</mx:TabNavigator>
+</mx:HBox>
+

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:component="common.component.*"
+		   width="100%" height="100%" creationComplete="init()" preinitialize="preinitialize()">
+	
+	<mx:Script source="../actionscript/CircuitBusinessRelation.as"/>
+	
+	<mx:VBox width="100%" height="100%" horizontalScrollPolicy="off" paddingBottom="0"
+			 paddingLeft="0" paddingRight="0" paddingTop="0" verticalScrollPolicy="off">
+		<component:ControlBar id="controlBar" width="100%" height="38"
+							  controlAdd="controlBar_controlAddHandler(event)"
+							  controlDel="controlBar_controlDelHandler(event)"
+							  controlEdit="controlBar_controlEditHandler(event)"
+							  controlExportExcel="toolbar_ExportExcelHandler(event)"
+							  controlImport="controlBar_controlImportHandler(event)"
+							  controlSearch="toolbar_toolEventSearchHandler(event)"
+							  imgName="comprehensivemonitor" modelName="电路业务关系" showAddButton="{isAdd}"
+							  showDelButton="{isDelete}" showEditButton="{isEdit}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}"
+							  showSearchButton="{isSearch}"/>
+		<mx:DataGrid id="dataGrid" width="100%" height="100%" editable="false"
+					 horizontalScrollPolicy="auto"> 
+			<mx:columns>
+				<mx:DataGridColumn width="100" dataField="no" headerText="序号"/>
+				<mx:DataGridColumn width="200" dataField="business_name" headerText="业务名称"/>
+				<mx:DataGridColumn width="200" dataField="business_id" headerText="业务编码"/>
+				<mx:DataGridColumn width="200" dataField="username" headerText="电路名称"/>
+				<mx:DataGridColumn width="200" dataField="circuitcode" headerText="电路编码"/>
+				<mx:DataGridColumn width="200" dataField="updateperson" headerText="更新人"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<component:pagetoolbar id="serverPagingBar" width="100%"/>
+	</mx:VBox>
+</mx:Canvas>

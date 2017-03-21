@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+	<mx:HBox  xmlns:mx="http://www.adobe.com/2006/mxml" height="23" horizontalScrollPolicy="off" verticalScrollPolicy="off" creationComplete="init();" horizontalGap="0" borderColor="#cccccc"
+		  backgroundColor="#ffffff" borderStyle="solid" verticalAlign="middle" paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0">
+		<mx:HBox id="oDateBox" verticalAlign="middle" horizontalGap="0"  paddingLeft="0" paddingRight="0" backgroundColor="#ffffff">
+			<mx:TextInput id="oYear" restrict="0-9"  maxChars="4" width="35" text="{_year}"  height="18"
+				focusIn="onfocusIn(oYear)" focusOut="onfocusOut()" change="inputField_changeYears()"
+			 	focusAlpha="0" textAlign="right" borderStyle="none"/>
+			<mx:Text text="-" textAlign="center" width="8"/>
+			<mx:TextInput enter="changeFocus(oDay)" id="oMonth" restrict="0-9"  maxChars="2" width="20" text="{_month}" 
+				focusIn="onfocusIn(oMonth)" focusOut="onfocusOut()" change="inputField_changeMonths()" height="18"
+				focusAlpha="0" textAlign="right" borderStyle="none"/>
+			<mx:Text text="-" textAlign="center" width="8"/>
+			<mx:TextInput enter="changeFocus(oHour)" id="oDay" restrict="0-9" focusOut="onfocusOut()"  maxChars="2" width="20" text="{_day}" 
+				focusIn="onfocusIn(oDay)" change="inputField_changeDays()" height="18"
+				focusAlpha="0" textAlign="right" borderStyle="none"/>
+		</mx:HBox>
+		<mx:HBox id="oTimeBox" verticalAlign="middle" horizontalGap="0" paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0" backgroundColor="#ffffff">
+			<mx:TextInput enter="changeFocus(oMinute)" id="oHour"  restrict="0-9"  maxChars="2" width="20" text="{_hour}" 
+				focusIn="onfocusIn(oHour)" focusOut="onfocusOut()" change="inputField_changeHour()" height="18"
+				focusAlpha="0" textAlign="right" borderStyle="none" />
+			<mx:Text text=":" textAlign="center"  width="8"/>
+			<mx:TextInput enter="changeFocus(oSecond)" id="oMinute"  restrict="0-9"  maxChars="2" width="20" text="{_minute}" 
+				focusIn="onfocusIn(oMinute)" focusOut="onfocusOut()" change="inputField_changeMinutes()" height="18"
+				focusAlpha="0" textAlign="right" borderStyle="none" />
+			<mx:Text text=":" textAlign="center"  width="8"/>
+			<mx:TextInput enter="onfocusOut()" id="oSecond" restrict="0-9"  maxChars="2" width="20" text="{_second}" 
+				focusIn="onfocusIn(oSecond)" focusOut="onfocusOut()" change="inputField_changeSeconds()" height="18"
+				focusAlpha="0" textAlign="right" borderStyle="none" />
+			<mx:DateField width="35" id="oDateFiled" visible="false"  formatString="YYYY-MM-DD" yearNavigationEnabled="true" 
+				change="dateFieldChange()" includeInLayout="false" dayNames="['日', '一', '二', '三', '四', '五', '六']" monthNames="['一月', '二月', '三月', '四月', '五月','六月', '七月', '八月', '九月', '十月', '十一月','十二月']"/>
+		</mx:HBox>
+		<mx:Image source="components/com/viewscenes/util/timecomp/l-07.gif" click="openDate()" id="oPic"/>
+		<mx:Image source="components/com/viewscenes/util/timecomp/picClear.jpg" click="clearDate()" id="oPicClear" visible="true" includeInLayout="true"/>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.formatters.DateFormatter;
+			private var dateType:String = "all";
+			private var dValue:String="none";//设置的字符串时间
+			private var inputField:TextInput;
+			[Bindable]
+			private var _year:String="1900";
+			[Bindable]
+			private var _month:String="01";
+			[Bindable]
+			private var _day:String="01";
+			[Bindable]
+			private var _hour:String="00";
+			[Bindable]
+			private var _minute:String="00";
+			[Bindable]
+			private var _second:String="00";
+//			private var openStatus:Boolean=false;
+			private var clearStatu = false;
+			private function init():void{
+				initDate();
+				dateDisplayAfterComplete();
+			}
+			
+			
+    //----------------------------------
+    //  enabled
+    //----------------------------------
+
+    [Inspectable(category="General", enumeration="true,false", defaultValue="true")]
+
+    /**
+     *  @private
+     */
+    override public function set enabled(value:Boolean):void
+    {
+        super.enabled = value;
+
+        // Scrollbars must be enabled/disabled when this container is.
+        if (horizontalScrollBar)
+            horizontalScrollBar.enabled = value;
+        if (verticalScrollBar)
+            verticalScrollBar.enabled = value;
+
+        invalidateProperties();
+    }
+			private function initDate():void{
+				if(dValue=="none"){
+					var nowDate:Date = new Date();
+					setDate(nowDate);
+				} else{
+					text=dValue;
+				}
+			}
+			
+			public function get yearValue():String{
+				_year = oYear.text;
+				return _year;
+			}
+			public function get monthValue():String{
+				_month = oMonth.text;
+				return _month;
+			}
+			public function get dayValue():String{
+				_day = oDay.text;
+				return _day;
+			}
+			public function get hourValue():String{
+				_hour = oHour.text;
+				return _hour;
+			}
+			public function get minuteValue():String{
+				_minute = oMinute.text;
+				return _minute;
+			}
+			public function get secondValue():String{
+				_second = oSecond.text;
+				return _second;
+			}
+			/**
+			 * 传入日期类型设置界面显示的时间
+			 */
+			public function setDate(date:Date):void{
+				_year = date.getFullYear().toString();
+				_month = (date.getMonth()+1)<10?"0"+(date.getMonth()+1):(date.getMonth()+1).toString();
+				_day = date.getDate()<10?"0"+date.getDate():date.getDate().toString();
+				_hour = date.getHours()<10?"0"+date.getHours():date.getHours().toString();
+				_minute = date.getMinutes()<10?"0"+date.getMinutes():date.getMinutes().toString();
+				_second = date.getSeconds()<10?"0"+date.getSeconds():date.getSeconds().toString();
+				oYear.text = _year;
+				oMonth.text = _month;
+				oDay.text = _day;
+				oHour.text = _hour;
+				oMinute.text = _minute;
+				oSecond.text = _second;
+				if(oDateFiled!=null){
+					oDateFiled.text=_year+"-"+_month+"-"+_day;
+				}
+			}
+			/*
+			*焦点移动控件移开后
+			*/
+			private function onfocusIn(textInput:TextInput):void{
+				inputField = textInput;
+				textInput.selectionBeginIndex=0;
+				textInput.selectionEndIndex=textInput.length;
+			}
+			/*
+			*焦点从控件移开后，监测各个输入框的内容使其合法
+			*/
+			private function onfocusOut():void{
+				if(inputField==oYear){
+                	checkInput(1900,2300);
+	            }
+	            else if(inputField==oMonth){
+	                checkInput(1,12);
+	            }
+	            else if(inputField==oDay){
+	            	var ayear:Number = new Number(oYear.text);
+	                var amonth:Number = new Number(oMonth.text);
+	                if(amonth==1||amonth==3||amonth==5||amonth==7||amonth==8||amonth==10||amonth==12){
+	            		checkInput(1,31);	
+	            	} else if(amonth==2){
+	            		if(ayear%4==0){//闰年
+	            			checkInput(1,29);	
+	            		} else{
+	            			checkInput(1,28);	
+	            		}
+	            	} else{
+	            		checkInput(1,30);	
+	            	}
+	                
+	            }
+	            else if(inputField==oHour){
+	                checkInput(0,23);
+	            }
+	            else if(inputField==oMinute){
+	                checkInput(0,59);
+	            }
+	            else if(inputField==oSecond){
+	                checkInput(0,59);
+	            }
+			}
+			private function checkInput(minNum:Number,maxNum:Number):void{
+				if(inputField.text.length==0){
+					inputField.text = minNum.toString();
+				} else{
+					var num:Number = Number(inputField.text);
+					if(num>maxNum){
+						inputField.text = maxNum.toString();
+					}
+					if(num<minNum){
+						inputField.text = minNum.toString();
+					}
+				}
+				if(maxNum.toString().length==2&&inputField.text.length==1){
+					inputField.text = "0"+inputField.text;
+				}
+				
+				if(inputField==oYear && this._year!=inputField.text){
+					this._year=inputField.text;
+					this.addTimeNewChangedEvent();
+				}
+				if(inputField==oMonth && this._month!=inputField.text){
+					this._month=inputField.text;
+					this.addTimeNewChangedEvent();
+				}
+				if(inputField==oDay && this._day!=inputField.text){
+					this._day=inputField.text;
+					this.addTimeNewChangedEvent();
+				}
+			}
+			/*
+			*输入小时2位后自动跳转到分钟输入框
+			*/
+			private function inputField_changeHour():void
+	        {   
+	        	if(oHour.length==2){
+	        		oMinute.setFocus();
+	        	}
+	        }
+	        /*
+			*输入分钟2位后自动跳转到秒钟输入框
+			*/
+	        private function inputField_changeMinutes():void
+	        {
+	        	if(oMinute.length==2){
+	        		oSecond.setFocus();
+	        	}
+	        }
+	        /*
+			*输入秒钟2位后自动跳转到小时输入框
+			*/
+	        private function inputField_changeSeconds():void
+	        {
+//	        	if(oSecond.length==2){
+//	        		oHour.setFocus();
+//	        	}
+				if(parseInt(oSecond.text)>59){
+					oSecond.text = "59";
+				}
+	        }
+	        /*
+			*输入年4位后自动跳转到月输入框
+			*/
+	         private function inputField_changeYears():void
+	        {
+	        	if(oYear.length==4){
+	        		oMonth.setFocus();
+	        	}
+	        }
+	        /*
+			*输入月2位后自动跳转到日输入框
+			*/
+	        private function inputField_changeMonths():void
+	        {
+	        	if(oMonth.length==2){
+	        		oDay.setFocus();
+	        	}
+	        }
+	        /*
+			*输入日2位后自动跳转到小时输入框
+			*/
+	        private function inputField_changeDays():void
+	        {   
+	        	if(oDay.length==2&&oTimeBox.visible==true){
+	        		oHour.setFocus();
+	        	}
+	        }
+	        /*
+			*通过控件选择日期
+			*/
+	        private function openDate():void
+	        {
+//	        	openStatus = !openStatus;
+//	        	if(openStatus){
+//	        		oDateFiled.text = getDate();
+//	        		oDateFiled.open();
+//	        	} else{
+//	        		oDateFiled.close();
+//	        	}
+				if(getDate().length==10){
+					oDateFiled.text = getDate();
+				}
+				oDateFiled.open();
+	        }
+	        
+	        private function dateFieldChange():void
+	        {
+	        	//setDisplay("time");
+	        	if(text!=oDateFiled.text){
+	        		text=oDateFiled.text;
+	        		this.addTimeNewChangedEvent();
+	        	}
+	        }
+	        private function addTimeNewChangedEvent(){
+	        	this.dispatchEvent(new Event("TimeNewChanged",true));//对外发送日期改变消息
+	        }
+	        /*
+			* 控制显示日期 date:显示年月日 time:显示时分秒 否则全部显示
+			*/
+	        public function set dateDisplay(str:String):void
+	        {
+	        	dateType = str;
+	        }
+	        /*
+			* 控制显示日期 date:显示年月日 time:显示时分秒 否则全部显示
+			*/
+	        private function dateDisplayAfterComplete():void
+	        {
+	        	if(dateType=="date"){
+	        		//this.width=140;
+	        		oTimeBox.visible=false;
+	        		oTimeBox.includeInLayout=false;
+	        		oDateBox.visible=true;
+	        		oPic.visible=true;
+	        	} else if(dateType=="time"){
+	        		//this.width=80;
+	        		oDateBox.visible=false;
+	        		oDateBox.includeInLayout=false;
+	        		oTimeBox.visible=true;
+	        		oPic.visible=false;
+	        		oPic.includeInLayout=false;
+	        	} else if(dateType=="all"){
+	        		oDateBox.visible=true;
+	        		oTimeBox.visible=true;
+	        		oPic.visible=true;
+	        		//this.width=195;
+	        	} else if(dateType=="alltimereadonly"){
+	        		oDateBox.visible=true;
+	        		oTimeBox.visible=true;
+	        		oTimeBox.enabled=false;
+	        		oPic.visible=true;
+	        	}
+	        	oPicClear.visible = clearStatu;
+				oPicClear.includeInLayout = clearStatu;
+	        }
+	        /*
+			*取得全部日期数据 "2009-01-12 12:09:18"
+			*/
+	        public function getFullDate():String
+	        {
+	        	var result = oYear.text+"-"+oMonth.text+"-"+oDay.text+" "+oHour.text+":"+oMinute.text+":"+oSecond.text;
+	        	if(result=="-- ::"){
+	        		result = "";
+	        	}
+	        	return result;
+	        }
+	        /*
+			*取得年月日日期数据 "2009-01-12"
+			*/
+	        public function getDate():String
+	        {
+	        	var result = oYear.text+"-"+oMonth.text+"-"+oDay.text;
+	        	if(result=="--"){
+	        		result = "";
+	        	}
+	        	return result;
+	        }
+	        /*
+			*取得时分秒日期数据 "12:09:18"
+			*/
+	        public function getTime():String
+	        {
+	        	var result = oHour.text+":"+oMinute.text+":"+oSecond.text;
+	        	if(result=="::"){
+	        		result = "";
+	        	}
+	        	return result;
+	        }
+	        
+	        /*
+			*根据界面显示的内容取得日期值 
+			* 如界面只显示年月日，则此方法只返回年月日的值
+			*/
+	        public function get text():String
+	        {
+	        	if(oDateBox.visible==false&&oTimeBox.visible==true){
+					return getTime();
+	        	} else if(oDateBox.visible==true&&oTimeBox.visible==false){
+	        		return getDate();
+	        	} else{
+	        		return getFullDate();
+	        	}
+	        }
+	        
+	        /*
+			 * 通过字符串设置界面显示的日期 
+			 * 格式  "2009-01-12 12:09:18" 时分秒可以没有或者年月日可以没有
+			 */
+			public function set text(date:String):void{
+				dValue = date;
+				if(date==null||date==""
+						     ||((dateType=="all"||dateType=="alltimereadonly")&&!(date.length==19||date.length==10))
+						     ||(dateType=="date"&&date.length!=10)
+						     ||(dateType=="time"&&date.length!=8)){//赋空值
+						     try{
+					oYear.text= "";
+					oMonth.text = "";
+					oDay.text = "";
+					oHour.text = "";
+					oMinute.text = "";
+					oSecond.text = "";
+						     }catch(e){
+						     	
+						     }
+				}else{
+					if(oSecond!=null){
+						var nyear:Number = 0;
+						var nmonth:Number = 0;
+						var nday:Number = 0;
+						var nhour:Number = 0;
+						var nminute:Number = 0;
+						var nsecond:Number = 0;
+						var arr:Array = date.split(" ");
+						//mx.controls.Alert.show(arr.length+"--"+arr[0]);
+						var arrDate:Array = arr[0].toString().split("-");
+						if(date.indexOf("-")>0){//存在年月日
+							nyear = Number(arrDate[0]);
+							nmonth = Number(arrDate[1])-1;
+							nday = Number(arrDate[2]);
+							if(arr.length>1){//存在时分秒
+								var arrTime:Array = arr[1].toString().split(":");
+								nhour = Number(arrTime[0]);
+								nminute = Number(arrTime[1]);
+								nsecond = Number(arrTime[2]);
+							} else{
+								nhour = Number(oHour.text);
+								nminute = Number(oMinute.text);
+								nsecond = Number(oSecond.text);
+							}
+						} else{//不存在年月日，只有时分秒
+							nyear = Number(oYear.text);
+							nmonth = Number(oMonth.text);
+							nday = Number(oDay.text);
+							var arrTime:Array = arr[0].toString().split(":");
+							nhour = Number(arrTime[0]);
+							nminute = Number(arrTime[1]);
+							nsecond = Number(arrTime[2]);
+						}
+						var nowDate:Date = new Date(nyear,nmonth,nday,nhour,nminute,nsecond);
+						setDate(nowDate);
+					}
+				}
+			}
+			/**
+			 * 回车后自动跳转到下一个输入框
+			 **/
+			private function changeFocus(obj:TextInput):void{
+				//if(event.charCode==13){
+					obj.setFocus();
+				//}
+			}
+			/**
+			 * 清空日期
+			 **/
+			private function clearDate():void{
+				_year = "";
+				_month = "";
+				_day = "";
+				_hour = "";
+				_minute = "";
+				_second = "";
+			}
+			/*
+			 * 设置是否显示清除日期按钮
+			 */
+			public function set clear(bb:Boolean):void{
+				clearStatu = bb;
+			}
+						/**
+			 * 设置时间
+			 **/
+			 
+			  public function setDateTime(_year:int=0,_month:int=0,_day:int=0,_hour:int=0,_minute:int=0,_second:int=0):void    
+		     {
+		     	var date:Date=new Date();
+		     	var year:int=date.getFullYear()+_year;
+		     	var month:int=date.getMonth()+1+_month;
+		     	if(month==0)
+		     	{
+		     		month=12;
+		     		year=year-1;
+		     	}
+		     	else if(month<0)
+		     	{
+		     		month=month+12;
+		     		year=year-1;
+		     	}
+		     	var day:int=date.getDate()+_day;
+		     	var hour:int=date.getHours()+_hour;
+		     	var minute:int=date.getMinutes()+_minute;
+		     	var second:int=date.getSeconds()+_second;
+		     	setDate(new Date(year,month-1,day,hour,minute,second));
+		     }
+			
+			//获取当前时间2013-03-07 16:23:00
+			public static function getNowtime():String{
+				var format:DateFormatter = new DateFormatter();
+				format.formatString = "YYYY-MM-DD JJ:NN:SS";
+				return format.format(new Date());			
+			}
+			
+		]]>
+	</mx:Script>
+</mx:HBox>

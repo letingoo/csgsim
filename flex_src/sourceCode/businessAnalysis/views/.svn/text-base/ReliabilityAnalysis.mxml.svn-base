@@ -1,0 +1,511 @@
+<mx:Canvas  xmlns:mx="http://www.adobe.com/2006/mxml"
+			xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+			xmlns:twaver="twaver.common.*"
+			fontSize="12"  
+			creationComplete="init();"
+			width="100%"
+			height="100%"
+			xmlns:component="common.component.*" 
+			xmlns:code="com.google.code.*"
+			xmlns:s="library://ns.adobe.com/flex/spark">  
+	
+	<mx:Script>
+		<![CDATA[			
+			import common.actionscript.ModelLocator;
+			import common.model.RemoteObjectResult;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.businessAnalysis.actionscript.IndexChangeEvent;
+			import sourceCode.businessAnalysis.actionscript.VersionOper;
+			
+			import twaver.DemoUtils;
+			import twaver.core.util.h._ED;
+			[Bindable]
+			//传输系统列表
+			public var netInfo:XMLList;
+			[Bindable]
+			//传输系统设备列表
+			public var tranSysA_equipLst:XMLList;
+			[Bindable]
+			//传输系统链路列表
+			public var tranSysA_LinkLst:XMLList;
+			[Bindable]
+			public static var equipA:ArrayCollection=new ArrayCollection();
+			
+			[Bindable]
+			public static var LinkDataA:ArrayCollection=new ArrayCollection();
+			
+			[Bindable]
+			//传输系统设备列表
+			private var equipList:ArrayCollection=new ArrayCollection();
+			[Bindable]
+			//传输系统链路列表
+			private var linkList:ArrayCollection=new ArrayCollection();
+			
+			[Bindable]
+			private var numInfo:ArrayCollection = new ArrayCollection(
+				[{label:"1",data:0},
+				{label:"2",data:1},
+				{label:"3",data:2}]);
+			[Bindable]
+			private var typeInfo:ArrayCollection = new ArrayCollection(
+				[{label:"设备",data:0},
+				{label:"复用段",data:1}]);
+			[Bindable]
+			private var info:ArrayCollection = new ArrayCollection;
+			private var nameListDoubleClick:Array;
+			
+			
+			private function analysisInfo():void{
+//				var obj:RemoteObject = new RemoteObject("resBusinessDwr");
+//				obj.endpoint = ModelLocator.END_POINT;
+//				obj.showBusyCursor = true;
+//				obj.modifyCircuitInfo();
+//				obj.addEventListener(ResultEvent.RESULT,showInfo);
+				if(num.selectedIndex == 1){
+					var equipObj:Object = new Object();
+					var linkObj:Object = new Object();
+					if(!equipSelected.enabled || equipSelected.selectedIndex == 0)
+						equipObj = null;
+					else
+						equipObj = equipSelected.selectedItem;
+					
+					if(!linkSelected.enabled || linkSelected.selectedIndex == 0)
+						linkObj = null;
+					else
+						linkObj = linkSelected.selectedItem;
+					
+					var setSelected:RemoteObject = new RemoteObject("businessAnalysis");
+					setSelected.endpoint = ModelLocator.END_POINT;
+					setSelected.showBusyCursor = true;
+					setSelected.addEventListener(ResultEvent.RESULT,getResult);
+					setSelected.setSelected(equipObj,linkObj);
+				}else{
+					getAnalysisResult();
+				}
+				
+				
+				
+			}
+			
+			private function getAnalysisResult(){
+				var obj:String = netAB.selectedItem.@code;
+				getTranSysA_equipLst(obj);
+				getTranSysA_LinkLst(obj);
+				var rtobj:RemoteObject = new RemoteObject("businessAnalysis");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.addEventListener(ResultEvent.RESULT,showInfo);
+				rtobj.nxAnalysis(int(num.selectedItem.label),obj,type.selectedItem.label);
+				
+			}
+
+			private function resultShow(result:RemoteObjectResult):void{
+				if(result.error) {        
+					Alert.show(result.errorMessage);
+				}else{
+					info =ArrayCollection(result.resultData);
+					info.refresh();
+				}
+			}
+			
+			private function showInfo(event:ResultEvent):void{
+				te.text = event.result.toString();
+				VersionOper.getAllLog(resultShow);
+			}
+			
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				netAB.selectedIndex = 0;
+				num.selectedIndex = 0;
+				type.selectedIndex = 0;
+				
+				//equipSelected
+				equipSelected.enabled = false;
+				linkSelected.enabled = false;
+				linkid.visible=false;
+				equipid.visible=false;
+				
+				//读取传输系统
+				var rtobj:RemoteObject = new RemoteObject("businessAnalysis");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;			
+				rtobj.addEventListener(ResultEvent.RESULT,getNetInfoList);
+				rtobj.getTranSystemLst();
+				//定制右键菜单
+				var contextMenu:ContextMenu=new ContextMenu();
+				nodeDataGrid.contextMenu=contextMenu;
+				nodeDataGrid.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(e:ContextMenuEvent):void{
+					var item:ContextMenuItem = new ContextMenuItem("查看影响业务和中断业务");
+					item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler);
+					
+					var item1:ContextMenuItem = new ContextMenuItem("查询");
+					item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, searchSelectHandler);
+					
+					var flexVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					var playerVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					if(nodeDataGrid.selectedItems.length==0){//选中元素个数
+						nodeDataGrid.contextMenu.hideBuiltInItems();
+						nodeDataGrid.contextMenu.customItems = [item1,flexVersion,playerVersion];
+					}
+					else{
+						nodeDataGrid.contextMenu.hideBuiltInItems();
+						nodeDataGrid.contextMenu.customItems = [item1,item];
+					}
+				});
+			}
+			
+			private function searchSelectHandler(e:ContextMenuEvent):void{
+				//在info列表中搜索
+				//打开搜索框
+				var RAB:SearchBusinessResult = new SearchBusinessResult();
+				PopUpManager.addPopUp(RAB, this, true);    
+				PopUpManager.centerPopUp(RAB);
+				RAB.info=info;
+				RAB.equipA =equipA;
+				RAB.LinkDataA = LinkDataA;
+			}
+			
+			protected function getNetInfoList(event:ResultEvent):void
+			{
+				netInfo = new XMLList(event.result);
+				
+			}
+			
+			protected function num_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				
+				typeInfo.removeAll();
+				typeInfo.addItem({label:"设备",data:2});
+				typeInfo.addItem({label:"复用段",data:2});
+				if(num.selectedIndex == 1){
+					typeInfo.addItem({label:"设备 + 复用段",data:2});
+				}else if(num.selectedIndex == 2){
+					typeInfo.addItem({label:"1设备 + 2复用段",data:2});
+					typeInfo.addItem({label:"2设备 + 1复用段",data:2});
+				}
+				typeInfo.refresh();
+				type.selectedIndex = 0;
+				
+				if(num.selectedIndex == 1){
+					getEquipLinkList();
+					
+				}else{
+					equipList = new ArrayCollection();
+					linkList = new ArrayCollection();
+					//equipSelected
+					equipSelected.enabled = false;
+					linkSelected.enabled = false;
+					linkid.visible=false;
+					equipid.visible=false;
+				}
+			}
+			
+			//获取传输A网设备列表
+			private function getTranSysA_equipLst(obj:String):void{
+				var re:RemoteObject=new RemoteObject("businessAnalysis");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,tranSysA_equipLstHandler);
+				Application.application.faultEventHandler(re);
+				re.openProEquipA(obj); 
+			}
+			
+			//获取传输A网设备列表
+			public function tranSysA_equipLstHandler(event:ResultEvent):void{
+				equipA = ArrayCollection(event.result);
+			}
+			//	获取传输A网复用段列表
+			private function getTranSysA_LinkLst(obj:String):void{
+				var re:RemoteObject=new RemoteObject("businessAnalysis");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,tranSysA_LinkLstHandler);
+				Application.application.faultEventHandler(re);
+				re.openProLinkA(obj); 
+				
+			}
+			
+			//	获取传输A网复用段列表
+			public function tranSysA_LinkLstHandler(event:ResultEvent):void{
+				LinkDataA =  ArrayCollection(event.result);
+			}
+			
+			protected function itemSelectHandler(event:ContextMenuEvent):void
+			{
+				// TODO Auto-generated method stub
+				var ob:Object = nodeDataGrid.selectedItem;
+				var str:String = ob.name;
+				var nameList:Array = str.split(" + ");
+				for(var i:int = 0; i<nameList.length; i++){
+					if(nameList[i].toString().search(" - ") != -1){
+						var linkPoint:Array = nameList[i].toString().split(" - ");
+						linkPoint[0] = getEquipIdByLabel(linkPoint[0]);
+						linkPoint[1] = getEquipIdByLabel(linkPoint[1]);
+						nameList[i] = getLinkIdByEquip(linkPoint);
+					}else{
+						nameList[i] = getEquipIdByLabel(nameList[i]);
+					}
+				}
+				
+				VersionOper.getBusinessFail(result2,nameList);
+				nameListDoubleClick=nameList;//用于 查询完影响业务再查可恢复业务
+//				VersionOper.getBusinessRe(result3,nameList);//查询完影响业务再查可恢复业务
+			}
+			private var a:ArrayCollection = new ArrayCollection();
+			private var b:ArrayCollection = new ArrayCollection();
+			private function result2(result:RemoteObjectResult):void{
+				if(result.error) {        
+					Alert.show(result.errorMessage);
+				}else{
+					a = ArrayCollection(result.resultData);
+					VersionOper.getBusinessRe(result3,nameListDoubleClick);//查询完影响业务再查可恢复业务
+				}
+			}
+			private function result3(result:RemoteObjectResult):void{
+				if(result.error) {        
+					Alert.show(result.errorMessage);
+				}else{
+					b = ArrayCollection(result.resultData);
+					var RAB:RABusinessResult = new RABusinessResult();
+					PopUpManager.addPopUp(RAB, this, true);    
+					PopUpManager.centerPopUp(RAB);
+					RAB.setInfo(a,b,nodeDataGrid.selectedItem.name);
+				}
+			}
+			private function getEquipIdByLabel(str:String):String{
+				for(var i:int = 0; i<equipA.length; i++){
+					if(equipA.getItemAt(i).EQUIP_LABEL == str)
+						return equipA.getItemAt(i).EQUIP_ID;
+				}
+				return "";
+			}
+			private function getLinkIdByEquip(point:Array):String{
+				for(var i:int = 0; i<LinkDataA.length; i++){
+					var ob:Object = LinkDataA.getItemAt(i);
+					if((ob.FROM_EQUIP_ID == point[0] && ob.TO_EQUIP_ID == point[1]) ||
+						(ob.FROM_EQUIP_ID == point[1] && ob.TO_EQUIP_ID == point[0]))
+						return ob.LINK_ID;
+				}
+				return "";
+			}
+
+
+			protected function netAB_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				type.selectedIndex = 0;
+				if(num.selectedIndex == 1){
+					getEquipLinkList();
+					
+					
+				}else{
+					equipList = new ArrayCollection();
+					linkList = new ArrayCollection();
+					//equipSelected
+					equipSelected.enabled = false;
+					linkSelected.enabled = false;
+				}
+			}
+			
+			private function chooseSelected():void{
+				if(num.selectedIndex == 1){
+					if(type.selectedItem.label == "设备"){
+						linkSelected.selectedIndex = 0;
+						linkSelected.enabled = false;
+						linkid.visible=false;
+						equipid.visible=true;
+						equipSelected.enabled = true;
+					}
+					else if(type.selectedItem.label == "复用段"){
+						equipSelected.selectedIndex = 0;
+						equipSelected.enabled = false;
+						linkSelected.enabled = true;
+						linkid.visible=true;
+						equipid.visible=false;
+					}else{
+						equipSelected.selectedIndex = 0;
+						linkSelected.selectedIndex = 0;
+						equipSelected.enabled = true;
+						linkSelected.enabled = true;
+						linkid.visible=true;
+						equipid.visible=true;
+					}
+				}else{
+					if(type.selectedItem.label == "设备"){
+						linkSelected.selectedIndex = 0;
+						linkSelected.enabled = false;
+	//					linkid.visible=false;
+	//					equipid.visible=true;
+						equipSelected.enabled = true;
+					}
+					else if(type.selectedItem.label == "复用段"){
+						equipSelected.selectedIndex = 0;
+						equipSelected.enabled = false;
+						linkSelected.enabled = true;
+	//					linkid.visible=true;
+	//					equipid.visible=false;
+					}else{
+						equipSelected.selectedIndex = 0;
+						linkSelected.selectedIndex = 0;
+						equipSelected.enabled = true;
+						linkSelected.enabled = true;
+	//					linkid.visible=true;
+	//					equipid.visible=true;
+					}
+				}	
+			}
+			
+			private function getEquipLinkList():void{
+				var obj:String = netAB.selectedItem.@code;
+				
+				var re:RemoteObject=new RemoteObject("businessAnalysis");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,getEquipList);
+				Application.application.faultEventHandler(re);
+				re.openProEquipA(obj); 
+				
+				
+			}
+			
+			public function getEquipList(event:ResultEvent):void{
+				equipList =  ArrayCollection(event.result);
+				var obj:Object = new Object();
+				obj.EQUIP_NAME = "无";
+				obj.EQUIP_ID = "";
+				equipList.addItemAt(obj,0);
+				equipSelected.enabled = true;
+				equipid.visible=true;
+				equipSelected.selectedIndex = 0;
+				
+				var netName:String = netAB.selectedItem.@code;
+				
+				var re:RemoteObject=new RemoteObject("businessAnalysis");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,getLinkList);
+				Application.application.faultEventHandler(re);
+				re.openProLinkA(netName); 
+			}
+			
+			public function getLinkList(event:ResultEvent):void{
+				linkList =  ArrayCollection(event.result);
+				for(var i:int = 0; i<linkList.length; i++){
+					var name1:String = getEquipLabel(linkList.getItemAt(i).FROM_EQUIP_ID.toString());
+					var name2:String = getEquipLabel(linkList.getItemAt(i).TO_EQUIP_ID.toString());
+					linkList.getItemAt(i).LINK_LABEL = name1 + " - " + name2;
+				}
+				
+				var obj:Object = new Object();
+				obj.LINK_LABEL = "无";
+				obj.LINK_ID = "";
+				linkList.addItemAt(obj,0);
+				if(type.selectedItem.label != "设备"){
+					linkSelected.enabled = true;
+					linkid.visible=true;
+				}
+				linkSelected.selectedIndex = 0;
+				
+				chooseSelected();
+			}
+			
+			private function getEquipLabel(str:String){
+				for(var i:int = 0; i<equipList.length; i++){
+					if(str == equipList.getItemAt(i).EQUIP_ID.toString())
+						return equipList.getItemAt(i).EQUIP_LABEL.toString();
+				}
+				return "";
+			}
+			
+			public function getResult(event:ResultEvent):void{
+				getAnalysisResult();
+			}
+
+			protected function type_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				chooseSelected();
+			}
+
+		]]>
+	</mx:Script>
+	
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingTop="0" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		horizontalAlign="center" verticalGap="0">
+		
+		<mx:HBox width="100%" height="30" >
+	<mx:HBox width="80%" height="30"  verticalAlign="middle">
+		<mx:Spacer width="20"/>
+		<mx:Button id="analysis" label="分析" click="analysisInfo()"/>
+		<mx:HBox width="20%" height="100%" verticalAlign="middle">
+			<mx:Label text="分析范围" width="60" />
+			<mx:ComboBox id="netAB" width="150" labelField="@label" dataProvider="{netInfo}" 
+						 change="netAB_changeHandler(event)"/>
+		</mx:HBox>
+		<mx:HBox width="20%" height="100%" verticalAlign="middle">
+			<mx:Label text="故障数目" width="60" />
+			<mx:ComboBox id="num" width="150" dataProvider="{numInfo}" change="num_changeHandler(event)"/>
+		</mx:HBox>
+		<mx:HBox id="num2" width="20%" height="100%" verticalAlign="middle">
+			<mx:Label text="故障类型" width="60" />
+			<mx:ComboBox id="type" width="150" dataProvider="{typeInfo}" change="type_changeHandler(event)"/>
+		</mx:HBox>
+		<mx:HBox width="20%" height="100%" verticalAlign="middle" id="equipid">
+			<mx:Label text="选择设备" width="60" />
+			<mx:ComboBox id="equipSelected" width="150" dataProvider="{equipList}" labelField="EQUIP_NAME"/>
+		</mx:HBox>
+		<mx:HBox width="20%" height="100%" verticalAlign="middle" id="linkid">
+			<mx:Label text="选择复用段" width="60" />
+			<mx:ComboBox id="linkSelected" width="150" dataProvider="{linkList}" labelField="LINK_LABEL"/>
+		</mx:HBox>
+		
+	</mx:HBox>	
+		<mx:HBox width="20%" height="30" horizontalAlign="right">
+			<component:ControlBar id="controlBar" width="15%" height="30"
+								  imgName="task" modelName="业务可靠性分析" showAddButton="{false}"
+								  showDelButton="{false}" showEditButton="{false}"
+								  showExportExcelButton="{false}" showImportButton="{false}"
+								  showSearchButton="{false}"/>
+		</mx:HBox>
+		</mx:HBox>
+	<mx:DataGrid width="100%" height="93%" editable="false" 			
+				 id="nodeDataGrid" styleName="mainDataGrid"
+				 fontSize="12" 
+				 dataProvider="{info}"
+				 variableRowHeight="true"
+				 textAlign="left"
+				 horizontalGridLines="true" 
+				 verticalGridLines="true" 
+				 sortableColumns="true" >
+		<mx:columns>
+			<mx:DataGridColumn headerText="出故障的设备或复用段" dataField="name" width="300"/>					
+			<mx:DataGridColumn headerText="受影响的业务数" dataField="fail" width="80" />
+			<mx:DataGridColumn headerText="可恢复的业务数" dataField="re" width="80" />	
+			<mx:DataGridColumn headerText="恢复率" dataField="lv" width="80" />
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<mx:HBox width="100%" height="18">
+		<mx:Label id="te" verticalCenter="middle"  fontSize="13"/>
+	</mx:HBox>	
+	</mx:VBox>
+</mx:Canvas>  

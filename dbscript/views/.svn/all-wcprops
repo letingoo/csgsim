@@ -1,0 +1,167 @@
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/svn/csgsim/!svn/ver/1/dbscript/views
+END
+v_mnt_alarm_sys_equipment.vw
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_alarm_sys_equipment.vw
+END
+v_alarm_for_equippannel_pack.vw
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarm_for_equippannel_pack.vw
+END
+v_mnt_alarmflash_forcurve.vw
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_alarmflash_forcurve.vw
+END
+v_mnt_transys_rootalarm_total.vw
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_transys_rootalarm_total.vw
+END
+v_mnt_flash_mid.vw
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_flash_mid.vw
+END
+v_mnt_companyalarm_total.vw
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_companyalarm_total.vw
+END
+v_mnt_alarmdealmethod_total.vw
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_alarmdealmethod_total.vw
+END
+v_mnt_powerline_alarmcount.vw
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_powerline_alarmcount.vw
+END
+v_alarm_for_equippannel_port.vw
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarm_for_equippannel_port.vw
+END
+v_mnt_rootalarm_affectcircuit.vw
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_rootalarm_affectcircuit.vw
+END
+v_mnt_powerline_breakcircuit.vw
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_powerline_breakcircuit.vw
+END
+v_mnt_circuit_mid.vw
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_circuit_mid.vw
+END
+v_alarmrelatecircuit.vw
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarmrelatecircuit.vw
+END
+v_mnt_alarmforsysmap.vw
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_alarmforsysmap.vw
+END
+v_mnt_alarmfash_total.vw
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_alarmfash_total.vw
+END
+v_alarmdefinenew.vw
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarmdefinenew.vw
+END
+v_alarmrelatecircuit_affect.vw
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarmrelatecircuit_affect.vw
+END
+v_mnt_circuit_topolin.vw
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_circuit_topolin.vw
+END
+v_alarmrelatefault.vw
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarmrelatefault.vw
+END
+v_alarm_for_sys_equipment.vw
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarm_for_sys_equipment.vw
+END
+v_mnt_circuitstatus_total.vw
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_circuitstatus_total.vw
+END
+v_mnt_transys_currentstatus.vw
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_transys_currentstatus.vw
+END
+v_mnt_alarmflash.vw
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_alarmflash.vw
+END
+v_mnt_alarmdealmethod_mid.vw
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_alarmdealmethod_mid.vw
+END
+v_mnt_transys_rootalarm_mid.vw
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/csgsim/!svn/ver/1/dbscript/views/v_mnt_transys_rootalarm_mid.vw
+END
+v_alarm_house_shelfalarm.vw
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarm_house_shelfalarm.vw
+END
+v_alarminfo$oc.vw
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/csgsim/!svn/ver/1/dbscript/views/v_alarminfo$oc.vw
+END

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="186" height="25" creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			private function init():void{
+				usage_bar.setStyle("labelWidth", usage_bar.width);
+			}
+			public function setValue(used:int):void{
+				
+				usage_bar.setProgress(used,63);
+				usage_label.text=used.toString()+"/63";
+			}
+		]]>
+	</mx:Script>
+	<mx:ProgressBar id="usage_bar" width="100%" height="16" mode="manual" label="%3%%" 
+					minimum="0" maximum="63" labelPlacement="center" textIndent="0" verticalCenter="0"/>
+	<mx:Label id="usage_label" width="30%" right="0" verticalCenter="0" textAlign="center"/>
+</mx:Canvas>
+

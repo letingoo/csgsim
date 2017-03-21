@@ -1,0 +1,19 @@
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"  
+		   fontSize="12" xmlns:controls="ht.*" 
+		   creationComplete="initApp()" preinitialize="preinitialize()"
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+		   xmlns:common="twaver.common.*">   
+	
+	<mx:Script source="../actionscript/CheckWireChild.as" />
+	
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:HDividedBox width="100%" height="100%" backgroundColor="0xCCCCCC">
+			<mx:VDividedBox width="100%" height="100%">
+				<mx:HBox id="childtoolbar" width="100%" horizontalGap="0"/>
+				<servasoftware:Network  id="network"  width="100%"  height="100%" backgroundColor="0xFFFFFF"  doubleClick="network_doubleClickHandler(event)"/>			
+			</mx:VDividedBox>
+		</mx:HDividedBox>   
+	</mx:VBox>	
+	
+</mx:Canvas>  

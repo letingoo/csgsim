@@ -1,0 +1,703 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--区域 状态监视-->
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" 
+		  xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+		  borderThickness="1" borderThicknessBottom="2"  borderThicknessLeft="2"
+		  borderThicknessRight="2" borderThicknessTop="2"
+		  headerHeight="0"  backgroundAlpha="1" borderColor="#157baa" creationComplete="init()" xmlns:views="sourceCode.subject.main.views.*"
+		  >
+	<mx:Style source="/assets/css/mntsubject.css"/>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.Label;
+			import mx.core.Application;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.ToolTipManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.rootalarm.views.*;
+			import sourceCode.subject.main.views.RootAlarmMonitor1;
+			
+			import twaver.*;
+			import twaver.Node;
+			import twaver.core.util.h._ED;
+			import twaver.network.layout.AutoLayouter;
+			import twaver.network.ui.AlarmAttachment;
+			import twaver.network.ui.Attachment;
+			private var getNetStatus:RemoteObject;
+			private var nodeIdCollection:ArrayCollection=new ArrayCollection;
+			private var timer:Timer; 
+			private var alarmNodeCollection:ArrayCollection=new ArrayCollection();
+			[Embed(source='assets/images/mntsubject/vendormonitor.png')]   
+			public var vendormonitor:Class; 
+			[Embed(source='assets/images/mntsubject/yunhua.png')]   
+			public var yunhua:Class; 
+			[Embed(source='assets/images/mntsubject/yunhua1.png')]   
+			public var yunhua1:Class; 
+			[Embed(source='assets/images/mntsubject/yunECI.png')]   
+			public var yunECI:Class; 
+			[Embed(source='assets/images/mntsubject/yunECI1.png')]   
+			public var yunECI1:Class; 
+			[Embed(source='assets/images/mntsubject/guizhong.png')]   
+			public var guizhong:Class; 
+			[Embed(source='assets/images/mntsubject/guizhong1.png')]   
+			public var guizhong1:Class; 
+			[Embed(source='assets/images/mntsubject/guixi.png')]   
+			public var guixi:Class; 
+			[Embed(source='assets/images/mntsubject/guixi1.png')]   
+			public var guixi1:Class; 
+			[Embed(source='assets/images/mntsubject/xiNEC.png')]   
+			public var xiNEC:Class; 
+			[Embed(source='assets/images/mntsubject/xiNEC1.png')]   
+			public var xiNEC1:Class; 
+			
+			[Embed(source="assets/images/mntsubject/xifeng.png")]   
+			public static const  xifeng:Class; 
+			[Embed(source="assets/images/mntsubject/xifeng1.png")]   
+			public static const  xifeng1:Class; 
+			[Embed(source="assets/images/mntsubject/donghua.png")]   
+			public static const  donghua:Class; 
+			[Embed(source="assets/images/mntsubject/donghua1.png")]   
+			public static const  donghua1:Class; 
+			[Embed(source="assets/images/mntsubject/dongma.png")]  
+			public static const  dongma:Class; 
+			[Embed(source="assets/images/mntsubject/dongma1.png")]  
+			public static const  dongma1:Class; 
+			[Embed(source="assets/images/mntsubject/haihua.png")]  
+			public static const  haihua:Class; 
+			[Embed(source="assets/images/mntsubject/haihua1.png")]  
+			public static const  haihua1:Class; 
+			[Embed(source="assets/images/mntsubject/haiUT.png")]   
+			public static const  haiUT:Class; 
+			[Embed(source="assets/images/mntsubject/haiUT1.png")]   
+			public static const  haiUT1:Class; 
+			[Embed(source='assets/images/mntsubject/run.png')]   
+			public static const  run:Class;  			
+			[Embed(source='assets/images/mntsubject/alarm.png')]   
+			public static const  alarm:Class;  					
+			
+			[Embed(source="assets/images/mntsubject/04.swf")]   
+			public static const  sysback4:Class; 
+			[Embed(source="assets/images/mntsubject/05.swf")]   
+			public static const  sysback5:Class; 
+			[Embed(source="assets/images/mntsubject/06.swf")]   
+			public static const  sysback6:Class; 
+			
+			[Embed(source="assets/images/mntsubject/0101.swf")]   
+			public static const  sysback11:Class; 
+			[Embed(source="assets/images/mntsubject/0202.swf")]   
+			public static const  sysback22:Class; 
+			[Embed(source="assets/images/mntsubject/0303.swf")]   
+			public static const  sysback33:Class; 
+			[Embed(source="assets/images/mntsubject/0404.swf")]   
+			public static const  sysback44:Class; 
+			[Embed(source="assets/images/mntsubject/0505.swf")]   
+			public static const  sysback55:Class; 
+			[Embed(source="assets/images/mntsubject/0606.swf")]   
+			public static const  sysback66:Class; 
+			
+			
+			[Embed(source='assets/images/mntsubject/header_rightbg.png')]   
+			public var header_rightbg:Class; 
+			
+			private var autoLayouter:AutoLayouter = null;
+			private var box:ElementBox=new ElementBox();
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			private var background:Layer;
+			private var system:Layer;
+			private var backNode:Node;
+			
+			
+			public function init():void{
+				DealAlarmUtil.initMessage();
+//				subscriberRealNetWorkStatus("systemAlarm");
+				
+//				ToolTipManager.toolTipClass= AreaToolTip;
+
+//				registerAlarm();
+				network.elementBox.clear();
+				network.elementBox.layerBox.clear();
+				box=network.elementBox;
+				Utils.registerImageByClass("vendormonitor", vendormonitor);
+				Utils.registerImageByClass("run", run);
+				Utils.registerImageByClass("alarm", alarm);				
+				
+//				Utils.registerImageByClass("yunhua", yunhua);
+//				Utils.registerImageByClass("yunhua1", yunhua1);
+//				Utils.registerImageByClass("yunECI", yunECI);
+//				Utils.registerImageByClass("yunECI1", yunECI1);
+//				Utils.registerImageByClass("guizhong", guizhong);
+//				Utils.registerImageByClass("guizhong1", guizhong1);
+//				Utils.registerImageByClass("guixi", guixi);
+//				Utils.registerImageByClass("guixi1", guixi1);
+//				Utils.registerImageByClass("xiNEC", xiNEC);
+//				Utils.registerImageByClass("xiNEC1", xiNEC1);
+//				Utils.registerImageByClass("xifeng", xifeng);
+//				Utils.registerImageByClass("xifeng1", xifeng1);
+//				Utils.registerImageByClass("donghua", donghua);
+//				Utils.registerImageByClass("donghua1", donghua1);
+//				Utils.registerImageByClass("dongma", dongma);
+//				Utils.registerImageByClass("dongma1", dongma1);
+//				Utils.registerImageByClass("haihua", haihua);
+//				Utils.registerImageByClass("haihua1", haihua1);
+//				Utils.registerImageByClass("haiUT", haiUT);
+//				Utils.registerImageByClass("haiUT1", haiUT1);
+				
+				
+				//初始化界面
+				drawRound();
+				
+			 	network.movableFunction = function():Boolean{
+					return false;
+				}; 
+				
+				//network.setPanInteractionHandlers();
+			}
+			/*
+				初始化界面
+			*/
+			public function drawRound():void{
+				background = new Layer("background");
+				system= new Layer("system");
+				network.elementBox.layerBox.add(background, 0);
+				network.elementBox.layerBox.add(system, 1);
+				background.movable = false;
+				backNode=new Node("background");
+				backNode.image="vendormonitor";
+				backNode.setSize(508,257);
+				backNode.setCenterLocation(network.width/2,network.height/2);
+				backNode.layerID = "background";
+				box.add(backNode);
+				
+				creatNode("云南华为传输网","yunhua",backNode.centerLocation.x-151.5,backNode.centerLocation.y-24.5,80,80);
+				creatNode("云南ECI传输网","yunECI",backNode.centerLocation.x-150.5,backNode.centerLocation.y-56.5,80,80);
+				creatNode("贵州中兴传输网","guizhong",backNode.centerLocation.x-40.5,backNode.centerLocation.y-87.5,80,80);
+				creatNode("贵州传输网","guixi",backNode.centerLocation.x-8,backNode.centerLocation.y-89.5,80,80);
+				creatNode("广西NEC传输网","xiNEC",backNode.centerLocation.x-20.5,backNode.centerLocation.y-18.5,80,80);
+				creatNode("广西烽火传输网","xifeng",backNode.centerLocation.x+26,backNode.centerLocation.y-45.5,80,80);
+				creatNode("广东华为传输网","donghua",backNode.centerLocation.x+200,backNode.centerLocation.y-39.5,80,80);
+				creatNode("广东传输网","dongma",backNode.centerLocation.x+106,backNode.centerLocation.y-39.5,80,80);
+				
+				creatNode("广州华为传输A网","dongma",backNode.centerLocation.x+131,backNode.centerLocation.y-59.5,80,80);
+				creatNode("广州华为传输B网","dongma",backNode.centerLocation.x+142,backNode.centerLocation.y-39.5,80,80);
+				creatNode("广州中兴传输网","dongma",backNode.centerLocation.x+106,backNode.centerLocation.y-10,80,80);
+				creatNode("深圳中兴传输网","dongma",backNode.centerLocation.x+136,backNode.centerLocation.y-7,80,80);
+				creatNode("深圳华为传输网","dongma",backNode.centerLocation.x+160,backNode.centerLocation.y-7,80,80);
+				
+				creatNode("海南华为传输网","haihua",backNode.centerLocation.x+48,backNode.centerLocation.y+75,80,80);
+				creatNode("海南UT传输网","haiUT",backNode.centerLocation.x+68.5,backNode.centerLocation.y+60,80,80);
+				getNetStatus=new RemoteObject("subject");
+				getNetStatus.endpoint = ModelLocator.END_POINT;
+				getNetStatus.addEventListener(ResultEvent.RESULT,getNetStatusCallback);
+				getNetStatus.addEventListener(FaultEvent.FAULT,faultHandler);
+				getNetStatus.getNetStatus(); 
+			}
+			
+			
+			/**
+			 * 订阅网络状态告警信息
+			 */
+			private function subscriberRealNetWorkStatus(subtopic:String):void{	
+				var consumer:Consumer =new Consumer();				
+				var channelSet:ChannelSet = new ChannelSet();   
+				channelSet.addChannel(DealAlarmUtil.streamingAMF);   
+				channelSet.addChannel(DealAlarmUtil.pollingAMF);
+				consumer.destination = DealAlarmUtil.sdestination; 
+				consumer.channelSet = channelSet;
+				consumer.subtopic = subtopic;
+				consumer.addEventListener(MessageEvent.MESSAGE,handleRealNetWorkStatus);
+				consumer.addEventListener(MessageFaultEvent.FAULT,faultHandlerMsg);
+				consumer.subscribe();
+			}
+			
+			/**
+			 * 初始化网络状态信息
+			 */
+			private function getNetStatusCallback(event:ResultEvent):void{
+				getNetStatus.removeEventListener(ResultEvent.RESULT,getNetStatusCallback);
+				var getNetStatusCollection:ArrayCollection=event.result as ArrayCollection;
+//				locaSysStatus(getNetStatusCollection);
+				locaSysStatus(getNetStatusCollection)
+			}
+			
+			private function handleRealNetWorkStatus(msg:MessageEvent):void{
+				if(msg.message.body==null && msg.message.body==""){
+					Alert.show('接到的消息为空',"提示信息",4,this,null,iconClass); return;
+				}
+				var networkAC:ArrayCollection = msg.message.body as ArrayCollection;
+				for(var i:int=0;i<networkAC.length;i++){
+					updateSysStatus(networkAC[i]);
+				}
+			}
+			private function updateSysStatus(para:Object):void{
+				var follower:Follower=null;
+				for(var i:int = 0;i<network.elementBox.toDatas().count;i++){
+					var ielement:IElement=network.elementBox.toDatas().getItemAt(i);
+					if(ielement is Follower){
+						if(Follower(ielement).name==para.SYSTEMCODE){
+							var alarmCount=para.ROOTALARM;
+							var flag:String=para.SYSSTATUS as String;
+							var j:String=String(Follower(ielement).id).split("sys")[0];
+							if(flag=="1"){
+								Follower(ielement).host.image="sysback"+j+""+j;
+							}else if(flag=="2"){
+								Follower(ielement).host.image="sysback"+j;
+							}else{
+								Follower(ielement).host.image="sysback"+j;
+							}
+							addAlarm(null,Follower(ielement).id,box.alarmBox);
+							if(alarmCount!="0" && alarmCount!=null){
+								Follower(ielement).alarmState.setNewAlarmCount(AlarmSeverity.getByValue(int(1)),alarmCount);	
+							}
+						}
+					}
+				}
+			}
+
+			/**
+			 * 定位系统状态信息
+			 * 
+			 * 1表示未确认，2表示确认，3表示正常的
+			 * 
+			 */
+			private function locaSysStatus(getNetStatusCollection:ArrayCollection):void{
+				alarmNodeCollection.removeAll();
+				for(var i:int=0;i<getNetStatusCollection.length;i++){
+					var sys:String=getNetStatusCollection[i].BELONGTRANSYS as String;
+					var alarmCount:String=getNetStatusCollection[i].ROOTALARM;
+					var ackedCount:String=getNetStatusCollection[i].ACKEDCOUNT;
+					var ackingCount:String=getNetStatusCollection[i].ACKINGCOUNT;
+					var node:Node=null;
+					node=network.elementBox.getDataByID(sys) as Node;
+					if(node!=null){
+						if(alarmCount!="0"){
+//							node.toolTip = node.id+"\n"+"根告警总数："+alarmCount+"\n"
+//								+"已确认根告警："+ackedCount+"\n"
+//								+"未确认根告警："+ackingCount;
+							node.image="alarm";
+							node.setSize(20,20);
+							node.setClient("ROOTALARM",alarmCount);
+							node.setClient("ACKEDCOUNT",ackedCount);
+							node.setClient("ACKINGCOUNT",ackingCount);							
+//							node.image=getPic(sys);
+//							addAlarm(null,node.id,box.alarmBox);
+//							node.alarmState.setNewAlarmCount(AlarmSeverity.getByValue(int(1)),alarmCount);	
+						}
+						if(ackingCount!="0"){
+							alarmNodeCollection.addItem(node);
+						}
+					}
+					
+				}
+//				var timer:Timer = new Timer(500); 
+//				timer.addEventListener(TimerEvent.TIMER,function tick(event:TimerEvent = null):void {
+//					for(var i:int=0;i<alarmNodeCollection.length;i++){
+//						var node:Node = alarmNodeCollection[i] as Node;
+//						if(node.image.indexOf("1")>-1){
+//							node.image=node.image.split("1")[0];
+//						}else{
+//							node.image=node.image+"1";
+//						}
+//					}
+//				}); 
+//				timer.start();
+			}
+			public  function getPic(sys:String):String{
+				var str:String="";
+				if(sys=="云南华为传输网"){
+					str="yunhua1";
+				}else if(sys=="云南ECI传输网"){
+					str="yunECI1";
+				}else if(sys=="贵州中兴传输网"){
+					str="guizhong1";
+				}else if(sys=="贵州传输网"){
+					str="guixi1";
+				}else if(sys=="广西NEC传输网"){
+					str="xiNEC1";
+				}else if(sys=="广西烽火传输网"){
+					str="xifeng1";
+				}else if(sys=="广东华为传输网"){
+					str="donghua1";
+				}else if(sys=="广东传输网"){
+					str="dongma1";
+				}else if(sys=="海南华为传输网"){
+					str="haihua1";
+				}else{
+					str="haiUT1";
+				}
+				return str;
+			}
+			
+			
+			public static function registerAlarm():void{
+				AlarmSeverity.clear();
+				AlarmSeverity.register(1,'CRITICAL','',0xFF0000);//紧急告警
+				AlarmSeverity.register(2,'MAJOR','',0xFF9900);//主要告警
+				AlarmSeverity.register(3,'MINOR','',0xFFFF00);//次要告警
+				AlarmSeverity.register(4,'WARNING','',0x00FFFF);//一般告警
+			}
+			
+			
+			//生成node节点   ---各个专业的
+			private function creatNode(name:String,image:String,x:int,y:int,widh:int,height:int):void{
+				var node:Node=new Node(name);
+//				node.toolTip = name;
+				node.image= "run";
+//				node.image=image;
+				node.setLocation(x,y);
+				node.layerID='system';
+				node.setClient("ROOTALARM","0");
+				node.setClient("ACKEDCOUNT","0");
+				node.setClient("ACKINGCOUNT","0");
+//				node.setSize(widh,height);
+				box.add(node);
+			}
+			
+			//生成Node节点   ----各个专业下的背景图片
+			private function creatBackNode(name:String,backimage:String,x:int,y:int):Node{
+				var backname=name+"_back";
+				var backNode:Node=new Node(backname);
+				//backNode.name=backname;
+				backNode.image=backimage;
+				backNode.setLocation(x,y);
+				box.add(backNode);
+				nodeIdCollection.addItem(backNode.id);
+				return backNode;
+			}
+			
+			//生成Node节点的泡泡
+			private function addAlarm(alarmID:Object,elementID:Object,alarmBox:AlarmBox):void{
+				var alarm:Alarm=new Alarm(alarmID,elementID);
+				alarmBox.add(alarm);
+			}
+			
+	
+			protected function network_mouseMove(event:MouseEvent):void{
+				var data:IData = network.getElementByMouseEvent(event);
+				if(data is Node)
+				{   
+					if((data as Node).id!= "background"){
+						var node:Node = data as Node;
+						
+						if(node.id == "广东华为传输网"){
+							areaWindow.x = node.x-95;
+							areaWindow.y = node.y+15;						
+						}else if(node.id == "海南华为传输网"){
+							areaWindow.x = node.x+15;
+							areaWindow.y = node.y-70;						
+						
+						}else if(node.id == "海南UT传输网"){
+							areaWindow.x = node.x+15;
+							areaWindow.y = node.y-70;						
+						}else if(node.id == "深圳华为传输网"){
+							areaWindow.x = node.x;
+							areaWindow.y = node.y+18;						
+						}							
+						else{
+							areaWindow.x = node.x+15;
+							areaWindow.y = node.y+15;
+						}
+						areaWindow.jzname.text = node.id.toString();
+//						areaWindow.ROOTALARM.text ="根告警总数:"+	node.getClient("ROOTALARM");
+//						areaWindow.ACKEDCOUNT.text ="已确认根告警:"+node.getClient("ACKEDCOUNT");
+//						areaWindow.ACKINGCOUNT.text ="未确认根告警:"+node.getClient("ACKINGCOUNT");
+						areaWindow.ROOTALARM.htmlText ="根告警总数:"+"<font color='#ff0000' >"+node.getClient("ROOTALARM")+"</font>";
+						areaWindow.ACKEDCOUNT.htmlText ="已确认根告警:"+"<font color='#ff0000' >"+node.getClient("ACKEDCOUNT")+"</font>";
+						areaWindow.ACKINGCOUNT.htmlText ="未确认根告警:"+"<font color='#ff0000' >"+node.getClient("ACKINGCOUNT")+"</font>";
+						
+						"<font color='#ff0000' face='Arial' size='12'>This is a text</font>"
+							
+
+						areaWindow.visible = true;
+						areaWindow.includeInLayout = true;					
+					}else{
+						areaWindow.visible = false;
+						areaWindow.includeInLayout = false;					
+					}
+
+				}else{
+					areaWindow.visible = false;
+					areaWindow.includeInLayout = false;
+				}
+			} 				
+			//Node节点双击
+			protected function network_doubleClickHandler(event:MouseEvent):void
+			{
+				if(network.selectionModel.lastData!=null  && Node(network.selectionModel.lastData).layerID.toString()=="system"){
+					var sysname:String=network.selectionModel.lastData.id.toString();
+					Registry.register("systemcode",sysname);
+					Registry.register("alarm","true");
+					Application.application.openModel("网络拓扑图", false);
+				}
+			}
+			
+			//Node节点单击
+			protected function network_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				
+				var getSysOrg_itemMenu:ContextMenuItem=new ContextMenuItem("查看系统组织图");
+				getSysOrg_itemMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,getSysOrg)
+				
+				var getRootAlarm_itemMenu:ContextMenuItem=new ContextMenuItem("查看根告警详情");
+				getRootAlarm_itemMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,getRootAlarm)
+				
+				network.contextMenu=new ContextMenu();	
+				network.contextMenu.hideBuiltInItems();	
+				
+				if(network.selectionModel.lastData!=null  && network.selectionModel.lastData.getClient("NodeType")=="major" && network.selectionModel.lastData is Node)
+				{
+					if(network.selectionModel.lastData.name!="综合监控视图"){
+						network.contextMenu.customItems=[getSysOrg_itemMenu,getRootAlarm_itemMenu];		
+					}
+				}
+			}
+			
+			
+			//查看系统组织图
+			private function getSysOrg(event:ContextMenuEvent):void{
+				if(network.selectionModel.lastData!=null  && network.selectionModel.lastData.getClient("NodeType")=="major" && network.selectionModel.lastData is Node){
+					
+					var sysname:String=network.selectionModel.lastData.name;
+					Registry.register("systemcode",sysname);
+					Application.application.openModel("系统组织图", false);					
+				} 
+				
+			}
+			
+			//查看根告警详情
+			private function getRootAlarm(event:ContextMenuEvent):void{
+				if(network.selectionModel.lastData!=null  && network.selectionModel.lastData.getClient("NodeType")=="major" && network.selectionModel.lastData is Node){
+					
+					var rootalarmmonitor1:RootAlarmMonitor1=new RootAlarmMonitor1();
+					var sysname:String=network.selectionModel.lastData.name;
+					var obj:Object=new Object();
+					obj.BELONGTRANSYS=sysname;
+					rootalarmmonitor1.linkRelationUI(obj,'rootalarm');
+				} 
+			}
+			
+			private function faultHandlerMsg(event:MessageFaultEvent):void{
+//				Alert.show(event.faultString,"消息处理失败！！",4,this,null,iconClass);			
+			}
+			
+			private function faultHandler(evt:FaultEvent):void{
+				Alert.show(evt.fault.toString(),"提示信息",4,this,null,iconClass);
+			}
+			
+		]]>
+	</mx:Script>
+
+	
+	<mx:Grid width="100%" height="100%" verticalGap="0" horizontalGap="0"  backgroundColor="#FFFFFF">
+		<mx:GridRow width="100%" height="28" >
+			<!-- 以下banner 条部分-->
+			<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="100%" height="100%" colSpan="2">						
+				<mx:Grid id="transline" width="100%" height="28" verticalGap="0" horizontalGap="0" backgroundColor="#FFFFFF">
+					<mx:GridRow width="100%" height="28" backgroundImage="@Embed(source='assets/images/mntsubject/themeheader.png')" backgroundSize="100%" >
+						<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="30%" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerbg.png')" backgroundSize="100%" color="#FFFFFF">				          
+							<mx:Label text="区域 状态监视"  />
+						</mx:GridItem>
+						<mx:GridItem horizontalAlign="right"  width="35" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerrightbg.png')" />
+						<mx:GridItem horizontalAlign="right" verticalAlign="middle" width="55%" height="100%">
+							<mx:HBox>
+								<!--<mx:LinkButton icon="@Embed(source='assets/images/mntsubject/Form.png')" click="liebiao_clickHandler()"/>
+								<mx:LinkButton icon="@Embed(source='assets/images/mntsubject/Columnar.png')" click="createPie()"/>-->
+							</mx:HBox>
+						</mx:GridItem>
+					</mx:GridRow>
+				</mx:Grid>
+			</mx:GridItem>	
+			
+			<!-- 以上banner 条部分-->
+		</mx:GridRow>	
+		
+		<mx:GridRow width="100%"  height="100%">
+			<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="100%" height="100%" colSpan="2">	
+				<mx:Canvas id="areaCanvas" width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="off" >
+				<twaver:Network id="network" width="100%" height="100%"  verticalScrollPolicy="off" horizontalScrollPolicy="off"
+								doubleClickEnabled="true" doubleClick="network_doubleClickHandler(event)"	
+								mouseMove="network_mouseMove(event)"
+								click="network_clickHandler(event)"/>
+					<views:Areawindow id="areaWindow"  visible="false"  includeInLayout="false"   />
+				</mx:Canvas>
+			</mx:GridItem>	
+			
+		</mx:GridRow>	
+		
+	<!--	<mx:GridRow width="100%"  height="44">
+			<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="100%" height="100%" colSpan="2">						
+				<mx:Button id="btn" label="click me" click="btn_clickHandler(event)"/>
+				<mx:TextArea text="" id="ta" />
+			</mx:GridItem>	
+		</mx:GridRow>	-->
+		
+	</mx:Grid>
+					
+					<!--				<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="100%" height="100%" verticalAlign="bottom" horizontalAlign="right">
+							<mx:Box id="西门子传输_label_2">
+								<mx:Label id="西门子传输_label_1" width="90%" height="90%" doubleClickEnabled="true" doubleClick="DoubleClick('西门子传输')" useHandCursor="true" buttonMode="true" mouseChildren="true"/>
+							</mx:Box>
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%">
+							<mx:Image id="dwdm_e" source="{dwdme}" doubleClickEnabled="true" doubleClick="sysOrgGraphic('DWDM.E')"/>
+						</mx:GridItem>
+						
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" horizontalAlign="left" verticalAlign="bottom">
+							<mx:Box id="华为10G传输适配器_label_2">
+								<mx:Label id="华为10G传输适配器_label_1" width="90%" height="90%" doubleClickEnabled="true" doubleClick="DoubleClick('华为10G传输适配器')" useHandCursor="true" buttonMode="true" mouseChildren="true"/>
+							</mx:Box>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="left" width="100%" height="100%">
+							<mx:Image id="西门子传输" source="{pcmsys}" doubleClickEnabled="true" doubleClick="sysOrgGraphic('西门子传输')"/>
+						</mx:GridItem>
+						
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%" fontSize="8" color="#FFFFFF">
+							<mx:Label id="dwdm_e_label" text="DWDM.E"/>
+						</mx:GridItem>
+						
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="right" width="100%" height="100%">
+							<mx:Image id="华为10G传输适配器" source="{pcmsys}" doubleClickEnabled="true" doubleClick="sysOrgGraphic('华为10G传输适配器')"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="left"  width="100%" height="100%" fontSize="8" color="#FFFFFF">
+							<mx:Label id="西门子传输_label" text="西门子传输"/>
+							
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="center" width="100%" height="100%" backgroundImage="{netmgrbg}" backgroundSize="100%">
+							<mx:Image id="netwkmgr" source="{netmgrtopo}"  mouseOver="showdatagird()" doubleClickEnabled="true" doubleClick="netwkmgr_DoubleClick()" />
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="right"  width="100%" height="100%" fontSize="8" color="#FFFFFF">
+							<mx:Label id="华为10G传输适配器_label" text="华为10G传输适配器"/>
+							
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="100%" height="100%" verticalAlign="bottom" horizontalAlign="left">
+							<mx:Box id="oms1200c_label_2">
+								<mx:Label id="oms1200c_label_1" width="90%" height="90%" textDecoration="underline" doubleClickEnabled="true" doubleClick="DoubleClick('马可尼传输网管')" useHandCursor="true" buttonMode="true" mouseChildren="true"/>
+							</mx:Box>
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="left"  width="100%" height="100%" fontSize="8" color="#FFFFFF">
+							<mx:Label id="oms1200c_label" text="马可尼传输网管"/>
+							
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%" fontSize="8" color="#FFFFFF">
+							<mx:Label id="netmgrtopo_label" text="综合网管系统"/>
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="right" width="100%" height="100%" fontSize="8" color="#FFFFFF">
+							<mx:Label id="oms3200a_label" text="大唐传输"/>
+							
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" horizontalAlign="left" verticalAlign="bottom">
+							<mx:Box id="oms3200a_label_2">
+								<mx:Label id="oms3200a_label_1" width="90%" height="90%" doubleClickEnabled="true" doubleClick="DoubleClick('大唐传输')" useHandCursor="true" buttonMode="true" mouseChildren="true"/>
+							</mx:Box>
+						</mx:GridItem>
+						
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="left" width="100%" height="100%">
+							<mx:Image id="oms1200c" source="{sdhsys}" mouseOver="showdatagird()" doubleClickEnabled="true" doubleClick="sysOrgGraphic('马可尼传输网管')"/>
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="center" width="100%" height="100%" fontSize="8" color="#FFFFFF">
+							<mx:Label id="oms1664b_label" text="华为传输"/>
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="right" width="100%" height="100%">
+							<mx:Image id="oms3200a" source="{sdhsys}"  mouseOver="showdatagird()" doubleClickEnabled="true" doubleClick="sysOrgGraphic('大唐传输')"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="center" width="100%" height="100%">
+							<mx:Image id="oms1664b" source="{sdhsys}"  mouseOver="showdatagird()" doubleClickEnabled="true" doubleClick="sysOrgGraphic('华为传输')"/>
+						</mx:GridItem>
+						<mx:GridItem horizontalAlign="left" verticalAlign="bottom" width="100%" height="100%">
+							<mx:Box id="oms1664b_label_2">
+								<mx:Label id="oms1664b_label_1" width="90%" height="90%" doubleClickEnabled="true" doubleClick="DoubleClick('华为传输')" useHandCursor="true" buttonMode="true" mouseChildren="true"/>
+							</mx:Box>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+					</mx:GridRow>
+					
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="bottom" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%">
+							
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="100%">
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%">
+							
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+						<mx:GridItem verticalAlign="top" horizontalAlign="center" width="100%" height="100%">
+						</mx:GridItem>
+					</mx:GridRow>
+				</mx:Grid>
+			</mx:GridItem>	
+		</mx:GridRow>
+	</mx:Grid>	-->	
+	
+</mx:Panel>

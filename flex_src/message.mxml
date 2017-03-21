@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<mx:Application xmlns:fx="http://ns.adobe.com/mxml/2009"   
+			   xmlns:mx="library://ns.adobe.com/flex/spark"   
+			   xmlns:mx="library://ns.adobe.com/flex/mx"   
+			   minWidth="955" minHeight="600"> 
+	<fx:Script> 
+		<![CDATA[  
+			import mx.messaging.Channel;  
+			import mx.messaging.ChannelSet;  
+			import mx.messaging.Consumer;  
+			import mx.messaging.events.MessageEvent;  
+			import mx.rpc.events.ResultEvent;   
+			private var myConsumer:Consumer = new Consumer();   
+			
+			//直接利用Remote来进行远程的消息调用  
+			//开始订阅消息  
+			protected function rbt_clickHandler(event:MouseEvent):void  
+			{  
+				// TODO Auto-generated method stub  
+				//利用远程调用来触发开始工作  
+				subMessage.startSendMessage("start");  
+				//准备开始订阅消息  
+				myConsumer.destination = " message -data-feed";   
+				//这里也要与后台的主题名称必须相同  www.it165.net
+				myConsumer.subtopic = "tick";   
+				myConsumer.channelSet = new ChannelSet(["my-streaming-amf"]);   
+				myConsumer.addEventListener(MessageEvent.MESSAGE, remote_messageHandler);   
+				myConsumer.subscribe();   
+			}  
+			//获取订阅的消息，以文本来显示显示  
+			private function remote_messageHandler(event:MessageEvent):void   
+			{   
+				var mess:String = event.message.body as String;   
+				demot.appendText("\n"+ mess);  
+			}   
+			//退订该消息  
+			protected function cbr_clickHandler(event:MouseEvent):void  
+			{  
+				subMessage.stopSendMessage("stop");  
+				myConsumer.unsubscribe(false);  
+			}  
+			protected function subMessage_resultHandler(event:ResultEvent):void  
+			{} 
+		]]> 
+	</fx:Script> 
+	<fx:Declarations> 
+		<!—用来启动消息发布 --> 
+		<mx:RemoteObject id="subMessage" destination="RemoteMessage"   
+						 result="subMessage_resultHandler(event)"> </mx:RemoteObject> 
+	</fx:Declarations> 
+	<mx:TextArea x="445" y="42" width="257" id="demot"/> 
+	<mx:Button x="445" y="210" label="订阅消息Remote" id="rbt" click="rbt_clickHandler(event)"/> 
+	<mx:Button x="597" y="207" label="退订消息R" id="cbr" click="cbr_clickHandler(event)"/> 
+</mx:Application> 
+

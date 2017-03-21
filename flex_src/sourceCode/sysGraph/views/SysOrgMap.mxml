@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--系统组织图-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+		 width="100%"
+		 height="100%"
+		 verticalGap="0"
+		 horizontalGap="0"
+		 creationComplete="init();initEvent()"
+	
+		 preinitialize="preinitialize()"
+		 xmlns:views="sourceCode.sysGraph.views.*" 
+		 xmlns:actionscript="sourceCode.sysGraph.actionscript.*"
+		 xmlns:base="base.*"
+		 xmlns:component="common.component.*" 
+		 xmlns:h="sourceCode.sysGraph.actionscript.*">	 <!--"init();initEvent()" -->
+	
+	<mx:Script source="../actionscript/Risk_Operation.as" />
+	
+	
+	<mx:Script source="../actionscript/Risk_estimate.as" />
+
+	<mx:Script>
+		<![CDATA[
+			import com.as3xls.xls.ExcelFile;
+			import com.as3xls.xls.Sheet;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			
+			import sourceCode.packGraph.views.Color1;
+			import sourceCode.resManager.resNode.Events.testevent;
+			import sourceCode.sysGraph.actionscript.DFloyd;
+			import sourceCode.sysGraph.model.Testmodel;
+			private var refExcelFile:FileReference;
+			//private var refRouteFile:FileReference;
+			private var xls:ExcelFile;
+			public var equipname:Array = new Array(),link_155:Array = new Array(),equipX:Array = new Array(),equipY:Array = new Array(),node_type:Array = new Array(),real_equip:Array = new Array();
+			private var flag:int=1,id0:Number=1,id1:Number=-1,id2:Number=-1,id3:Number=-1,id4:Number=-1,id5:Number=-1,id6:Number=-1;
+			public var route_main:Array=new Array(),route_sub1:Array=new Array(),route_sub2:Array=new Array();
+			[bindable] 
+			private var route_name:Array=new Array();
+			private var nullflag:Number=1;
+			[bindable]
+			private var route_list:XMLList;
+			//选定业务路由监听动作
+//			private function changeFn(e:Event):void{
+//				clear_route();
+//				getselected_route(route_que.selectedIndex);
+//			}
+			
+			private function getselected_route(position:int):void{
+				clear_route();
+				Alert.show(route_main[position],"主用路由");
+				Alert.show(route_sub1[position],"备用路由");
+				Alert.show(route_sub2[position],"迂回路由");
+				mark_route(route_main[position],true);
+				mark_route(route_sub1[position],false);
+			}
+			
+			//重置有色连线
+			public function clear_route(){
+				systemorgmap.elementBox.forEach(function(element:IElement):void{
+					if(element is Link)
+					{
+						element.setStyle(Styles.INNER_COLOR, 0x000000);
+						element.setStyle(Styles.OUTER_COLOR, 0xFFFFFF);
+					}
+				});
+				
+			}
+			
+			//checkbox事件监听
+			private function expand_routemap(event:Event):void{
+				if (event.target is CheckBox)
+				{
+					var node:XML=testtree.selectedItem as XML;
+					if(node.@type == "system")
+					{
+						if(event.target.selected){
+							if(node.@name=="华为"){
+								init_new_view(node);//new func
+							}
+
+							else
+								import_map_clickHandler();
+						}
+					}
+				}
+
+			}
+
+			public function sql_handler():void
+			{
+				Alert.show("12345");
+				var remoteObject:RemoteObject=new RemoteObject("sysManager");
+				remoteObject.endpoint = ModelLocator.END_POINT;
+				remoteObject.addEventListener(ResultEvent.RESULT,testHandler);
+				remoteObject.showBusyCursor = true;
+				remoteObject.testsql("");
+			
+			//	Alert.show(recv.a);
+			//	remoteObject.addEventListener(ResultEvent.RESULT,modify_reuslt);
+			}
+			
+
+			
+			protected function testHandler(event:ResultEvent):void
+			{
+				var x:Testmodel=(Testmodel)(event.result);
+				Alert.show(x.l1);
+			}
+			
+
+			
+			//标记选定业务路由
+			public function mark_route(route:String,flag:Boolean){
+				var sp_route:Array=new Array();
+				
+				sp_route=route.split("-");
+				for(var temp:int =0;temp<sp_route.length-1;temp++){
+					//Alert.show(temp.toString());
+					systemorgmap.elementBox.forEach(function(element:IElement):void{
+//						if(temp==1)
+//							Alert.show(element.getClient("equip_a"));
+						if(element is Link&&((element.getClient("equip_a")==sp_route[temp]&&element.getClient("equip_z")==sp_route[temp+1] )||
+						(element.getClient("equip_z")==sp_route[temp]&&element.getClient("equip_a")==sp_route[temp+1])
+						))
+						{	
+							
+							switch(flag){
+								case true:
+									element.setStyle(Styles.INNER_COLOR,0x800080);
+									break;
+								case false:{
+									if(element.getStyle(Styles.INNER_COLOR)==0x800080){
+										element.setStyle(Styles.OUTER_COLOR,0xef1111);
+										element.setStyle(Styles.INNER_COLOR,0x800080);
+									}
+										
+									else
+										element.setStyle(Styles.INNER_COLOR,0xef1111);
+									break;
+								}
+						
+							}
+						}
+					});
+					
+				}
+				
+			}
+			
+
+
+			
+//			private function child_app(element:XML,node_content:String,pos:int){
+//				var newNode:XML=<item/>;
+//				//tips:xml中保存 的书类型为对应类型,无需转换
+//				newNode.@name=node_content;
+//				newNode.@position=pos;
+//				newNode.@type="business_route";
+//				element.appendChild(newNode);
+//			}
+			public  function route_doubleClickHandler(event:Event):void{
+				var element:XML =testtree.selectedItem as XML;
+				if(element.@type=="business_route"){
+					
+					var pos:int=element.@position;
+					getselected_route(pos);
+					
+				}
+			}
+			
+
+			
+			
+		
+			public function import_map_clickHandler():void
+			{
+				// TODO Auto-generated method stub
+					refExcelFile = new  FileReference();
+					var xlsFilter:FileFilter = new FileFilter("Excels", "*.xls");
+					refExcelFile.browse([xlsFilter]);
+					//Alert.show("请选择调度数据网文件");
+					refExcelFile.addEventListener(Event.SELECT,onFileSelect);
+			}
+			
+			public function onFileSelect(event:Event):void {
+				refExcelFile.load();
+				refExcelFile.addEventListener(Event.COMPLETE,daoru);
+			}
+			
+			private function daoru(event:Event):void{
+				var node_a:Node=null;
+				var node_z:Node=null;
+				var data:ByteArray = new ByteArray();
+				nullflag=1;
+				set_clear();
+				// 读 bytes放入bytearray变数
+				refExcelFile.data.readBytes(data, 0, 0);
+				// Load the Excel file
+				xls=new ExcelFile();
+				xls.loadFromByteArray(data);
+				var sheet:Sheet = xls.sheets[0];
+				if(sheet.values.length==0){
+					Alert.show("表格导入出错或为空");
+				}
+				else{
+					for(var i:int = 0;i<Number(sheet.cols.toString());i++){
+						if(sheet.getCell(0,i).value=="设备名称")
+							id1=i;
+						else if(sheet.getCell(0,i).value=="相对纬度（X）")
+							id2=i;
+						else if(sheet.getCell(0,i).value=="相对经度（Y）")
+							id3=i;
+						else if(sheet.getCell(0,i).value=="站点互联")
+							id4=i;
+						else if(sheet.getCell(0,i).value=="类别")
+							id5=i;
+//						else if(sheet.getCell(0,i).value=="设备名称")
+//							id6=i;
+					}
+					if(id1==-1||id2==-1||id3==-1||id4==-1||id5==-1){
+						flag=0;
+						Alert.show(id1.toString()+id2.toString()+id3.toString()+id4.toString()+id5.toString());
+					}
+					else
+						flag=1;
+					if(flag==1){
+						
+						//分类导入表中数据
+						for(var i:int=1;i<Number(sheet.rows.toString());i++){
+						if(sheet.getCell(i,id1).toString()!=""&&sheet.getCell(i,id1).toString()!=null){
+							equipname[i]=sheet.getCell(i,id1).toString();
+							equipX[i]=sheet.getCell(i,id2).toString();
+							equipY[i]=sheet.getCell(i,id3).toString();
+						}
+
+							if(sheet.getCell(i,id4).toString()!=""&&sheet.getCell(i,id4).toString()!=null)
+								link_155[i]=sheet.getCell(i,id4).toString();
+							if(sheet.getCell(i,id5).toString()!=""&&sheet.getCell(i,id5).toString()!=null)
+								node_type[i]=sheet.getCell(i,id5).toString();
+//							if(sheet.getCell(i,id6).toString()!=""&&sheet.getCell(i,id6).toString()!=null)
+//								real_equip[i]=sheet.getCell(i,id6).toString();
+						}
+						systemorgmap.elementBox.clear();
+					//	Alert.show(equipname.length.toString(),"eqname");
+						for (var i:int=1;i<equipname.length;i++)
+						{	
+//							Shared.info_array[i-1] = new Array();
+//							for(var j:int = 0; j<equipname.length; j++){
+//								Shared.info_array[i-1][j] = 0;
+//							}
+							var node=new Node(equipname[i]);
+							node.name=equipname[i];
+							node.setSize(30,30);
+							node.image="twaverImages/device/xunishebei.png";
+							node.icon="twaverImages/device/xunishebei.png";
+						//	node.setClient("real_equip",real_equip[i]);//lian
+							node.setClient("type",node_type[i]);
+							node.setClient("NodeType","equipment");
+							node.setClient("checkable",true);
+							node.setStyle(Styles.SELECT_COLOR,"0xFF6600");
+							node.setCenterLocation(int(equipX[i]), int(equipY[i]));
+							systemorgmap.elementBox.add(node);
+						}
+						Alert.show("length",link_155.length.toString());
+						var err_info:String=new String();
+						for (var i:int=1; i <link_155.length; i++)
+						{
+							var temp:Array=new Array();
+							temp=link_155[i].split("-");
+							var nodeaname:String,nodezname:String;
+							
+							node_a=systemorgmap.elementBox.getDataByID(temp[0]) as Node;
+							node_z=systemorgmap.elementBox.getDataByID(temp[1]) as Node;
+							if(node_a==null||node_z==null){
+								nullflag=0;
+								err_info=link_155[i];
+								break;
+							}
+//							systemorgmap.elementBox.forEach(function(element:IElement):void{
+//								if(element.elementUIClass.toString() == "[class NodeUI]"){
+//									if(element.name==nodeaname)
+//										node_a=Node(element);
+//									if(element.name==nodezname)
+//										node_z=Node(element);
+//								}
+//							});
+							var id_1:int,id_2:int;
+//							for(j=1;j<equipname.length;j++){
+//								if(nodeaname==equipname[j])
+//									id_1=j-1;
+//								if(nodezname==equipname[j])
+//									id_2=j-1;
+//							}
+//							Shared.info_array[id_1][id_2] = 1;
+//							Shared.info_array[id_2][id_1] = 1;
+							var link:Link = new Link(node_a,node_z);
+							link.setClient("equip_a",node_a.name);
+							link.setStyle(Styles.LINK_COLOR, "0x000000");
+							link.setClient("equip_z",node_z.name);
+							link.setStyle(Styles.LINK_WIDTH,2.5);
+							systemorgmap.elementBox.add(link);
+						}
+//						for (var i:int=1; i < node_type.length; i++)
+//						{
+//							var temp:Array=new Array();
+//							temp=node_type[i].split("-");
+//							node_a=systemorgmap.elementBox.getDataByID(temp[0]) as Node;
+//							node_z=systemorgmap.elementBox.getDataByID(temp[1]) as Node;
+//							var id_1:int,id_2:int;
+////							for(j=1;j<equipname.length;j++){
+////								if(temp[0]==equipname[j])
+////									id_1=j-1;
+////								if(temp[1]==equipname[j])
+////									id_2=j-1;
+////							}
+////							Shared.info_array[id_1][id_2] = 1;
+////							Shared.info_array[id_2][id_1] = 1;
+//							var link:Link = new Link(node_a,node_z);
+//							link.setStyle(Styles.LINK_WIDTH,1);
+//							systemorgmap.elementBox.add(link);
+//						}
+						
+						checknulllink(nullflag,err_info);
+						
+						//导入 至不可检修点恢复配置
+					
+						Shared.import_flag=1;
+						Shared.test_flag=1;
+						var count:int=link_155.length+node_type.length;
+						nod.text=count.toString();
+						bus_ana_clickHandler();
+						}
+					else{
+						Alert.show("导入文件格式错误，请联系系统管理员！");
+					}
+				}
+			}
+			public function checknulllink(flag:Number,err_info:String):void{
+				if(nullflag==0)
+					Alert.show("路由生成时下列节点不存在，请查看："+err_info,"空节点");
+			}
+
+			
+			public function  getroutecount(obj:Object,content:String){
+				var sp_route:Array=new Array();
+				sp_route=content.split("-");
+				for(var temp:int =0;temp<sp_route.length-1;temp++){
+						var pos:int=obj.eq_name.indexOf(sp_route[temp]);
+						if(pos!=-1)
+							obj.count[pos]++;
+						else{
+							obj.count.push("1");//single_bus_ana.eq.push(s)
+							obj.count.eq_name.push(sp_route[temp]);
+						}
+				}
+				Alert.show(obj.toString());			
+			}
+			
+			public function ana_route(obj:Object,eqlist:Array){
+				for(var temp:int =0;temp<obj.eqname.length;temp++){
+					if(obj.count[temp]>1){
+						eqlist.push(obj.eqname[temp]);
+					}
+				}
+				Alert.show(eqlist.toString());
+				
+			}
+			
+
+			
+		]]>
+	</mx:Script>
+
+	
+	
+	
+	<mx:NumberValidator id="numValid"  source="{ddd}" property="text" required="true" domain="real" allowNegative="false"  
+						requiredFieldError="不能为空，请输入！" integerError="请输入正整数！"  trigger="{diClick}" triggerEvent="click" valid="diClickHandler();"/>
+	<mx:Script source="../actionscript/sysGraph.as"/>
+	
+	<mx:ArrayCollection id="linkItems">
+		<actionscript:ActionTile label="flexional link" imageName="link_flexional_icon" 
+								 action="{function():void{
+								 createLinkInteraction(Link,Consts.LINK_TYPE_PARALLEL,createLinkCallBack);
+								 }}" />
+	</mx:ArrayCollection>
+	
+	<mx:RemoteObject id="fw"  destination="fiberWire" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"
+					 fault="DealFault(event)" result="resultHandler(event)"/>
+
+	<component:ControlBar id="controlBar" width="100%" height="30" modelName="网络拓扑图" imgName="sysorgmap"/>
+
+	<mx:HDividedBox width="100%" height="100%" right="20" left="0" >
+		<mx:HBox  height="100%" verticalGap="0" horizontalGap="0">
+			<mx:VBox id="leftpanel" width="100%" height="100%" verticalGap="0" horizontalGap="0">
+				<component:SearchTextInput id="searchText" height="35" width="100%" searchEnter="{enter()}"
+										   clickButton="searchText_clickHandler(event)" />
+				<h:CheckTree id="tree" 
+							 width="100%" 
+							  visible="false"
+							 height="0"
+							 rowHeight="20"
+							 dataProvider="{XMLData}" 
+							 labelField="@name"
+							 iconFunction="iconFun" 
+							 checkBoxOpenItemsOnCheck="true"
+							 checkBoxStateField="@checked"							 
+							 backgroundImage="@Embed(source='assets/images/treebg.png')"
+							 backgroundSize="100%"									
+							 click="showSystemMap(event)" 
+							 doubleClickEnabled="true"
+							 doubleClick="tree_doubleClickHandler(event)"/>			
+				<h:CheckTree id="testtree" 
+							 width="100%" 
+							 height="100%"
+							 rowHeight="20"
+							 labelField="@name"
+							 iconFunction="iconFun" 
+							 checkBoxOpenItemsOnCheck="true"
+							 checkBoxStateField="@checked"							 
+							 backgroundImage="@Embed(source='assets/images/treebg.png')"
+							 backgroundSize="100%"									
+							 click="expand_routemap(event)" 
+							 doubleClickEnabled="true"
+							 doubleClick="route_doubleClickHandler(event)"/>			
+			</mx:VBox>
+			<mx:DataGrid id="dataGrid1" height="100%"  dataProvider="{arrayCollection}" visible="false" itemDoubleClick="dataGrid1_itemDoubleClickHandler(event)"
+						 doubleClickEnabled="true" >
+				<mx:columns>
+					<mx:DataGridColumn id="colum0" headerText="序号" width="40">  
+						<mx:itemRenderer>  
+							<mx:Component>  
+								<mx:Label text="{this.parentDocument.genrowno(data)}"/>  
+							</mx:Component>  
+						</mx:itemRenderer>  
+					</mx:DataGridColumn>
+					<mx:DataGridColumn  id="colum1" headerText="网元" dataField="equipName"  width="90" fontSize="11.5"  wordWrap="true"/>
+					<mx:DataGridColumn id="colum2" headerText="" dataField="sumAvailability" width="55"/>
+					
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:DataGrid   id="dgEquip" height="100%" visible="false" dataProvider="{equipInfo}" doubleClickEnabled="true" 
+						  doubleClick="itemListClickHander(event)" >
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" dataField="SerialNum" editable="false" labelFunction="lfRowNum" width="55"/>
+					<mx:DataGridColumn headerText="网元" dataField="S_SBMC" width="140" fontSize="11.5" wordWrap="true" />
+					<mx:DataGridColumn headerText="端口数" dataField="RAT" width="75"/>				
+				</mx:columns>
+			</mx:DataGrid>
+			<!--	wumm-->
+			<mx:DataGrid   id="dgEquip_1" height="100%" visible="false" dataProvider="{equipInfo_1}" doubleClickEnabled="true" 
+						   doubleClick="dgEquip_doubleClick(event)" >
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" dataField="SerialNum" editable="false" labelFunction="lfRowNum_1" width="55"/>
+					<mx:DataGridColumn headerText="网元" dataField="S_SBMC" width="140" fontSize="11.5" wordWrap="true" />
+					<mx:DataGridColumn headerText="端口数" dataField="PORT_NUM" width="75" />				
+				</mx:columns>
+			</mx:DataGrid>
+				</mx:HBox>
+
+				<mx:Canvas id="cvs" width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<mx:VBox width="100%" height="100%" horizontalGap="0" verticalGap="0">
+						<mx:HBox>
+						<mx:HBox id="toolbar" width="100%" horizontalGap="0" visible="true"  verticalAlign="middle">
+							<mx:ComboBox id="cob" dataProvider="{arr_cb}" labelField="label"  width="106"  change="cob_changeHandler(event)" 
+										 click="cob_clickHandler(event)"/><!--	prompt="请选择"-->
+							<mx:ComboBox id="eqp_Analysis" width="0"   visible="false" dataProvider="{arr_Analysis}" labelField="label" change="cob1_changeHandler(event)" 
+										 click="cob1_clickHandler(event)"/><!--	prompt="请选择"-->
+
+							<mx:ComboBox id="cob_add" visible="false" dataProvider="{arr_cb_add}" labelField="label"  width="0"  change="cob_changeHandler(event)"/>
+							<mx:Button id="import_map" click="import_route_clickHandler()" label="业务路由导入" width="0" visible="false" />
+							<mx:Button id="import_eq_type_2_val" width="0" visible="false"  click="import_bus_val_clickHandler()" label="设备权重导入"/>
+							<mx:Button id="import_route_type_2_val" width="0" visible="false"  click="import_route_clickHandler()" label="复用段权重导入"/>
+							<mx:Button id="point_check" click="bus_ana_clickHandler()" label="全网检修状态查看"  />
+							<mx:Button id="risk_check" click="risk_check_handler()" label="全网风险预警信息查看" />
+							<mx:Button id="risk_est" click="risk_estimate_handler()" label="业务风险评估信息查看" />
+							<mx:Button visible="false" id="sqltest" click="obj_handler()" label="sqltest"/>
+						</mx:HBox>
+
+						</mx:HBox>
+						<mx:HBox id="colors">
+							<mx:Label   text="节点个数：" fontSize="14"/>
+							<mx:Label  id ="nod" text="" color="0x7B68EE" fontSize="14"  />
+							
+							
+							<mx:Canvas width="10" backgroundColor="0x7CFC00" >
+								<mx:Label width="100%" height="100%" />
+							</mx:Canvas>
+							<mx:Spacer height="100%" width="3" />
+							<mx:Label text="可检修设备"/>
+							
+
+							<mx:Canvas width="10" backgroundColor="0xCD0000" >
+								<mx:Label width="100%" height="100%" />
+							</mx:Canvas>
+							<mx:Spacer height="100%" width="3" />
+							<mx:Label text="不可检修设备"/>
+							
+							<mx:Canvas width="10" backgroundColor="0x191970" >
+								<mx:Label width="100%" height="100%" />
+							</mx:Canvas>
+							<mx:Spacer height="100%" width="3" />
+							<mx:Label text="检修中设备"/>
+							<mx:Spacer height="100%" width="6" />
+							
+						</mx:HBox>
+						<tw:Network id="systemorgmap" 
+					
+									width="100%" 
+									height="100%" 
+									backgroundColor="0xffffff"   							
+									dragEnter="onDragEnter(event)" 
+									dragOver="onDragOver(event)"
+									dragDrop="onGridDragDrop(event)"
+									dragExit="onDragExit(event)"
+									keyboardRemoveEnabled="false" 
+									keyDown="sysNetwork_keyDownHandler(event)"	
+									doubleClick="doubleChickHandler(event)"  click="itemClickHandler(event)"
+									visible="true"
+									/>
+				<mx:DataGrid  id="dgEquipInfo"  width="{systemorgmap.width}" height="18%"  visible="false" dataProvider="{equipPortDetail}">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" dataField="SerialNum_1" editable="false" width="30" labelFunction="lfRowNum1" />					
+						<mx:DataGridColumn headerText="网元" dataField="S_SBMC" width="200" wordWrap="true"/>
+						<mx:DataGridColumn headerText="端口" dataField="LOGICPORT" width="100" wordWrap="true" />	
+						<mx:DataGridColumn id="sumport" headerText="VC12总量" dataField="SUMPORT" width="50" />
+						<mx:DataGridColumn id="rep" headerText="使用VC12量" dataField="REP" width="50" />
+						<mx:DataGridColumn id="useport" headerText="剩余VC量" dataField="USEPORT" width="50" />
+						<mx:DataGridColumn headerText="利用率(%)" dataField="USEPERCE" width="50" />
+					</mx:columns>
+				</mx:DataGrid>
+				<!--wumm-->
+				
+				<mx:DataGrid id="dgEquipInfo_1"  width="{systemorgmap.width}" height="18%"  visible="false" dataProvider="{equipPortDetail_1}">
+							<mx:columns>
+								<mx:DataGridColumn headerText="序号" dataField="SerialNum_1" editable="false" width="30" labelFunction="lfRowNum1_1" />					
+								<mx:DataGridColumn headerText="网元" dataField="S_SBMC" width="100" wordWrap="true"/>
+								<mx:DataGridColumn headerText="端口" dataField="LOGICPORT" width="100"  wordWrap="true"/>	
+								<mx:DataGridColumn headerText="速率" dataField="RATE" width="50" />
+								<mx:DataGridColumn id="sumTimeSlot"  dataField="TIMESLOT_SUM" width="50" />
+								<mx:DataGridColumn id="useTimeSlot"  dataField="TIMESLOT_USE" width="80" />
+								<mx:DataGridColumn id="leftTimeSlot"   dataField="TIMESLOT_LEFT" width="80" />
+								<mx:DataGridColumn headerText="利用率(%)" dataField="USE_RATIO" width="80" />
+							</mx:columns>
+				</mx:DataGrid>
+					<mx:VBox label="设备" width="100%" height="100%" horizontalGap="0" borderStyle="solid" visible="false" includeInLayout="false" id="treee">
+						<mx:Tree id="deviceTree" width="100%" height="100%" dataProvider="{DeviceXML}"	
+								 verticalScrollPolicy="auto"
+								 iconFunction="deviceiconFun"
+								 change="treeChange()" 
+								 labelField="@label"						
+								 defaultLeafIcon="{null}" 
+								 borderStyle="none"
+								 dropEnabled="false"
+								 dragEnabled="true"
+								 dragMoveEnabled="false"
+								 itemClick="tree_itemClick(event)" 
+								 itemOpen="treeChange()"
+								 itemRollOver="curIndex = event.rowIndex"/>
+					</mx:VBox>
+						</mx:VBox>			
+					
+
+									
+				
+					<mx:Accordion id="acc" change="accordionChange()"  height="{vb.height}" styleName="myAccordion" 
+							  width="220"   paddingBottom="0" paddingTop="0" right="52" top="24.5">
+						
+						<mx:VBox label="设备模板" width="100%" height="100%" horizontalGap="0" borderStyle="solid" paddingTop="10"
+								 horizontalAlign="center" verticalAlign="middle">
+							<mx:TileList id="tileList" dragEnabled="true" borderThickness="0" 
+										 width="100%" height="100%"
+										 rowHeight="70" columnWidth="100"
+										 columnCount="1" dataProvider="{xmlListColl}">
+								<mx:itemRenderer>
+									<mx:Component>
+										<views:EquipModelRenderer left="10" right="10" />
+									</mx:Component>
+								</mx:itemRenderer>
+							</mx:TileList>
+						</mx:VBox>
+						<mx:VBox label="复用段" width="100%" height="100%" borderStyle="solid">
+							<mx:TileList id="tileTopoLink" borderThickness="0" rowHeight="30" columnWidth="35"
+										 width="100%" height="100%" columnCount="3" dataProvider="{linkItems}"
+										 itemClick="onItemClick(event)">
+								<mx:itemRenderer>
+									<views:ActionTileRenderer left="10" right="10" />
+								</mx:itemRenderer>
+							</mx:TileList>
+						</mx:VBox>
+						<mx:VBox label="搜索" width="100%" height="100%" horizontalGap="0" borderStyle="solid" 
+								 verticalGap="0">
+							<component:SearchTextInput id="searchText1" height="35" width="100%" clickButton="searchText_clickHandler1(event)" searchEnter="{enter1()}"/>
+							<mx:List id="tileSearch" dragEnabled="true" borderThickness="0" 
+									 width="100%" height="100%"
+									 rowHeight="40" columnWidth="100"
+									 columnCount="1" labelField="@label" itemClick="tileSearch_itemDoubleClickHandler(event)" doubleClickEnabled="true">
+							</mx:List>
+						</mx:VBox>
+						
+						<!--分析-->
+						<mx:VBox id="vbox" label="分析"
+								 width="100%" height="100%" horizontalGap="0" borderStyle="solid" 
+								 verticalGap="0">
+							<!-- Start 成环率分析-->	
+							<mx:Label id="lab" text="" visible="false"/>
+							
+							<mx:HBox id="diInput" visible="false" horizontalAlign="center">
+								<mx:Label id="dl" text="直径" />
+								<mx:TextInput width="30%" id="ddd" />
+								<mx:Button id="diClick" label="提交" />
+							</mx:HBox>
+							
+							<mx:VBox id="switch_show" width="100%" visible="false" horizontalAlign="center" horizontalCenter="0">
+								<mx:Button id="switchcrit" label="切换割点显示" click="switchshow()"/>
+							</mx:VBox>
+							<mx:DataGrid id="equipGrid" width="100%" height="100%" sortableColumns="false"
+										 dataProvider="{Shared.equips}" itemClick="equipGridList_itemClickHandler(event)"
+										 paddingTop="0">
+								<mx:columns>
+									<mx:DataGridColumn dataField="NODE_NAME" headerText="未成环设备" id="no" showDataTips="true" dataTipField="TIPINFO" visible="false"/>
+									<mx:DataGridColumn dataField="Path" headerText="直径路径" id="di" visible="false" showDataTips="true" dataTipField="Path"/>
+									<mx:DataGridColumn dataField="G_Point" headerText="无悬挂点割点" id="su" showDataTips="true" visible="false"/>	
+								</mx:columns> 
+							</mx:DataGrid>
+							<mx:DataGrid id="equipGrid_1" width="100%" height="100%" sortableColumns="false"
+										 dataProvider="{Shared.equips}" itemClick="equipGridList1_itemClickHandler(event)"
+										 paddingTop="0" visible="false" includeInLayout="false" doubleClickEnabled="false">
+								<mx:columns>
+									<mx:DataGridColumn dataField="G_Point" headerText="有悬挂点割点" id="su_1" showDataTips="true" visible="false" />	
+								</mx:columns> 
+							</mx:DataGrid>
+							<!--  End  -->	
+							
+						</mx:VBox>
+
+						<!--分析-->
+					</mx:Accordion>
+			
+					<base:VButtonBar id="vb" visible="true" Vdata="{ac}" accordion="{acc}" width="41" creationComplete="b1_creationCompleteHandler(event)"
+									 paddingBottom="0" paddingTop="0" right="10" top="24.5" tabChildren="false" autoLayout="false" clipContent="true" 
+									 selectedItemEvent="vb_selectedItemEventHandler(event)"/>
+
+
+				</mx:Canvas>
+
+
+	</mx:HDividedBox>
+</mx:VBox>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http:/ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="operation">
+    <select id="getOperations" resultClass="sysManager.function.model.OperationModel" parameterClass="java.lang.String">
+        select oper_id,oper_name,parent_id,oper_desc,ischilden from  SEC_OPERATION_RES
+        where parent_id=#value# order by oper_id         
+    </select>
+    <insert id="insertOper" parameterClass="sysManager.function.model.OperationModel">
+    	insert into sec_operation_res(oper_id,oper_name,parent_id)values(sysmgr.nextval,#oper_name#,#parent_id#)
+    </insert>
+    <insert id="delOper" parameterClass="java.lang.String">
+    	delete from sec_operation_res where oper_id=#value#
+    </insert>
+    <delete id="delOperByParentId" parameterClass="java.lang.String">
+    	delete from sec_operation_res t where t.parent_id = #value#
+    </delete>
+    <insert id="updateChilden" parameterClass="java.lang.String">
+    	update sec_operation_res set ischilden='1' where oper_id=#value#
+    </insert>
+    <update id="updateOperationByOperId" parameterClass="sysManager.function.model.OperationModel">
+        update sec_operation_res set oper_name = #oper_name#    
+        where oper_id=#oper_id#
+    </update>
+</sqlMap>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="timeslotMap">
+<!--获取当前系统下的复用段的所有速率-->
+	 <select id="selectTimeSlotSecondLayerTreeNode" resultClass="java.util.HashMap" parameterClass="String">
+        <![CDATA[
+       		
+			select distinct linerate as lineratebm, getxtxx(linerate) as linerate
+			  from en_topolink
+			 where equip_a in
+			       (select equipcode from equipment where system_name = '$str$')
+			   and equip_z in
+			       (select equipcode from equipment where system_name = '$str$')
+			order by lineratebm asc
+        ]]> 
+        <!-- /*select distinct linerate as lineratebm, getxtxx(linerate) as linerate from en_topolink 
+			where (getsystembyeq(equip_a)='$str$' or getsystembyeq(equip_z)='$str$') 
+			and linerate in ('ZY110604','ZY110603', 'ZY110601', 'ZY110602')
+			order by lineratebm asc*/ -->
+    </select>
+<!--获取当前系统下固定速率下的复用段    -->
+     <select id="selectThirdLayerTreeNode" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+        <![CDATA[
+			     select t.label,
+			       t.Aendptp || '-' || t.Zendptp as node,
+			       t.Aendptp,
+			       t.Zendptp,
+			       aendptpcode,
+			       t.equipcode_a as equipa,
+			       zendptpcode,
+			       t.equipcode_z as equipz
+			  from view_topolink t
+			 where t.lineratebm = '$str1$'
+			   and (t.system_a = '$str2$' and
+			       t.system_z = '$str2$')
+			   and t.Aendptp is not null
+			   and t.Zendptp is not null
+			 order by t.aendptp asc, t.zendptp asc
+ 
+			      
+        ]]> 
+        <!-- select t.label,
+			       t.Aendptp || '-' || t.Zendptp as node,
+			       t.Aendptp,
+			       t.Zendptp,
+			       aendptpcode,
+			       getequipcode(aendptpcode) equipa,
+			       zendptpcode,
+			       getequipcode(zendptpcode) equipz
+			  from view_topolink t
+			 where t.lineratebm = '$str1$'
+			   and (getsystembyeq(equipcode_a) = '$str2$' or
+			       getsystembyeq(equipcode_z) = '$str2$')
+			   and t.Aendptp is not null
+			   and t.Zendptp is not null
+			 order by t.aendptp asc, t.zendptp asc -->	
+    </select>
+    
+</sqlMap>
+ 

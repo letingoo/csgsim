@@ -1,0 +1,181 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				title="选择局站"
+				showCloseButton="true" 
+				backgroundImage="@Embed(source='assets/images/treebg.png')"
+				backgroundSize="100%" 
+				width="408" height="500"  
+				layout="horizontal"
+				close="close()"
+				creationComplete="init();initEvent();">
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		<mx:Tree verticalScrollPolicy="auto"
+				 id="stationsTree" 
+				 x="0" y="0" 
+				 width="100%" height="100%" 
+				 dataProvider="{folderCollection}"
+				 labelField="@label"
+				 defaultLeafIcon="{leafPic}" 
+				 borderStyle="none"
+				 doubleClickEnabled="true"
+				 change="treeChange()"
+				 itemClick="tree_itemClick(event)"
+				 itemOpen="treeChange()"
+				 itemRollOver="curIndex = event.rowIndex"
+				 doubleClick="stationsTree_doubleClickHandler(event)"/>
+	</mx:VBox>
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.TextInput;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.channelRoute.model.Circuit;
+			import sourceCode.packGraph.views.checkedEquipPack;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			
+			[Embed('assets/images/file/fileLeaf.gif')]
+			[Bindable]
+			public var leafPic:Class;
+			public var XMLData:XMLList;
+			private var curIndex:int;
+			private var catalogsid:String; 
+			private var type:String;
+			private var selectedNode:XML;
+			
+			[Bindable]   
+			public var folderCollection:XMLList;
+			public var page_parent:Object;
+			public var whichOne:String;
+			
+			private function init():void
+			{
+				var obj:RemoteObject = new RemoteObject("businessDispatch");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				obj.getStations(" ","root");
+				obj.addEventListener(ResultEvent.RESULT,getStationsTree);
+			}
+			
+			public function getStationsTree(e:ResultEvent):void{
+				folderCollection=new XMLList(e.result.toString()); 
+				stationsTree.dataProvider = folderCollection;
+			}
+			
+			private function tree_itemClick(evt:ListEvent):void {
+				var item:Object = Tree(evt.currentTarget).selectedItem;
+				if (null != stationsTree && stationsTree.selectedIndex == 0 && stationsTree.dataDescriptor.isBranch(item)) {
+					stationsTree.expandItem(item, !stationsTree.isItemOpen(item), true);
+				}
+			}
+			
+			private function initEvent():void{  
+				addEventListener(EventNames.CATALOGROW,gettree);
+			}
+			
+			private function gettree(e:Event):void{ 
+				removeEventListener(EventNames.CATALOGROW,gettree);
+				var rt_TimeslotTree:RemoteObject = new RemoteObject("businessDispatch");
+				rt_TimeslotTree.endpoint = ModelLocator.END_POINT;
+				rt_TimeslotTree.showBusyCursor =true;
+				rt_TimeslotTree.getStations(catalogsid,type);//获取树的数据
+				rt_TimeslotTree.addEventListener(ResultEvent.RESULT, generateRateTreeInfo);
+			}
+			
+			private function generateRateTreeInfo(event:ResultEvent):void{
+				selectedNode = stationsTree.selectedItem as XML;
+				var str:String = event.result as String;  
+				if(str!=null&&str!=""){  
+					var child:XMLList= new XMLList(str);
+					if(selectedNode.children()==null||selectedNode.children().length()==0){ 	
+						selectedNode.appendChild(child);
+						stationsTree.callLater(openTreeNode,[selectedNode]);
+					}
+				} 
+				addEventListener(EventNames.CATALOGROW,gettree);
+			}
+			
+			private function DealFault(event:FaultEvent):void
+			{
+				Alert.show(event.fault.toString());
+			}
+			
+			private function openTreeNode(xml:XML):void{
+				if(stationsTree.isItemOpen(xml))
+					stationsTree.expandItem(xml,false);
+				stationsTree.expandItem(xml,true);
+			}
+			
+			private function treeChange():void
+			{
+				stationsTree.selectedIndex = curIndex;
+				if(stationsTree){
+					stationsTree.selectedIndex = curIndex;
+					selectedNode = stationsTree.selectedItem as XML;
+				}else{
+					return; 
+				}
+				if(stationsTree.selectedItem.@isBranch == true && stationsTree.selectedItem.@type == "domainname"){
+					catalogsid = this.stationsTree.selectedItem.@label;
+					type="system";
+				}else if(stationsTree.selectedItem.@isBranch == true && stationsTree.selectedItem.@node == "2"){
+					catalogsid = this.stationsTree.selectedItem.@code;
+					type="rate";
+				}
+				dispatchEvent(new Event(EventNames.CATALOGROW));
+			}
+			
+			protected function stationsTree_doubleClickHandler(event:MouseEvent):void{
+				if(stationsTree.selectedItem.@isBranch==false &&stationsTree.selectedItem.@leaf==true){
+					if(whichOne=="a"){
+						page_parent.aStationName.text = stationsTree.selectedItem.@label;
+						page_parent.aStationcode = stationsTree.selectedItem.@code;
+						page_parent.aEquipName.text ="";
+					}else if(whichOne=="z"){
+						page_parent.zStationName.text = stationsTree.selectedItem.@label;	
+						page_parent.zStationcode = stationsTree.selectedItem.@code;
+						page_parent.zEquipName.text ="";
+					}
+					if(whichOne=="aONOW"){
+						page_parent.aStationName.text = stationsTree.selectedItem.@label;
+						page_parent.aStationcode = stationsTree.selectedItem.@code;
+					}else if(whichOne=="zONOW"){
+						page_parent.zStationName.text = stationsTree.selectedItem.@label;	
+						page_parent.zStationcode = stationsTree.selectedItem.@code;
+					}
+					this.close();
+				}
+			}
+			
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);  
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>  

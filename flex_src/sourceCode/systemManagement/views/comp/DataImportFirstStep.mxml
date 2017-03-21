@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="530" height="350"  
+				title="数据录入向导 :第一步（下载模板或上传数据源文件）"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12"> 
+	
+	<mx:Script>  
+		<![CDATA[  			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.systemManagement.views.comp.DataImportSecStep;
+			private var file:FileReference = new FileReference();
+			private var netFile:FileReference;
+			private var downloadURL:URLRequest;
+			[Bindable]
+			private var stateText:String = "请选择数据文件";
+			public var iora:DataImportSecStep;
+			private var flag:Boolean = false;
+			protected override function createChildren():void {
+				super.createChildren();
+				file.addEventListener(Event.SELECT, file_select);
+				file.addEventListener(Event.COMPLETE, file_complete);
+				file.addEventListener(ProgressEvent.PROGRESS, file_progress);
+				file.addEventListener(IOErrorEvent.IO_ERROR,errorhandler);
+			}
+			private function errorhandler(event:IOErrorEvent):void
+			{
+			  Alert.show(event.text.toString());
+			}
+			
+			private function file_select (e:Event):void {
+				this.stateText =   file.name;
+			}
+			private function file_complete (e:Event):void {
+				this.stateText = "上传完毕,请点击下一步";
+			}
+			private function file_progress (e:ProgressEvent):void {
+				this.stateText = "已上传 " + Math.round(100 * e.bytesLoaded / e.bytesTotal) + "%";
+			}
+			private function upload ():void {
+				if(stateText=="请选择数据文件")
+				{
+					Alert.show("请选择文件！","提示");
+				}
+				else 	if(file.name.substring(file.name.indexOf("."),file.name.length)!=".xls"&&file.name.substring(file.name.indexOf("."),file.name.length)!=".xlsx")
+				{
+				  Alert.show("请检查文件格式！","提示");
+				}else if(file.size > 0) {
+					this.stateText = "正在上传 " + file.name;
+					var request:URLRequest = new URLRequest();
+					request.url = "UploadExcel?filename=" + file.name;
+					file.upload(request);
+					flag =true;
+				}
+			}
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+			
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub 
+				this.close();
+			}
+         
+
+			protected function Download_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var templateType:String = this.Templatecombox.text;
+				if(templateType=="问题跟踪模板")
+				{
+					var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim("assets/Templates/问题跟踪-模板.xls"))); 
+					navigateToURL(request,"_blank");
+				}
+			}
+
+
+			protected function NEXT_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(flag==true)
+				{
+					this.close();
+					iora = new DataImportSecStep();
+					MyPopupManager.addPopUp(iora, true);
+					iora.intiliz();
+				}else
+				{
+                    Alert.show("您还没上传文件！","提示");				
+				}
+			}
+
+
+			protected function SKIP_clickHandler(event:MouseEvent):void
+			{
+				this.close();
+				iora= new DataImportSecStep();
+				MyPopupManager.addPopUp(iora, true);
+				iora.intiliz();
+			}
+
+		]]>  
+	</mx:Script>
+	<mx:Button x="321" y="261" label="下一步" width="75" click="NEXT_clickHandler(event)"/>
+	<mx:Button x="238" y="261" label="返回" width="75" click="button1_clickHandler(event)"/>
+	<mx:ComboBox id="Templatecombox" x="91" y="69" editable="false" width="197">
+		<mx:ArrayCollection>
+			<mx:String>问题跟踪模板</mx:String>
+		</mx:ArrayCollection>
+	</mx:ComboBox>
+	<mx:Label x="9" y="28" text="首先，您需要下载数据模板，选择要下载的模板类型，然后点击下载按钮：" width="475" height="26"/>
+	<mx:Label x="10" y="71" text="模板类型：" width="65" height="28"/>
+	<mx:Button x="319" y="69" label="下载" width="75" click="Download_clickHandler(event)"/>
+	<mx:Label x="10" y="146" text="或者，如果您有已经编辑好的Excel文件，可以浏览上传。" width="369" height="21"/>
+	<mx:TextInput text="{stateText}" width="196" editable="false" x="92" y="189"/>
+	<mx:Button label="浏览" click="file.browse();" x="320" y="189" width="75"/>
+	<mx:Button label="上传" click="upload();" x="408" y="189" width="76"/>
+	<mx:HRule x="1" y="121" width="509"/>
+	<mx:Label x="10" y="191" text="文件选择：" height="24"/>
+	<mx:RemoteObject id="upRM" destination="netresDao" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"/>
+	<mx:Label x="10" y="264" text="注：只允许上传Excel文件" width="278"/>
+	<mx:Button x="408" y="261" label="跳过" width="76" click="SKIP_clickHandler(event)"/>
+</mx:TitleWindow>  

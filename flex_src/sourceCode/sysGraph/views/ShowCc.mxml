@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	creationComplete="init();"
+	height="100%"  width="100%"
+	styleName="popwindow"
+	xmlns:comp="common.actionscript.*"
+	xmlns:views="common.component.*"
+	xmlns:component="common.component.*"  >
+	
+	<mx:Script>
+		<![CDATA[
+			import com.mechan.MecGrid.mecGridClasses.SelectedItem;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			import common.other.SuperPanelControl.WindowContainer;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.alarmmgr.actionscript.SequenceItemRenderer;
+			import sourceCode.alarmmgr.views.PopUpKeyBusiness;
+			import sourceCode.rootalarm.actionscript.RootAlarmMgrCombox;
+			
+			[Bindable]
+			public var param:ArrayCollection = new ArrayCollection();
+			
+			[Bindable]
+			private var cbconfigSys:RootAlarmMgrCombox = null;
+			[Bindable]
+			private var cbconfigVendor:RootAlarmMgrCombox = null;
+			[Bindable]
+			private var cbconfigAlarmlevel:RootAlarmMgrCombox = null;
+			[Bindable]
+			private var cbconfigCircuitype:RootAlarmMgrCombox = null;
+			[Bindable]
+			private var cbconfigalarmdealmethod:RootAlarmMgrCombox = null;
+			private var rootAlarmWin:TitleWindow;
+			
+			public var obj:Object = new Object();
+			[Bindable]			
+			public var iscleared:String = "0"; 
+			[Bindable]
+			private var filterContent:Array = new Array();
+			private var currentGridSelectitem:Object=null;
+			[Bindable]
+			public var  currentGrid:String="currentrootalarm";
+			
+			[Bindable]
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			public var belongequip:String="";
+			[Bindable]
+			public  var cm:ContextMenu = new ContextMenu();
+			[Embed(source="assets/images/rootalarm/search1.png")]
+			public static const btnIcon:Class;
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			private var indexRenderer:Class = SequenceItemRenderer;  
+			
+			
+			public function init():void{
+					pagingFunction(0,50);
+					var item:ContextMenuItem = new ContextMenuItem("方式信息");
+					item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,  ContextMenuChannelRoute);
+					var item_Delete_CC:ContextMenuItem = new ContextMenuItem("删除交叉");
+					item_Delete_CC.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,  configEquipSlot);
+					var item_config_CC:ContextMenuItem = new ContextMenuItem("配置交叉");
+					item_config_CC.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,  configEquipSlot);
+					
+					cm = new ContextMenu();
+					cm.hideBuiltInItems();
+					cm.customItems = [item, item_Delete_CC, item_config_CC];					
+					dg.contextMenu  = cm;
+//					pagingToolBarforAlarmExp.addEventListener("returnALL", showAllDataHandler);
+			}
+			
+			//查询所有交叉
+			private function showAllDataHandler(event:Event):void
+			{
+				if(belongequip!=""){
+					var rtobj:RemoteObject=new RemoteObject("fiberWire");
+					rtobj.endpoint= ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.getEquipCcxx(belongequip,"0",pagingToolBarforAlarmExp.totalRecord);        //表格加载数据
+					rtobj.addEventListener(ResultEvent.RESULT,loadData);
+				}
+				
+//				getOpera(code, type, 0, serverPagingBar1.totalRecord);
+			}
+			
+			/**
+			 *配置处理函数 
+			 * @param e
+			 * 
+			 */
+			private function configEquipSlot(e:ContextMenuEvent):void
+			{
+				
+				if(e.currentTarget.caption == "删除交叉"){
+					toolbar_toolEventDeleteHandler();
+				}else if(e.currentTarget.caption == "配置交叉") {
+					var slot:configSlot=new configSlot();
+					slot.equipcode=belongequip as String;
+					slot.equipname=dg.selectedItem.EQUIPNAME;
+					MyPopupManager.addPopUp(slot, true);
+				}
+				
+			}
+
+			/**
+			 * 
+			 * 删除
+			 * 
+			 * */
+			protected function toolbar_toolEventDeleteHandler():void
+			{
+				if(dg.selectedItem != null){
+					Alert.show("您确认要删除吗？","请您确认！",Alert.YES|Alert.NO,this,delconfirmHandler,null,Alert.NO);
+				}else{
+					Alert.show("请先选中一条记录！","提示");
+				}
+			}
+			
+			
+			private function delconfirmHandler(event:CloseEvent):void {
+				if (event.detail == Alert.YES) {
+					var remoteObject:RemoteObject=new RemoteObject("resNetDwr");
+					remoteObject.endpoint = ModelLocator.END_POINT;
+					remoteObject.showBusyCursor = true;
+					//删除一条记录
+					remoteObject.delCCByID(dg.selectedItem.ID);
+					remoteObject.addEventListener(ResultEvent.RESULT,delCCResult);
+					Application.application.faultEventHandler(remoteObject);
+				}
+			}
+			
+			public function delCCResult(event:ResultEvent):void{
+				if(event.result.toString()=="success")
+				{
+					Alert.show("删除成功！","提示");
+					pagingToolBarforAlarmExp.navigateButtonClick("firstPage");
+				}else
+				{
+					Alert.show("删除失败！","提示");
+				}
+			}
+			
+			private function ContextMenuChannelRoute(evt:ContextMenuEvent):void{
+				
+				if(dg.selectedItem.CIRCUITCODE){  
+					
+					var rtobj1:RemoteObject=new RemoteObject("fiberWire");
+					rtobj1.endpoint=ModelLocator.END_POINT;
+					rtobj1.showBusyCursor=true;
+					var str:String=dg.selectedItem.CIRCUITCODE; 
+					rtobj1.getTypeBycircuitCode(str);
+					rtobj1.addEventListener(ResultEvent.RESULT, function(event:ResultEvent):void
+					{
+						if(event.result){
+							Registry.register("para_circuitcode", str);
+							Registry.register("para_circuitype", event.result.toString());
+							Application.application.openModel("方式信息", false);
+						}
+					});
+				}else 
+				{
+					Alert.show("没有相应的电路！","提示！");
+				}
+			}		
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void {
+				if(belongequip!=""){
+					start = (pageIndex * pageSize+1).toString();
+					end = ((pageIndex * pageSize) + pageSize).toString();
+					
+					var rtobj:RemoteObject=new RemoteObject("fiberWire");
+					rtobj.endpoint= ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.getEquipCcxx(belongequip,start,end);        //表格加载数据
+					rtobj.addEventListener(ResultEvent.RESULT,loadData);
+				}
+			}
+			
+			private function loadData(event:ResultEvent){
+				param.removeAll();
+				if(event.result!=null){
+					var returnObject:Object= event.result as Object;
+					param=returnObject.returnList as ArrayCollection;
+					dg.dataProvider=param;
+					
+					pagingToolBarforAlarmExp.orgData =param;
+					var count:int =int(returnObject.count);
+					pagingToolBarforAlarmExp.totalRecord = count;
+					pagingToolBarforAlarmExp.dataBind(true);
+				}
+				
+				
+			}
+		
+			
+			
+			private function rootAlarmWinClose(evt:CloseEvent):void{
+				PopUpManager.removePopUp(rootAlarmWin);
+			}
+			
+			//查看告警处理经验
+			
+			private function alarmHelpEXPClose(evt:CloseEvent):void{
+//				PopUpManager.removePopUp(alarmHelpEXP);
+			}
+			
+			//查看影响业务
+			private function getEffectBusiness (event:ContextMenuEvent) :void{
+				
+					var keybusiness:PopUpKeyBusiness =new PopUpKeyBusiness();
+					keybusiness.alarmnumber=dg.selectedItem.alarmnumber;
+					PopUpManager.addPopUp(keybusiness,this,true);
+					PopUpManager.centerPopUp(keybusiness);
+					
+					
+				
+			}
+			
+			
+			//定位到告警
+			private function getFixAlarm (event:ContextMenuEvent) :void{
+					var alarmObj=dg.selectedItem.objclasszh;
+					if(alarmObj!=null && alarmObj!=""){
+						if(alarmObj=="时隙" || alarmObj=="端口"){
+							var strport:String=dg.selectedItem.belongportobject;
+							if(strport!=null && strport!=""){
+								var strarray:Array=strport.split("=");
+								strport="";
+								for(var i:int=0;i<strarray.length;i++)
+								{  
+									if(i!=strarray.length-1)
+										strport+=strarray[i]+",";
+									else
+										strport+=strarray[i];
+								}
+								Registry.register("packcode", strport);
+								Registry.register("portcode", dg.selectedItem.belongportcode);
+								Application.application.openModel("机盘管理视图", false);
+								
+							}
+						}else if(alarmObj=="机盘"){
+							
+							
+							var strport:String=dg.selectedItem.belongpackobject;
+							if(strport!=null && strport!=""){
+								var strarray:Array=strport.split("=");
+								strport="";
+								for(var i:int=0;i<strarray.length;i++)
+								{  
+									if(i!=strarray.length-1)
+										strport+=strarray[i]+",";
+									else
+										strport+=strarray[i];
+								}
+							}
+							
+							Registry.register("packcode", strport);
+							
+							Registry.register("systemcode", dg.selectedItem.belongtransys);
+							Registry.register("equipcode", dg.selectedItem.belongequip);	
+							
+							
+							Application.application.openModel("设备面板图", false);
+							
+						}else if(alarmObj=="设备"){
+							
+							Registry.register("systemcode",dg.selectedItem.belongtransys);
+							Registry.register("equipcode",dg.selectedItem.belongequip);
+							Application.application.openModel("系统组织图", false);
+						}else{
+							Alert.show("无法定位该告警，请确定该告警类型","提示信息",4,this,null,iconClass);
+						}
+					}else{
+						Alert.show("无法定位该告警，请确定该告警类型","提示信息",4,this,null,iconClass);
+					}
+					
+			}
+			
+			
+			/*查询*/
+			
+			
+			
+
+		]]>
+	</mx:Script>
+	
+	
+	
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		
+		<mx:VBox width="100%" height="100%" backgroundColor="#FFFFFF" backgroundAlpha="0.7" paddingBottom="0"  paddingLeft="5" paddingRight="5" paddingTop="0" verticalGap="0" borderColor="#FFFFFF" borderSides="top" borderStyle="solid" borderThickness="1" shadowDistance="2" >
+			
+			<comp:ColorDataGrid id="dg" width="100%" height="100%" headerHeight="25" styleName="alarm" verticalAlign="middle"   horizontalGridLineColor="#99CCFF" verticalGridLineColor="#99CCFF" horizontalGridLines="true" >
+				<comp:columns>
+					
+					<mx:DataGridColumn headerText="序号"  width="50" itemRenderer="{new ClassFactory(indexRenderer)}" textAlign="center"/>
+					<mx:DataGridColumn headerText="设备名称" dataField="EQUIPNAME" width="120" showDataTips="true" dataTipField="EQUIPNAME"/>
+					<mx:DataGridColumn headerText="A端端口" dataField="AENDPTPXX" width="250" showDataTips="true" dataTipField="AENDPTPXX"/>
+					<mx:DataGridColumn headerText="Z端端口" dataField="ZENDPTPXX" width="250" showDataTips="true" dataTipField="ZENDPTPXX"/> 
+					<mx:DataGridColumn headerText="A端时隙" dataField="ASLOT" width="100" showDataTips="true" dataTipField="ASLOT"/>
+					<mx:DataGridColumn headerText="Z端时隙" dataField="ZSLOT" width="100" showDataTips="true" dataTipField="ZSLOT"/>
+					<mx:DataGridColumn headerText="速率" dataField="RATE" width="100" showDataTips="true" dataTipField="RATE"/> 
+					<mx:DataGridColumn headerText="更新时间" dataField="UPDATEDATE" width="150" showDataTips="true" dataTipField="UPDATEDATE"/>
+					<mx:DataGridColumn headerText="承载业务" dataField="CIRCUITCODE" width="100" showDataTips="true" dataTipField="CIRCUITCODE"/> 
+				</comp:columns>
+			</comp:ColorDataGrid>
+			
+			<views:pagetoolbar width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{dg}" pagingFunction="pagingFunction">
+			</views:pagetoolbar>
+		</mx:VBox>
+		
+				
+	</mx:VBox>
+</mx:VBox>

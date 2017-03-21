@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 creationComplete="intApp()"
+		 preinitialize="preinitialize()" 
+		 xmlns:views="sourceCode.tableResurces.views.*" 
+		 xmlns:component="common.component.*"
+		 verticalGap="0">
+	
+	<mx:Script source="../actionscript/BusinessResources.as" />
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="业务资源" imgName="businessRess"
+						  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="true"
+						  showExportExcelButton="{isExport}" showImportButton="{isImport}"
+						  controlAdd="toolbar1_toolEventAddHandler(event)" controlEdit="toolbar1_toolEventEditHandler(event)" 
+						  controlDel="toolbar1_toolEventDeleteHandler(event)" controlSearch="toolbar1_toolEventSearchHandler(event)"
+						  controlExportExcel="toolbar1_toolEventEmpExcelHandler(event)" controlImport="toolbar1_toolEventImpExcelHandler(event)"/>
+	<mx:HBox width="100%" height="100%" paddingTop="10" paddingLeft="5" paddingRight="5" paddingBottom="5">
+		<mx:DataGrid id="RessGrid" width="100%" height="100%" headerRelease="RessGrid_headerReleaseHandler(event)" >
+			<mx:columns>
+				<mx:DataGridColumn headerText="序号" dataField="no" width="50" sortable="false"/>
+				<mx:DataGridColumn headerText="业务编码" dataField="business_id" width="150" visible="false"/>
+				<mx:DataGridColumn headerText="业务名称" dataField="business_name" width="150"/>
+				<mx:DataGridColumn headerText="所属电路" dataField="circuitcode" width="150"/>
+				<mx:DataGridColumn headerText="业务起点" dataField="end_id_a" width="150"/>
+				<mx:DataGridColumn headerText="业务终点" dataField="end_id_z" width="80"/>
+				<mx:DataGridColumn headerText="业务类别" dataField="business_type" width="100"/>
+				<mx:DataGridColumn headerText="业务速率" dataField="business_rate" width="80"/>
+				<mx:DataGridColumn headerText="业务状态" dataField="business_state" width="100"/>
+				<mx:DataGridColumn headerText="业务版本" dataField="version_id" width="150"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:HBox>
+	
+	<component:pagetoolbar 
+		id="serverPagingBar_Ress" 
+		width="100%"/>
+	
+</mx:VBox>

@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" 
+	width="604" 
+	height="362" 
+	showCloseButton="true" 
+	close="closeHandler()" 
+	backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+	backgroundSize="100%" creationComplete="titlewindow1_creationCompleteHandler(event)">
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.other.blogagic.util.mapNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import org.flexunit.runner.Result;
+			
+			
+			import sourceCode.ocableResource.model.FiberDetailsModel;
+			[Bindable] public var node:mapNode;
+			[Bindable] public var xmlTransSystem:XMLList;
+			[Bindable] public var xmlFiberType:XMLList;
+			[Bindable] public var xmlFiberStatus:XMLList;
+			[Bindable] public var xmlFiberProperty:XMLList;
+			
+			public var days:Array = new Array("日", "一", "二", "三", "四", "五","六");
+			public var monthNames:Array = new Array("一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月");			
+			
+			public var fdmdata:FiberDetailsModel;
+			protected function btn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			var remoteObject:RemoteObject=new RemoteObject("mapResourcesInfo");
+			remoteObject.endpoint=ModelLocator.END_POINT;
+			remoteObject.showBusyCursor=true;
+			var fiber:FiberDetailsModel = new FiberDetailsModel(); 
+			fiber.fibercode = fdmdata.fibercode;
+			fiber.name_std = txt_name_std.text;
+			fiber.fiberserial =txt_fiberserial.text;
+			fiber.property =com_property.selectedItem.@label;
+			fiber.status = com_status.selectedItem.@label;
+			fiber.systemcode = com_systemcode.selectedItem.@label;
+			fiber.fibermodel = com_fibermodel.selectedItem.@label;
+			fiber.aendeqport =txt_aendeqport.text;
+			fiber.aendodfport = txt_aendodfport.text;
+			fiber.length= txt_length.text ;
+			fiber.zendeqport =txt_zendeqport.text;
+			fiber.zendodfport =txt_zendodfport.text;
+			fiber.remark = txt_remark.text;
+			remoteObject.addEventListener(ResultEvent.RESULT,updateFiberHandler);
+			remoteObject.updateFiber(fiber);
+				
+			}
+			
+			public function updateFiberHandler(event:ResultEvent):void{
+				var result:String = event.result as String;
+				if(result=="successful")
+				{
+				  Alert.show("更新成功!", "温馨提示");
+				}else if(result=="failed")
+				{
+				  Alert.show("更新失败!", "温馨提示");
+				}
+				
+			}
+			
+			protected function closeHandler():void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				getTransSystem();
+			}
+			
+			private function getTransSystem():void{
+				var re:RemoteObject=new RemoteObject("netresDao");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,resultTransSystemHandler);
+				re.getTransSystem(); 
+				
+			}
+			
+			public function resultTransSystemHandler(event:ResultEvent):void{
+				var str:String = event.result as String;
+				setTransSystem(str,fdmdata.systemcode==null?"":fdmdata.systemcode);
+				
+				var re:RemoteObject=new RemoteObject("mapResourcesInfo");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,getFiberTypeHandler);
+				re.getFiberType();
+				
+			}
+			
+			public function getFiberTypeHandler(event:ResultEvent):void{
+				var str:String = event.result as String;
+				setFiberType(str,fdmdata.fibermodel==null?"":fdmdata.fibermodel);
+				
+				var re:RemoteObject=new RemoteObject("mapResourcesInfo");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,getFiberStatusHandler);
+				re.getFiberStatus();
+				
+			}
+			
+			public function getFiberStatusHandler(event:ResultEvent):void{
+				var str:String = event.result as String;
+				setFiberStatus(str,fdmdata.status==null?"":fdmdata.status);
+				
+				
+				var re:RemoteObject=new RemoteObject("mapResourcesInfo");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,getFiberPropertyHandler);
+				re.getFiberProperty();
+				
+
+			}
+			
+			
+			public function getFiberPropertyHandler(event:ResultEvent):void{
+			  var str:String = event.result as String;
+			  setFiberProperty(str,fdmdata.property==null?"":fdmdata.property);
+			  
+  			  txt_name_std.text = fdmdata.name_std;
+  			  txt_fiberserial.text = fdmdata.fiberserial;
+  			  txt_aendeqport.text = fdmdata.aendeqport;
+  			  txt_aendodfport.text = fdmdata.aendodfport;
+  			  txt_length.text = fdmdata.length;
+  			  txt_zendeqport.text = fdmdata.zendeqport;
+  			  txt_zendodfport.text = fdmdata.zendodfport;
+  			  txt_remark.text = fdmdata.remark;
+			}
+			
+			
+			public function setFiberProperty(str:String, id:String):void
+			{
+				xmlFiberProperty = new XMLList(str);
+				if(exist(xmlFiberProperty,id))
+				{
+					com_property.dataProvider = xmlFiberProperty;
+					for each (var item:Object in com_property.dataProvider)
+					{
+						if (item.@label == id)
+						{
+							com_property.selectedItem=item;
+							
+						}
+					}
+					
+				}else
+				{
+					str+="<fiberStatus id=\"" +id + "\" label=\""+ id + "\" isBranch=\"false\"></fiberStatus>";
+					xmlFiberProperty = new XMLList(str);
+					com_property.dataProvider = xmlFiberProperty;
+					for each (var item:Object in com_property.dataProvider)
+					{
+						if (item.@label == id)
+						{
+							com_property.selectedItem=item;
+							
+						}
+					}
+				}
+				
+			}
+			
+			
+			public function setFiberStatus(str:String, id:String):void
+			{
+				xmlFiberStatus = new XMLList(str);
+				if(exist(xmlFiberStatus,id))
+				{
+					com_status.dataProvider = xmlFiberStatus;
+					for each (var item:Object in com_status.dataProvider)
+					{
+						if (item.@label == id)
+						{
+							com_status.selectedItem=item;
+							
+						}
+					}
+					
+				}else
+				{
+					str+="<fiberStatus id=\"" +id + "\" label=\""+ id + "\" isBranch=\"false\"></fiberStatus>";
+					xmlFiberStatus = new XMLList(str);
+					com_status.dataProvider = xmlFiberStatus;
+					for each (var item:Object in com_status.dataProvider)
+					{
+						if (item.@label == id)
+						{
+							com_status.selectedItem=item;
+							
+						}
+					}
+				}
+				
+			}
+			
+			
+			public function setTransSystem(str:String, id:String):void
+			{
+				xmlTransSystem = new XMLList(str);
+				if(exist(xmlTransSystem,id))
+				{
+					com_systemcode.dataProvider = xmlTransSystem;
+					for each (var item:Object in com_systemcode.dataProvider)
+					{
+						if (item.@label == id)
+						{
+							com_systemcode.selectedItem=item;
+							
+						}
+					}
+					
+				}else
+				{
+					str+="<transystem id=\"" +id + "\" label=\""+ id + "\" isBranch=\"false\"></transystem>";
+					xmlTransSystem = new XMLList(str);
+					com_systemcode.dataProvider = xmlTransSystem;
+					for each (var item:Object in com_systemcode.dataProvider)
+					{
+						if (item.@label == id)
+						{
+							com_systemcode.selectedItem=item;
+							
+						}
+					}
+				}
+				
+			}
+			
+			public function setFiberType(str:String, id:String):void
+			{
+				xmlFiberType = new XMLList(str);
+				
+				if(exist(xmlFiberType,id))
+				{
+					com_fibermodel.dataProvider=xmlFiberType;
+					for each (var item:Object in com_fibermodel.dataProvider)
+					{
+						if (item.@label == id)
+						{
+							com_fibermodel.selectedItem=item;
+							
+						}
+					}
+				}else
+				{
+					var data:String = "<fiberType id=\"" + fdmdata.fibermodel + "\" label=\""+ fdmdata.fibermodel + "\" isBranch=\"false\"></fiberType>";
+					str+=data;
+					xmlFiberType = new XMLList(str);
+					com_fibermodel.dataProvider=xmlFiberType;
+					for each (var item:Object in com_fibermodel.dataProvider)
+					{
+						if (item.@label == id)
+						{
+							com_fibermodel.selectedItem=item;
+							
+						}
+					}
+				}
+			}
+			
+			public function exist(data:XMLList,id:String):Boolean{
+				var flag:Boolean = false;
+				for each (var item:Object in data)
+				{
+					if (item.@label == id)
+					{
+						flag =  true;
+						
+					}
+				}
+				return flag;
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center">
+		
+		<mx:HBox width="100%"
+				 height="82%">
+			<mx:Form width="287"
+					 height="100%">
+				<mx:FormItem label="所属光缆接续段"
+							 required="true">
+					<mx:TextInput id="txt_name_std"
+								  width="150"
+								  maxChars="100" editable="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="光纤序号" required="true">
+					<mx:TextInput id="txt_fiberserial"
+								  width="150"
+								  maxChars="100" editable="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="产权">
+					<mx:ComboBox id="com_property"
+								 labelField="@label"
+								 width="150"
+								 restrict="0-9."/>
+				</mx:FormItem>
+				<mx:FormItem label="起始设备端口">
+					<mx:TextInput id="txt_aendeqport"
+								  width="150"
+								  maxChars="100"/>
+				</mx:FormItem>
+				<mx:FormItem label="起始ODF端口">
+					<mx:TextInput id="txt_aendodfport"
+								  width="150"
+								  maxChars="100"/>
+				</mx:FormItem>
+				<mx:FormItem label="状态">
+					<mx:ComboBox id="com_status"
+								 labelField="@label"
+								 width="150"
+								 restrict="0-9."/>
+				</mx:FormItem>
+			</mx:Form>
+			
+			<mx:Form width="287"
+					 height="100%">
+				<mx:FormItem label="承载系统">
+					<mx:ComboBox id="com_systemcode"
+								 labelField="@label"
+								 width="150"
+								 restrict="0-9."/>
+				</mx:FormItem>
+				<mx:FormItem label="长度">
+					<mx:TextInput id="txt_length"
+								  width="150"/>
+				</mx:FormItem>
+				<mx:FormItem label="类型">
+					<mx:ComboBox id="com_fibermodel"
+								 labelField="@label"
+								 width="150"/>
+				</mx:FormItem>
+				<mx:FormItem label="终止设备端口">
+					<mx:TextInput id="txt_zendeqport"
+								  width="150"
+								  maxChars="20"/>
+				</mx:FormItem>
+				<mx:FormItem label="终止ODF端口">
+					<mx:TextInput id="txt_zendodfport"
+								  width="150"
+								  maxChars="20"/>
+				</mx:FormItem>
+				<mx:FormItem label="备注">
+					<mx:TextInput id="txt_remark"
+								  width="150"
+								  maxChars="100" height="38"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		
+		<mx:HBox width="100%"
+				 height="18%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			
+			<mx:Button id="btn"
+					   label="修改"
+					   width="80"
+					   styleName="loginprimary"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="20"/>
+			<mx:Button label="关闭"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="{PopUpManager.removePopUp(this)}"/>
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+</mx:TitleWindow>

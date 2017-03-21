@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="init()"
+		 preinitialize="preinitialize()" 
+		 xmlns:component="common.component.*">
+	<mx:RemoteObject id="con_UserMgr" destination="userManager" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}"
+					 result="get_UserInfos(event)"
+					 fault="faultCallBack(event)"/>
+	<mx:RemoteObject id="to_rolesSet" destination="userManager" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}"
+					 result="getRolesinformation(event)"
+					 fault="faultCallBack(event)"/>
+	<mx:RemoteObject id="to_rolesShow" destination="userManager" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}"
+					 result="getRolesinfos(event)"
+					 fault="faultCallBack(event)"/>
+	<mx:RemoteObject id="to_depart" destination="userManager" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}"
+					 result="getDepartinformation(event)"
+					 fault="faultCallBack(event)"/>
+	<mx:Script source="../../actionscript/comp/PaginationDataGrid.as"/>
+	<mx:DataGrid id="user_infos" dataProvider="{_acUserInfo.userList}" 
+				 width="100%" height="100%" doubleClickEnabled="true" 
+				 doubleClick="dgDetailInfos()" contextMenu="{cm}" 
+				 itemRollOver="{lastRollOverIndex = event.rowIndex}">
+		<mx:columns>
+			<mx:DataGridColumn headerText="序号" width="35" dataField="no" textAlign="center"/> 
+			<mx:DataGridColumn headerText="用户名" id="user_id" dataField="user_id"/>
+			<mx:DataGridColumn headerText="真实姓名" id="user_name" dataField="user_name" />
+			<mx:DataGridColumn headerText="性别" id="user_sex" dataField="user_sex" />
+			<mx:DataGridColumn headerText="所属单位" id="user_dept" dataField="user_dept"/>
+			<mx:DataGridColumn headerText="职位" id="user_post" dataField="user_post"/>
+			<mx:DataGridColumn headerText="生日" id="birthday" dataField="birthday"/>
+			<mx:DataGridColumn headerText="学历" id="education" dataField="education"/>
+			<mx:DataGridColumn headerText="固定电话" id="telephone" dataField="telephone"/>
+			<mx:DataGridColumn headerText="移动电话" id="mobile" dataField="mobile"/>
+			<mx:DataGridColumn headerText="电子邮箱" id="email" dataField="email"/>
+			<mx:DataGridColumn headerText="通信地址" id="address" dataField="address"/>
+			<mx:DataGridColumn headerText="备注" id="remark" dataField="remark"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:HBox width="100%" height="5%" verticalAlign="middle" backgroundColor="#CCDDEE">
+		<component:pagetoolbar id="pageToolBar" width="100%" height="10%" 
+							   dataGrid="{user_infos}" 
+							   pagingFunction="pagingFunction"
+							   pageSize="50"/>
+	</mx:HBox>
+</mx:VBox>

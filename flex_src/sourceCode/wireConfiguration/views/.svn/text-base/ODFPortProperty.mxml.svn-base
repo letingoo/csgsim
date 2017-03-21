@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="650" height="336"  
+				title="端口属性"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12" creationComplete="titlewindow1_creationCompleteHandler(event)"> 
+	
+	<mx:Script>  
+		<![CDATA[  			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import sourceCode.wireConfiguration.model.OdfPort;
+			
+			[Bindable]
+			private var _odfport:OdfPort=new OdfPort();
+		
+			
+			public function get odfport():OdfPort
+			{
+				return _odfport;
+			}
+
+			public function set odfport(value:OdfPort):void
+			{
+				_odfport = value;
+			}
+
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+			
+				var rtobj1:RemoteObject = new RemoteObject("wireConfiguration");
+				rtobj1.endpoint = ModelLocator.END_POINT;	
+				rtobj1.getODFPortData(this._odfport.odfportcode);
+				rtobj1.addEventListener(ResultEvent.RESULT, portDataHandler); 
+			}
+			
+			private function portDataHandler(event:ResultEvent):void{
+				var data:ArrayCollection = event.result as ArrayCollection;
+				this._odfport = data.getItemAt(0) as OdfPort;
+			
+				
+				
+			}
+			
+		]]>  
+	</mx:Script>
+	
+			<mx:Label text="标准名称:"     textAlign="left" width="80"  x="27" y="33"/>  
+			<mx:TextInput id="port_name_std" width="180" editable="false" text="{this._odfport.port_name_std}"  x="129" y="31"/> 				
+		
+			<mx:Label text="所属局站:"    textAlign="left" width="80"  x="317" y="33"/>
+			<mx:TextInput id="station_name_std" width="180" editable="false" text="{this._odfport.station_name_std}" x="405" y="31"/>
+	
+			<mx:Label text="所属机房:"   textAlign="left" width="80" x="27" y="63"/>
+			<mx:TextInput id="room_name_std" width="180" editable="false" text="{this._odfport.room_name_std}"  x="129" y="63"/>
+		
+			<mx:Label text="机架序号:" textAlign="left" width="80"    x="317" y="65"/>
+			<mx:TextInput id="shelfserial"  width="180"  editable="false" text="{this._odfport.shelfserial}"  x="405" y="63"/>
+		
+			<mx:Label text="ODM模块号:" textAlign="left" width="80"    x="27" y="97"/>
+			<mx:TextInput id="ddfddmserial"  width="180" editable="false" text="{this._odfport.odfodmserial}" x="129" y="95"/>
+		
+			<mx:Label text="ODF端子号:" textAlign="left" width="80"    x="317" y="97"/>
+			<mx:TextInput id="portserial"  width="180" editable="false" text="{this._odfport.portserial}" x="405" y="95"/>
+		
+			<mx:Label text="端子类型:" textAlign="left" width="80"    x="27" y="129"/>
+			<mx:TextInput id="porttype_x"  width="180" editable="false" text="{this._odfport.porttype}"  x="129" y="127"/>
+		
+			<mx:Label text="端子状态:"   textAlign="left" width="80"  x="317" y="129"/>
+			<mx:TextInput id="status_x"  width="180"  editable="false" text="{this._odfport.status_x}" x="405" y="127"/>
+		<!--<mx:HBox width="100%" height="30" horizontalAlign="center"  verticalAlign="bottom" horizontalGap=".5">
+		<mx:Label text="前向标签:"  textAlign="left" width="80"  />
+		<mx:TextInput id="upport"  width="180" editable="false" text="{this._ddfport.upport}"/>
+		</mx:HBox>		
+		<mx:HBox width="100%" height="30" horizontalAlign="center"  verticalAlign="bottom" horizontalGap=".5">
+		<mx:Label text="光缆纤芯"  textAlign="left" width="80"  />
+		<mx:TextInput id="downport"  width="180" editable="false" text="{this._ddfport.downport}"/>
+		</mx:HBox>	
+		
+		<mx:HBox width="100%" height="30" horizontalAlign="center"  verticalAlign="bottom" horizontalGap=".5">
+		<mx:Label text="后向标签"  textAlign="left" width="80"  />
+		<mx:TextInput id="upport"  width="180" editable="false" text="{this._ddfport.upport}"/>
+		</mx:HBox>	-->
+			<mx:Label text="业务名称:"  textAlign="left" width="80"  x="27" y="159"/>
+			<mx:TextInput id="circuit"  width="180" editable="false" text="{this._odfport.circuit}" x="129" y="157"/>
+			
+	        <mx:Label text="备注:"  textAlign="left" width="80"   x="317" y="161"/>
+			<mx:TextInput id="remark"  width="180"  editable="false" text="{this._odfport.remark}" x="405" y="159"/>
+			
+	        <mx:Label text="更新人:"  textAlign="left" width="80"   x="27" y="193"/>
+			<mx:TextInput id="updateperson"  width="180" editable="false" text="{this._odfport.updateperson}" x="129" y="191"/>
+		
+			<mx:Label text="更新时间:"  textAlign="left" width="80"   x="317" y="193"/>
+			<mx:TextInput id="updatedate"  width="180"  editable="false" text="{this._odfport.updatedate}" x="405" y="191"/>
+	
+</mx:TitleWindow>  
+

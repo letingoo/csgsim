@@ -1,0 +1,65 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/csgsim/!svn/ver/1/dbscript/procedures
+END
+getBreakCircuitCountByAlarmID.sql
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/csgsim/!svn/ver/1/dbscript/procedures/getBreakCircuitCountByAlarmID.sql
+END
+getPortStructInfo.sql
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/csgsim/!svn/ver/1/dbscript/procedures/getPortStructInfo.sql
+END
+alarm_affection_deal_trans.sql
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/csgsim/!svn/ver/1/dbscript/procedures/alarm_affection_deal_trans.sql
+END
+alarm_raise_trans.sql
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/csgsim/!svn/ver/1/dbscript/procedures/alarm_raise_trans.sql
+END
+analyzecompanyalarm.sql
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/dbscript/procedures/analyzecompanyalarm.sql
+END
+getPortLabelByCode.sql
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/csgsim/!svn/ver/1/dbscript/procedures/getPortLabelByCode.sql
+END
+portrelatecircuitpost.sql
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/csgsim/!svn/ver/1/dbscript/procedures/portrelatecircuitpost.sql
+END
+alarmdefinesettingv2.sql
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/csgsim/!svn/ver/1/dbscript/procedures/alarmdefinesettingv2.sql
+END
+writecircuittoalarm.sql
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/dbscript/procedures/writecircuittoalarm.sql
+END
+writealarmprobablecause.sql
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/csgsim/!svn/ver/1/dbscript/procedures/writealarmprobablecause.sql
+END

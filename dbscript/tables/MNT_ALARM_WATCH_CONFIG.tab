@@ -1,0 +1,53 @@
+-- Create table
+create table MNT_ALARM_WATCH_CONFIG
+(
+  ID           VARCHAR2(20) not null,
+  ENDESC       VARCHAR2(50) not null,
+  ZHDESC       VARCHAR2(50),
+  ISSTATUS     VARCHAR2(10) default 'Y',
+  ISENABLE     VARCHAR2(10) default 'Y',
+  UPDATEPERSON VARCHAR2(20),
+  UPDATEDATE   DATE,
+  REMARK       VARCHAR2(50)
+)
+tablespace TSGDDB
+  pctfree 10
+  initrans 1
+  maxtrans 255
+  storage
+  (
+    initial 64
+    minextents 1
+    maxextents unlimited
+  );
+-- Add comments to the columns 
+comment on column MNT_ALARM_WATCH_CONFIG.ID
+  is '主键标识';
+comment on column MNT_ALARM_WATCH_CONFIG.ENDESC
+  is '英文描述';
+comment on column MNT_ALARM_WATCH_CONFIG.ZHDESC
+  is '中文描述';
+comment on column MNT_ALARM_WATCH_CONFIG.ISSTATUS
+  is '当前状态';
+comment on column MNT_ALARM_WATCH_CONFIG.ISENABLE
+  is '是否可用';
+comment on column MNT_ALARM_WATCH_CONFIG.UPDATEPERSON
+  is '更新人';
+comment on column MNT_ALARM_WATCH_CONFIG.UPDATEDATE
+  is '更新日期';
+comment on column MNT_ALARM_WATCH_CONFIG.REMARK
+  is '备注';
+-- Create/Recreate primary, unique and foreign key constraints 
+alter table MNT_ALARM_WATCH_CONFIG
+  add primary key (ID)
+  using index 
+  tablespace TSGDDB
+  pctfree 10
+  initrans 2
+  maxtrans 255
+  storage
+  (
+    initial 64K
+    minextents 1
+    maxextents unlimited
+  );

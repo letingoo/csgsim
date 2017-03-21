@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+		   xmlns:local="sourceCode.packGraph.views.*"
+		   creationComplete="initApp()"
+		   preinitialize="preinitialize()"
+		   width="100%"
+		   height="100%"
+		   fontSize="12">
+
+	<mx:Script source="../actionscript/checkedEquipPack.as"/>
+	<mx:TabNavigator id="tab_view" width="100%" height="100%" verticalGap="0">
+		<servasoftware:Network  id="equipPackPic" label="电口" doubleClickEnabled="true" doubleClick="doukouChick(event)" width="100%"  height="100%" backgroundColor="0xFFFFFF"/>
+		<servasoftware:Network  id="equipPackPic2" label="光口" width="100%"  height="100%" backgroundColor="0xFFFFFF" />
+	</mx:TabNavigator>
+</mx:Canvas>  

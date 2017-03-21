@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				xmlns:fx="http://ns.adobe.com/mxml/2009"   
+				xmlns:s="library://ns.adobe.com/flex/spark"   
+				
+				
+				layout="absolute" 
+				fontFamily="宋体" 
+				fontSize="12" 
+				showCloseButton="true" 
+				width="1000" 
+				height="550"
+				creationComplete="init()"
+				close="{MyPopupManager.removePopUp(this)}" 
+				
+				>
+	<mx:Script source="../actionscript/Usr_select.as" />
+
+	
+	
+	
+	<mx:VBox 
+		xmlns:fx="http://ns.adobe.com/mxml/2009"   
+		width="100%" 
+		height="100%" 
+		paddingTop="0" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		horizontalAlign="center" verticalGap="0">	
+		
+		<mx:HBox width="100%" height="5%" paddingLeft="10"  paddingTop="10" paddingRight="10" visible="true" horizontalAlign="left">
+			<mx:FormItem label="请为以下业务重新选择主用路由：" width="100%" />	
+
+		</mx:HBox>
+		
+		<mx:HBox visible="false" width="100%" height="5%" paddingLeft="10" paddingBottom="30"  paddingTop="10" paddingRight="10" horizontalAlign="left">
+			<mx:ComboBox id="cbox" textAlign="center" width="40%" paddingRight="50" change="cbox_changeHandler(event)"  >  
+			</mx:ComboBox>  
+			
+			<mx:DataGrid id="selectedGrid" 
+						 verticalAlign="center"
+						 width="60%"
+						 rowCount="6"
+						 >
+				<mx:columns>
+					<mx:DataGridColumn headerText="已选业务路由" dataField="bus_name" width="200" />
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+		<mx:HBox width="100%" height="85%" paddingLeft="10"  paddingTop="10" paddingRight="10" visible="true" horizontalAlign="center">
+			<mx:DataGrid id="usr_select_lst" dataProvider="{usr_list_2} " 
+						 variableRowHeight="true" wordWrap="true"
+						 verticalAlign="center"
+						 width="100%"
+						 rowCount="6"
+						 >
+				<mx:columns>
+					<mx:DataGridColumn headerText="业务名称" dataField="bus_id" width="50">		   
+					</mx:DataGridColumn>
+					<mx:DataGridColumn headerText="可选路由" dataField="route" width="200">		   
+					</mx:DataGridColumn>
+					<mx:DataGridColumn id="colum0" headerText="选择" width="50">  
+						<mx:itemRenderer>  
+							<mx:Component>  
+								<mx:HBox width="100%"  
+										 horizontalAlign="center">  
+									
+									<mx:CheckBox id="check" label="" textAlign="center" width="100%" change="this.outerDocument.select_clickHandler(event)" >  
+									</mx:CheckBox>  	
+								</mx:HBox>
+							</mx:Component>  
+						</mx:itemRenderer>  
+					</mx:DataGridColumn>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+		
+
+
+		<mx:DataGrid id="dataGrid" visible="false" dataProvider="{show_list}"
+					 verticalAlign="center"
+					 width="100%"
+					 rowCount="6"
+					 >
+			<mx:columns>
+				<mx:DataGridColumn headerText="可选路由" dataField="route" width="200">		   
+				</mx:DataGridColumn>
+				<mx:DataGridColumn id="colum1" headerText="选择路由" width="50">  
+					<mx:itemRenderer>  
+						<mx:Component>  
+							<mx:HBox width="100%"  
+									 horizontalAlign="center">  
+								
+								<mx:Button id="select" label="选择" textAlign="center" width="100%"  >  
+								</mx:Button>  	
+							</mx:HBox>
+						</mx:Component>  
+					</mx:itemRenderer>  
+				</mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:HBox width="100%" height="5%" paddingTop="50" visible="true">
+			
+		</mx:HBox>
+		<mx:HBox width="100%" height="5%" paddingLeft="10" horizontalGap="200"  paddingTop="10" paddingRight="10" visible="true">
+			<mx:Button label="完成" click="{submit_btn_click_handler(event)}" />
+			<mx:Button label="重置" click="{submit_btn_click_handler(event)}" />
+		</mx:HBox>
+		
+		
+		
+	</mx:VBox>
+
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.ListEvent;
+			
+			private function addDataGridColumn(dataField:String):void {
+				var dgc:DataGridColumn = new DataGridColumn(dataField);
+				var cols:Array = dataGrid.columns;
+				cols.push(dgc);
+				dataGrid.columns = cols;
+			}
+			
+			private function init1():void {
+				addDataGridColumn("col4");
+			}
+			
+
+			protected function cbox_changeHandler(event:ListEvent):void
+			{
+				//Alert.show(event.target.selectedItem.toString(),"selected");
+				changeview(event.target.selectedItem.toString());
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function check_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+		]]>
+	</mx:Script>
+	
+</mx:TitleWindow>

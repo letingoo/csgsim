@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 				
+				width="348"
+				height="392" 
+				title="添加复用段"
+				showCloseButton="true"
+				fontSize="12" 
+				close="closeWin()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				creationComplete="initData()" xmlns:actionscript="sourceCode.resManager.resNet.actionscript.*">
+	<mx:Metadata>
+		[Event(name="AfterAddTopoLink",type="common.other.events.LinkParameterEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.other.events.LinkParameterEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ComboBase;
+			import mx.core.Application;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.resManager.resNet.model.TopoLink;
+			import sourceCode.tableResurces.actionscript.TreeComboBoxItemChange;
+			
+			[Bindable]private var xmlTransSys:XMLList;
+			[Bindable]private var xmlPort_A:XMLList;
+			[Bindable]private var xmlPort_Z:XMLList;
+			[Bindable]private var xmlLineRate:XMLList;
+			private var item:Object;
+			private var tempCmb:ComboBase;
+			private var xml:XML = new XML("<linerate id='' label='' name='linerate' isBranch='false'/>");
+			
+			public var topolinkModel:TopoLink = new TopoLink();
+			public var equipCodeA:String;
+			public var equipCodeZ:String;
+			public var a_systemcode:String;
+			public var z_systemcode:String;
+			public var rate:String;
+			private var selectedNode:XML; 
+			private var acTransSystem:ArrayCollection;
+			public var aendptpcode:String="";
+			public var zendptpcode:String="";
+			public var currSystemName:String="";
+//			public var equipa_isVirtual:Boolean=false;
+//			public var equipz_isVirtual:Boolean=false;
+			private function initData():void{
+				
+				getLineRate();
+				//获取两端传输系统编码
+				getSystemcodeAByEquipcode(equipCodeA);
+			}
+						
+			private function getSystemcodeAByEquipcode(equipcode:String):void{
+				var rt:RemoteObject=new RemoteObject("resNetDwr");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.addEventListener(ResultEvent.RESULT,getSystemcodeAHandler);
+				rt.getSystemcodesByEquipcode(equipcode);
+			}
+			
+			private function getSystemcodeAHandler(event:ResultEvent):void{
+				a_systemcode = event.result.toString();
+				getSystemcodeZByEquipcode(equipCodeZ);
+			}
+			
+			private function getSystemcodeZByEquipcode(equipcode:String):void{
+				var rt:RemoteObject=new RemoteObject("resNetDwr");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.addEventListener(ResultEvent.RESULT,getSystemcodeZHandler);
+				rt.getSystemcodesByEquipcode(equipcode);
+			}
+			
+			private function getSystemcodeZHandler(event:ResultEvent):void{
+				z_systemcode = event.result.toString();
+			}
+			
+			private function getLineRate():void{
+				var rt:RemoteObject=new RemoteObject("resNetDwr");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.addEventListener(ResultEvent.RESULT,getLineRateHandler);
+				rt.getLineRate();//查询速率
+			}
+			
+			
+			
+
+			
+			private function getLineRateHandler(event:ResultEvent):void{
+				var xml:XML = new XML("<root></root>");
+				xmlLineRate = new XMLList(event.result.toString());
+				xml.appendChild(xmlLineRate);
+				var xmlList:XMLList = new XMLList(xml);
+				xmlList.insertChildBefore(xmlList.linerate[0],this.xml);
+				cmbLineRate.dataProvider = xml.children();
+			}
+			
+			private function closeWin():void{
+				MyPopupManager.removePopUp(this);
+				dispatchEvent(new Event("CloseWinTopoLink"));
+			}
+			
+			public function addTopoLink():void{
+				if(vadateValue()){
+					topolinkModel.linerate = String(cmbLineRate.selectedItem.@id);
+					topolinkModel.linelength = txtLength.text;
+					topolinkModel.remark = txtRemark.text;
+					topolinkModel.aendptp = String(cmbPort_A.text);
+					topolinkModel.zendptp = String(cmbPort_Z.text);
+					topolinkModel.aendptpcode = this.aendptpcode;
+					topolinkModel.zendptpcode = this.zendptpcode;
+					topolinkModel.equipcode_a=this.equipCodeA;
+					topolinkModel.equipcode_z=this.equipCodeZ;
+					topolinkModel.a_systemcode=a_systemcode;
+					topolinkModel.z_systemcode=z_systemcode;
+					topolinkModel.lineratecode = String(cmbLineRate.selectedItem.@id);
+					topolinkModel.systemcode=currSystemName;
+					//修改判断端口上是否已经有复用段了
+					
+					checkPortUseA(this.aendptpcode);
+				}
+			}
+			
+			private function checkPortUseA(portcode:String):void{
+				var re:RemoteObject=new RemoteObject("resNetDwr");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,checkPortUseAResult);
+				re.addEventListener(FaultEvent.FAULT,faultHanlder);
+				re.checkPortUse(portcode);
+			}
+			
+			public function checkPortUseAResult(event:ResultEvent):void
+			{
+				if(event.result.toString()=="success"){
+					checkPortUseZ(this.zendptpcode);
+				}else{
+					Alert.show("所选A端端口上已有复用段，请重新选择！","提示");
+					return;
+				}
+			}
+			
+			private function checkPortUseZ(portcode:String):void{
+				var re:RemoteObject=new RemoteObject("resNetDwr");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,checkPortUseZResult);
+				re.addEventListener(FaultEvent.FAULT,faultHanlder);
+				re.checkPortUse(portcode);
+			}
+			
+			public function checkPortUseZResult(event:ResultEvent):void
+			{
+				if(event.result.toString()=="success"){
+					var addrt:RemoteObject=new RemoteObject("resNetDwr");
+					addrt.endpoint = ModelLocator.END_POINT;
+					addrt.showBusyCursor = true;
+					addrt.addEventListener(ResultEvent.RESULT,addTopoLinkResult);
+					addrt.addEventListener(FaultEvent.FAULT,faultHanlder);
+					addrt.AddTopLinks(topolinkModel);
+				}else{
+					Alert.show("所选Z端端口上已有复用段，请重新选择！","提示");
+					return;
+				}
+			}
+			
+			private function faultHanlder(event:FaultEvent):void{
+				Alert.show(event.message.toString());
+			}
+			
+			private function vadateValue():Boolean{
+			if(!cmbLineRate.selectedItem){
+					Alert.show("请选择速率","提示");return false;
+				}else if(cmbPort_A.text==null||cmbPort_A.text==""){
+					Alert.show("请选择A端端口","提示");return false;
+				}else if(cmbPort_Z.text==null||cmbPort_Z.text==""){
+					Alert.show("请选择Z端端口","提示");return false;
+				}else if(txtLength.text == ""){
+					Alert.show("请输入复用段的长度","提示");return false;
+				}
+				return true;
+			}
+			
+			public function addTopoLinkResult(event:ResultEvent):void
+			{
+				if(event.result.toString()=="success"){
+					var rate:String=String(cmbLineRate.selectedItem.@id);
+					this.dispatchEvent(new LinkParameterEvent("AfterAddTopoLink",rate));		
+					MyPopupManager.removePopUp(this);
+					Alert.show("添加成功！","提示"); 
+				}else{
+					Alert.show("添加失败！","提示");
+				}
+			}
+			
+
+			
+			private function openSelectTreeWin(flag:String):void{
+				if(!cmbLineRate.selectedIndex){
+					Alert.show("请先选择速率!","提示");
+				}else{
+					if(flag!=null&&flag=="a"){
+						var treeport:winfortPortSelectTree = new winfortPortSelectTree();
+						treeport.parent_page = this;
+						treeport.flag = flag;
+						treeport.equipCodeA=equipCodeA;
+
+						treeport.rate = cmbLineRate.selectedItem.@id;
+
+						MyPopupManager.addPopUp(treeport, true);
+	
+					}
+					if(flag!=null&&flag=="z"){
+						var treeport:winfortPortSelectTree = new winfortPortSelectTree();
+						treeport.parent_page = this;
+						treeport.flag = flag;
+						treeport.equipCodeZ=equipCodeZ;
+						treeport.rate = cmbLineRate.selectedItem.@id;
+						MyPopupManager.addPopUp(treeport, true);
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" height="100%" fontSize="12" >
+		
+		<mx:Form width="100%" height="100%">
+			<mx:FormItem label="A端设备">			
+				<mx:TextInput id="txtEquipNameA"  width="180" editable="false" styleName="unEditTextInput"/>
+			</mx:FormItem>
+			<mx:FormItem label="Z端设备">
+				<mx:TextInput id="txtEquipNameZ" width="180" editable="false" styleName="unEditTextInput"/>
+			</mx:FormItem>
+			<mx:FormItem label="速率" required="true">				
+				<mx:ComboBox id="cmbLineRate" width="180" labelField="@label"/>
+			</mx:FormItem>
+			<mx:FormItem label="A端端口" required="true">
+				<mx:TextInput id="cmbPort_A" width="180" editable="false" click="openSelectTreeWin('a')"/>
+			</mx:FormItem>
+			<mx:FormItem label="Z端端口" required="true">				
+				<mx:TextInput id="cmbPort_Z" width="180" editable="false" click="openSelectTreeWin('z')"/>
+			</mx:FormItem>
+			<mx:FormItem label="长度">
+				<mx:TextInput id="txtLength" x="89" y="192" width="180" text="0"/>
+			</mx:FormItem>
+			<mx:FormItem label="备注">				
+				<mx:TextArea id="txtRemark"  width="180" height="87"/>
+			</mx:FormItem>
+		</mx:Form>	
+	</mx:HBox>	
+	
+	
+	<mx:HBox width="100%" height="40"   verticalAlign="middle" horizontalAlign="center" 
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">		
+		<mx:Button id="btnSave" label="保存" width="80" click="addTopoLink()" textAlign="center" styleName="loginprimary"  height="30"/>
+		<mx:Spacer width="20"/>
+		<mx:Button id="btnCancel" label="取消" width="80" click="closeWin()" textAlign="center" styleName="loginsecondary"  height="32"/>
+	</mx:HBox>
+	
+	
+	
+</mx:TitleWindow>

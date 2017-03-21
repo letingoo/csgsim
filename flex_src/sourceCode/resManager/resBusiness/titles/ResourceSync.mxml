@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:component="common.component.*"
+		   width="100%" height="100%" creationComplete="init()">
+
+	<mx:Script source="../actionscript/ResourceSync.as"/>
+	
+	<mx:VBox width="100%" height="100%" horizontalAlign="center" paddingBottom="0" paddingLeft="0"
+			 paddingRight="0" paddingTop="0" verticalGap="0">
+		<component:ControlBar id="controlBar" width="100%" height="38" showResourceSync="controlBar_showResourceSyncHandler(event)"
+							  showUnselectedButton="true" showUnselected="controlBar_showUnselectedHandler(event)" imgName="circuitroute" modelName="资源同步"
+							  showResourceSyncButton="true" showAllSelectButton="true" showAllSelect="controlBar_showAllSelectHandler(event)"/>
+		<mx:HBox id="label1" width="100%" height="10%" verticalAlign="middle">
+			<mx:Spacer width="100"/>
+			<mx:HBox width="10%" height="100%" verticalAlign="middle">
+				<mx:Label text="时间从" width="60" />
+				<mx:DateField id="dfstartUpdateDate" 
+							  width="120" 
+							  dayNames="{days}" 
+							  monthNames="{monthNames}" 
+							  yearNavigationEnabled="true" 
+							  formatString="YYYY-MM-DD"/>
+			</mx:HBox>
+			<mx:HBox width="10%" height="100%" verticalAlign="middle">
+				<mx:Label text="至" width="60" />
+				<mx:DateField  id="dfendUpdateDate"  
+							   width="120" 
+							   dayNames="{days}" 
+							   monthNames="{monthNames}" 
+							   yearNavigationEnabled="true" 
+							   formatString="YYYY-MM-DD"/>
+			</mx:HBox>
+			<mx:Button id="closeBtn"
+					   label="清空"
+					   styleName="loginsecondary"
+					   width="80"
+					   click="reSet();"/>
+			<mx:Button  label="同步选中资源" click="button_clickHandler(event)"  styleName="loginprimary"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="100%">
+			<mx:HBox id="hbox1" width="100%" height="100%">
+				<mx:Spacer width="100"/>
+				<mx:Form id="form0" width="100%" height="100%">
+					<mx:CheckBox id="box_1" label="站点" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_1')" />
+					<mx:CheckBox id="box_2" label="光缆" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_2')" />
+					<mx:CheckBox id="box_3" label="复用段" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_3')" />
+					<mx:CheckBox id="box_4" label="光纤" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_4')" />
+					<mx:CheckBox id="box_5" label="设备" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_5')" />
+					<mx:CheckBox id="box_6" label="交叉" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_6')" />
+					<mx:CheckBox id="box_7" label="机框" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_7')" />
+					<mx:CheckBox id="box_8" label="机槽" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_8')" />
+					<mx:CheckBox id="box_9" label="电路" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_9')" />
+					<mx:CheckBox id="box_10" label="机盘" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_10')" />
+					<mx:CheckBox id="box_11" label="端口" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_11')" />
+					<mx:CheckBox id="box_12" label="业务" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_12')" />
+					<mx:CheckBox id="box_13" label="电路业务关系" selected="false" textAlign="center"
+								 click="box_id_clickHandler('box_13')" />
+				</mx:Form>
+				
+			</mx:HBox>
+			<!-- flex不支持动态图片 -->
+			<mx:VBox id="hbox2" width="100%" height="100%" horizontalAlign="center">
+				<mx:Label width="650" text="数据同步中，请稍等..." />
+				<mx:Image id="img" width="800" height="52" creationComplete="initImg()"/>
+			</mx:VBox>
+		</mx:HBox>
+	</mx:VBox>
+	
+</mx:Canvas>

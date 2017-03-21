@@ -1,0 +1,1568 @@
+<mx:VBox    xmlns:mx="http://www.adobe.com/2006/mxml"
+			xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+			xmlns:twaver="twaver.common.*"
+			fontSize="12"  
+			creationComplete="init()"
+			width="100%" height="100%">  
+	<mx:Style>
+		.textinput{
+			paddingTop : 5;
+			border-style:none;
+		}
+		.banner{
+			color : #000000;
+		}
+		.singleButton{
+			cornerRadius : 10;
+		}
+		.gradientCanvas{
+			backgroundGradientColors : #CFCFCF, #A8A8A8;
+			backgroundGradientAlphas : 1, 1;
+			backgroundGradientRotation : 90;
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.CustomInteractionHandler;
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.Spacer;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.myDocument.model.FolderModel;
+			import sourceCode.packGraph.model.OpticalPortStatus;
+			
+			import twaver.*;
+			import twaver.core.util.l.u;
+			import twaver.network.interaction.DefaultInteractionHandler;
+			private var elementBox:ElementBox;
+			public var portA:String="00000000000000354649";
+			public var portZ:String="00000000000000354650";
+			private var portlabelA:String;
+			private var portlabelZ:String;
+			private var native_rateA:String;
+			private var native_rateZ:String;
+			private var portA_VC4_list:Array;
+			private var portZ_VC4_list:Array;
+			private var arrayList:Array;
+			private var portZ_VC12_list:Array;
+			private var portA_VC12_list:Array;
+			public var equipcode:String;
+			private var loop_i:int=0;
+			private var isBatch:Boolean = false;
+			private var page = this;
+			public var isShowBatch:Boolean = true;//为了让再次刷新时别再添加一个批量的checkbox
+			private var selectrate:String ;
+			private var tempLink:Link;
+			
+			private function init():void{
+				SerializationSettings.registerGlobalClient("flag", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("VC4", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("VC12", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("scattered", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("overall", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("isuse", Consts.TYPE_STRING);
+				drawPic();
+				DemoUtils.createButtonBar(toolbar,[
+					DemoUtils.createButtonInfo("默认模式", DemoImages.select, function():void{	
+						configEquipSlotPic.interactionHandlers=new Collection([  
+						
+						new CustomInteractionHandler(configEquipSlotPic),  
+						
+						new DefaultInteractionHandler(configEquipSlotPic),]); }),
+					DemoUtils.createButtonInfo("连线", DemoImages.link_icon, function():void{	
+						configEquipSlotPic.setCreateLinkInteractionHandlers(Link,function(link:Link):void{
+							var fromielement:IElement = link.fromNode;
+							var toielement:IElement = link.toNode;
+							if((fromielement is Follower)&&(toielement is Follower)){
+								var fromfollower:Follower = link.fromNode as Follower;
+								var tofollower:Follower = link.toNode as Follower;
+								var T:Boolean = true;
+								if((fromfollower.getClient("overall")!=null&&fromfollower.getClient("overall")=="1")||(tofollower.getClient("overall")!=null&&tofollower.getClient("overall")=="1")){
+									configEquipSlotPic.elementBox.remove(link);
+									Alert.show("已存在交叉","提示");
+									T = false;
+								}
+								
+								if(T&&tofollower.getClient("isuse")!=null&&tofollower.getClient("isuse")=="1"){
+									configEquipSlotPic.elementBox.remove(link);
+									Alert.show("已存在交叉","提示");
+									T = false;
+								}
+								if(T&&fromfollower.getClient("isuse")!=null&&fromfollower.getClient("isuse")=="1"){
+									configEquipSlotPic.elementBox.remove(link);
+									Alert.show("已存在交叉","提示");
+									T = false;
+								}
+								if(T&&fromfollower==tofollower){
+									configEquipSlotPic.elementBox.remove(link);
+									Alert.show("不能和自己做交叉","提示");
+									T = false;
+								}
+								
+								if(T&&fromfollower.getClient("scattered")!=null&&fromfollower.getClient("scattered")=="1"){
+								
+									configEquipSlotPic.elementBox.remove(link);
+									Alert.show("该条时隙已经被打散，不能做VC4级别的交叉！","提示");
+									T = false;
+								
+								}
+								if(T&&tofollower.getClient("scattered")!=null&&tofollower.getClient("scattered")=="1"){
+									
+									configEquipSlotPic.elementBox.remove(link);
+									Alert.show("该条时隙已经被打散，不能做VC4级别的交叉！","提示");
+									T = false;
+									
+								}
+								
+								if(T){
+									if((fromfollower.getClient("flag")=="VC4"&&tofollower.getClient("flag")=="VC12")||(tofollower.getClient("flag")=="VC4"&&fromfollower.getClient("flag")=="VC12")){
+										configEquipSlotPic.elementBox.remove(link);
+										Alert.show("VC4和VC12不同速率之间不能建立交叉！","提示");
+										T = false;
+									}
+								}
+								if(T){
+									var alertString:String = "确认建立交叉吗？";
+									Alert.show(alertString,
+										"提示",
+										Alert.YES|Alert.NO,
+										null,
+										function(e:CloseEvent):void{
+											confirm(e,link);
+										}
+									);
+								}
+								var color:uint = 0x10F000;
+								link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+								link.setStyle(Styles.LINK_WIDTH, 2);
+								link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+								link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+							}else{
+								if(native_rateA=='10M/s-100M/s'||native_rateZ=='10M/s-100M/s'||native_rateA=='10Mb/s-100Mb/s'||native_rateZ=='10Mb/s-100Mb/s'){
+									if((fromielement.getClient("flag")!=null&&fromielement.getClient("flag")=="VC4")||(toielement.getClient("flag")!=null&&toielement.getClient("flag")=="VC4")){
+									    Alert.show("以太网口只能和VC12做连接！","提示");
+										configEquipSlotPic.elementBox.remove(link);
+									}else{
+										if(!isBatch){
+											var alertString:String = "确认建立此连接吗？";
+											Alert.show(alertString,
+												"提示",
+												Alert.YES|Alert.NO,
+												null,
+												function(e:CloseEvent):void{
+													confirm(e,link);
+												}
+											);
+										}else{
+											
+											var batchWindow:batchConifgSlot = new batchConifgSlot();
+											batchWindow.network = configEquipSlotPic;
+											batchWindow.portA = portA;
+											batchWindow.portZ = portZ;
+											batchWindow.link = link;
+											batchWindow.native_rateA = native_rateA;
+											batchWindow.native_rateZ = native_rateZ;
+											batchWindow.slotView = page;
+											MyPopupManager.addPopUp(batchWindow);
+											configEquipSlotPic.elementBox.remove(link);
+										}
+									}
+								}else{
+									configEquipSlotPic.elementBox.remove(link);
+									Alert.show("不允许在端口上直接建立交叉！","提示");
+								}
+							
+							}
+						},null,false,null,true);}),
+						DemoUtils.createButtonInfo("显示/隐藏VC4级别的连线", DemoImages.expand, function():void{
+								var T:Boolean = false;
+								var array:Array = new Array();
+								if(configEquipSlotPic.elementBox!=null&&configEquipSlotPic.elementBox.datas.count>0){
+									
+									for(var i:int=0;i<configEquipSlotPic.elementBox.datas.count;i++){
+										
+										var ielement:IElement = configEquipSlotPic.elementBox.datas.getItemAt(i) as IElement;
+										if(ielement  is Link){
+											if(ielement.getClient("flag")!=null&&ielement.getClient("flag")=="VC4"){
+												var link:Link = ielement as Link;
+												array.push(link);
+												T=true;
+												configEquipSlotPic.elementBox.remove(link);
+												//break;
+											}
+										}
+										
+									}
+									
+								}
+								if(!T){
+									drawVC4SlotLink();
+								}	
+							}),
+							DemoUtils.createButtonInfo("显示/隐藏VC12级别的连线", DemoImages.expand, function():void{
+								var T:Boolean = false;
+								var array:Array = new Array();
+								if(configEquipSlotPic.elementBox!=null&&configEquipSlotPic.elementBox.datas.count>0){
+									
+									for(var i:int=0;i<configEquipSlotPic.elementBox.datas.count;i++){
+										
+										var ielement:IElement = configEquipSlotPic.elementBox.datas.getItemAt(i) as IElement;
+										if(ielement  is Link){
+											if(ielement.getClient("flag")!=null&&ielement.getClient("flag")=="VC12"){
+												var link:Link = ielement as Link;
+												array.push(link);
+												T=true;
+												configEquipSlotPic.elementBox.remove(link);
+												//break;
+											}
+										}
+										
+									}
+									
+								}
+								if(!T){
+									drawVC12SlotLink();
+								}	
+							}),
+							DemoUtils.createButtonInfo("放大", DemoImages.zoomIn, function():void{configEquipSlotPic.zoomIn(true);}),
+							DemoUtils.createButtonInfo("缩小", DemoImages.zoomOut, function():void{configEquipSlotPic.zoomOut(true);}),
+							DemoUtils.createButtonInfo("重置", DemoImages.zoomReset, function():void{configEquipSlotPic.zoomReset(true);}),
+							DemoUtils.createButtonInfo("全局预览", DemoImages.zoomOverview, function():void{configEquipSlotPic.zoomOverview(true);})
+				],true);
+							
+							var spacer:Spacer = new Spacer();
+							spacer.width = 10;
+							toolbar.addChild(spacer);
+							}
+							private function confirm(e:CloseEvent,link:Link):void{
+								if(e.detail==Alert.YES){
+									var aptp:String = "";
+									var aslot:String = "";
+									var zptp:String = "";
+									var zslot:String = "";
+									var rate:String = "";
+									var fromElement:IElement = link.fromNode as IElement;
+									var toElement:IElement = link.toNode as IElement;
+									if(isBatch){
+										selectrate = fromElement.getClient("flag");
+										tempLink = link;
+										if(native_rateA=='10M/s-100M/s'||native_rateZ == '10M/s-100M/s'){ //这种速率的交叉在其他地方处理
+											
+										}else{
+											var portaname:String ;
+											var portzname:String ;
+											var aslots:ArrayCollection = new ArrayCollection();
+											var zslots:ArrayCollection = new ArrayCollection();
+											if(fromElement.getClient("flag")=="VC4"){ //VC4的时隙
+												var portaname:String = fromElement.parent.name;
+												var portzname:String = toElement.parent.name;
+												var followers:ICollection = (Node)(fromElement.parent).followers;
+												for(var i = 0; i < followers.count; i++){
+													var fo:Follower = followers.getItemAt(i) as Follower;
+													if(fo.getClient("overall") != "1" && fo.getClient("isuse") != "1" && fo.getClient("scattered") != "1"){
+														var portstatus:OpticalPortStatus = new OpticalPortStatus();
+														portstatus.aptp = fo.parent.id.toString();
+														portstatus.aslot = fo.getClient("VC4");
+														portstatus.rate = "VC4";
+														aslots.addItem(portstatus);
+													}
+												}
+												
+												followers = (Node)(toElement.parent).followers;
+												for(var i = 0; i < followers.count; i++){
+													var fo:Follower = followers.getItemAt(i) as Follower;
+													if(fo.getClient("overall") != "1" && fo.getClient("isuse") != "1" && fo.getClient("scattered") != "1"){
+														var portstatus:OpticalPortStatus = new OpticalPortStatus();
+														portstatus.aptp = fo.parent.id.toString();
+														portstatus.aslot = fo.getClient("VC4");
+														portstatus.rate = "VC4";
+														zslots.addItem(portstatus);
+													}
+												}
+												
+											}else if(fromElement.getClient("flag") == "VC12"){  //VC12的时隙
+												var portaname:String = fromElement.parent.parent.name;
+												var portzname:String = toElement.parent.parent.name;
+												if(!fromElement.parent.parent){
+													portaname =  fromElement.parent.name;
+												}else{
+													portaname =  fromElement.parent.parent.name;
+												}
+												
+												if(!toElement.parent.parent){
+													portzname =  toElement.parent.name;
+												}else{
+													portzname =  toElement.parent.parent.name;
+												}
+												
+												var followers:ICollection = (Follower)(fromElement.parent).followers;
+												for(var i = 0; i < followers.count; i++){
+													var fo:Follower = followers.getItemAt(i) as Follower;
+													if(fo.getClient("isuse") != "1"){
+														var portstatus:OpticalPortStatus = new OpticalPortStatus();
+														portstatus.aptp = fo.parent.parent.id.toString();
+														portstatus.aslot = fo.getClient("VC12");
+														portstatus.rate = "VC12";
+														aslots.addItem(portstatus);
+													}
+												}
+												followers = (Follower)(toElement.parent).followers;
+												for(var i = 0; i < followers.count; i++){
+													var fo:Follower = followers.getItemAt(i) as Follower;
+													if(fo.getClient("isuse") != "1"){
+														var portstatus:OpticalPortStatus = new OpticalPortStatus();
+														portstatus.aptp = fo.parent.parent.id.toString();
+														portstatus.aslot = fo.getClient("VC12");
+														portstatus.rate = "VC12";
+														zslots.addItem(portstatus);
+													}
+												}
+											}
+											
+											var form:batchConfigPortSlot = new batchConfigPortSlot();
+											form.aname = portaname;
+											form.zname = portzname;
+											form.aslots = aslots;
+											form.zslots = zslots;
+											form.astartslot = fromElement.getClient(fromElement.getClient("flag")=="VC4"?"VC4":"VC12");
+											form.zstartslot = fromElement.getClient(fromElement.getClient("flag")=="VC4"?"VC4":"VC12");
+											form.del = false;
+											form.parentObject = this; 
+											MyPopupManager.addPopUp(form,true);
+											form.addEventListener("CancelComplete",function(event:Event):void{
+												configEquipSlotPic.elementBox.remove(link);
+												MyPopupManager.removePopUp(form);
+											});
+											form.addEventListener("SaveComplete",function(event:Event):void{
+												configEquipSlotPic.elementBox.remove(link);
+												MyPopupManager.removePopUp(form);
+												dispatchEvent(new Event("configSucess"));
+												var ro:RemoteObject = new RemoteObject("channelTree");
+												ro.endpoint = ModelLocator.END_POINT;
+												ro.showBusyCursor = true;
+												ro.addEventListener(ResultEvent.RESULT,batchAddSuccessResultHanler);
+												ro.getSlotDetailByportAAndPortZ(portA,portZ);
+											});
+										}
+									}else{
+										if(native_rateA=='10M/s-100M/s'||native_rateZ == '10M/s-100M/s'){
+											if(fromElement is Node){
+												rate = "VC12";
+												aptp = fromElement.id.toString();
+												aslot = '1';
+												zptp = toElement.parent.parent.id.toString();
+												zslot = toElement.getClient("VC12");
+												
+											}
+											if(toElement is Node){
+												rate = "VC12";
+												zptp = fromElement.id.toString();
+												zslot = '1';
+												aptp = toElement.parent.parent.id.toString();
+												aslot = toElement.getClient("VC12");
+											}
+										}else{
+											if(fromElement.getClient("flag")=="VC4"){
+												rate = "VC4";
+												aptp = fromElement.parent.id.toString();
+												zptp = toElement.parent.id.toString();
+												aslot = fromElement.getClient("VC4");
+												zslot = toElement.getClient("VC4");
+											}
+											if(fromElement.getClient("flag")=="VC12"){
+												rate = "VC12";
+												if(fromElement.parent.parent!=null){
+												aptp = fromElement.parent.parent.id.toString();
+												}else{
+												if(aptp==null||aptp==""){
+												aptp = fromElement.parent.id.toString();
+												}
+												}
+												if(toElement.parent.parent!=null){
+												zptp = toElement.parent.parent.id.toString();
+												}else{
+												if(zptp==null||zptp==""){
+												zptp = toElement.parent.id.toString();
+												}
+												}
+												aslot =  fromElement.getClient("VC12");
+												zslot = toElement.getClient("VC12");
+											} 
+										}
+										var rtobj:RemoteObject = new RemoteObject("channelTree");
+										rtobj.endpoint = ModelLocator.END_POINT;
+										rtobj.showBusyCursor = "true";
+										rtobj.insertCCNative(aptp,aslot,zptp,zslot,rate);//插入交叉
+										rtobj.addEventListener(ResultEvent.RESULT,function(e:ResultEvent){
+										if(e.result!=null&&e.result.toString()=="true"){
+										    var obj:Object = new Object();
+											obj.id =aptp+"-"+aslot+"-"+zptp+"-"+zslot+"-"+rate;
+											obj.pid = equipcode;
+											obj.rate = rate;
+											obj.portA = aptp;
+											obj.portZ = zptp;
+											obj.aslot = aslot;
+											obj.zslot = zslot;
+											obj.porta_label = portlabelA;
+											obj.portz_label = portlabelZ;
+											obj.arate = native_rateA;
+											obj.zrate = native_rateZ;
+											if(arrayList!=null){
+											arrayList.push(obj);
+											}else{
+												arrayList = new Array();
+												arrayList.push(obj);
+											}
+											Alert.show("配置成功！","提示");
+											dispatchEvent(new Event("configSucess"));
+											if(rate == 'VC4'){
+											
+												var color:uint =0x00cccc; 
+												fromElement.setStyle(Styles.LABEL_COLOR,color);
+												fromElement.setClient("scattered","1");
+												fromElement.toolTip="已经被打散";
+												toElement.setStyle(Styles.LABEL_COLOR,color);
+												toElement.setClient("scattered","1");
+												toElement.toolTip="已经被打散";
+												
+											}
+											if(rate == 'VC12'){
+											    var color:uint = 0x009900;
+												fromElement.setStyle(Styles.LABEL_COLOR,color);
+												fromElement.setClient("isuse",'1');
+												toElement.setStyle(Styles.LABEL_COLOR,color);
+												toElement.setClient("isuse",'1');
+												var fromVc12:int = fromElement.getClient("VC12");
+												var fromVc4:int = Math.ceil(fromVc12/63);
+												var d_fromVc12:int = fromVc12 - (fromVc4-1)*63;
+												var toVc12:int = toElement.getClient("VC12");
+												var toVc4:int = Math.ceil(toVc12/63);
+												var d_toVc12:int = toVc12 - (toVc4-1)*63; 
+												var T:Boolean = false;
+												
+												if(toElement.parent.parent!=null&&fromElement.parent.parent!=null){
+													if(toElement.parent.parent.id.toString()!=fromElement.parent.parent.id.toString()){
+													T = true;
+													}
+												}
+												if(toElement.parent.parent==null&&fromElement.parent.parent!=null){
+													if(toElement.parent.id.toString()!=fromElement.parent.parent.id.toString()){
+														T = true;
+													}
+												}
+												if(toElement.parent.parent!=null&&fromElement.parent.parent==null){
+													if(toElement.parent.parent.id.toString()!=fromElement.parent.id.toString()){
+														T = true;
+													}
+												}
+												if(toElement.parent.parent==null&&fromElement.parent.parent==null){
+													if(toElement.parent.id.toString()!=fromElement.parent.id.toString()){
+														T = true;
+													}
+												}
+												if(T){
+													if(fromElement.toolTip!=null)
+														fromElement.toolTip = fromElement.toolTip+"\n"+"与对端的第"+toVc4+"个VC4"+"中的第"+d_toVc12+"个VC12交叉";
+													else
+														fromElement.toolTip = "与对端的第"+toVc4+"个VC4"+"中的第"+d_toVc12+"个VC12交叉";
+													if(toElement.toolTip!=null)
+														toElement.toolTip = toElement.toolTip+"\n"+"与对端的第"+fromVc4+"个VC4"+"中的第"+d_fromVc12+"个VC12交叉";
+													else
+														toElement.toolTip = "与对端的第"+fromVc4+"个VC4"+"中的第"+d_fromVc12+"个VC12交叉";	
+												}else{
+													if(fromElement.toolTip!=null)
+														fromElement.toolTip = fromElement.toolTip+"\n"+"与本端的第"+toVc4+"个VC4"+"中的第"+d_toVc12+"个VC12交叉";
+													else
+														fromElement.toolTip = "与本端的第"+toVc4+"个VC4"+"中的第"+d_toVc12+"个VC12交叉";
+													if(toElement.toolTip!=null)
+														toElement.toolTip = toElement.toolTip+"\n"+"与本端的第"+fromVc4+"个VC4"+"中的第"+d_fromVc12+"个VC12交叉";
+													else
+														toElement.toolTip = "与本端的第"+fromVc4+"个VC4"+"中的第"+d_fromVc12+"个VC12交叉";	
+												}
+												
+				
+											}
+										
+										}else{
+											Alert.show("交叉配置不成功！","提示");
+											configEquipSlotPic.elementBox.remove(link);
+										}
+										});
+									}
+								}
+								else{
+									configEquipSlotPic.elementBox.remove(link);
+								}
+								
+							}
+							
+							public function drawPic():void{
+								configEquipSlotPic.elementBox = new ElementBox();
+								elementBox = configEquipSlotPic.elementBox;
+								var rtobj1:RemoteObject = new RemoteObject("channelTree");
+								rtobj1.endpoint = ModelLocator.END_POINT;
+								rtobj1.showBusyCursor = true;
+								rtobj1.getPortAZDetailForSlot(portA,portZ);
+								rtobj1.addEventListener(ResultEvent.RESULT,function(e:ResultEvent):void{
+									if(e.result!=null&&e.result.toString()!=""){
+										var tmp:Array = JSON.decode(e.result.toString()) as Array; 
+										if(tmp!=null&&tmp.length>0){
+											var equipname:String = tmp[0].pname;
+											var node:Node = new Node(tmp[0].pid);
+											node.name = equipname;
+											node.image = null;
+											node.width = 0;
+											node.height = 0;
+											node.setLocation(480,0);
+											node.setStyle(Styles.LABEL_BOLD, true);
+											node.setStyle(Styles.LABEL_SIZE, 18);
+											elementBox.add(node);
+											if(tmp[0].portA == portA){
+												portlabelA = tmp[0].portA_label;
+												portlabelZ = tmp[0].portZ_label;
+												native_rateA = tmp[0].rateA;
+												native_rateZ = tmp[0].rateZ;
+											}
+											if(tmp[0].portA == portZ){
+												portlabelA = tmp[0].portZ_label;
+												portlabelZ = tmp[0].portA_label;
+												native_rateA = tmp[0].rateZ;
+												native_rateZ = tmp[0].rateA;
+											}
+											equipcode = tmp[0].pid;
+										}
+										channeltreeremote.getSlotDetailByportAAndPortZ(portA,portZ);
+										if(isShowBatch){
+//											if(native_rateA=='10M/s-100M/s'||native_rateZ=='10M/s-100M/s'){
+												var checkBox:CheckBox = new CheckBox();
+												checkBox.label = "批量操作";
+												toolbar.addChild(checkBox);
+												checkBox.addEventListener(Event.CHANGE,checkChangHandler);
+//											}
+										}
+										configEquipSlotPic.contextMenu = new ContextMenu();
+										configEquipSlotPic.contextMenu.hideBuiltInItems();
+										configEquipSlotPic.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, 
+											function(e:ContextMenuEvent):void
+											{
+												if(configEquipSlotPic.selectionModel.count > 0){
+//													var p:Point = new Point(e.mouseTarget.mouseX / configEquipSlotPic.zoom, e.mouseTarget.mouseY / configEquipSlotPic.zoom);
+//													var data:ICollection = configEquipSlotPic.getElementsByLocalPoint(p);
+//													configEquipSlotPic.selectionModel.setSelection(data.getItemAt(0));
+													var element:Element = configEquipSlotPic.selectionModel.selection.getItemAt(0);
+													if(configEquipSlotPic.selectionModel.selection.getItemAt(0) is Link){
+														var deleteLink:ContextMenuItem = new ContextMenuItem("删 除");
+														deleteLink.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, deleteLinkFunction); 
+														configEquipSlotPic.contextMenu.customItems = [deleteLink];
+													}else{
+														configEquipSlotPic.contextMenu.customItems = [];
+													}
+												}else{
+													configEquipSlotPic.contextMenu.customItems = [];
+												}
+											});
+									}
+								})
+							}
+							
+							private function resultHandler(event:ResultEvent):void {
+								if(event.result!=null&&event.result.toString()!=""){
+									
+									arrayList = JSON.decode(event.result.toString()) as Array;
+								}									
+									var node:Node = new Node(portA);
+									node.name = portlabelA;
+									node.setSize(40,40);
+									node.setClient("flag","portA");
+									
+									var totoalNum:int=vc4ContainsVc12(native_rateA);
+									if(totoalNum>1)
+									node.setLocation(60,40*totoalNum/2);
+									else
+										node.setLocation(60,40/2);	
+									elementBox.add(node);
+									if(native_rateA!='2M/s'&&native_rateA!='2Mb/s'){
+									for(var i:int=0;i<totoalNum;i++){
+										var node1:Follower = new Follower(portA+"VC4-"+(i+1));
+										node1.name="VC4-"+(i+1);
+										node1.setClient("flag","VC4");
+										node1.setClient("VC4",(i+1));
+										node1.setSize(20,20);
+										if(totoalNum!=1)
+										node1.setLocation(180,40*(i+1));
+										else
+											node1.setLocation(180,30);	
+										node1.host = node;
+										node1.parent = node;
+										elementBox.add(node1);
+										var link:Link = new Link(node,node1);
+										var color:uint = 0x10F000;
+										link.setStyle(Styles.LINK_COLOR, color);
+										link.setStyle(Styles.LINK_WIDTH, 2);
+										link.setStyle(Styles.LINK_TYPE,Consts.LINK_TYPE_ORTHOGONAL_HORIZONTAL);
+										link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+										link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+										elementBox.add(link);
+									}
+									}else{
+										var node1:Follower = new Follower(portA+"VC12-1");
+										node1.name="VC12-1";
+										node1.setClient("flag","VC12");
+										node1.setClient("VC12",'1');
+										node1.setSize(10,10);
+										node1.setLocation(180,35);
+										node1.host = node;
+										node1.parent = node;
+										elementBox.add(node1);
+										var link:Link = new Link(node,node1);
+										var color:uint = 0x10F000;
+										link.setStyle(Styles.LINK_COLOR, color);
+										link.setStyle(Styles.LINK_WIDTH, 2);
+										link.setStyle(Styles.LINK_TYPE,Consts.LINK_TYPE_ORTHOGONAL_HORIZONTAL);
+										link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+										link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+										elementBox.add(link); 
+									}
+									
+									node = new Node(portZ);
+									node.name = portlabelZ;
+									node.setSize(40,40);
+									node.setClient("flag","portZ");
+									totoalNum=vc4ContainsVc12(native_rateZ);
+									if(totoalNum>1)
+									node.setLocation(950,40*totoalNum/2);
+									else
+										node.setLocation(950,40/2);
+									elementBox.add(node);
+									if(native_rateZ!='2M/s'&&native_rateZ!='2Mb/s'){
+									if(portZ_VC4_list!=null){
+										if(totoalNum!=portZ_VC4_list.length){
+											for(var j:int=0;j<totoalNum;j++){
+												var T:Boolean = false;
+												for(var i:int=0;i<portZ_VC4_list.length;i++){
+													var obj:Object = portZ_VC4_list[i];
+													var slot:int = obj.zslot;
+													if(slot ==(j+1)){
+														T = false; 
+														break;
+													}else{
+														T = true;
+													}
+												}
+												if(T){
+													var newobj:Object = new Object();
+													newobj.zslot=j+1;
+													portZ_VC4_list.push(newobj);
+												}
+												if(totoalNum==portZ_VC4_list.length){
+													break;
+												}
+											}
+											
+										}
+										for(var i:int=0;i<portZ_VC4_list.length;i++){
+											var obj:Object = portZ_VC4_list[i];
+											
+											var node1:Follower = new Follower(portZ+"VC4-"+obj.zslot);
+											node1.name="VC4-"+obj.zslot;
+											node1.setSize(20,20);
+											node1.setLocation(820,40*(i+1));
+											node1.host = node;
+											node1.parent = node;
+											node1.setClient("flag","VC4");
+											node1.setClient("VC4",obj.zslot);
+											elementBox.add(node1);
+											var link:Link = new Link(node,node1);
+											var color:uint = 0x10F000;
+											link.setStyle(Styles.LINK_COLOR, color);
+											link.setStyle(Styles.LINK_WIDTH, 2);
+											link.setStyle(Styles.LINK_TYPE,Consts.LINK_TYPE_ORTHOGONAL_HORIZONTAL);
+											link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+											link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+											elementBox.add(link);
+										}
+										
+									}else{
+										
+										for(var i:int=0;i<totoalNum;i++){
+											var vc4:int = i+1;
+											var node1:Follower = new Follower(portZ+"VC4-"+vc4);
+											
+											node1.name="VC4-"+vc4;
+											node1.setSize(20,20);
+											if(totoalNum!=1)
+											    node1.setLocation(820,40*(i+1));
+											else
+												node1.setLocation(820,30);	
+											node1.host = node;
+											node1.parent = node;
+											node1.setClient("flag","VC4");
+											node1.setClient("VC4",vc4);
+											elementBox.add(node1);
+											var link:Link = new Link(node,node1);
+											var color:uint = 0x10F000;
+											link.setStyle(Styles.LINK_COLOR, color);
+											link.setStyle(Styles.LINK_WIDTH, 2);
+											link.setStyle(Styles.LINK_TYPE,Consts.LINK_TYPE_ORTHOGONAL_HORIZONTAL);
+											link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+											link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+											elementBox.add(link);
+										}
+										
+									}
+									}else{
+									
+										var node1:Follower = new Follower(portZ+"VC12-1");
+										
+										node1.name="VC12-1";
+										node1.setSize(10,10);
+										node1.setLocation(820,35);
+										node1.host = node;
+										node1.parent = node;
+										node1.setClient("flag","VC12");
+										node1.setClient("VC12",'1');
+										elementBox.add(node1);
+										var link:Link = new Link(node,node1);
+										var color:uint = 0x10F000;
+										link.setStyle(Styles.LINK_COLOR, color);
+										link.setStyle(Styles.LINK_WIDTH, 2);
+										link.setStyle(Styles.LINK_TYPE,Consts.LINK_TYPE_ORTHOGONAL_HORIZONTAL);
+										link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+										link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+										elementBox.add(link);
+									}
+									if(arrayList!=null)
+									drawVC4SlotLink();
+							}
+							
+							private function vc4ContainsVc12(rate:String):int{
+								var totoalNum:int = 0;
+								if(rate=="2.5G/s"||rate=="2.5Gb/s"){
+									totoalNum = 16;
+								}else if(rate=="155M/s"||rate=="155Mb/s"){
+									totoalNum = 1;
+								}
+								else if(rate=="622M/s"||rate=="622Mb/s"){
+									totoalNum = 4;
+								}
+								else if(rate=="1.25G/s"||rate=="1.25Gb/s"){
+									totoalNum = 8;
+								}
+								else if(rate=="10G/s"||rate=="10Gb/s"){
+									totoalNum = 64;
+								}
+								return totoalNum;
+							}
+							
+							private function drawVC4SlotLink():void{
+							
+								if(arrayList!=null&&arrayList.length>0){
+									for(var i:int=0;i<arrayList.length;i++){
+										var rate:String = arrayList[i].rate;
+										if(rate=="VC4"){
+											var fromNode:Follower;
+											var toNode:Follower; 
+											if(portA == arrayList[i].portA){
+												fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC4-"+arrayList[i].aslot) as Follower;
+												toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC4-"+arrayList[i].zslot) as Follower;
+											}
+											if(portA == arrayList[i].portZ){
+												fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC4-"+arrayList[i].zslot) as Follower;
+												toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC4-"+arrayList[i].aslot) as Follower;
+											}
+											
+											
+											if(fromNode!=null&&toNode!=null){
+												var link:Link = new Link(arrayList[i].id, fromNode,toNode);
+												var color:uint = 0x10F000;
+												link.setStyle(Styles.LINK_COLOR, color);
+												link.setStyle(Styles.LINK_WIDTH, 2);
+												link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+												link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+												link.setClient("isdefault",arrayList[i].isdefault);
+												if(arrayList[i].isdefault == "1"){
+													link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+												}
+												link.setClient("flag","VC4");
+												elementBox.add(link);
+												fromNode.setClient("overall","1");
+												var color:uint =0x009900;
+												fromNode.setStyle(Styles.LABEL_COLOR,color);
+												fromNode.toolTip="与对端的"+toNode.name+"交叉";
+												toNode.setClient("overall","1");
+												toNode.setStyle(Styles.LABEL_COLOR,color);
+												toNode.toolTip="与对端的"+fromNode.name+"交叉";
+											}  
+										}else{
+											break;
+										}
+									}
+									judgeVC4BreakUp();
+								}
+								
+							}
+							
+							private function judgeVC4BreakUp():void{
+								
+							   var node_a:Node = elementBox.getDataByID(portA) as Node;
+							   var node_z:Node = elementBox.getDataByID(portZ) as Node;
+							   var color:uint = 0x00cccc;
+							   
+//							   if(native_rateA!=null&&(native_rateA=='10M/s-100M/s'||native_rateA=='10Mb/s-100Mb/s')){
+//								   node_a.setStyle(Styles.LABEL_COLOR,color);
+//								   if(arrayList!=null){
+//									   for(var j:int=0;j<arrayList.length;j++){
+//										   if(arrayList[j].rate=="VC12"){
+//											   if(arrayList[j].portA==node_a.id.toString()){
+//												   var vc12_tmp:int = arrayList[j].zslot;
+//												   Alert.show(vc12_tmp.toString());
+//											   }
+//										   }
+//									   }
+//								   }
+//							   }
+//							   if(native_rateZ!=null&&(native_rateZ=='10M/s-100M/s'||native_rateZ=='10Mb/s-100Mb/s')){
+//								   node_z.setStyle(Styles.LABEL_COLOR,color);
+//							   }
+							   if(node_a!=null&&node_a.followers!=null&&node_a.followers.count>0){
+							   
+								   for(var i:int = 0;i<node_a.followers.count;i++){
+								   
+									   var follower:Follower = node_a.followers.getItemAt(i);
+									   if(follower.getClient("overall")!=null&&follower.getClient("overall")=="1"){
+										   //留的接口 
+									   }else{
+										   
+									       var vc4:int = follower.getClient("VC4");
+										  
+										  if(arrayList!=null){
+										   for(var j:int=0;j<arrayList.length;j++){
+										      if(arrayList[j].rate=="VC12"){
+											   if(arrayList[j].portA==node_a.id.toString()){
+											      var vc12_tmp:int = arrayList[j].aslot;
+												  
+												  var vc4_tmp:int = Math.ceil(vc12_tmp/63);
+												  if(vc4_tmp==vc4){
+												  
+													  follower.setClient("scattered","1");
+													  follower.toolTip="已经被打散";
+													
+													  follower.setStyle(Styles.LABEL_COLOR,color);
+													  break;
+												  }
+											   }
+											   if(arrayList[j].portZ==node_a.id.toString()){
+												   var vc12_tmp:int = arrayList[j].zslot;
+												   var vc4_tmp:int = Math.ceil(vc12_tmp/63);
+												   if(vc4_tmp==vc4){
+													   
+													   follower.setClient("scattered","1");
+													   follower.toolTip="已经被打散";
+													
+													   follower.setStyle(Styles.LABEL_COLOR,color);
+													   break;
+												   }
+											   }
+										   
+										   }
+										   }
+									   }
+									   }
+								   
+								   }
+							   
+							   }
+							  
+							   if(node_z!=null&&node_z.followers!=null&&node_z.followers.count>0){
+								   
+								   for(var i:int = 0;i<node_z.followers.count;i++){
+									   
+									   var follower:Follower = node_z.followers.getItemAt(i);
+									   if(follower.getClient("overall")!=null&&follower.getClient("overall")=="1"){
+										   //留的接口 
+									   }else{
+										   var vc4:int = follower.getClient("VC4"); 
+										   for(var j=0;j<arrayList.length;j++){
+											   if(arrayList[j].rate=="VC12"){  
+											   if(arrayList[j].portA==node_z.id.toString()){
+												   var vc12_tmp:int = arrayList[j].aslot;
+												   var vc4_tmp:int = Math.ceil(vc12_tmp/63);
+												   if(vc4_tmp==vc4){
+													   
+													   follower.setClient("scattered","1");
+													   follower.toolTip="已经被打散";
+													  
+													   follower.setStyle(Styles.LABEL_COLOR,color);
+													   break;
+												   }
+											   }
+											   if(arrayList[j].portZ==node_z.id.toString()){
+												   var vc12_tmp:int = arrayList[j].zslot;
+												   var vc4_tmp:int = Math.ceil(vc12_tmp/63);
+												   if(vc4_tmp==vc4){
+													   
+													   follower.setClient("scattered","1");
+													   follower.toolTip="已经被打散";
+													   
+													   follower.setStyle(Styles.LABEL_COLOR,color);
+													   break;
+												   }
+											   }
+											   
+										   }
+										   }
+									   }
+									   
+								   }
+								   
+							   }
+							   judgeVC4IsOverAll();
+							
+							}
+							
+							public function judgeVC4IsOverAll():void{
+								var count:int = configEquipSlotPic.elementBox.datas.count;
+								if(loop_i<count){
+									var ielement:IElement = configEquipSlotPic.elementBox.datas.getItemAt(loop_i) as IElement;
+									if(ielement is Follower){
+										
+										var follower:Follower =ielement as Follower; 
+										
+										if(follower.getClient("flag")=='VC4'&&follower.getClient("scattered")==null&&follower.getClient("overall")==null){
+											var rtobj:RemoteObject = new RemoteObject("channelTree");
+											rtobj.endpoint = ModelLocator.END_POINT;
+											rtobj.showBusyCursor = true;
+											var vc4:int = follower.getClient("VC4");
+											//Alert.show(vc4.toString());
+											rtobj.judgeVC4IsOverAllOrBreakUp(follower.parent.id.toString(),vc4);//插入交叉
+											rtobj.addEventListener(ResultEvent.RESULT,function(e:ResultEvent):void{
+												if(e.result!=null&&e.result.toString()!=""){
+												var str:String = e.result.toString();
+												if(str=="overall"){
+													var color:uint = 0x10F000;
+													follower.setClient("overall","1");
+													var color:uint =0x009900;
+													follower.setStyle(Styles.LABEL_COLOR,color);
+													follower.toolTip="与另外的端口交叉";
+												}
+												if(str=="scattered"){
+													follower.setClient("scattered","1");
+													follower.toolTip="已经被打散,与另外的端口的VC12交叉";
+													var color:uint = 0x00cccc;
+													follower.setStyle(Styles.LABEL_COLOR,color);
+												}
+												
+												}
+												loop_i = loop_i+1;
+												judgeVC4IsOverAll();
+											});
+										}else{
+											loop_i = loop_i+1;
+											judgeVC4IsOverAll();
+										}
+										
+									}else{
+										loop_i = loop_i+1;
+										judgeVC4IsOverAll();
+									}
+									
+									
+								}else{
+								loop_i = 0;
+								}
+							}
+							
+							public function judgeVc4BreakUpOtherPort():void{
+							}
+							
+							public function DealFault(event:FaultEvent):void {
+								Alert.show(event.fault.toString());
+								trace(event.fault);
+							}
+							private function doubleClickFunction(event:MouseEvent):void{
+								if(configEquipSlotPic.selectionModel.count>0){
+									var ielement:IElement = configEquipSlotPic.elementBox.selectionModel.selection.getItemAt(0);
+									if(ielement is Follower){
+										var follower:Follower =ielement as Follower; 
+										if(follower.name.indexOf('VC4')!=-1){
+											if(follower.getClient("overall")!=null&&follower.getClient("overall")=='1'){
+												
+												Alert.show("该VC4时隙未被打散，不能展开VC12级别的时隙","提示");
+												
+											}else{
+												var node:Node = follower.parent as Node;
+												
+												for(var j:int=0;j<node.followers.count;j++){
+													var fo:Follower = node.followers.getItemAt(j);
+													if(follower!=fo){
+														configEquipSlotPic.elementBox.selectionModel.clearSelection();
+														configEquipSlotPic.elementBox.selectionModel.selection.addAll(fo.followers);
+														configEquipSlotPic.elementBox.removeSelection();
+														
+													}
+													
+												}
+												
+												
+												
+												if(follower.followers==null||follower.followers.count<1){
+													var vc4num:int = follower.getClient("VC4");
+													for(var i:int=0;i<63;i++){
+														var a:int = follower.getClient("VC4") as int;
+														var vc12:int = (a-1)*63+(i+1);
+														var follower1:Follower = new Follower(node.id.toString()+"VC12-"+vc12);
+														
+														follower1.setClient("VC12",vc12);
+														follower1.name = "VC12-"+(i+1);
+														follower1.setClient("flag","VC12");
+														follower1.setStyle(Styles.LABEL_SIZE,10);
+														
+														follower1.setSize(10,10);
+														if(node.getClient("flag")!=null&&node.getClient("flag")=='portA'){
+															follower1.setLocation(300,20*(i+1));
+															follower1.setStyle(Styles.LABEL_POSITION,Consts.POSITION_RIGHT);
+															follower1.setStyle(Styles.LABEL_XOFFSET,20);
+														}
+														if(node.getClient("flag")!=null&&node.getClient("flag")=='portZ'){
+															follower1.setLocation(700,20*(i+1));
+															follower1.setStyle(Styles.LABEL_POSITION,Consts.POSITION_LEFT);
+															follower1.setStyle(Styles.LABEL_XOFFSET,-20);
+														}
+														follower1.host = follower;
+														follower1.parent = follower;
+														
+														
+														elementBox.add(follower1);
+														var color:uint = 0x009900;
+														follower1.toolTip = null;
+														if(arrayList!=null&&arrayList.length>0){
+														for(var k:int=0;k<arrayList.length;k++){
+														
+															if(arrayList[k].rate=="VC12"){
+																
+															if(node.id.toString()==arrayList[k].portA){
+															
+																if(vc12==arrayList[k].aslot){
+																 var vc12_z:int = arrayList[k].zslot;
+													             var vc4_z:int = Math.ceil(vc12_z/63);
+																 var d_vc12:int = vc12_z-(vc4_z-1)*63;
+																 if(arrayList[k].portA==arrayList[k].portZ){
+																	 if(follower1.toolTip!=null)
+																	 follower1.toolTip = follower1.toolTip+"\n"+"与本端的第"+vc4_z+"个VC4"+"中的第"+d_vc12+"个VC12交叉";
+																	 else
+																		 follower1.toolTip = "与本端的第"+vc4_z+"个VC4"+"中的第"+d_vc12+"个VC12交叉"; 
+																 }
+																 else 	{
+																	 if(follower1.toolTip!=null)
+																	 follower1.toolTip = follower1.toolTip+"\n"+"与对端的第"+vc4_z+"个VC4"+"中的第"+d_vc12+"个VC12交叉";
+																	 else
+																		 follower1.toolTip = "与对端的第"+vc4_z+"个VC4"+"中的第"+d_vc12+"个VC12交叉";	 
+																 }
+																 
+																 follower1.setStyle(Styles.LABEL_COLOR,color);
+																 follower1.setClient("isuse","1");
+																 break;
+																}
+																
+															}
+															if(node.id.toString()==arrayList[k].portZ){
+																if(vc12==arrayList[k].zslot){
+																	var vc12_z:int = arrayList[k].aslot;
+																	var vc4_z:int = Math.ceil(vc12_z/63);
+																	var d_vc12:int = vc12_z-(vc4_z-1)*63;
+																	if(arrayList[k].portA==arrayList[k].portZ){
+																		if(follower1.toolTip!=null){
+																		follower1.toolTip = follower1.toolTip+"\n"+"与本端的第"+vc4_z+"个VC4"+"中的第"+d_vc12+"个VC12交叉";
+																		}else{
+																			follower1.toolTip = "与本端的第"+vc4_z+"个VC4"+"中的第"+d_vc12+"个VC12交叉";
+																		}
+																	}
+																	else {
+																	if(follower1.toolTip!=null)	
+																		follower1.toolTip = follower1.toolTip+"\n"+"与对端的第"+vc4_z+"个VC4"+"中的第"+d_vc12+"个VC12交叉";
+																	else
+																		follower1.toolTip = "与对端的第"+vc4_z+"个VC4"+"中的第"+d_vc12+"个VC12交叉";
+																	}
+																	follower1.setStyle(Styles.LABEL_COLOR,color);
+																	follower1.setClient("isuse","1");
+																	break;
+																}
+																
+															}
+															}
+														
+														}
+													}
+														
+														configEquipSlotPic.elementBox.selectionModel.selection.addItem(follower);
+														var link:Link = new Link(follower,follower1);
+														var color:uint = 0x10F000;
+														link.setStyle(Styles.LINK_COLOR, color);
+														link.setStyle(Styles.LINK_WIDTH, 2);
+														link.setStyle(Styles.LINK_TYPE,Consts.LINK_TYPE_ORTHOGONAL_HORIZONTAL);
+														link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+														link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+														elementBox.add(link);
+														
+													}
+													drawVC12SlotLink();
+												}else{
+													
+													configEquipSlotPic.elementBox.selectionModel.clearSelection();
+													configEquipSlotPic.elementBox.selectionModel.selection.addAll(follower.followers);
+													configEquipSlotPic.elementBox.removeSelection();
+													configEquipSlotPic.elementBox.selectionModel.selection.addItem(follower);
+													
+												}
+											}
+										}
+									}
+								}
+							}
+							
+							private function drawVC12SlotLink():void{
+								if(arrayList!=null&&arrayList.length>0){
+									
+									for(var i:int=0;i<arrayList.length;i++){
+										var rate:String = arrayList[i].rate;
+										var fromNode:IElement;
+										var toNode:IElement;
+										var isdefault:String = arrayList[i].isdefault;
+										if(rate=="VC12"){
+											if(portA == arrayList[i].portA){
+												if(native_rateA=='10M/s-100M/s'||native_rateA=='10Mb/s-100Mb/s'){
+													fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA) as IElement;
+													toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC12-"+arrayList[i].zslot) as IElement;
+												}else if(native_rateZ=='10M/s-100M/s'||native_rateZ=='10Mb/s-100Mb/s'){
+													fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC12-"+arrayList[i].aslot) as IElement;
+													toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ) as IElement;
+												}else{
+													fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC12-"+arrayList[i].aslot) as IElement;
+													toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC12-"+arrayList[i].zslot) as IElement;
+												}
+											}
+											if(portA == arrayList[i].portZ){
+												if(native_rateA=='10M/s-100M/s'||native_rateA=='10Mb/s-100Mb/s'){
+													toNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ) as IElement;
+													fromNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC12-"+arrayList[i].aslot) as IElement;
+													
+												}else if(native_rateZ=='10M/s-100M/s'||native_rateZ=='10Mb/s-100Mb/s'){
+													toNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC12-"+arrayList[i].aslot) as IElement;
+													fromNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ) as IElement;
+												}
+												else{
+													fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC12-"+arrayList[i].zslot) as IElement;
+													toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC12-"+arrayList[i].aslot) as IElement;
+												}
+											}
+											if(fromNode!=null&&toNode!=null){
+												if((fromNode is Node)&&(toNode is Follower)){
+													var link:Link = new Link(arrayList[i].id,fromNode as Node,toNode as Follower);
+													var color:uint = 0x10F000;
+													link.setStyle(Styles.LINK_COLOR, color);
+													link.setStyle(Styles.LINK_WIDTH, 2);
+													link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+													link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+													link.setClient("isdefault",isdefault);
+													if(isdefault == "1"){
+														link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+													}
+													link.setClient("flag","VC12");
+													elementBox.add(link);
+												}else if((toNode is Node)&&(fromNode is Follower)){
+													var link:Link = new Link(arrayList[i].id,fromNode as Follower,toNode as Node);
+													var color:uint = 0x10F000;
+													link.setStyle(Styles.LINK_COLOR, color);
+													link.setStyle(Styles.LINK_WIDTH, 2);
+													link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+													link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+													link.setClient("isdefault",isdefault);
+													link.setClient("flag","VC12");
+													if(isdefault == "1"){
+														link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+													}
+													elementBox.add(link);
+												}else{
+													var link:Link = new Link(arrayList[i].id,fromNode as Follower,toNode as Follower);
+													var color:uint = 0x10F000;
+													link.setStyle(Styles.LINK_COLOR, color);
+													link.setStyle(Styles.LINK_WIDTH, 2);
+													link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+													link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+													link.setClient("isdefault",isdefault);
+													link.setClient("flag","VC12");
+													if(isdefault == "1"){
+														link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+													}
+													elementBox.add(link);
+												}
+												
+											}
+											
+										}
+										
+									}
+									
+								}
+							}
+							private function checkChangHandler(event:Event):void{
+								if(CheckBox(event.target).selected)
+									isBatch = true; 
+								else
+									isBatch = false;
+							}
+							private function deleteLinkFunction(event:ContextMenuEvent):void{
+								Alert.show(
+									"您确认删除该连接关系吗？",
+									"确认",
+									Alert.YES|Alert.NO,
+									null,
+									function(e:CloseEvent):void{
+										if(e.detail==Alert.YES){
+										   var element:IElement = configEquipSlotPic.selectionModel.lastData as IElement; 
+										   var link:Link = element as Link;
+										   tempLink = link;
+										   if(link!=null){
+											   if(link.getClient("isdefault") == "0"){
+												Alert.show("该交叉是系统自动采集，不可删除！","提示");
+												return;
+											   }
+											   if(isBatch){
+												   batchDelCC();
+											   }else{
+											     var fromElement:IElement = link.fromNode as IElement;
+												 var toElement:IElement = link.toNode as IElement;
+												 var rate:String = "";
+												 var aslot:String  = "";
+												 var aptp:String = "";
+												 var zptp:String = "";
+												 var zslot:String = "";
+												 if(native_rateA=='10M/s-100M/s'||native_rateZ == '10M/s-100M/s'){
+													 if(fromElement.getClient("flag")!=null&&fromElement.getClient("flag")=="VC12"){
+														 rate = "VC12";
+														 aptp = toElement.id.toString();
+														 aslot = '1';
+														 zptp = fromElement.parent.parent.id.toString();
+														 zslot = fromElement.getClient("VC12");
+														 
+													 }
+													 if(toElement.getClient("flag")!=null && toElement.getClient("flag")=="VC12"){
+														 rate = "VC12";
+														 zptp = fromElement.id.toString();
+														 zslot = '1';
+														 aptp = toElement.parent.parent.id.toString();
+														 aslot = toElement.getClient("VC12");
+													 }
+												  }else{
+													  if(fromElement.getClient("flag") == "VC12"){
+														  rate = "VC12";
+														  aptp = toElement.parent.parent.id.toString();
+														  aslot = toElement.getClient("VC12");
+														  zptp = fromElement.parent.parent.id.toString();
+														  zslot = fromElement.getClient("VC12");
+													  }else{
+														  rate = "VC4";
+														  aptp = toElement.parent.id.toString();
+														  aslot = toElement.getClient("VC4");
+														  zptp = fromElement.parent.id.toString();
+														  zslot = fromElement.getClient("VC4");
+													  }
+												  }
+												 if(rate!=""&&aslot!=""&&aptp!=""&&zptp!=""&&zslot!=""){
+													 var rt:RemoteObject = new RemoteObject("channelTree");
+													 rt.endpoint = ModelLocator.END_POINT;
+													 rt.showBusyCursor = true;
+													 rt.deleteSlotLink(aptp,aslot,zptp,zslot,rate);
+													 rt.addEventListener(ResultEvent.RESULT,function(event:ResultEvent):void{
+													 	if(event.result!=null){
+															Alert.show("删除成功！");
+															configEquipSlotPic.elementBox.remove(link);
+															fromElement.toolTip = "";
+															fromElement.setStyle(Styles.LABEL_COLOR,Consts.COLOR_BLACK);
+															toElement.toolTip = "";
+															toElement.setStyle(Styles.LABEL_COLOR,Consts.COLOR_BLACK);
+															
+															if(fromElement.getClient("flag") == "VC4"){
+																var vc4:int = fromElement.getClient("VC4");
+																var ro:RemoteObject = new RemoteObject("channelTree");
+																ro.endpoint = ModelLocator.END_POINT;
+																ro.showBusyCursor = true;
+																ro.addEventListener(ResultEvent.RESULT,function(e:ResultEvent):void{
+																	if(e.result!=null&&e.result.toString()!=""){
+																		var str:String = e.result.toString();
+																		setSlotProperty(fromElement,str);
+																	}
+																});
+																ro.judgeVC4IsOverAllOrBreakUp(fromElement.parent.id.toString(),vc4);//插入交叉
+															}else{
+																fromElement.setClient("isuse","0");
+															}
+															if(toElement.getClient("flag") == "VC4"){
+																var vc4:int = toElement.getClient("VC4");
+																var ro1:RemoteObject = new RemoteObject("channelTree");
+																ro1.endpoint = ModelLocator.END_POINT;
+																ro1.showBusyCursor = true;
+																ro1.addEventListener(ResultEvent.RESULT,function(e:ResultEvent):void{
+																	if(e.result!=null&&e.result.toString()!=""){
+																		var str:String = e.result.toString();
+																		setSlotProperty(toElement,str);
+																	}
+																});
+																ro1.judgeVC4IsOverAllOrBreakUp(toElement.parent.id.toString(),vc4);//插入交叉
+															}else{
+																toElement.setClient("isuse","0");
+															}
+														}
+													 });
+												 }
+											   }
+										   }
+										}
+									}
+								);
+							
+							}
+							
+							private function  batchDelCC():void{
+								var fromElement:IElement = tempLink.fromNode as IElement;
+								var toElement:IElement = tempLink.toNode as IElement;
+								var portaname:String ;
+								var portzname:String ;
+								var aslots:ArrayCollection = new ArrayCollection();
+								var zslots:ArrayCollection = new ArrayCollection();
+								if(fromElement.getClient("flag")=="VC4"){ //VC4的时隙
+									portaname = fromElement.parent.name;
+									portzname = toElement.parent.name;
+									var followers:ICollection = (Node)(fromElement.parent).followers;
+									for(var i = 0; i < followers.count; i++){
+										var fo:Follower = followers.getItemAt(i) as Follower;
+												var portstatus:OpticalPortStatus = new OpticalPortStatus();
+												portstatus.aptp = fo.parent.id.toString();
+												portstatus.aslot = fo.getClient("VC4");
+												portstatus.rate = "VC4";
+												aslots.addItem(portstatus);
+									}
+									
+									followers = (Node)(toElement.parent).followers;
+									for(var i = 0; i < followers.count; i++){
+										var fo:Follower = followers.getItemAt(i) as Follower;
+										var portstatus:OpticalPortStatus = new OpticalPortStatus();
+										portstatus.aptp = fo.parent.id.toString();
+										portstatus.aslot = fo.getClient("VC4");
+										portstatus.rate = "VC4";
+										zslots.addItem(portstatus);
+									}
+									
+								}else if(fromElement.getClient("flag") == "VC12"){  //VC12的时隙
+									portaname = fromElement.parent.parent.name;
+									portzname = toElement.parent.parent.name;
+									if(!fromElement.parent.parent){
+										portaname =  fromElement.parent.name;
+									}else{
+										portaname =  fromElement.parent.parent.name;
+									}
+									
+									if(!toElement.parent.parent){
+										portzname =  toElement.parent.name;
+									}else{
+										portzname =  toElement.parent.parent.name;
+									}
+									
+									var followers:ICollection = (Follower)(fromElement.parent).followers;
+									for(var i = 0; i < followers.count; i++){
+										var fo:Follower = followers.getItemAt(i) as Follower;
+										var portstatus:OpticalPortStatus = new OpticalPortStatus();
+										portstatus.aptp = fo.parent.parent.id.toString();
+										portstatus.aslot = fo.getClient("VC12");
+										portstatus.rate = "VC12";
+										aslots.addItem(portstatus);
+									}
+									followers = (Follower)(toElement.parent).followers;
+									for(var i = 0; i < followers.count; i++){
+										var fo:Follower = followers.getItemAt(i) as Follower;
+										var portstatus:OpticalPortStatus = new OpticalPortStatus();
+										portstatus.aptp = fo.parent.parent.id.toString();
+										portstatus.aslot = fo.getClient("VC12");
+										portstatus.rate = "VC12";
+										zslots.addItem(portstatus);
+									}
+								}
+								
+								var form:batchConfigPortSlot = new batchConfigPortSlot();
+								form.aname = portaname;
+								form.zname = portzname;
+								form.aslots = aslots;
+								form.zslots = zslots;
+								form.astartslot = fromElement.getClient(fromElement.getClient("flag")=="VC4"?"VC4":"VC12");
+								form.zstartslot = toElement.getClient(toElement.getClient("flag")=="VC4"?"VC4":"VC12");
+								form.del = true;
+								form.parentObject = this; 
+								MyPopupManager.addPopUp(form,true);
+								form.addEventListener("CancelComplete",function(event:Event):void{
+									MyPopupManager.removePopUp(form);
+								});
+							}
+							
+							public function batchDelSuccessResultHanler(str:String):void{
+								Alert.show("删除成功","提示");
+								var arr:Array = str.split(":");
+								if(arr != null && arr.length  > 0){
+									for(var j:int = 0; j < arr.length - 1; j++){
+										var id:String = arr[j];
+										var link:Link = configEquipSlotPic.elementBox.getElementByID(id) as Link;
+										if(link){
+											var fromElement:Element = link.fromNode;
+											var toElement:Element = link.toNode;
+											if(fromElement.getClient("flag") == "VC4"){
+												fromElement.toolTip = "";
+												fromElement.setClient("overall","0");
+												fromElement.setStyle(Styles.LABEL_COLOR,Consts.COLOR_BLACK);
+												toElement.toolTip = "";
+												toElement.setClient("overall","0");
+												toElement.setStyle(Styles.LABEL_COLOR,Consts.COLOR_BLACK);
+											}else if(fromElement.getClient("flag") == "VC12"){
+												fromElement.setClient("isuse","0");
+												fromElement.toolTip = "";
+												fromElement.setStyle(Styles.LABEL_COLOR,Consts.COLOR_BLACK);
+												toElement.setClient("isuse","0");
+												toElement.toolTip = "";
+												toElement.setStyle(Styles.LABEL_COLOR,Consts.COLOR_BLACK);
+											}
+											configEquipSlotPic.elementBox.remove(link);
+										}
+											
+									}
+								}
+							}
+							
+							private function setSlotProperty(follower:IElement,str:String):void{
+								if(str=="overall"){
+									var color:uint = 0x10F000;
+									follower.setClient("overall","1");
+									var color:uint =0x009900;
+									follower.setStyle(Styles.LABEL_COLOR,color);
+									follower.toolTip="与另外的端口交叉";
+								}else if(str=="scattered"){
+									follower.setClient("scattered","1");
+									follower.toolTip="已经被打散,与另外的端口的VC12交叉";
+									var color:uint = 0x00cccc;
+									follower.setStyle(Styles.LABEL_COLOR,color);
+								}else{
+									follower.setClient("overall","0");
+									follower.setStyle(Styles.LABEL_COLOR,Consts.COLOR_BLACK);
+								}
+							}
+							
+							private function batchAddSuccessResultHanler(event:ResultEvent):void{
+									if(event.result!=null&&event.result.toString()!=""){
+										arrayList = JSON.decode(event.result.toString()) as Array;
+									}									
+									if(arrayList!=null){
+										if(selectrate == "VC4"){
+											for(var i:int=0;i<arrayList.length;i++){
+												if(arrayList[i].rate=="VC4"){
+													var rate:String = arrayList[i].rate;
+													var fromNode:Follower;
+													var toNode:Follower; 
+													
+													if(portA == arrayList[i].portA){
+														fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC4-"+arrayList[i].aslot) as Follower;
+														toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC4-"+arrayList[i].zslot) as Follower;
+													}
+													if(portA == arrayList[i].portZ){
+														fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC4-"+arrayList[i].zslot) as Follower;
+														toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC4-"+arrayList[i].aslot) as Follower;
+														
+													}
+													var link:Link = configEquipSlotPic.elementBox.getDataByID(arrayList[i].id) as Link;
+													if(fromNode!=null&&toNode!=null && !link){
+														var link:Link = new Link(arrayList[i].id,fromNode,toNode);
+														var color:uint = 0x10F000;
+														link.setStyle(Styles.LINK_COLOR, color);
+														link.setStyle(Styles.LINK_WIDTH, 2);
+														link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+														link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+														link.setClient("isdefault",arrayList[i].isdefault);
+														if(arrayList[i].isdefault == "1"){
+															link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+														}
+														link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+														link.setClient("flag","VC4");
+														elementBox.add(link);
+														fromNode.setClient("overall","1");
+														var color:uint =0x009900;
+														fromNode.setStyle(Styles.LABEL_COLOR,color);
+														fromNode.toolTip="与对端的"+toNode.name+"交叉";
+														toNode.setClient("overall","1");
+														toNode.setStyle(Styles.LABEL_COLOR,color);
+														toNode.toolTip="与对端的"+fromNode.name+"交叉";
+													}  
+												}
+											}
+										}else if(selectrate == "VC12"){
+											for(var i:int=0;i<arrayList.length;i++){
+													if(arrayList[i].rate=="VC12"){
+													var rate:String = arrayList[i].rate;
+													var fromNode:Follower;
+													var toNode:Follower; 
+													
+													if(portA == arrayList[i].portA){
+														fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC12-"+arrayList[i].aslot) as Follower;
+														toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC12-"+arrayList[i].zslot) as Follower;
+													}
+													if(portA == arrayList[i].portZ){
+														fromNode =  configEquipSlotPic.elementBox.getDataByID(arrayList[i].portZ+"VC12-"+arrayList[i].zslot) as Follower;
+														toNode = configEquipSlotPic.elementBox.getDataByID(arrayList[i].portA+"VC12-"+arrayList[i].aslot) as Follower;
+														
+													}
+													var link:Link = configEquipSlotPic.elementBox.getDataByID(arrayList[i].id) as Link;
+													if(fromNode!=null&&toNode!=null && !link){
+														var link:Link = new Link(arrayList[i].id,fromNode,toNode);
+														var color:uint = 0x10F000;
+														link.setStyle(Styles.LINK_COLOR, color);
+														link.setStyle(Styles.LINK_WIDTH, 2);
+														link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+														link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+														link.setClient("isdefault",arrayList[i].isdefault);
+														if(arrayList[i].isdefault == "1"){
+															link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+														}
+														link.setStyle(Styles.LINK_COLOR, "0xffc83d");
+														link.setClient("flag","VC4");
+														fromNode.setClient("isuse","1");
+														toNode.setClient("isuse","1");
+														elementBox.add(link);
+														var color:uint =0x009900;
+														fromNode.setStyle(Styles.LABEL_COLOR,color);
+														toNode.setStyle(Styles.LABEL_COLOR,color);
+													}  
+												}
+											}
+										}
+									}
+							}
+							
+		]]>
+	</mx:Script>
+	<mx:RemoteObject  destination="channelTree" requestTimeout="300"  showBusyCursor="true" id="channeltreeremote" endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" result="resultHandler(event)">
+	</mx:RemoteObject>
+	
+	<mx:VBox width="100%" id='configEquipSlotbox' height="100%" label="">
+		<mx:HBox id="toolbar" horizontalGap="0" width="100%"/>
+		<tw:Network  id="configEquipSlotPic" label="配置交叉" width="100%" doubleClickEnabled="true" doubleClick="doubleClickFunction(event)"  height="100%" backgroundColor="0xFFFFFF" >
+		</tw:Network>
+		
+	</mx:VBox>	
+	
+</mx:VBox>  

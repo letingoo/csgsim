@@ -1,0 +1,68 @@
+-- Create table
+create table MNT_SUBJECT
+(
+  RSCODE    VARCHAR2(20) not null,
+  SUBTITILE VARCHAR2(50) not null,
+  SUBNAME   VARCHAR2(50) not null,
+  SUBDESC   VARCHAR2(100),
+  SUBCLASS  VARCHAR2(100),
+  ISSELE    VARCHAR2(10),
+  SORDER    VARCHAR2(10),
+  SX        NUMBER(8,5),
+  SY        NUMBER(8,5),
+  SWIDTH    NUMBER(8,5),
+  SHEIGHT   NUMBER(8,5),
+  REMARK    VARCHAR2(100),
+  ISDRAG    VARCHAR2(10) default 'N'
+)
+tablespace TSGDDB
+  pctfree 10
+  initrans 1
+  maxtrans 255
+  storage
+  (
+    initial 64
+    minextents 1
+    maxextents unlimited
+  );
+-- Add comments to the columns 
+comment on column MNT_SUBJECT.RSCODE
+  is '主题编号';
+comment on column MNT_SUBJECT.SUBTITILE
+  is '主题标题';
+comment on column MNT_SUBJECT.SUBNAME
+  is '主题别名';
+comment on column MNT_SUBJECT.SUBDESC
+  is '主题描述';
+comment on column MNT_SUBJECT.SUBCLASS
+  is '实现类';
+comment on column MNT_SUBJECT.ISSELE
+  is '选择状态';
+comment on column MNT_SUBJECT.SORDER
+  is '显示顺序';
+comment on column MNT_SUBJECT.SX
+  is '相对父窗口X坐标';
+comment on column MNT_SUBJECT.SY
+  is '相对父窗口Y坐标';
+comment on column MNT_SUBJECT.SWIDTH
+  is '主题宽度';
+comment on column MNT_SUBJECT.SHEIGHT
+  is '主题高度';
+comment on column MNT_SUBJECT.REMARK
+  is '备注';
+comment on column MNT_SUBJECT.ISDRAG
+  is '是否允许拖放';
+-- Create/Recreate primary, unique and foreign key constraints 
+alter table MNT_SUBJECT
+  add primary key (RSCODE)
+  using index 
+  tablespace TSGDDB
+  pctfree 10
+  initrans 2
+  maxtrans 255
+  storage
+  (
+    initial 64K
+    minextents 1
+    maxextents unlimited
+  );

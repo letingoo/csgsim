@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" 
+				width="800" 
+				height="388" 
+				title="查看机盘业务"
+				showCloseButton="true"
+				creationComplete="init()"
+				close="{MyPopupManager.removePopUp(this)}" 			
+				fontFamily="宋体" 
+				fontSize="12">
+	<mx:Script source="../actionscript/viewslotInfo.as"/>
+	<mx:DataGrid 
+		id = "soltList"  
+		width="100%" 
+		height="100%">
+		<mx:columns>
+			<mx:DataGridColumn headerText="电路号" dataField="CIRCUITCODE"/>
+			<mx:DataGridColumn headerText="速率" width="60" dataField="RATE"/>			
+			<mx:DataGridColumn headerText="A端端口" dataField="PORTSERIALNO1"/>
+			<mx:DataGridColumn headerText="A端时隙" width="80" dataField="SLOT1"/>
+			<mx:DataGridColumn headerText="Z端端口" dataField="PORTSERIALNO2"/>
+			<mx:DataGridColumn headerText="Z端时隙" width="80" dataField="SLOT2"/>			
+		</mx:columns>
+	</mx:DataGrid>
+</mx:TitleWindow>

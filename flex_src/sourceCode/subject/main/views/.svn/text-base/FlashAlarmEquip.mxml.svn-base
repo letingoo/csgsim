@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--告警详细信息-->
+
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" 
+				creationComplete="init();" 
+				title="频闪告警配置" x="200" y="0"
+				width="300" height="200"  
+				showCloseButton="true"
+				close="titleWindow_close(event);"
+				horizontalScrollPolicy="off" verticalScrollPolicy="off"
+				>
+	<mx:Script>
+		<![CDATA[
+			
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.controls.Text;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			public var fm:FlashAlarmMonitor;
+			public var flag:int = 0;
+			public var subtitile:String="";
+			public var subname:String ="";
+			private var param:ArrayCollection =new ArrayCollection();
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class;
+			
+			public function init():void{
+				getFlashAlarmEquip();
+			}
+			protected function saveFlashAlarmEquip():void
+			{
+				subtitile=tsubtitile.text+'';
+				subname=tsubname.text+'';
+				if(subtitile==null || subtitile==''){
+					Alert.show('重点频闪告警个数不能为空！',"提示信息",4,this,null,iconClass);
+				}else if(subname==null || subname==''){
+					Alert.show('频闪告警筛选次数不能为空！',"提示信息",4,this,null,iconClass);
+				}else{
+					var rtobj:RemoteObject=new RemoteObject("FlashAlarmMonitorDwr");
+					rtobj.endpoint= ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.addEventListener(ResultEvent.RESULT,getcommonresult);
+					rtobj.addEventListener(FaultEvent.FAULT,fault);
+					rtobj.updateFlashAlarmEquip(subtitile,subname);
+				}
+			}
+			private function getcommonresult(event:ResultEvent):void{
+				
+				if(event.result=="成功"){
+					Alert.show('保存成功');
+					PopUpManager.removePopUp(this);
+					if(flag==0){
+						fm.pagingFunction7();
+					}else{
+						fm.pagingFunction();
+					}
+				}else{
+					Alert.show('保存失败');
+				}
+			}
+			
+			
+			private function getFlashAlarmEquip():void{
+				
+				var rtobj:RemoteObject=new RemoteObject("FlashAlarmMonitorDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getFlashAlarmEquip();       
+				rtobj.addEventListener(ResultEvent.RESULT,setFlashAlarmEquip);
+				
+			}
+			private function setFlashAlarmEquip(event:ResultEvent):void{
+				param.removeAll();
+				param=event.result as ArrayCollection;
+				tsubtitile.text=param[0].SUBTITILE;
+				tsubname.text=param[0].SUBNAME;
+			}
+			private function fault(event:FaultEvent):void
+			{
+				Alert.show(event.fault.toString());
+				
+			}
+			private function titleWindow_close(evt:CloseEvent):void {
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				saveFlashAlarmEquip();
+				// TODO Auto-generated method stub
+			}
+			
+			
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				// TODO Auto-generated method stub
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%"   verticalAlign="middle" horizontalAlign="center" verticalGap="0">
+		<mx:Form width="100%" height="100%" >
+			<mx:FormItem label="重点频闪告警个数：">
+				<mx:TextInput id="tsubtitile" restrict="0-9" width="100"  />
+			</mx:FormItem>
+			<mx:Spacer height="10"/>
+			<mx:FormItem label="频闪告警筛选次数：">
+				<mx:TextInput id="tsubname" restrict="0-9" width="100"  />
+			</mx:FormItem>
+		</mx:Form>
+		<mx:HBox height="100%" width="100%" styleName="btnbg">
+			<mx:Button label="保 存" styleName="normal" click="button1_clickHandler(event)"/>
+			<mx:Button label="取 消" styleName="normal" click="button2_clickHandler(event)" />
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

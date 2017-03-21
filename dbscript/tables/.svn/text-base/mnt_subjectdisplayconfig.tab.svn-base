@@ -1,0 +1,50 @@
+create table MNT_SUBJECTDISPLAYCONFIG
+(
+  DSCODE            VARCHAR2(10) not null,
+  RELATEDISPLAYDATA VARCHAR2(10) not null,
+  FIELDEN           VARCHAR2(10) not null,
+  FIELDZH           VARCHAR2(10) not null,
+  ISPIE             VARCHAR2(10),
+  ISCOL             VARCHAR2(10),
+  ISCURVE           VARCHAR2(10),
+  ISGRID            VARCHAR2(10),
+  ISUPDATE          VARCHAR2(10),
+  MSGID             VARCHAR2(10),
+  DATACOLOR         VARCHAR2(10),
+  SERIAL            VARCHAR2(10),
+  UPDATEPERSON      VARCHAR2(10),
+  UPDATEDATE        VARCHAR2(10),
+  REMARK            VARCHAR2(10)
+)
+;
+comment on column MNT_SUBJECTDISPLAYCONFIG.DSCODE
+  is '数据源ID';
+comment on column MNT_SUBJECTDISPLAYCONFIG.RELATEDISPLAYDATA
+  is '关联数据';
+comment on column MNT_SUBJECTDISPLAYCONFIG.FIELDEN
+  is '英文字段';
+comment on column MNT_SUBJECTDISPLAYCONFIG.FIELDZH
+  is '中文字段';
+comment on column MNT_SUBJECTDISPLAYCONFIG.ISPIE
+  is '是否饼图可用';
+comment on column MNT_SUBJECTDISPLAYCONFIG.ISCOL
+  is '是否柱状图可用';
+comment on column MNT_SUBJECTDISPLAYCONFIG.ISCURVE
+  is '是否曲线图可用';
+comment on column MNT_SUBJECTDISPLAYCONFIG.ISGRID
+  is '是否表格可用';
+comment on column MNT_SUBJECTDISPLAYCONFIG.ISUPDATE
+  is '是否需要消息更新';
+comment on column MNT_SUBJECTDISPLAYCONFIG.MSGID
+  is '消息ID';
+comment on column MNT_SUBJECTDISPLAYCONFIG.DATACOLOR
+  is '颜色系列';
+comment on column MNT_SUBJECTDISPLAYCONFIG.SERIAL
+  is '序号';
+comment on column MNT_SUBJECTDISPLAYCONFIG.UPDATEPERSON
+  is '更新人';
+comment on column MNT_SUBJECTDISPLAYCONFIG.UPDATEDATE
+  is '更新日期';
+comment on column MNT_SUBJECTDISPLAYCONFIG.REMARK
+  is '备注';
+

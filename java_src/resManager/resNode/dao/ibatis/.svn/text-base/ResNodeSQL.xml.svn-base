@@ -1,0 +1,1410 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="resNode">
+
+<typeAlias alias="frameModel" type="resManager.resNode.model.EquipFrame"/>
+	
+	<select id="getStationCount" resultClass="Integer">
+		select count(*)
+		from (select rownum no,
+		stationcode,
+		decode(stationname,null,'',stationname) stationname,
+		decode(x_stationtype,null,'',x_stationtype) x_stationtype,
+		decode(province,null,'',province) province,
+		decode(property,null,'',property) property,
+		decode(to_char(lng,'fm9,999,999,990.09999'),null,'',to_char(lng,'fm9,999,999,990.09999')) lng,
+		decode(to_char(lat,'fm9,999,999,990.09999'),null,'',to_char(lat,'fm9,999,999,990.09999')) lat,
+		decode(remark,null,'',remark) remark,
+		decode(updatedate,null,'',updatedate) updatedate,
+		decode(updateperson,null,'',updateperson) updateperson,system_name
+		from view_station
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="stationname">
+				(stationname like
+				'%$stationname$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="name_std">
+				(name_std like
+				'%$name_std$%')
+						</isNotEmpty>
+						
+			<isNotEmpty prepend="AND" property="x_stationtype">
+				(x_stationtype 
+				=#x_stationtype#)
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="province">
+				(province =#province#)
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="property">
+				( property like '%$property$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="lng">
+				(lng like '%$lng$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="lat">
+				(lat like '%$lat$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="founddate_start">
+				( founddate >=
+				to_date('$founddate_start$','YYYY-mm-dd'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="founddate_end">
+				( founddate
+				&lt;=to_date('$founddate_end$','YYYY-mm-dd'))
+				</isNotEmpty>
+					<isNotEmpty prepend="and" property="system_name">
+				system_name like
+				'$system_name$'
+			</isNotEmpty>
+		</dynamic>
+		)
+	</select>
+	<select id="getStation" resultClass="resManager.resNode.model.StationModel"
+		parameterClass="resManager.resNode.model.StationModel">
+		 select * from(
+		 select no,
+		 stationcode,
+		 stationname,
+		 x_stationtype,
+		 volt,
+		 province,
+		 property,
+		 lng,
+		 lat,
+		 remark,
+		 updatedate,
+		 updateperson,
+		 detailaddr,
+		 founddate,
+		 name_std,
+		 zip,
+		 fax,system_name
+		 from (select
+		 stationcode,
+		 decode(stationname,null,'',stationname) stationname,
+		 decode(x_stationtype,null,'',x_stationtype) x_stationtype,
+		 decode(volt,null,'',volt) volt,
+		 decode(province,null,'',province) province,
+		 decode(property,null,'',property) property,
+		 decode(to_char(lng,'fm9,999,999,990.09999'),null,'',to_char(lng,'fm9,999,999,990.09999')) lng,
+		 decode(to_char(lat,'fm9,999,999,990.09999'),null,'',to_char(lat,'fm9,999,999,990.09999')) lat,
+		 decode(remark,null,'',remark) remark,
+		 decode(detailaddr,null,'',detailaddr) detailaddr,
+		 decode(founddate,null,'',to_char(founddate,'yyyy-mm-dd')) founddate,
+		 decode(name_std,null,'',name_std) name_std,
+		 decode(updatedate,null,'',to_char(updatedate,'yyyy-mm-dd')) updatedate,
+		 decode(updateperson,null,'',updateperson) updateperson,
+		 decode(zip,null,'',zip) zip,
+		 decode(fax,null,'',fax) fax,system_name,
+		 row_number() over(order by 
+		 <isNotNull prepend="" property="sort">
+		 	$sort$ $dir$
+		 </isNotNull>
+		 <isNull prepend="" property="sort">
+		 	stationcode
+		 </isNull>
+		 ) no
+		 from
+		 view_station
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="stationcode">
+				(stationcode =#stationcode#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="stationname">
+				(stationname like
+				'%$stationname$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="name_std">
+				(name_std like
+				'%$name_std$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="zip">
+				(zip like '%$zip$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="fax">
+				(fax like '%$fax$%')
+			</isNotEmpty>
+						
+			<isNotEmpty prepend="AND" property="x_stationtype">
+				(x_stationtype
+				='$x_stationtype$')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="province">
+				(province ='$province$')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="property">
+				( property like '%$property$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="lng">
+				(lng like '%$lng$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="lat">
+				(lat like '%$lat$%')
+                        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="volt">
+				(volt like '$volt$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="founddate_start">
+				( founddate >=
+				to_date('$founddate_start$','YYYY-mm-dd'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="founddate_end">
+				( founddate
+				&lt;=to_date('$founddate_end$','YYYY-mm-dd'))
+				</isNotEmpty> 
+			<isNotEmpty prepend="AND" property="end">
+				( rownum &lt;= #end# )
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="system_name">
+			system_name like
+			'$system_name$'
+		</isNotEmpty>
+		</dynamic>
+		)) 
+		<isNotNull prepend="" property="start">
+			where no > #start# and no &lt;=#end#
+		</isNotNull>
+		
+	</select>
+	
+		<delete id="deleteStation" parameterClass="String">    		
+		<![CDATA[
+		delete from Station where stationcode='$stationcode$'	
+		]]>
+	</delete>
+
+
+	<select id="getStationType" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select t.xtbm as id,t.xtxx as label from xtbm t where xtbm like 'ZY0103__' order by t.xtbm
+		]]>
+	</select>
+	<select id="getStationCodeByName"  resultClass="String" parameterClass="String">
+		select stationcode from station where stationname = '$stationName$'
+	</select>
+	
+	<select id="getXTBMList" resultClass="java.util.HashMap" parameterClass="String">
+      <![CDATA[	
+       		select t.xtbm,t.xtxx from xtbm t where t.xtbm like '$xtbm$' order by t.xtbm
+
+        ]]>  
+    </select>
+    	<!-- 获取电压值 -->
+	<select id="getVoltValue" resultClass="netres.model.ComboxDataModel">
+		select xtxx as id, decode(xtxx,'0','无',xtxx) as label from xtbm where xtbm like 'ZY1313__' order by id
+	</select>
+	
+	<update id="updateStationNameStd" parameterClass="java.lang.String">
+	    update station set name_std = trim(getxtxx(province) || '/' || stationname) 
+        where stationcode = '$stationcode$' 
+	</update>
+	
+	<select id="getOcableCount" resultClass="Integer">
+		select count(*)
+		from (select rownum no,
+		ocablecode,
+		decode(ocablename,null,'',ocablename) ocablename,
+		decode(ocablemodel,null,'',ocablemodel) ocablemodel,
+		decode(length,null,'',length) length,
+		decode(builddate,null,'',builddate) builddate,
+		decode(property,null,'',property) property,
+		decode(buildmode,null,'',buildmode) buildmode,
+		decode(station_a,null,'',station_a) station_a,
+		decode(station_z,null,'',station_z) station_z,
+		decode(name_std,null,'',name_std) name_std,
+		decode(province,null,'',province) province,
+		decode(fibercount,null,'',fibercount) fibercount,
+		decode(occupyfibercount,null,'',occupyfibercount) occupyfibercount,
+		decode(rundate,null,'',rundate) rundate,
+		decode(remark,null,'',remark) remark,
+		decode(updatedate,null,'',updatedate) updatedate,
+		decode(updateperson,null,'',updateperson) updateperson
+		from view_en_ocable
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="ocablename">
+				(ocablename like
+				'%$ocablename$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="name_std">
+				(name_std like
+				'%$name_std$%')
+						</isNotEmpty>
+						
+			<isNotEmpty prepend="AND" property="ocablemodel">
+				(ocablemodel 
+				=#ocablemodel#)
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="province">
+				(province =#province#)
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="a_area">
+				(a_area =#a_area#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="z_area">
+				(z_area =#z_area#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station_a">
+				(station_a like '%$station_a$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station_z">
+				(station_z like '%$station_z$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="builddate_start">
+				( builddate >=
+				to_date('$builddate_start$','YYYY-mm-dd'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="builddate_end">
+				( builddate
+				&lt;=to_date('$builddate_end$','YYYY-mm-dd'))
+				</isNotEmpty>
+		</dynamic>
+		)
+	</select>
+	<select id="getOcable" resultClass="resManager.resNode.model.OcableModel"
+		parameterClass="resManager.resNode.model.OcableModel">
+		 select * from(
+		 select no,
+		 ocablecode,
+		 ocablename,
+		 ocablemodel,
+		 buildmode,
+		 voltlevel,
+		 length,
+		 builddate,
+		 property,
+		 station_a,
+		 station_z,
+		 name_std,
+		 province,
+		 fibercount,
+		 occupyfibercount,
+		 rundate,
+		 updatedate,
+		 updateperson,
+		 a_area,
+         z_area,
+		 remark
+		 from (select
+		 ocablecode,
+		decode(ocablename,null,'',ocablename) ocablename,
+		decode(ocablemodel,null,'',ocablemodel) ocablemodel,
+		decode(voltlevel,null,'',voltlevel) voltlevel,
+		decode(length,null,'',length) length,
+		decode(builddate,null,'',to_char(builddate,'yyyy-mm-dd')) builddate, 
+		decode(property,null,'',property) property,
+		decode(buildmode,null,'',buildmode) buildmode,
+		decode(station_a,null,'',station_a) station_a,
+		decode(station_z,null,'',station_z) station_z,
+		decode(name_std,null,'',name_std) name_std,
+		decode(province,null,'',province) province,
+		decode(fibercount,null,'',fibercount) fibercount,
+		decode(occupyfibercount,null,'',occupyfibercount) occupyfibercount,
+		decode(rundate,null,'',rundate) rundate,
+		decode(remark,null,'',remark) remark,
+		decode(updatedate,null,'',to_char(updatedate,'yyyy-mm-dd')) updatedate, 
+		decode(updateperson,null,'',updateperson) updateperson,
+		decode(a_area,null,'',a_area) a_area,
+		decode(z_area,null,'',z_area) z_area,
+		 row_number() over(order by $sort$ $dir$) no
+		 from
+		 view_en_ocable
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="ocablename">
+				(ocablename like
+				'%$ocablename$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="name_std">
+				(name_std like
+				'%$name_std$%')
+						</isNotEmpty>
+						
+			<isNotEmpty prepend="AND" property="ocablemodel">
+				(ocablemodel 
+				=#ocablemodel#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="a_area">
+				(a_area =#a_area#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="z_area">
+				(z_area =#z_area#)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="property">
+				( property like '%$property$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station_a">
+				(station_a like '%$station_a$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station_z">
+				(station_z like '%$station_z$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="builddate_start">
+				( builddate >=
+				to_date('$builddate_start$','YYYY-mm-dd'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="builddate_end">
+				( builddate
+				&lt;=to_date('$builddate_end$','YYYY-mm-dd'))
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="end">
+				( rownum &lt;= #end# )
+			</isNotEmpty>
+		</dynamic>
+		)) where no > #start# and no &lt;=#end#
+	</select>
+	
+		<delete id="delOcable" parameterClass="String">    		
+		<![CDATA[
+		delete from en_ocable where ocablecode='$ocablecode$'	
+		]]>
+	</delete>
+	<update id="updateOcableNameStd" parameterClass="java.lang.String">
+	    update en_ocable o set  o.name_std = 
+	   	 trim('光缆段'||o.FIBERCOUNT||'芯##'||(select count(*) from en_ocable t where t.station_a=o.station_a and  t.station_z=o.station_z)||
+	   	  '-' || (select a.stationname from station a where a.stationcode=o.station_a)||'~'||
+	   	  (select b.stationname from station b where b.stationcode=o.station_z))
+        where o.ocablecode = #ocablecode#
+	</update>
+	<select id="getEnOcableByCode" parameterClass="java.lang.String" resultClass="resManager.resNode.model.OcableModel">
+		select rownum no,
+		ocablecode,
+		decode(ocablename,null,'',ocablename) ocablename,
+		decode(ocablemodel,null,'',ocablemodel) ocablemodel,
+		decode(length,null,'',length) length,
+		decode(builddate,null,'',builddate) builddate,
+		decode(property,null,'',property) property,
+		decode(buildmode,null,'',buildmode) buildmode,
+		decode(station_a,null,'',station_a) station_a,
+		decode(station_z,null,'',station_z) station_z,
+		decode(name_std,null,'',name_std) name_std,
+		decode(province,null,'',province) province,
+		decode(fibercount,null,'',fibercount) fibercount,
+		decode(occupyfibercount,null,'',occupyfibercount) occupyfibercount,
+		decode(rundate,null,'',rundate) rundate,
+		decode(remark,null,'',remark) remark,
+		decode(updatedate,null,'',updatedate) updatedate,
+		decode(updateperson,null,'',updateperson) updateperson
+		from en_ocable
+		where ocablecode=#ocablecode#
+		
+	</select>
+	
+	<select id="getFibercountByOcableCode" parameterClass="java.lang.String"
+		resultClass="java.lang.Integer">
+		select count(1) from en_fiber where ocablecode =
+		#ocablecode#
+	</select>
+	
+	<select id="getFiberCountByOcablecodeNew" parameterClass="string" resultClass="int">
+		select decode(t.fibercount,null,0,t.fibercount) from en_ocable t where t.ocablecode=#ocablecode#
+	</select>
+	
+	<insert id="addFibersbyOcable" parameterClass="resManager.resNode.model.FiberModel">
+		<![CDATA[
+			insert into en_fiber f (f.fibercode,f.ocablecode,f.fiberserial,f.property,f.updateperson,f.updatedate,name_std)
+			values(lpad(EN_FIBER_SEQ.nextval,20,0),'$ocablecode$','$fiberserial$','$property$','$updateperson$',sysdate,'$name_std$')
+		]]>
+	</insert>
+	
+	<select id="getFiberCount" resultClass="Integer">
+		select count(*)
+		from (select rownum no,
+		fibercode,
+		decode(fiberserial,null,'',fiberserial) fiberserial,
+		decode(ocablecode,null,'',ocablecode) ocablecode,
+		decode(ocablename,null,'',ocablename) ocablename,
+		decode(length,null,'',length) length,
+		decode(property,null,'',property) property,
+		decode(status,null,'',status) status,
+		decode(aendeqport,null,'',aendeqport) aendeqport,
+		decode(zendeqport,null,'',zendeqport) zendeqport,
+		decode(name_std,null,'',name_std) name_std,
+		decode(remark,null,'',remark) remark,
+		decode(updatedate,null,'',updatedate) updatedate,
+		decode(updateperson,null,'',updateperson) updateperson
+		from view_en_fiber
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="ocablename">
+				(ocablename like
+				'%$ocablename$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="name_std">
+				(name_std like
+				'%$name_std$%')
+						</isNotEmpty>
+						
+			<isNotEmpty prepend="AND" property="property">
+				( property like '%$property$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="aendeqport">
+				(aendeqport like '%$aendeqport$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="zendeqport">
+				(zendeqport like '%$zendeqport$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="status">
+				( status like '%$status$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ocablecode">
+				ocablecode = #ocablecode#
+			</isNotEmpty>
+		</dynamic>
+		)
+	</select>
+	<select id="getFiber" resultClass="resManager.resNode.model.FiberModel"
+		parameterClass="resManager.resNode.model.FiberModel">
+		 select * from(
+		 select no,
+		 fibercode,
+		 fiberserial,
+		 ocablecode,
+		 ocablename,
+		 length,
+		 status,
+		 property,
+		 aendeqport,
+		 zendeqport,
+		 name_std,
+		 updatedate,
+		 updateperson,
+		 opticalbusiness,
+         toplinkbusiness,
+		 remark
+		 from (select v.fibercode,
+              decode(v.fiberserial, null, '', v.fiberserial) fiberserial,
+              decode(v.ocablecode, null, '', v.ocablecode) ocablecode,
+              decode(v.ocablename, null, '', v.ocablename) ocablename,
+              decode(v.length, null, '', v.length) length,
+              decode(v.property, null, '', v.property) property,
+              decode(v.status, null, '', v.status) status,
+              decode(v.aendeqport, null, '', v.aendeqport) aendeqport,
+              decode(v.zendeqport, null, '', v.zendeqport) zendeqport,
+              decode(v.name_std, null, '', v.name_std) name_std,
+              decode(v.remark, null, '', v.remark) remark,
+              decode(v.updatedate,
+                     null,
+                     '',
+                     to_char(v.updatedate, 'yyyy-mm-dd')) updatedate,
+              decode(v.updateperson, null, '', v.updateperson) updateperson,
+              getopticalbusiness(v.opticalid) opticalbusiness,
+              gettoplinkbusiness(v.opticalid) toplinkbusiness,
+		 row_number() over(order by v.$sort$ $dir$) no
+		 from
+		 view_en_fiber v,optical p where v.opticalid=p.resid(+)
+			<isNotEmpty prepend="AND" property="ocablename">
+				(ocablename like
+				'%$ocablename$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="name_std">
+				(name_std like
+				'%$name_std$%')
+						</isNotEmpty>
+						
+			<isNotEmpty prepend="AND" property="property">
+				( v.property like '%$property$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="aendeqport">
+				(v.aendeqport like '%$aendeqport$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="zendeqport">
+				(v.zendeqport like '%$zendeqport$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+				</isNotEmpty>
+				
+			<isNotEmpty prepend="AND" property="end">
+				( rownum &lt;= #end# )
+			</isNotEmpty>			
+			<isNotEmpty prepend="AND" property="status">
+				( status like '%$status$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ocablecode">
+				ocablecode = #ocablecode#
+			</isNotEmpty>
+		)) where no > #start# and no &lt;=#end#
+	</select>
+	
+		<delete id="delFiber" parameterClass="String">    		
+		<![CDATA[
+		delete from en_fiber where fibercode='$fibercode$'	
+		]]>
+	</delete>
+
+	<select id="GetEquipPackCount" resultClass="Integer"
+		parameterClass="resManager.resNode.model.EquipPack">
+		select count(*)
+		from (select rownum no,
+		equipcode,
+		decode(equipname,null,'',equipname) equipname,
+		frameserial,
+		slotserial,
+		packserial,
+		decode(packmodel,null,'',packmodel) packmodel,
+		decode(updatedate,null,'',to_char(updatedate, 'yyyy-mm-dd'))
+		updatedate,
+		decode(updateperson,null,'',updateperson) updateperson
+		from
+		view_equippack
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="equipname">
+				(equipname like
+				'%$equipname$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="frameserial">
+				(frameserial like
+				'%$frameserial$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="slotserial">
+				(slotserial like
+				'%$slotserial$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="packserial">
+				( packserial like
+				'%$packserial$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="packmodel">
+				(packmodel like
+				'%$packmodel$%')
+					</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+			        </isNotEmpty>
+		</dynamic>
+		)
+	</select>
+	<select id="getEquipPack" resultClass="resManager.resNode.model.EquipPack"
+		parameterClass="resManager.resNode.model.EquipPack">
+		select * from(
+		select equipcode,rownum no,
+		equipname,
+		frameserial,
+		slotserial,
+		packserial,
+		packmodel,
+		updatedate,
+		remark,
+		system,
+		vender,
+		updateperson
+		from
+		(select
+		equipcode,
+		decode(equipname,null,'',equipname) equipname,
+		frameserial,
+		slotserial,
+		packserial,
+		remark,
+		systemcode as system,
+		getxtxx(x_vendor)as vender,
+		decode(packmodel,null,'',packmodel) packmodel,
+		decode(updatedate,null,'',to_char(updatedate,'yyyy-mm-dd'))
+		updatedate,
+		decode(updateperson,null,'',updateperson)
+		updateperson
+		from
+		view_equippack
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="equipname">
+				(equipname like
+				'%$equipname$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="frameserial">
+				(frameserial like
+				'%$frameserial$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="slotserial">
+				(slotserial like
+				'%$slotserial$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="packserial">
+				( packserial like
+				'%$packserial$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="packmodel">
+				(packmodel like
+				'%$packmodel$%')
+					</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="updateperson">
+				( updateperson like
+				'%$updateperson$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+			        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(remark like
+				'%$remark$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="end">
+				( rownum &lt;= #end#)
+			 </isNotEmpty>
+
+		</dynamic>
+		<dynamic prepend="ORDER BY">
+			<isNotEmpty   property= "isNumber"> 
+				length($isNumber$) $dir$,
+			</isNotEmpty> 
+			<isNotEmpty   property= "sort"> 
+				$sort$ $dir$
+			</isNotEmpty> 
+		</dynamic>
+		))where no > #start# and no &lt;=#end#
+	</select>
+	<insert id="addEquipPack" parameterClass="resManager.resNode.model.EquipPack">  		
+		<![CDATA[
+					insert into EquipPack(equipcode,frameserial,slotserial,packserial,s_packname,packmodel,updatedate,updateperson,id,resid)
+				 values('$equipcode$',
+				 		'$frameserial$',
+				 		'$slotserial$',
+				 		'$packserial$',
+				 		'$packmodel$',
+				 		'$packmodel$',
+				 		decode('$updatedate$',null,'',to_date('$updatedate$','YYYY-MM-DD')),
+				 		'$updateperson$',
+				 		lpad(equippack_seq.nextval,20,0),
+				 		(select max(t.resid)+1 from equippack t)
+				 	    )
+			
+    	]]>
+	</insert>
+	<update id="ModEquipPack" parameterClass="resManager.resNode.model.EquipPack">
+    	<![CDATA[
+    		update EquipPack set 
+    					         packserial='$packserial$',
+    					         packmodel='$packmodel$',
+    					         updatedate=to_date('$updatedate$','YYYY-MM-DD')				
+    					   where equipcode='$gb_equipcode$'
+    					     and frameserial= '$gb_frameserial$'
+    					     and slotserial='$gb_slotserial$'
+    					     and packserial='$gb_packserial$' 
+    	]]>
+	</update>
+	
+	<delete id="deleteEquiplogicPortByModel" parameterClass="resManager.resNode.model.EquipPack">
+		delete from equiplogicport t where 
+		t.equipcode='$gb_equipcode$' 
+		and t.frameserial='$gb_frameserial$' 
+		and t.slotserial='$gb_slotserial$' 
+		and t.packserial='$gb_packserial$'
+	</delete>
+	
+	<select id="checkPackSerial" parameterClass="map" resultClass="resManager.resNode.model.EquipPack">
+	
+		select * from EquipPack where equipcode='$equipcode$'
+    					     and frameserial= '$frameserial$'
+    					     and slotserial='$slotserial$'
+    					     and packserial='$packserial$'
+	
+	</select>
+	
+	<procedure id="deleteEquipPack" parameterClass="resManager.resNode.model.EquipPack">    		
+		call deleteequippack('$equipcode$','$frameserial$'
+		,'$slotserial$','$packserial$')
+	
+	</procedure>
+	
+	<select id="getPackModel" resultClass="netres.model.ComboxDataModel">
+		select distinct e.packmodel as id, e.packmodel as label From equippack e
+	</select>
+		<select id="getSystemByVender" resultClass="netres.model.ComboxDataModel"
+		parameterClass="String">
+		<![CDATA[
+			select systemcode as id ,sysname as label from (
+    		select distinct t.systemcode,t.sysname from transsystem t,view_equipment e where t.systemcode=e.systemcode and x_vendor='$vender$')
+		]]>
+	</select>
+	
+	<select id="getOcablesearch" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct t.ocablecode id, t.ocablename label
+  		from en_ocable t
+ 		where t.fibercount > getfiblecount(t.ocablecode)
+ 		<isNotEmpty prepend="and" property="cond">
+ 			t.ocablename like '%$cond$%'
+ 		</isNotEmpty>
+	</select>
+	
+	<select id="getEquipByStationAndeqsearch" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct t.equipcode id,t.s_sbmc label from equipment t 
+		where t.stationcode=#stationcode#
+		and t.equiptype='ODF设备'
+		<isNotEmpty prepend="and" property="cond">
+			t.s_sbmc like '%$cond$%'
+		</isNotEmpty>
+	</select>
+	
+	<select id="getAportAndZportByOcablecode" parameterClass="string" resultClass="string">
+		select t.station_a||';'||t.station_z 
+  		from en_ocable t
+ 		where t.ocablecode=#ocablecode#
+	</select>
+	
+	<select id="getFiberSerialByOcablecode" parameterClass="string" resultClass="string">
+		select max(t.fiberserial) from en_fiber t where t.ocablecode=#ocablecode#
+	</select>
+	
+	<select id="getSlotSerialByEquipcode" resultClass="java.util.HashMap"
+		parameterClass="Map">
+		select * from equipslot where equipcode=#equipcode# and
+		frameserial=#frameserial#
+		order by length(slotserial),slotserial
+    </select>
+    
+    <select id="getEuipSlotSerialByFrameDistinct" resultClass="java.util.HashMap"
+		parameterClass="Map">
+		
+		select *
+  		from equipslot t
+ 		where equipcode = #equipcode#
+   			and frameserial = #frameserial#
+   			and t.slotserial not in (select s.slotserial
+                              from equippack s
+                             where s.equipcode = #equipcode#
+                               and s.frameserial = #frameserial#)
+ 			order by length(slotserial), slotserial
+	</select>
+   
+   	<select id="getVendor" resultClass="netres.model.ComboxDataModel">
+		select x.xtbm as id,x.xtxx as
+		label from
+		xtbm x where xtbm like 'ZY08_%'
+	</select>
+		<select id="getFrameSerialByEquipcode" resultClass="java.util.HashMap"
+		parameterClass="String">
+		select * from equipframe where equipcode=#equipcode#	
+    </select>
+    	<select id="getEquipByeqsearch" resultClass="netres.model.ComboxDataModel" parameterClass="java.util.Map">
+		select distinct e.equipcode as id,e.s_sbmc as label from
+			re_sys_equip r,equipment e where r.equipcode(+) = e.equipcode 
+			and (e.equiptype='SDH设备' or e.equiptype is null)
+			<isNotEmpty prepend="AND" property="systemcode">
+					r.systemcode='$systemcode$' and r.equipcode=e.equipcode 
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="vendor">
+					e.x_vendor='$vendor$'
+			</isNotEmpty>
+				<isNotEmpty prepend="AND" property="topolinkeqsearch">
+					e.s_sbmc like '%$topolinkeqsearch$%'
+			</isNotEmpty>
+			order by e.s_sbmc
+	</select>
+
+	
+	<select id="getEquipFrameCount" resultClass="Integer"
+		parameterClass="frameModel">
+		select count(*) from  view_equipframe t
+			where 1=1
+			<isNotEmpty prepend="and" property="shelfinfo">
+				t.shelfinfo = #shelfinfo#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="framemodel">
+				getxtxx(t.framemodel)=#framemodel#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="frame_state">
+				getxtxx(t.frame_state) like '%$frame_state$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="s_framename">
+				t.s_framename like '%$s_framename$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="xfront">
+				t.xfront=#xfront#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="yfront">
+				t.yfront=#yfront#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="frontheight">
+				t.frontheight like '%$frontheight$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="frontwidth">
+				t.frontwidth like '%$frontwidth$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="remark">
+				t.remark  like '%$remark$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="frameserial">
+				t.frameserial=#frameserial#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="updatedate_start">
+				t.updatedate > #updatedate_start#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="updatedate_end">
+				t.updatedate  &lt;= #updatedate_end#
+			</isNotEmpty>
+	</select>
+	<select id="getEquipFrame" resultClass="frameModel"
+		parameterClass="frameModel">
+			select * from(select equipcode,
+			s_framename,
+			frameserial,
+			shelfinfo,
+			framemodel,
+			model_code,
+			vendor,
+			frame_state,
+			state_code,
+			xfront,
+			yfront,
+			frontheight,
+			frontwidth,
+			frontviewpic,
+			remark,
+			updateperson,
+			updatedate,
+			projectname,
+			no
+			from(
+		select t.equipcode,t.s_framename,t.frameserial,t.shelfinfo, getxtxx(t.framemodel) framemodel,t.framemodel model_code,
+		t.vendor,getxtxx(t.frame_state) frame_state,t.frame_state state_code,t.xfront,t.yfront,t.frontheight,
+		t.frontwidth,t.frontviewpic,t.remark,t.updateperson,t.updatedate,t.projectname,
+		row_number() over(order by $sort$ $dir$) no from view_equipframe t
+		<dynamic prepend="WHERE">
+		<isNotEmpty prepend="and" property="shelfinfo">
+			t.shelfinfo = #shelfinfo#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="framemodel">
+			t.framemodel=#framemodel#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="frame_state">
+			t.frame_state like '%$frame_state$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="s_framename">
+			t.s_framename like '%$s_framename$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="xfront">
+			t.xfront=#xfront#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="yfront">
+			t.yfront=#yfront#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="frontheight">
+			t.frontheight like '%$frontheight$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="frontwidth">
+			t.frontwidth like '%$frontwidth$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="remark">
+			t.remark  like '%$remark$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="frameserial">
+			t.frameserial=#frameserial#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updatedate_start">
+			t.updatedate > #updatedate_start#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updatedate_end">
+			t.updatedate &lt;= #updatedate_end#
+		</isNotEmpty>
+		</dynamic>
+		) where no &lt;=$end$ )where no > $start$
+	</select>
+
+	<select id="getVender" resultClass="netres.model.ComboxDataModel">
+		select x.xtbm as id,x.xtxx as
+		label from
+		xtbm x where xtbm like 'ZY08_%'
+	</select>
+	<select id="getEquipFrameVendorById" parameterClass="string" resultClass="string">
+		SELECT xtxx  FROM xtbm where xtbm = #vender# and type='frame_vendor'
+	</select>
+	<select id="getEquipFrameStateById" parameterClass="string" resultClass="string">
+		SELECT xtxx  FROM xtbm where xtbm = #frame_state# and type='frame_state'
+	</select>
+	<select id="getEquipFrameModelById" parameterClass="string" resultClass="string">
+		
+		SELECT xtxx  FROM xtbm where xtbm = #framemodel# and type='frame_model'
+	</select>
+	<select id="getFrameStateLst" resultClass="netres.model.ComboxDataModel">
+		SELECT xtbm as id,xtxx as label  FROM xtbm where xtbm like 'ZT%'
+	</select>
+	<select id="getFrameModelLst" resultClass="netres.model.ComboxDataModel">
+<!--		SELECT xtbm as id,xtxx as label FROM xtbm where xtbm like '%ZY0402%' and xtbm > 'ZY0402' ORDER BY XTXX-->
+		select xtxx as id,xtxx as label from xtbm where type in ('华为','中兴','NEC')
+	</select>
+	<!--  <delete id="delEquipFrame" parameterClass="string">
+		delete from equipframe where projectname=#equipcode#
+	</delete>-->
+	<select id="getFrameSlotStatus" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select t.xtbm as id,t.xtxx as label from xtbm t where t.type='sdh_state' order by t.xtbm 
+		]]>
+	</select>
+	<select id="getSlotStatusById" parameterClass="string" resultClass="string">
+		SELECT xtxx  FROM xtbm where xtbm = #status# and type='sdh_state'
+	</select>
+	<select id="getFrameSlotCount" parameterClass="resManager.resNode.model.FrameSlot" resultClass="Integer">
+		select count(*) from 
+		view_equipslot t where 1=1
+		<isNotEmpty prepend="and" property="slotserial">
+			t.slotserial = #slotserial#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="equipname">
+			t.equipname = #equipname#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="frameserial">
+			t.frameserial=#frameserial#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="y_slotmodel">
+			t.y_slotmodel=#y_slotmodel#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="status">
+			t.status = #status#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="panelwidth">
+			t.panelwidth like '%$panelwidth$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="panellength">
+			t.panellength like '%$panellength$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="rowno">
+			t.rowno=#rowno#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="colno">
+			t.colno=#colno#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="slotname">
+			t.slotname like '%$slotname$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updateperson">
+			t.updateperson=#updateperson#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="sync_status">
+			t.sync_status=#sync_status#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updatedate_start">
+			t.updatedate > #updatedate_start#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updatedate_end">
+			t.updatedate &lt;= #updatedate_end#
+		</isNotEmpty>
+		
+	</select>
+	<select id="getEFrameSlotLst" parameterClass="resManager.resNode.model.FrameSlot" resultClass="resManager.resNode.model.FrameSlot">
+	select * from(
+		select  
+		slotserial,
+		equipcode,
+		frameserial,
+		y_slotmodel,
+		isreplace,
+		status,
+		state,
+		panelwidth,
+		panellength,
+		remark,
+		rowno,
+		colno,
+		updateperson,
+		updatedate,
+		name_std,
+		slotname,
+		sync_code,
+		sync_status,
+		equipname,
+		no
+		from(
+		select t.slotserial,t.equipcode,
+		t.frameserial,
+		t.y_slotmodel,
+		t.isreplace,
+		 getxtxxbytype(t.status,'sdh_state') status,
+		 t.status state,
+		t.panelwidth,
+		t.panellength,
+		t.remark,
+		t.rowno,
+		t.colno,
+		t.updateperson,
+		t.updatedate,
+		t.name_std,
+		t.slotname,
+		t.sync_status sync_code,
+		getxtxx(t.sync_status) sync_status,t.equipname,
+		row_number() over(order by $sort$ ,t.slotserial $dir$) no from view_equipslot t
+		<dynamic prepend="WHERE">
+		<isNotEmpty prepend="and" property="slotserial">
+			t.slotserial = #slotserial#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="equipname">
+			t.equipname = #equipname#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="frameserial">
+			t.frameserial=#frameserial#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="y_slotmodel">
+			t.y_slotmodel=#y_slotmodel#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="status">
+			 t.status=#status#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="panelwidth">
+			t.panelwidth like '%$panelwidth$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="panellength">
+			t.panellength like '%$panellength$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="rowno">
+			t.rowno=#rowno#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="colno">
+			t.colno=#colno#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="slotname">
+			t.slotname like '%$slotname$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updateperson">
+			t.updateperson=#updateperson#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="sync_status">
+			t.sync_status=#sync_status#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updatedate_start">
+			t.updatedate > #updatedate_start#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="updatedate_end">
+			t.updatedate &lt;= #updatedate_end#
+		</isNotEmpty>
+		</dynamic>
+		) where no &lt;=$end$ )where no > $start$
+	</select>
+	<!--  <delete id="delFrameSlot" parameterClass="string">
+		delete from equipslot t where t.name_std=#equipcode#
+	</delete>-->
+	<select id="getShelfinfoNameById" parameterClass="string" resultClass="string">
+		select s_sbmc from equipment where equipcode=#shelfinfo#
+	</select>
+	<select id="getFramenameById" parameterClass="string" resultClass="string">
+		select S_FRAMENAME from equipframe where name_std=#framename#
+	</select>
+	<select id="getFrameserialByeId" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		 SELECT  distinct t.FRAMESERIAL id ,t.FRAMESERIAL label  from equipframe t where t.equipcode=#equipcode#
+	</select>
+	<select id="getFrameserialByeName_std" parameterClass="string" resultClass="string">
+		select frameserial from equipslot where name_std=#id#
+	</select>
+	<select id="selectDomainFlexForNetres" resultClass="java.util.HashMap">
+		select
+		distinct(domainname) from en_province order by
+		length(domainname) desc
+    </select>
+	<select id="selectProvinceFlexForNetres" resultClass="java.util.HashMap"
+		parameterClass="map">
+<!--		select e.province, e.provincename from en_province e-->
+<!--		where-->
+<!--		e.domainname='$domain$' order by e.province ASC -->
+			select distinct e.province, e.provincename from v_station_province e
+		    where
+		    e.domainname='$domain$'
+		    <isNotEmpty prepend="and" property="cond">
+		    	e.stationname like '%$cond$%'
+		    </isNotEmpty>
+		    
+		     order by e.province ASC 
+    </select>
+    
+	<select id="selectSystemForEquipment" resultClass="java.util.HashMap"
+		parameterClass="map">
+		select distinct(e.systemcode),e.system_name from  v_equipment_sys_type_nw e
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="systemcode">
+				(e.systemcode = '$systemcode$')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="s_sbmc">
+				(e.s_sbmc like '%$s_sbmc$%')
+			</isNotEmpty>
+		</dynamic>
+		order by e.systemcode
+    </select>
+
+	<select id="selectStationFlexForNetres" resultClass="java.util.HashMap"
+		parameterClass="map">
+<!--		select s.stationcode, s.stationname from station s-->
+<!--		where-->
+<!--		s.province=#province# order by s.stationname ASC-->
+			select s.stationcode, s.stationname
+			  from v_station_province s
+			 where s.province = #domain#
+			 <isNotEmpty prepend="and" property="cond">
+			 	s.stationname like '%$cond$%'
+			 </isNotEmpty>
+			
+			 order by s.stationname ASC
+    </select>
+	
+	<select id="getStationVolt1" resultClass="java.util.HashMap" parameterClass="map">
+	 	select distinct t.XTBM,t.xtxx,t.remark  from v_station_xtbm t where xtbm like 'ZY1313__' 
+		<isNotEmpty prepend="and" property="cond">
+			t.stationname like '%$cond$%'
+		</isNotEmpty>
+		 order by xtbm  
+	</select>
+	<select id="selectStationByVolt1" resultClass="java.util.HashMap" parameterClass="map" remapResults="true">
+	select decode(stationname, null, '未知站点', stationname) stationname,
+	       stationcode
+	  from v_station_xtbm t
+	 where t.XTBM like '%$volt$%'
+ 	<isNotEmpty prepend="and" property="cond">
+ 	t.stationname like '%$cond$%'
+ 	</isNotEmpty>
+ 	order by stationname
+	</select>
+	
+	<select id="getLogicportserialByEquip" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		 select t.logicport id,t.portserial label from equiplogicport t where t.equipcode=#equipcode#
+	</select>
+	<!-- add by xgyin -->
+	<select id="getLogicportserialByEquipNew" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		select t.logicport id,t.slotserial||'槽'||t.portserial||'端口' label from equiplogicport t where t.equipcode=#equipcode#
+	</select>
+	
+	<select id="getFiberPortserialByEquip" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		select distinct t.logicport id,
+       t.frameserial || '框' || t.slotserial || '槽' || t.portserial || '端口' label
+  from equiplogicport t
+ where t.equipcode =#equipcode#
+   and not exists 
+    (select distinct e.aendeqport
+          from en_fiber e
+         where e.aendeqport = t.logicport
+        union
+        select distinct e.zendeqport
+          from en_fiber e
+         where e.zendeqport = t.logicport)
+	</select>
+	
+	<select id="getFiberByCode" resultClass="resManager.resNode.model.FiberModel"
+		parameterClass="String">
+		
+		 select
+		 fibercode,
+		decode(fiberserial,null,'',fiberserial) fiberserial,
+		decode(ocablecode,null,'',ocablecode) ocablecode,
+		decode(length,null,'',length) length,
+		decode(property,null,'',property) property,
+		decode(status,null,'',status) status,
+		decode(aendeqport,null,'',aendeqport) aendeqport,
+		decode(zendeqport,null,'',zendeqport) zendeqport,
+		decode(name_std,null,'',name_std) name_std,
+		decode(remark,null,'',remark) remark,
+		decode(updatedate,null,'',to_char(updatedate,'yyyy-mm-dd')) updatedate, 
+		decode(updateperson,null,'',updateperson) updateperson,
+		 row_number() over(order by fibercode) no
+		 from
+		 en_fiber where fibercode=#fibercode#
+		
+	</select>
+	<insert id="addEquipFrame" parameterClass="frameModel">  		
+		<![CDATA[
+				insert into EquipFrame(equipcode,frameserial,s_framename,xfront,yfront,frontwidth,frontheight,remark,updatedate,updateperson,equipshelfcode)
+				values('$equipcode$',
+						'$frameserial$',
+						'$s_framename$',
+						'$xfront$',
+						'$yfront$',
+						'$frontwidth$',
+						'$frontheight$',
+						'$remark$',
+						decode(trim('$updatedate$'),'','',to_date('$updatedate$','YYYY-MM-DD')),
+						'$updateperson$',
+						'$shelfinfo$'
+					   )	
+    ]]>
+	</insert>
+	<insert id="addEquipSlot" parameterClass="resManager.resNode.model.FrameSlot">  		
+		<![CDATA[
+				insert into EquipSlot(equipcode,frameserial,slotserial,status,remark,updatedate)
+				values('$equipcode$',
+				'$frameserial$',
+				'$slotserial$',
+				'$status$',
+				'$remark$',
+				to_date('$updatedate$','YYYY-MM-DD')
+				)
+    	]]>
+	</insert>
+	<select id="getPackModels" resultClass="netres.model.ComboxDataModel" parameterClass="String">
+		<![CDATA[
+		select packmodel as id, packmodel as label
+		  from equippack_portnum s,
+		       (select t.x_vendor, t.x_model
+		          from equipment t
+		         where t.equipcode = #equipcode#) m
+		 where m.x_vendor = s.x_vendor
+		   and m.x_model = s.x_model
+		
+		]]>
+		
+		
+	</select>
+	<delete id="deleteCoordinatesByStationcode" parameterClass="java.util.HashMap">
+		delete from v_coordinates where MODELNAME = '$modelname$' and STATIONCODE = '$stationcode$' 
+		<!--  and province = '$province$'  -->
+	</delete>
+	
+	<update id="modifyEquipFrame" parameterClass="resManager.resNode.model.EquipFrame">
+		update EQUIPFRAME set 
+		shelfinfo=#shelfinfo:VARCHAR#,
+		s_framename=#s_framename:VARCHAR#,
+		frame_state=#frame_state:VARCHAR#,
+		frontheight=#frontheight:TIMESTAMP#,
+		framemodel=#framemodel:VARCHAR#,
+		frontwidth=#frontwidth:TIMESTAMP#,
+		remark=#remark:VARCHAR#,
+		updatedate=#updatedate:VARCHAR#,
+		updateperson=#updateperson:VARCHAR#
+		where equipcode=#equipcode#
+		and frameserial=#frameserial#
+		
+	</update>
+	
+	<update id="modifyEquipSlot" parameterClass="resManager.resNode.model.FrameSlot">
+		
+		update equipslot set 
+		equipname=#equipname:VARCHAR#,
+		status=#status:VARCHAR#,
+		rowno=#rowno:NUMBERIC#,
+		panellength=#panellength:NUMBERIC#,
+		sync_status=#sync_status:VARCHAR#,
+		remark=#remark:VARCHAR#,
+		slotname=#slotname:VARCHAR#,
+		colno=#colno:NUMBERIC#,
+		panelwidth=#panelwidth:NUMBERIC#,
+		updatedate=#updatedate:VARCHAR#,
+		updateperson=#updateperson:VARCHAR#
+		where equipcode=#equipcode#
+		and frameserial=#frameserial#
+		and slotserial=#slotserial#
+		
+	</update>
+	
+	<select id="getSlotserialByeIds" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select t.slotserial id,t.slotserial label
+		 from equipslot t 
+		 where t.equipcode=#equipcode# 
+		 and t.frameserial=#frameserial# 
+		 order by length(t.slotserial),t.slotserial asc
+	</select>
+	
+	<select id="getPortseriaByIds" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct t.portserial id,t.portserial label
+		 from equiplogicport t 
+		 where t.equipcode=#equipcode# 
+		 and t.frameserial=#frameserial# 
+	     and t.slotserial = #slotserial#
+	     and t.packserial = #packserial#
+		 order by length(t.portserial),t.portserial asc
+	</select>
+	
+	<select id="selectEquipmentFlex" parameterClass="map" resultClass="java.util.HashMap">
+	   select * from v_equipment_sys_type_nw e  
+	   		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="systemcode">
+				(e.systemcode = '$systemcode$')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="s_sbmc">
+				(e.s_sbmc like '%$s_sbmc$%')
+			</isNotEmpty>
+		</dynamic>
+	   order by e.equipcode
+	</select>
+	
+	<select id="getEquipCodeByName" parameterClass="string" resultClass="string">
+		select distinct e.equipcode from equipment e where e.s_sbmc=#equipname#
+	</select>
+	
+	<select id="getProvinceByStationcode" parameterClass="string" resultClass="string">
+		select getxtxx(t.province) from station t where t.stationcode=#code#
+	</select>
+	
+</sqlMap>

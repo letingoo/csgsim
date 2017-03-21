@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="800" height="400" 
+				creationComplete="init()"
+				title="告警确认日志"
+				showCloseButton="true" close="close()">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			public var alarmnumber:String="";
+			
+			
+			protected function close():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function init():void
+			{
+				if(alarmnumber!=""){
+					var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.getAckLog(alarmnumber);
+					rtobj.addEventListener(ResultEvent.RESULT, setDgDatas);
+				}
+			}
+			private function setDgDatas(e:ResultEvent):void{
+				if(e.result){
+					dg.dataProvider = e.result as  ArrayCollection;
+				}
+			}
+			private function formatStart(item:Object,column:DataGridColumn):String{
+				return String(item.acktime).substr(0,String(item.acktime).length-2);
+			}
+				 
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" paddingLeft="10" paddingRight="10" paddingTop="10" paddingBottom="10">
+		<mx:DataGrid id="dg" width="100%" height="100%" >
+			<mx:columns>
+				<mx:DataGridColumn dataField="acktime" headerText="告警确认时间" width="180" labelFunction="formatStart"/>
+				<mx:DataGridColumn dataField="ackcontent" headerText="告警确认内容" width="200"/>
+				<mx:DataGridColumn dataField="ackperson" headerText="告警确认人" width="100"/>
+				<mx:DataGridColumn dataField="isworkcase" headerText="告警原因" width="180"/>
+				<mx:DataGridColumn dataField="dealresult" headerText="告警处理方式" width="160"/>
+				<mx:DataGridColumn dataField="whichsys" headerText="告警确认之系统" width="120"/>
+			</mx:columns>
+		</mx:DataGrid>	
+	</mx:VBox>
+</mx:TitleWindow>

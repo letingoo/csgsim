@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute" 
+				fontFamily="宋体" 
+				fontSize="12" 
+				showCloseButton="true" 
+				width="650" 
+				height="210"
+				creationComplete="init()"
+				close="{MyPopupManager.removePopUp(this)}" 
+				>
+	<mx:Script source="../actionscript/CarryBusinessSearch.as" />
+	<mx:VBox width="100%"
+			  height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 verticalGap="0">
+		<mx:HBox width="100%" height="100%"
+				 id="hbox1">
+			<mx:Form width="100%"
+					 height="100%">
+				<mx:FormItem label="电路名称" required="false">
+					<mx:TextInput id="circuitcode" width="180" />
+				</mx:FormItem>
+				<mx:FormItem label="方式类型" required="false">
+				<!--	<mx:ComboBox id="username" labelField="@label" width="180" />-->
+					<mx:TextInput id="username"  width="180" />
+				</mx:FormItem>
+				<mx:FormItem label="方式名称">
+					<mx:TextInput id="remark"  width="180" />
+				</mx:FormItem>
+			</mx:Form>
+			<mx:Form width="100%"
+					 height="100%">
+				<mx:FormItem label="速率" >				
+					<mx:ComboBox id="rate" labelField="@label" width="180" />					
+				</mx:FormItem>
+				<mx:FormItem label="起始端口" required="false">
+					<mx:TextInput id="port_a" width="180" />
+				</mx:FormItem>
+				<mx:FormItem label="终止端口" required="false">
+					<mx:TextInput id="port_z" width="180" />
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox id="buttomhbox"
+				 width="100%"
+				 height="50"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			<mx:Button id="btn"
+					   label="查询"
+					   width="80"
+					   styleName="loginprimary"
+					   click="searchClickHandler(event)"/>
+			<mx:Spacer width="80"/>
+			<mx:Button label="重置"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="clear_clickHandler(event)"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

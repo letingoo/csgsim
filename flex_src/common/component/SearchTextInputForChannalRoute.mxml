@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox width="100%" xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 backgroundImage="@Embed(source='assets/images/treebg.png')"
+		 backgroundSize="100%">
+
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			protected function moreItem_clickHandler(event:MouseEvent):void
+			{
+				if(this.currentState!='more'){
+					moreItem.label = "关闭";
+					this.currentState='more';
+					//南网的速度与其他项目不一致所以已表中的数据为数据源 add by jtsun 20130114
+					var rtobj111:RemoteObject = new RemoteObject("equInfo");//channelTree
+					rtobj111.endpoint = ModelLocator.END_POINT;
+					rtobj111.showBusyCursor = true;
+//					rtobj111.getRate();
+					rtobj111.getFromXTBM('YW0102__');
+					rtobj111.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+						var xmllist:XMLList = new XMLList(e.result.toString());
+						var item:XML = <names></names>;
+						item = item.appendChild(<name label="---全部---"/>);
+						item = item.appendChild(xmllist.children());
+						f_rate.dataProvider = item.children();
+						f_rate.selectedIndex = -1;
+					});
+					var rtobj141:RemoteObject = new RemoteObject("equInfo");
+					rtobj141.endpoint = ModelLocator.END_POINT;
+					rtobj141.showBusyCursor = true;
+					rtobj141.getFromXTBM('YW120915__');
+					rtobj141.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+						var xmllist:XMLList = new XMLList(e.result.toString());
+						var item:XML = <names></names>;
+						item = item.appendChild(<name label="---全部---"/>);
+						item = item.appendChild(xmllist.children());
+						f_userName.dataProvider = item.children();
+						f_userName.selectedIndex = -1;
+					})	
+					var rtobj151:RemoteObject = new RemoteObject("channelTree");
+					rtobj151.endpoint = ModelLocator.END_POINT;
+					rtobj151.showBusyCursor = true;
+					rtobj151.getCircuitState();
+					rtobj151.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+						var xmllist:XMLList = new XMLList(e.result.toString());
+						var item:XML = <names></names>;
+						item = item.appendChild(<name label="---全部---"/>);
+						item = item.appendChild(xmllist.children());
+						f_state.dataProvider = item.children();
+						f_state.selectedIndex = -1;
+					})	
+				}else{
+					this.currentState='';
+					moreItem.label = "更多搜索";
+				}
+			
+			}
+		]]>
+	</mx:Script>
+
+	<mx:states>
+		<mx:State name="more">
+			<mx:AddChild position="lastChild">
+				<mx:VBox width="100%" height="123" verticalGap=".8">
+					<!--<mx:HBox width="100%" verticalAlign="middle">
+						<mx:Label     text="方式单编号:"  width="75" textAlign="right"/>
+						<mx:TextInput id="f_TxtFSDcode" width="100%" height="27"/>
+					</mx:HBox>-->
+					<mx:HBox width="100%" verticalAlign="middle">
+						<mx:Label text="业务类型:"  width="75" textAlign="right"/>
+						<mx:ComboBox id="f_userName" labelField="@label" textAlign="left" prompt="---全部---"   styleName="intableComBox" width="100%" height="27"/>
+					</mx:HBox>
+					<mx:HBox width="100%" verticalAlign="middle">
+						<mx:Label text="速率:"  width="75" textAlign="right"/>
+						<mx:ComboBox id="f_rate" labelField="@label" textAlign="left" prompt="---全部---"   styleName="intableComBox" width="100%" height="27"/>
+					</mx:HBox>
+					<mx:HBox width="100%" verticalAlign="middle">
+						<mx:Label text="电路状态:"  width="75" textAlign="right"/>
+						<mx:ComboBox id="f_state" labelField="@label" textAlign="left" prompt="---全部---" styleName="intableComBox" width="100%" height="27"/>
+					</mx:HBox>
+					<mx:HBox width="100%" horizontalAlign="center">
+						<mx:Button id="btn1"
+								   label="查询"
+								   width="80"
+								   styleName="loginprimary"
+								   click="dispatchEvent(new Event('searchEnter'))"
+								   />
+						<mx:Button id="btn2"
+								   label="重置"
+								   width="80"
+								   styleName="loginprimary"
+								   click="dispatchEvent(new Event('reset'))"
+								   />
+					</mx:HBox>
+				</mx:VBox>
+			</mx:AddChild>
+			<mx:SetStyle name="borderStyle" value="solid"/>
+		</mx:State>
+	</mx:states>
+<mx:HBox  width="100%" height="35" 
+		 paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" 
+		 backgroundImage="assets/images/searchtreebg.png" backgroundSize="100%"
+		 verticalAlign="middle" horizontalAlign="center" horizontalGap="0" id="hbox1">
+
+	<mx:Image source="assets/images/searchtree_left.png"/>
+	<mx:TextInput id="f_circuitcode" fontFamily="Arial" width="70%" fontSize="12" borderStyle="none" height="24" focusThickness="0"
+				  backgroundImage="@Embed(source='assets/images/searchtree_inputbg.png')" 
+				  backgroundSize="100%" themeColor="#FFFFFF" borderColor="#FFFFFF"
+				  enter="dispatchEvent(new Event('searchEnter'))"/>
+	<mx:Image source="assets/images/searchtree_btn1.png" click="dispatchEvent(new Event('clickButton'))" useHandCursor="true" buttonMode="true" mouseChildren="false"/>
+	<mx:LinkButton id="moreItem" label="更多搜索" color="white" fontSize="12" click="moreItem_clickHandler(event)"/>
+</mx:HBox>
+	<mx:Metadata>
+		[Event(name="searchEnter",type="flash.events.Event")]
+		[Event(name="clickButton",type="flash.events.Event")]
+		[Event(name="reset",type="flash.events.Event")]
+	</mx:Metadata>
+</mx:VBox>

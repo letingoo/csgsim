@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+		 paddingLeft="0"
+		 width="100%" 
+		 height="100%"
+		 paddingRight="0" 
+		 paddingTop="0" 
+		 paddingBottom="0"
+		 creationComplete="init()"	
+		 xmlns:link="sourceCode.mapResourcesInfo.views.link.*" 
+		 xmlns:views="sourceCode.mapResourcesInfo.views.*" xmlns:views1="sourceCode.ocableTopo.views.*" >
+	<mx:Script>
+
+		<![CDATA[
+			import com.mechan.MecGrid.mecGridClasses.SelectedItem;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			import common.other.blogagic.util.mapNode;
+			
+			import flexlib.scheduling.scheduleClasses.utils.Selection;
+			
+			import mx.containers.Box;
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.core.Application;
+			import mx.core.UIComponent;
+			import mx.effects.effectClasses.HideShowEffectTargetFilter;
+			import mx.events.DragEvent;
+			import mx.events.ListEvent;
+			import mx.graphics.codec.PNGEncoder;
+			import mx.managers.PopUpManager;
+			import mx.printing.FlexPrintJob;
+			import mx.printing.FlexPrintJobScaleType;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.ObjectProxy;
+			
+			import sourceCode.businessGraph.model.StationModel;
+			import sourceCode.businessGraph.views.StationInfos;
+			import sourceCode.mapResourcesInfo.model.ImagesModelLocator;
+			
+			import sourceCode.mapResourcesInfo.model.Model;
+			
+			import sourceCode.mapResourcesInfo.model.SpModeler;
+			import sourceCode.ocableResource.model.OcableSectionModule;
+			import sourceCode.ocableResource.model.ocableModelLocator;
+			import sourceCode.ocableResource.model.ocableStationModel;
+			import sourceCode.ocableResource.other.StationNode;
+			import sourceCode.ocableTopo.actionscript.ActionTile;
+			import sourceCode.ocableTopo.model.En_ocablesection_sub;
+			import sourceCode.ocableTopo.model.SeparatorModel;
+			import sourceCode.ocableTopo.model.ocableSectionNew;
+			import sourceCode.wireConfiguration.model.OcableGraphicModule;
+			
+			import twaver.*;
+			import twaver.core.util.l.l;
+			import twaver.network.interaction.*;
+			public var apointcode:String = "";
+			public var zpointcode:String = "";
+			public var apointname:String = "";
+			public var zpointname:String = "";
+			public var ocablecode:String;
+			public var ocablecodeid:String;
+			public var separatorcode:String = "";
+			public var length:Number;
+			public var nodeC:String="";
+			private var datanumbers:int;
+			private var pageIndex:int=0;
+			private var pageSize:int=50;
+			private var nodeid:Object;
+			private var positionX:Number;
+			private var positionY:Number;
+			private const OUTLINE_COLOR:uint = 0x0000FF;
+			private const LINK_COLOR:uint = 0xFF0000;
+			private var indexRenderer:Class = SequenceItemRenderer;
+			private var netWorkSelectItem:*;
+			public var node:Node = new Node();
+			public var acStation:ArrayCollection;
+			public var acLink:ArrayCollection;
+			[Bindable]   
+			public var SeparatorOcableCollection:XMLList;
+			[Bindable] public var imageItems:ArrayCollection;
+			private var elementBox:ElementBox;
+			public var XMLData:XML;	
+			private var layer1:Layer = new Layer("link");
+			[Bindable]
+			private var fiberLine:ArrayCollection = new ArrayCollection;
+			public function get dataBox():DataBox{
+				return this.network.elementBox;
+			}
+			public function registerImage():void{
+				var bounds:Rectangle = new Rectangle(0,0,800,1300);			
+				Utils.registerImageByClass("OPGW500KV",ImagesModelLocator.OPGW500KV,true);
+				Utils.registerImageByClass("OPGW220KV",ImagesModelLocator.OPGW220KV,true);
+				Utils.registerImageByClass("OPGW110KV",ImagesModelLocator.OPGW110KV,true);
+				Utils.registerImageByClass("ADSS110KV",ImagesModelLocator.ADSS110KV,true);
+				Utils.registerImageByClass("ADSS35KV",ImagesModelLocator.ADSS35KV,true);
+				Utils.registerImageByClass("ADSS10KV",ImagesModelLocator.ADSS10KV,true);
+				Utils.registerImageByClass("otherOcable",ImagesModelLocator.otherOcable,true);
+				Utils.registerImageByClass("otherOcable",ImagesModelLocator.otherOcable,true);
+				Utils.registerImageByClass("分界点",ImagesModelLocator.stationnew,true);
+				Utils.registerImageByClass("局站",ImagesModelLocator.centerstation,true);
+				Utils.registerImageByClass("T节点",ocableModelLocator.GLZJ,true);
+				SerializationSettings.registerGlobalClient("OcableData", Consts.TYPE_DATA);
+				SerializationSettings.registerGlobalClient("OcableCode", Consts.TYPE_STRING);
+				listLink.dataProvider = linkItems;
+				
+
+				var remoteObject:RemoteObject = new RemoteObject("mapResourcesInfo");
+				remoteObject.endpoint = ModelLocator.END_POINT;
+				remoteObject.getOcableInfoer(ocablecode);
+				remoteObject.addEventListener(ResultEvent.RESULT,imagerHandler);
+				remoteObject.addEventListener(ResultEvent.RESULT,addSpHandler);			
+				
+//				var Apointcode:Node = adddrawer("apointname", "局站", new Point(40, 180), Consts.POSITION_BOTTOMLEFT);
+//				var Zpointcode:Node = adddrawerer("zpointname", "局站", new Point(680, 180), Consts.POSITION_BOTTOMLEFT);
+
+//				var link:Link = createLink(Apointcode,Zpointcode,getOcableType(ocablecode));
+			}
+			private function imagerHandler(event:ResultEvent):void{
+			
+			}
+			public function init():void{
+				registerImage();
+				initNetworkToolbar(toolbar, network,"默认模式");
+				getSeparatorOcableLines(ocablecode);
+				serverPagingBar.dataGrid=fibergrid;	
+				serverPagingBar.pagingFunction=pagingFunction;
+				
+				network.contextMenu = new ContextMenu;
+				network.contextMenu.hideBuiltInItems();
+				network.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,
+					function(e:ContextMenuEvent):void{
+						var p:Point = new Point(e.mouseTarget.mouseX / network.zoom, e.mouseTarget.mouseY / network.zoom);
+						positionX = e.mouseTarget.mouseX / network.zoom;
+						positionY = e.mouseTarget.mouseY / network.zoom;
+						var data:ICollection = network.getElementsByLocalPoint(p);
+						if (data.count > 0 && ((data.getItemAt(0) is Node) || (data.getItemAt(0) is Link))){
+							network.selectionModel.setSelection(data.getItemAt(0));
+						}else{
+							network.selectionModel.clearSelection();
+						}
+						var stationattribute:ContextMenuItem = new ContextMenuItem("局站属性");
+						stationattribute.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,stationattributehandler);
+						var ocableattributerr:ContextMenuItem = new ContextMenuItem("属性");
+						ocableattributerr.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,stationattributehandlereee);
+						var ocableattribute:ContextMenuItem = new ContextMenuItem("添加分界点");
+						ocableattribute.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,ocableattributehandler);
+						network.contextMenu.customItems = [stationattribute,ocableattributerr,ocableattribute]
+						
+						if (network.selectionModel.count == 0){
+							stationattribute.visible = false;
+							ocableattribute.visible = false;
+							ocableattributerr.visible = false;
+						}
+						else
+						{
+							if (data.getItemAt(0) is Node)
+							{
+								stationattribute.visible = true;
+								ocableattribute.visible = false;
+								ocableattributerr.visible = false;
+							}
+							else if (data.getItemAt(0) is Link)
+							{
+								stationattribute.visible = false;
+								ocableattribute.visible = true;
+								ocableattributerr.visible = true;
+							}
+						}
+					});
+				
+				getModel();
+				
+			}
+			
+			private function getModel():void{
+				var model:SpModeler = new SpModeler();				
+				model.sectioncode= ocablecode.toString();
+				model.start ="0";
+				model.end = "50";
+				var obj:RemoteObject = new RemoteObject("mapResourcesInfo");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				obj.getModelere(model);
+				obj.addEventListener(ResultEvent.RESULT,setModel);
+			}
+			private function setModel(event:ResultEvent):void{
+				var result:Model=event.result as Model;
+				onResult(result);
+			}
+			public function onResult(result:Model):void 
+			{	
+				serverPagingBar.orgData=result.orderList;
+				serverPagingBar.totalRecord=result.totalCount;
+				serverPagingBar.dataBind(true);					
+			}
+			
+			
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void{
+				
+				this.pageSize=pageSize;
+			}
+			private function getMapResourcesInfolink(ocablecode:String):void{			
+				var obj:RemoteObject = new RemoteObject("mapResourcesInfo");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				obj.getModelerer(ocablecode);
+				obj.addEventListener(ResultEvent.RESULT,getOcableLines);
+			}	
+			private function getOcableLines(event:ResultEvent){
+				 fiberLine = event.result as ArrayCollection;
+				createFiberConnectLink()
+			
+			}
+			private function createFiberConnectLink():void{
+				var elementa:IElement;
+				var elementb:IElement;
+				for(var j:int =0;j<fiberLine.length;j++){
+					elementa = this.network.elementBox.getElementByID(fiberLine.getItemAt(j).separator_a);
+					elementb = this.network.elementBox.getElementByID(fiberLine.getItemAt(j).separator_z);
+					var length:String = fiberLine.getItemAt(j).length;
+					var linkId:String = fiberLine.getItemAt(j).subsectioncode;
+					var linkcolor:String = fiberLine.getItemAt(j).laymode;
+					if(elementa && elementb){
+						var link:Link = createOcableLink(linkId,elementa as Node,elementb as Node, getOcableType(linkcolor),length,Consts.LINK_TYPE_PARALLEL);
+					}else{
+						Alert.show("点不存在！");
+					}
+				}
+			}
+			private function getSeparatorOcableLines(ocablecode:String):void{
+				var obj:RemoteObject = new RemoteObject("mapResourcesInfo");
+				obj.showBusyCursor=true;
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.addEventListener(ResultEvent.RESULT,getOcableLinesHandle);
+				obj.addEventListener(FaultEvent.FAULT,getFaultHandler);
+				obj.getSeparatorOcable(ocablecode);		
+			}
+			private var Separatorocable:String;
+			private var a_type:String;
+			private var z_type:String;
+			private function getOcableLinesHandle(event:ResultEvent):void{
+				SeparatorOcableCollection = new XMLList(event.result.toString());
+				Separatorocable = String(SeparatorOcableCollection.children()[0].@code);
+				var node:Node;
+				for(var i:int=0;i<SeparatorOcableCollection.children().length();i++){
+					var stationname:String = SeparatorOcableCollection.children()[i].@label;
+					var stationcode:String = SeparatorOcableCollection.children()[i].@code;
+					var num:int = SeparatorOcableCollection.children()[i].@num;
+
+					if(""!=ocablecode&&null!=ocablecode){
+						if(num==1){
+						var newnode:Node =  addmdel(stationname, "局站", new Point(40+180*i, 180),Consts.POSITION_BOTTOMLEFT,stationcode);
+						}else if(num==3){
+						node =	addmdel("分界点", "分界点", new Point(100+100*i, 80+20*i),Consts.POSITION_BOTTOMLEFT,stationcode);
+						}else if(num==2){
+						node =  addmdel(stationname, "GLZJ", new Point(40+20, 180),Consts.POSITION_BOTTOMLEFT,stationcode);
+						}
+					}else{
+						Alert.show("没有找到数据！");
+					}
+				}
+				getMapResourcesInfolink(ocablecode);
+			}
+			private function getFaultHandler(event:FaultEvent):void{
+				Alert.show(event.message.toString(),"错误");
+			}
+			private function ocableattributehandler(e:ContextMenuEvent):void{
+				
+				var modelerr:SeparatorModel = new SeparatorModel();
+				modelerr.NAME_STD = "分界点";
+				modelerr.LNG =String(positionX);
+				modelerr.LAT = String(positionY);
+				var rebj:RemoteObject = new RemoteObject("mapResourcesInfo");
+				rebj.endpoint = ModelLocator.END_POINT;
+				rebj.addSeparator(modelerr); 
+				rebj.addEventListener(ResultEvent.RESULT,addSpHandler);
+				getModel();
+			}
+			
+			private function cancelNodeHandler(event:ResultEvent):void{
+				elementBox.removeByID(nodeid);
+			}
+			
+			private function addSpHandler(event:ResultEvent):void{
+				
+				var Codeid:String = network.selectionModel.selection.getItemAt(0).id.toString();	
+				var codeC:String = event.result.toString();
+				var codeA:Object = (network.selectionModel.selection.getItemAt(0)as Link).fromNode.id;
+				var codeB:Object = (network.selectionModel.selection.getItemAt(0)as Link).toNode.id;
+//				var length:String = fiberLine.getItemAt(0).length;
+//				var linklength = network.selectionModel.selection.getItemAt(0).length.toString();
+//				Alert.show(linklength.toString());
+//				var linkA = String((positionX-40)/640);
+//				var linkB = String((640-(positionX-40))/640);
+				var linkaa = "1";
+				var linkbb = "1";
+				
+				var nodeC:Node = new Node(codeC);				
+				var obj:RemoteObject = new RemoteObject("mapResourcesInfo");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.addEventListener(ResultEvent.RESULT,addSeparatorNodeHandler);
+				obj.addSN(codeA.toString(),codeB.toString(),codeC,ocablecode,linkaa.toString(),linkbb.toString());										
+			}
+			private function addSeparatorNodeHandler(event:ResultEvent):void{
+				var Codeid:String = network.selectionModel.selection.getItemAt(0).id.toString();		
+				var obj:RemoteObject = new RemoteObject("mapResourcesInfo");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.delLink(Codeid);
+//				obj.addEventListener(ResultEvent.RESULT,addSeparatorNodeHandler);
+//				getSeparatorOcableLines(ocablecode);
+				
+				init()
+			}
+			private function stationattributehandler(e:ContextMenuEvent):void{
+				var element:Element= network.selectionModel.selection.getItemAt(0);
+				var item:ContextMenuItem = ContextMenuItem(e.target);
+				if (item.caption == "局站属性")
+				{	
+					var node:Node = element as Node;
+					var stationModel:StationModel = new StationModel;
+					var stationcode:Object = node.id;				
+					stationModel.stationcode=stationcode.toString();
+					var sp:RemoteObject = new RemoteObject("operaTopo");
+					sp.showBusyCursor = true;
+					sp.endpoint = ModelLocator.END_POINT;				
+					sp.getStationInfos(stationModel);
+					sp.addEventListener(ResultEvent.RESULT,pp);
+				}
+			}
+			
+			private function stationattributehandlereee(e:ContextMenuEvent):void{
+				var item:ContextMenuItem = ContextMenuItem(e.target);
+				if (item.caption == "属性"){
+					var ocableCodeid:String = network.selectionModel.selection.getItemAt(0).id.toString();
+//					Alert.show(ocableCodeid.toString());
+					var remoteObject:RemoteObject = new RemoteObject("mapResourcesInfo");
+					remoteObject.showBusyCursor = true;
+					remoteObject.endpoint = ModelLocator.END_POINT;
+					remoteObject.addEventListener(ResultEvent.RESULT,getStationPropertiesHandler);
+					remoteObject.getOcableSp(ocableCodeid);
+				}
+			}
+			private function pp(event:ResultEvent):void{
+				var stationModel:StationModel = event.result as StationModel;
+				var stationwin:StationInfos = new StationInfos;			
+				MyPopupManager.addPopUp(stationwin,true);
+				PopUpManager.centerPopUp(stationwin);
+				stationwin.stationname.text=stationModel.stationname;
+				stationwin.province.text=stationModel.province;
+				stationwin.lng.text=stationModel.lng;
+				stationwin.lat.text=stationModel.lat;
+				stationwin.remark.text=stationModel.remark;
+				stationwin.updatedate.text=stationModel.updatedate;
+			}
+			private function getStationPropertiesHandler(event:ResultEvent):void{
+				var ocablecodeer:String = network.selectionModel.selection.getItemAt(0).id.toString();
+				var ocablesection:SpModeler = event.result as SpModeler;
+				var ocablesttu:ocableAttributer = new ocableAttributer;
+				ocablesttu.ocablecodeid = ocablecodeer;
+				
+				PopUpManager.addPopUp(ocablesttu,this,true);
+				PopUpManager.centerPopUp(ocablesttu);
+				ocablesttu.LENGTH.text = ocablesection.length;
+				ocablesttu.LAYMODE.text = ocablesection.laymode;
+				ocablesttu.REMARK.text = ocablesection.remark;			
+			}
+			private function createLink(from:Node,to:Node,color:uint,linkType:String = null,name:String = null,dashed:Boolean = false,labelPosition:String = null,lineWidth:int = 1):Link{
+				var link:Link = new Link(from,to);
+				network.elementBox.add(link);
+				link.name=String(length);
+				return link;
+				
+			}
+			public function initNetworkToolbar(toolbar:Box, network:Network, interaction:String = null, showLabel:Boolean = false, perWidth:int = -1, height:int = -1):void{
+				toolbar.setStyle("horizontalGap", 4);
+				if(perWidth<0){
+					perWidth = DemoUtils.DEFAULT_BUTTON_WIDTH;
+				}
+				if(height<0){
+					height = DemoUtils.DEFAULT_BUTTON_HEIGHT;
+				}		
+				DemoUtils.createButtonBar(toolbar, [
+					DemoUtils.createButtonInfo("默认模式", DemoImages.select, function():void{
+						network.interactionHandlers=new Collection([  
+						
+						new CustomInteractionHandler(systemorgmap),  
+						
+						new DefaultInteractionHandler(systemorgmap),]); }),
+					DemoUtils.createButtonInfo("放大", DemoImages.zoomIn, function():void{network.zoomIn(true);}),
+					DemoUtils.createButtonInfo("缩小", DemoImages.zoomOut, function():void{network.zoomOut(true);}),
+					DemoUtils.createButtonInfo("重置", DemoImages.zoomReset, function():void{network.zoomReset(true);}),
+					DemoUtils.createButtonInfo("全局预览", DemoImages.zoomOverview, function():void{network.zoomOverview(true);})
+				], false, showLabel, perWidth, height);		
+				DemoUtils.createButtonBar(toolbar, [
+					DemoUtils.createButtonInfo("导出图片", DemoImages.export,  function():void{
+						var fr:Object = new FileReference();	
+						if(fr.hasOwnProperty("save")){
+							var bitmapData:BitmapData = network.exportAsBitmapData(); 
+							var encoder:PNGEncoder = new PNGEncoder();
+							var data:ByteArray = encoder.encode(bitmapData);
+							fr.save(data, 'network.png');
+						}else{
+							Alert.show("install Flash Player 10 to run this feature", "Not Supported"); 
+						}	
+					}),
+//						DemoUtils.createButtonInfo("打印...", DemoImages.print, function():void{
+//							var printJob:FlexPrintJob = new FlexPrintJob();              
+//							if (printJob.start()){
+//								var bitmapData:BitmapData = network.exportAsBitmapData(); 
+//								var component:UIComponent = new UIComponent();
+//								component.graphics.beginBitmapFill(bitmapData);
+//								component.graphics.drawRect(0, 0, bitmapData.width, bitmapData.height);
+//								component.graphics.endFill();
+//								component.width = bitmapData.width;
+//								component.height = bitmapData.height; 
+//								network.addChild(component);    
+//								try{
+//									printJob.printAsBitmap = true;
+//									printJob.addObject(component, FlexPrintJobScaleType.SHOW_ALL);						
+//								}
+//								catch (error:*){
+//									Alert.show(error, "Print Error"); 
+//								}
+//								printJob.send();
+//								network.removeChild(component);
+//							}		
+//						}),
+						DemoUtils.createButtonInfo("展开/收缩面板", DemoImages.toggle,function():void{
+							if(leftbody.visible){
+								leftbody.includeInLayout = false;
+								leftbody.visible = false;
+							}else{
+								leftbody.includeInLayout = true;
+								leftbody.visible = true;
+							}  
+							var xml:XMLSerializer = new XMLSerializer(network.elementBox);
+						})
+							
+							
+			], false, showLabel, perWidth, height);
+						var comboBox:ComboBox = addInteractionComboBox(toolbar, network, interaction, height);						
+						}									
+			public static function addInteractionComboBox(toolbar:Box, network:Network, interaction:String = null, height:int = -1):ComboBox{
+				var comboBox:ComboBox = new ComboBox();
+				toolbar.addChild(comboBox);
+				comboBox.dataProvider = ["默认模式","放大镜模式", "无"];
+				comboBox.addEventListener(ListEvent.CHANGE, function(e:Event = null):void{
+					var type:String = String(comboBox.selectedItem);
+					if(type == "默认模式"){
+						network.interactionHandlers=new Collection([  
+							
+							new CustomInteractionHandler(systemorgmap),  
+							
+							new DefaultInteractionHandler(systemorgmap),]); 
+					}else if(type == "放大镜模式"){
+						network.interactionHandlers = new Collection([
+							new SelectInteractionHandler(network),
+							new MoveInteractionHandler(network),
+							new DefaultInteractionHandler(network),
+							new MapFilterInteractionHandler(network, Consts.MAP_FILTER_MAGNIFY),
+						]);
+					}
+					
+					else if(type == "无"){ 
+						network.interactionHandlers = null;
+					}							
+				});
+				if(interaction != null){
+					comboBox.selectedItem = interaction;
+					comboBox.dispatchEvent(new ListEvent("change"));
+				}
+				if(height<=0){
+					height = DemoUtils.DEFAULT_BUTTON_HEIGHT;
+				}
+				comboBox.height = height;
+				return comboBox;
+			}
+			protected function network_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				if(network.selectionModel.count > 0){
+					netWorkSelectItem = network.selectionModel.selection.getItemAt(0);
+					
+					if(netWorkSelectItem is Link){
+						Link(netWorkSelectItem).setStyle(Styles.SELECT_STYLE,Consts.SELECT_STYLE_BORDER);
+						Link(netWorkSelectItem).setStyle(Styles.SELECT_WIDTH,'3');
+					}
+				}
+			}
+						
+						
+			private function addmdel(name:String,image:String,location:Point,labelPosition:String = null,
+																			 id:Object=null):Node{		
+				var node:Node = new Node(id);
+				node.name = name;
+				node.image = image;
+				node.location = location;
+				if(labelPosition){
+					node.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				network.elementBox.add(node);
+				//				Alert.show("ID:"+node.id);
+				return node;	
+			}
+						
+			private function createOcableLink(id:String,from:Node, 
+											  to:Node, 
+											  color:uint, 														  												  
+											  name:String, 
+											  linkType:String = null,	
+											  linkFromPosition:String = null,
+											  dashed:Boolean = false, 
+											  labelPosition:String = null, 
+											  lineWidth:int = 2):Link{
+				var link:Link = new Link(id,from,to);
+				link.setStyle(Styles.LINK_COLOR, color);
+				link.setStyle(Styles.LINK_WIDTH, lineWidth);
+				link.setStyle(Styles.LINK_BUNDLE_GAP, -2);
+				link.setStyle(Styles.LINK_BUNDLE_OFFSET,-1);
+				link.setStyle(Styles.LINK_FROM_POSITION,linkFromPosition);
+				if(linkType == null){
+					linkType = Consts.LINK_TYPE_ORTHOGONAL_VERTICAL;
+					link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+					link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+				}
+				link.setStyle(Styles.LINK_TYPE, linkType);
+				if(name){
+					link.name = name;
+				}
+				if(dashed){
+					link.setStyle(Styles.LINK_PATTERN, [25,10]);
+				}
+				if(labelPosition){
+					link.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				//				if(!box.getDataByID(link.id))
+				network.elementBox.add(link);
+				return link;
+			}	
+		private function getOcableType(type:String):uint
+		{			
+			var ocableColor:uint;
+			if(type=="OPGW光缆"){
+				ocableColor = 0x0033FF;
+			}
+			if(type=="ADSS光缆"){
+				ocableColor = 0xFF0000;
+			}
+			if(type=="隧道光缆"){
+				ocableColor = 0x006600;
+			}
+			if(type=="管道光缆"){
+				ocableColor = 0x00FF00;
+			}
+			if(type=="直埋光缆"){
+				ocableColor = 0xFF9900;
+			}
+			if(type=="架空光缆"){
+				ocableColor = 0xFF33FF;
+			}
+			if(type=="二次光缆"){
+				ocableColor = 0x0;
+			}							
+			if(type=="水下"){
+				ocableColor = 0x0;
+			}							
+			if (type==""){
+				ocableColor = 0xFF0000;
+			}							
+			return ocableColor;							
+		}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:ArrayCollection id="linkItems">
+		<link:ActionTile imageName="局站" label="局站" type="ZY130408"/>	
+		<link:ActionTile imageName="GLZJ" label="T节点" type="ZY130411"/>
+		<link:ActionTile imageName="分界点" label="分界点" type="ZY130407"/>	
+		<link:ActionTile  imageName="OPGW500KV" label="OPGW光缆" type="ZY130401" linkColor="0x0033FF" />
+		<link:ActionTile  imageName="OPGW220KV" label="ADSS光缆" type="ZY130402" linkColor="0xFF0000" />
+		<link:ActionTile  imageName="OPGW110KV" label="隧道光缆" type="ZY130403" linkColor="0x006600" />
+		<link:ActionTile  imageName="ADSS110KV" label="管道光缆" type="ZY130404" linkColor="0x00FF00" />
+		<link:ActionTile  imageName="ADSS35KV" label="直埋光缆" type="ZY130405" linkColor="0xFF9900" />
+		<link:ActionTile  imageName="ADSS10KV" label="架空光缆" type="ZY130406" linkColor="0xFF33FF" />
+		<link:ActionTile  imageName="otherOcable" label="二次光缆" type="ZY130401" linkColor="0x0" />
+		<link:ActionTile  imageName="otherOcable" label="水下" type="ZY130407" linkColor="0x0" />
+	</mx:ArrayCollection>
+	
+	<mx:HDividedBox width="100%" height="100%" >
+		<mx:VBox id="leftbody" fontSize="14" height="100%" width="170" >
+			<mx:Accordion id="nodeAccordion" styleName="myAccordion" fontSize="12" height="533" width="100%" >
+				<mx:HBox height="100%" width="100%"  >
+					<mx:List 
+						id="listLink" 
+						rollOverColor="#ffffff" 
+						dragEnabled="true" 
+						borderThickness="0"  
+						width="100%" 
+						height="100%"  >
+						<mx:itemRenderer>
+							<link:ActionTileRenderer >
+							</link:ActionTileRenderer>
+						</mx:itemRenderer>
+					</mx:List>
+				</mx:HBox>
+			</mx:Accordion>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%">
+			<mx:HBox id="toolbar" top="0" left="0">
+				<!--<mx:Label id="lblEvent" width="200"/>-->
+			</mx:HBox>	
+			<mx:VBox  
+				id="canvas"  
+				width="100%" 
+				height="100%" 
+				horizontalAlign="center" verticalAlign="middle">
+				<tw:Network 
+					id="network"  
+					width="100%" 
+					height="70%" 
+					keyboardRemoveEnabled="false"
+					mouseDown="network_clickHandler(event)">
+				</tw:Network>	
+				<mx:TabNavigator width="100%" height="216" id="tabnavigator1" creationPolicy="all" >
+					<mx:VBox width="20%" id="acbroad" height="100%" verticalGap="0" label="光缆敷设信息">
+
+							<mx:DataGrid id="fibergrid" width="100%" height="100%" wordWrap="true" horizontalScrollPolicy="auto">
+								<mx:columns>
+									<mx:DataGridColumn headerText="序号" 
+													   dataField="serialNO" 
+													   width="50"
+													   itemRenderer="{new ClassFactory(indexRenderer)}"/>
+									<mx:DataGridColumn headerText="起始点" dataField="separator_a" />
+									<mx:DataGridColumn headerText="终止点" dataField="separator_z" />
+									<mx:DataGridColumn headerText="光缆敷设方式" dataField="laymode" />
+									<mx:DataGridColumn headerText="长度(km)" dataField="length" />
+								</mx:columns>
+							</mx:DataGrid>			
+					</mx:VBox>
+				</mx:TabNavigator> 
+				<views1:pagetoolbar
+					id="serverPagingBar" 
+					width="100%"/>
+				</mx:VBox>
+		</mx:VBox>
+	</mx:HDividedBox>
+</mx:VBox>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="roleIbatis">
+	<select id="getRoles" resultClass="sysManager.role.model.RoleModel">
+		select * from sec_role_res order by role_id
+	</select>
+	<select id="getFuncs" resultClass="java.util.HashMap" parameterClass="java.lang.String">
+		select b.parent_id,b.oper_name from sec_role_oper a,sec_operation_res b
+		where a.oper_id=b.oper_id and a.role_id=#value#
+	</select>
+	<insert id="insertRoleOper" parameterClass="java.util.Map">
+		insert into sec_role_oper(role_id,oper_id)values(#role_id#,#oper_id#)
+	</insert>
+	<delete id="delRoleOper" parameterClass="java.lang.Integer">
+		delete from sec_role_oper where role_id=#value#
+	</delete>
+	<delete id="delRole" parameterClass="java.lang.String">
+		delete from sec_role_res where role_id=#value#
+	</delete>
+	<insert id="insertRole" parameterClass="sysManager.role.model.RoleModel">
+		insert into sec_role_res(role_id,role_name,role_desc)
+		values(sysmgr.nextval,#role_name#,'$role_desc$')
+	</insert>
+	<update id="updateRole" parameterClass="sysManager.role.model.RoleModel">
+		update sec_role_res set role_name=#role_name#,role_desc=#role_desc#
+		where role_id=#role_id#
+	</update>
+</sqlMap>

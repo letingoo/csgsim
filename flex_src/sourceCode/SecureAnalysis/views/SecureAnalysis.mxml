@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 creationComplete="init()"
+		 xmlns:views="sourceCode.tableResurces.views.*" 
+		 xmlns:component="common.component.*"
+		 verticalGap="0">
+	
+	<mx:Script>
+		<![CDATA[  
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import flash.events.ContextMenuEvent;
+			import flash.events.Event;
+			import flash.sampler.Sample;
+			import flash.ui.ContextMenu;
+			import flash.ui.ContextMenuItem;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.DataGridEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.SecureAnalysis.views.level;
+			import sourceCode.systemManagement.model.PermissionControlModel;
+			import sourceCode.tableResurces.Events.ToopEvent;
+			import sourceCode.tableResurces.model.ResultModel;
+			import sourceCode.tableResurces.views.DataImportFirstStep;
+			import sourceCode.tableResurces.views.FileExportFirstStep;
+			import sourceCode.SecureAnalysis.views.DetailTopo;
+			
+			import twaver.DemoUtils;
+			[Bindable]
+			private var allBusiness:ArrayCollection = new ArrayCollection(); 
+			/* private var allBusiness:ArrayCollection = new ArrayCollection(); */
+			private var allBusinesss:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var mmy:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var arr_cb:ArrayCollection=new ArrayCollection([
+				{label:'--所属系统--'},
+				{label:'全网'}]);	
+			public  var xz:String="";
+			public var flag:Boolean=false;
+			public static var ses:String;
+			private function init():void{
+			}		
+			private function clearSelected():void{
+			for(var i:int=0; i<allBusiness.length; i++){
+				if(allBusiness.getItemAt(i).available){
+				allBusiness.getItemAt(i).available = false;
+				dg.indexToItemRenderer(i).document.abox.selected=false;
+				selectedBus.removeAll();
+				}
+				} 
+			}
+			
+			public static var selectedBus:ArrayCollection= new ArrayCollection();
+			public static  var   fw:String="";
+			public static  var   sc:String="";
+			
+			public  function analysisN1():void{
+							for(var i:int=0; i<allBusiness.length; i++){
+				if(allBusiness.getItemAt(i).available)
+				selectedBus.addItem(allBusiness.getItemAt(i));        
+				}
+							if(selectedBus.length==0)
+							{
+								Alert.show("请选择设备!");
+							}			
+				if(selectedBus.length==1)
+			     	{
+									
+	        if(fw==""||sc=="")
+					{
+						Alert.show("请输入数据!");
+					}
+					else{
+				ses=selectedBus.getItemAt(0).name.toString();
+				var bra:level = new level();
+				PopUpManager.addPopUp(bra, this, true);    
+				PopUpManager.centerPopUp(bra); 
+					} 
+				}
+				if(selectedBus.length>1)
+				{				
+				Alert.show("请选择单个设备");
+				} 
+			}
+			protected function cob_changeHandler(event:ListEvent):void
+			{   	
+				if(cob.selectedIndex==1)
+				{
+					var ro:RemoteObject = new RemoteObject("Secure");
+					ro.endpoint = ModelLocator.END_POINT;
+					ro.showBusyCursor = true;
+					ro.addEventListener(ResultEvent.RESULT,ResultGetDevInfo);
+					ro.equipname();			  
+				}
+				
+			}
+			protected function cob_clickHandler(event:MouseEvent):void
+			{ 
+			
+			}
+			private function ResultGetDevInfo(event:ResultEvent):void
+			{
+				allBusiness=event.result as ArrayCollection;	
+			}
+
+			protected function dg_itemDoubleClickHandler(event:ListEvent):void
+			{
+				
+				ses=dg.selectedItem.name.toString();	
+				var detial:DetailTopo = new DetailTopo();
+				PopUpManager.addPopUp(detial, this, true);    
+				PopUpManager.centerPopUp(detial); 
+			}
+
+		]]>
+	</mx:Script>
+	<mx:HBox>
+		<mx:ComboBox id="cob" dataProvider="{arr_cb}" labelField="label"  width="170"  change="cob_changeHandler(event)"   
+					 click="cob_clickHandler(event)" textAlign="center" height="25"/>
+		<mx:Button id="n1Analysis" label="安全事件分析" click="analysisN1()" height="25"/> 
+		<mx:Button id="clearCheck" label="刷新" click="clearSelected()" height="25"/>
+	</mx:HBox>
+	
+	<!--<component:pagetoolbar width="100%"/>-->
+	<mx:VBox id="h" width="100%" height="100%" paddingBottom="0" 
+			 paddingLeft="0" paddingRight="0" paddingTop="0"  
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		<!--多选功能-->
+		<mx:DataGrid id ="dg" 
+					 width="100%" 
+					 height="100%" 
+					 editable="false" 
+					 horizontalScrollPolicy="auto" 
+					 variableRowHeight="true"
+					 doubleClickEnabled="true" dataProvider="{allBusiness}"
+					 allowMultipleSelection="true"
+					 wordWrap="true"
+					 itemDoubleClick="dg_itemDoubleClickHandler(event)" >
+			<mx:columns>
+				<mx:DataGridColumn headerText="选择" editable="false"  textAlign="center" width="50"> 
+					<mx:itemRenderer> 
+						<mx:Component> 
+							<mx:HBox horizontalAlign="center">
+								
+								<mx:CheckBox id="abox" label="" selected="{data.available}" textAlign="center"
+											 click="data.available = !data.available" />
+							</mx:HBox>
+						</mx:Component> 
+					</mx:itemRenderer> 
+				</mx:DataGridColumn> 				
+				<mx:DataGridColumn id="data1" headerText="设备" width="280" dataField="name" />
+				<mx:DataGridColumn headerText="光缆段数量" editable="false"  textAlign="center" width="150" dataField="num"/> 	
+				<mx:DataGridColumn  headerText="影响范围" editable="false"  textAlign="center"  width="400">
+					<mx:itemRenderer> 
+					<mx:Component> 
+					<mx:HBox horizontalAlign="center">	
+						<mx:Script>  
+							<![CDATA[ 
+								import mx.controls.Alert;
+									protected function cbox_changeHandler(event:Event):void
+								{
+								    //outerDocument.fw=cbox.text;
+			
+									SecureAnalysis.fw=cbox.text;
+						
+								}
+							     	protected function button1_clickHandler(event:Event):void
+							    	{
+									cbox.text="";
+								    }
+							]]>
+						</mx:Script>
+						<mx:TextInput id="cbox"   textAlign="center" change="cbox_changeHandler(event)" />
+						<mx:Button  textAlign="center"  label="清空" click="button1_clickHandler(event)" />
+					</mx:HBox>
+						</mx:Component> 
+					</mx:itemRenderer> 
+				</mx:DataGridColumn> 
+				<mx:DataGridColumn  headerText="时长(小时)" editable="false"  textAlign="center"> 
+					<mx:itemRenderer> 
+					<mx:Component> 
+					<mx:HBox horizontalAlign="center">
+						<mx:Script>  
+							<![CDATA[ 
+								
+								import mx.controls.Alert;
+								protected function bbox_changeHandler(event:Event):void
+								{											
+										SecureAnalysis.sc=bbox.text;			
+									//outerDocument.sc=bbox.text;
+								}
+								protected function button2_clickHandler(event:Event):void
+								{
+									bbox.text="";
+								}
+
+							]]>
+						</mx:Script>
+						<mx:TextInput id="bbox"  textAlign="center"  change="bbox_changeHandler(event)"/>
+						<mx:Button textAlign="center" label="清空" click="button2_clickHandler(event)" />
+					</mx:HBox>
+						</mx:Component> 
+					</mx:itemRenderer> 
+				</mx:DataGridColumn> 
+			</mx:columns> 
+		</mx:DataGrid>
+		
+	</mx:VBox>
+</mx:VBox>

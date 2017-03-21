@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="800"
+				height="500"
+				creationComplete="init()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="close()">
+	<!--<mx:layout>
+	<mx:BasicLayout/>
+	</mx:layout>
+	<mx:Declarations> -->
+	<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	<!--</mx:Declarations> -->
+	<mx:Script>
+		<![CDATA[       
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import sourceCode.channelRoute.views.trust;
+	
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import flash.events.ContextMenuEvent;
+			import flash.events.Event;
+			import flash.ui.ContextMenu;
+			import flash.ui.ContextMenuItem;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.DataGridEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.systemManagement.model.PermissionControlModel;
+			import sourceCode.tableResurces.Events.ToopEvent;
+			import sourceCode.tableResurces.model.ResultModel;
+			import sourceCode.tableResurces.views.DataImportFirstStep;
+			import sourceCode.tableResurces.views.FileExportFirstStep;
+			import twaver.DemoUtils;
+			
+			[Bindable]
+			private var info:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var allBusiness:ArrayCollection = new ArrayCollection();
+			
+			
+			private function init():void{
+			var infos:ArrayCollection = new ArrayCollection();
+				  infos=trust.selectedBus;
+				var rtobjs:RemoteObject = new RemoteObject("channelRoute");
+				rtobjs.endpoint = ModelLocator.END_POINT;
+				rtobjs.showBusyCursor = true;
+				rtobjs.addEventListener(ResultEvent.RESULT,getConditon);
+				//Alert.show(infos.length.toString());
+				if(infos.length==1)
+				{   
+					rtobjs.trusts(infos);	
+				}
+		
+				
+				//trust.selectedBus.removeAll();
+	       /*    Alert.show(infos.length.toString());
+			 
+			  Alert.show(trust.selectedBus.toString()); */
+			      }
+			
+			private function getConditon(event:ResultEvent):void{
+
+               	allBusiness=event.result as ArrayCollection;
+				if(allBusiness.length>0)
+				{
+				 	trust.selectedBus.removeAll();
+				} 
+}
+			
+			
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+			private function lfRowNum(oItem:Object,iCol:int):String    
+			{   
+				var iIndex:int = failBus.dataProvider.getItemIndex(oItem) + 1; 				
+				return String(iIndex);     
+			} 
+   /*      	public function setInfo(a:ArrayCollection,c:String,c2:String):void{
+				info = a;
+				this.title = "指定业务"+c2+"分析";
+				t1.text = "指定业务：" +c + "时，"+c2+"分析的结果是：";
+			}  */
+			
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" paddingTop="5" paddingBottom="5" paddingLeft="5" paddingRight="5">
+	<!--	<mx:Text id="t1" width="100%"/>-->
+		<mx:HBox width="100%" height="100%" horizontalGap="5" verticalGap="5">
+			<mx:DataGrid id="failBus" width="100%" height="100%" dataProvider="{allBusiness}" wordWrap="true">
+				<mx:columns>
+					<mx:DataGridColumn  width="50" headerText="序号" dataField="SerialNum" editable="false" labelFunction="lfRowNum"/>
+					<mx:DataGridColumn width="200" dataField="name" headerText="业务名称" wordWrap="true"/>
+					<mx:DataGridColumn  dataField="result" headerText="共享的设备" wordWrap="true"/>
+					<mx:DataGridColumn  dataField="results" headerText="共享的复用段" wordWrap="true"/>
+					<mx:DataGridColumn  dataField="idea" headerText="路由优化建议" wordWrap="true"/>			
+				</mx:columns>
+			</mx:DataGrid>		
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

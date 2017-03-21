@@ -1,0 +1,239 @@
+<mx:Canvas  xmlns:mx="http://www.adobe.com/2006/mxml"
+			xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+			xmlns:twaver="twaver.common.*"
+			fontSize="12"  
+			creationComplete="init();"
+			preinitialize="preinitialize()"
+			width="100%"
+			height="100%"
+			xmlns:component="common.component.*" 
+			xmlns:code="com.google.code.*">  
+	<!--电路路由图-->
+   <mx:Style>
+	   .darkbg
+	   {
+		   backgroundImage: Embed(source='assets/images/page_bg.png');
+		   backgroundSize: '100%';
+		   backgroundAttachment: fixed;
+	   }
+	   HBox.sat 
+	   {
+		   borderStyle: solid;
+		   borderThickness: 1;
+		   borderSides: top,bottom;
+		   backgroundColor: #FDF8DB;
+		   verticalAlign: middle;
+		   horizontalAlign: left;
+		   paddingLeft: 10;
+		   paddingRight: 10;
+		   borderColor: #F4E173;
+	   }
+	   Text.pagepart {
+		   color: #990000;
+		   fontFamily: Arial;
+		   fontSize: 14;
+		   fontWeight: bold;
+	   }
+	   HBox.pagetitle
+	   {
+		   fontFamily: Arial;
+		   fontSize: 16;
+		   fontWeight: bold;
+		   borderStyle: solid;
+		   borderThickness: 1;
+		   borderSides: bottom;
+	   }
+	   HBox.pagebg
+	   {
+		   verticalAlign: middle;
+		   horizontalAlign: center;
+		   paddingTop: 10;
+		   paddingLeft: 10;
+		   paddingRight: 10;
+		   paddingBottom: 20;
+		   backgroundAttachment: fixed;
+	   }
+	   VBox.page
+	   {
+		   backgroundColor: #FFFFFF;
+		   paddingBottom: 40;
+		   paddingTop: 30;
+		   paddingLeft: 20;
+		   paddingRight: 20;
+		   shadowDistance: 3;
+		   shadowDirection: right;
+		   dropShadowEnabled: true;
+		   dropShadowColor: #000000;
+		   borderStyle: solid;
+		   borderThickness: 1;
+		   borderSkin: Embed(source='assets/images/pagebg.png',scaleGridLeft='3',scaleGridTop='3',scaleGridRight='203',scaleGridBottom='203');
+	   }
+	   Text.blacknormal {
+		   color: #000000;
+		   fontFamily: Arial;
+		   fontSize: 12;
+		   fontWeight: normal;
+	   }
+	   Grid.gridout
+	   {
+		   borderStyle: solid;
+		   borderThickness: 1;
+		   borderSides: top,left;
+		   horizontalGap: 0;
+		   verticalGap: 0;
+		   borderColor: #d5e1fd;
+	   }
+	   GridItem.griditem
+	   {
+		   borderThickness: 1;
+		   borderStyle: solid;
+		   borderSides: bottom,right;
+		   horizontalAlign: left;
+		   verticalAlign: middle;
+		   borderColor: #D5E1FD;
+		   fontFamily: Arial;
+		   fontSize: 12;
+		   paddingLeft: 3;
+	   }
+	   GridItem.griditemlabel
+	   {
+		   borderThickness: 1;
+		   borderStyle: solid;
+		   borderSides: bottom,right;
+		   horizontalAlign: right;
+		   verticalAlign: middle;
+		   borderColor: #D5E1FD;
+		   backgroundColor: #ecf2fe;
+		   fontFamily: Arial;
+		   fontWeight: bold;
+		   fontSize: 12;
+		   paddingRight: 3;
+		   backgroundImage: Embed(source='assets/images/gridlabelbg.png');
+		   backgroundSize: "100%";
+	   }
+	   .singleButton{
+		   cornerRadius : 10;
+	   }
+	   .gradientCanvas{
+		   backgroundGradientColors : #CFCFCF, #A8A8A8;
+		   backgroundGradientAlphas : 1, 1;
+		   backgroundGradientRotation : 90;
+	   }
+	   TextInput.intable
+	   {
+		   fontFamily: Arial;
+		   fontSize: 12;
+		   paddingTop: 2;
+		   paddingBottom: 2;
+		   paddingRight: 2;
+		   paddingLeft: 2;
+		   borderStyle: none;
+	   }
+	   ComboBox.intableComBox
+	   {
+		   cornerRadius: 0;
+		   borderColor: #cccccc;
+		   fillColors: #ffffff, #ffffff, #ffffff, #ffffff;
+		   letterSpacing: 0;
+	   }
+	   TextInput.blacknormal1 {
+		   color: #000000;
+		   fontFamily: Arial;
+		   backgroundColor: #FDF8DB;
+		   fontSize: 12;
+		   fontWeight: normal;
+		   borderStyle: none;
+		   paddingTop: 2;
+		   paddingBottom: 2;
+		   paddingRight: 2;
+		   paddingLeft: 2;
+	   }
+   </mx:Style>
+
+
+	<mx:Script source="../actionscript/channelroute.as"/>
+	<mx:RemoteObject  destination="channelTree" requestTimeout="300"  showBusyCursor="true" 
+					  id="channeltreeremote" endpoint="{ModelLocator.END_POINT}"
+					  fault="DealFault(event)" result="resultHandler(event)"/>
+	
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="电路路由图" imgName="vannet"/>
+		<mx:HDividedBox width="100%" height="100%"  >
+			<mx:VBox width="250" id="channeltreeBox" label="电路列表" height="100%" 
+					 horizontalScrollPolicy="off" verticalScrollPolicy="off" verticalGap="0">
+				<component:SearchTextInputForChannalRoute id="SearchBar" searchEnter="select()" clickButton="select()" reset="reset()"/>
+				<mx:Tree id="channeltree" 
+						 dataProvider="{folderCollection}" 			
+						 labelField="@label"
+						 width="100%" 
+						 showRoot="true"
+						 height="100%" 
+						 dragEnabled="true" 
+						 defaultLeafIcon="{null}" 
+						 borderStyle="none"
+						 change="treeChange()" 
+						 itemOpen="treeChange()"
+						 doubleClickEnabled="true"
+						 doubleClick="getChannelPic(event)"
+						 iconFunction="deviceiconFun"
+						 backgroundImage="@Embed(source='assets/images/treebg.png')"
+						 backgroundSize="100%"
+						 itemClick="tree_itemClick(event)"
+						 itemRollOver="curIndex = event.rowIndex"
+						 />
+			</mx:VBox>
+			<mx:TabNavigator    width="100%" change="changeItems(event)" id="channeltab" verticalGap="0" 
+								horizontalGap="0" paddingBottom="0" paddingLeft="0" paddingRight="0"
+								paddingTop="0" height="100%"  creationPolicy="all">
+				<mx:VBox label="路由图" width="100%" id='channelbox' height="100%" >
+					<mx:HBox id="toolbar" width="100%" horizontalGap="0"/>
+					<tw:Network  id="channelPic" label="路由图"  width="100%" height="100%" 
+								 backgroundColor="0xFFFFFF" />
+				</mx:VBox>
+				<!--
+				<mx:VBox id="request" label="方式单" width="100%" height="100%" visible="false" >
+					<code:IFrame id="tmis_request"  width="100%" height="100%" visible="false"/>
+				</mx:VBox>-->
+			</mx:TabNavigator> 
+		</mx:HDividedBox> 
+	</mx:VBox>
+	
+		
+	<twaver:MovablePane  id="optionPane" label="设置" title="设置" right="18" top="70" visible="false">
+		<mx:Form paddingTop="5" paddingBottom="5" paddingLeft="5" paddingRight="5" indicatorGap="5" >
+			<mx:Label text="端口" fontWeight="bold" fontSize="12" ></mx:Label>
+			<mx:HBox width="100%" horizontalAlign="center">
+				<mx:Label text="端口显示" ></mx:Label>
+				<mx:RadioButton id="portShow" groupName="port" label="是" click="if(portShow.selected)configSlot.visible=true"  selected="true" />
+				<mx:RadioButton id="portHide" groupName="port" label="否" click="if(portHide.selected)configSlot.visible=false"/>			
+			</mx:HBox>
+			<mx:HBox width="100%" id="configSlot" horizontalAlign="center"> 
+				<mx:Label text="显示内容" ></mx:Label>
+				<mx:CheckBox id="slotserial" label="机槽"  selected="true" />
+				<mx:CheckBox id="portserial" label="端口"  selected="true" />
+			</mx:HBox>
+			<mx:Label text="复用段" fontWeight="bold" fontSize="12"></mx:Label>
+			<mx:HBox width="100%" horizontalAlign="center">
+				<mx:Label text="复用段显示" ></mx:Label>
+				<mx:RadioButton id="topoLinkShow" groupName="link" label="是" click="if(topoLinkShow.selected){configTopoLink.visible=true;configTimeSlot.visible=true;}"  selected="true" />
+				<mx:RadioButton id="topoLinkHide" groupName="link" label="否" click="if(topoLinkHide.selected){configTopoLink.visible=false;configTimeSlot.visible=false;}"/>			
+			</mx:HBox>
+			<mx:HBox width="100%" id="configTopoLink" horizontalAlign="center">    
+				<mx:Label text="显示内容" ></mx:Label>
+				<mx:CheckBox id="systemcode" label="系统名称"  selected="true" />
+				<mx:CheckBox id="timeslot" label="时隙" click="if(timeslot.selected)configTimeSlot.visible=true;else configTimeSlot.visible=false"  selected="true" />
+			</mx:HBox>
+			<mx:HBox width="100%" id="configTimeSlot" horizontalAlign="center"> 
+				<mx:Label text="时隙格式" ></mx:Label>
+				<mx:RadioButton id="timeslot373" label="373格式"  selected="true" />
+				<mx:RadioButton id="timeslotno373" label="标准格式"   />
+			</mx:HBox>
+			<mx:HBox width="100%" horizontalAlign="center">                  
+			</mx:HBox>
+			<mx:HBox width="100%" horizontalAlign="center" horizontalGap="2">
+				<mx:Button id="submit" label="应用" click="submitChannel(event)" paddingLeft="2" paddingRight="2" />
+				<mx:Button id="cancel" label="关闭" click="cancelChannel(event)" paddingLeft="2" paddingRight="2" />
+			</mx:HBox>
+		</mx:Form>
+	</twaver:MovablePane>
+</mx:Canvas>  

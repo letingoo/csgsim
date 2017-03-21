@@ -1,0 +1,29 @@
+-- Create table
+create table MODULE_STATUS_CHANGE
+(
+  ENTITYTYPE       VARCHAR2(20),
+  ENTITYNAME       VARCHAR2(32),
+  IP               VARCHAR2(30),
+  PID              VARCHAR2(20),
+  ENTITYREMARK     VARCHAR2(500),
+  VERSION          VARCHAR2(20),
+  FROMSTATUS       VARCHAR2(10),
+  TOSTATUS         VARCHAR2(10),
+  STATUSCHANGETIME DATE,
+  UPDATEPERSON     VARCHAR2(20),
+  UPDATEDATE       DATE,
+  ISMONITORBYUI    VARCHAR2(10) default 'Y'
+)
+tablespace TSGDDB
+  pctfree 10
+  initrans 1
+  maxtrans 255
+  storage
+  (
+    initial 16
+    minextents 1
+    maxextents unlimited
+  );
+-- Add comments to the columns 
+comment on column MODULE_STATUS_CHANGE.ISMONITORBYUI
+  is '是否通过UI进行监视';

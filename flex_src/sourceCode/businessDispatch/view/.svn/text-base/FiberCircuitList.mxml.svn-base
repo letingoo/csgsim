@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 xmlns:view="sourceCode.businessDispatch.view.*" 
+		 width="100%" height="100%" 
+		 creationComplete="initApp()">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.formatters.DateFormatter;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import sourceCode.businessDispatch.model.ResultModel;
+			import sourceCode.businessDispatch.model.SelectOthersCircuit;
+			
+			import twaver.SequenceItemRenderer;
+			
+			private var lastRollOverIndex:int;
+			private var indexRenderer:Class = SequenceItemRenderer;
+			private var contextMeau:ContextMenu;
+			
+			public var pageIndex:int = 0;
+			public var pageSize:int = 50;
+			public var lookManner_MenuItem:ContextMenuItem;//查看方式单
+			public var fiber_MenuItem:ContextMenuItem;//制作方式单
+			public var revocation_MenuItem:ContextMenuItem;//撤销方式单
+			public var change_MenuItem:ContextMenuItem;//变更方式单
+			public var look_MenuItem:ContextMenuItem;//查看申请单
+			public var selectObj:SelectOthersCircuit = new SelectOthersCircuit();
+			public var fiberCircuit:FiberCircuitInfo = new FiberCircuitInfo();
+			
+			protected function initApp():void{
+				repealedLstGridPagingBar.dataGrid = repealedLstGrid;
+				repealedLstGridPagingBar.pagingFunction = pagingFunction;
+				
+				failedLstGridPagingBar.dataGrid = failedLstGrid;
+				failedLstGridPagingBar.pagingFunction = pagingFunction;
+				
+				completedLstGridPagingBar.dataGrid = completedLstGrid;
+				completedLstGridPagingBar.pagingFunction = pagingFunction;
+				
+				OpenGridPagingBar.dataGrid = OpenGrid;
+				OpenGridPagingBar.pagingFunction = pagingFunction;
+				
+				tabnavigator_changeHandler();
+			}
+
+			protected function tabnavigator_changeHandler():void
+			{
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				var model:SelectOthersCircuit = new SelectOthersCircuit();
+				if(label == "待制作申请单"){
+					businessDispatchRemote.getFiberItems();
+				}else if(label == "待作废申请单"){
+					businessDispatchRemote.getRepealedFiberCircuit(model);
+				}else if(label == "未通过申请单"){
+					businessDispatchRemote.getFailedFiberCircuit(model);
+				}else if(label == "已完成申请单"){
+					businessDispatchRemote.getCompletedFiberCircuit(model);
+				}else if(label == "已开通申请单"){
+					businessDispatchRemote.getOpenedFiberCircuit(model);
+				}
+				Application.application.showLoading();
+				businessDispatchRemote.addEventListener(ResultEvent.RESULT, setDataProvide);
+			}
+
+			public function pagingFunction(pageIndex:int, pageSize:int):void{
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				this.pageSize = pageSize;
+				selectObj.start = (pageIndex * pageSize).toString(); 
+				selectObj.end = (pageIndex * pageSize + pageSize).toString();
+				if(label == "待作废申请单"){
+					businessDispatchRemote.getRepealedFiberCircuit(selectObj);
+				}else if(label == "未通过申请单"){
+					businessDispatchRemote.getFailedFiberCircuit(selectObj);
+				}else if(label == "已完成申请单"){
+					businessDispatchRemote.getCompletedFiberCircuit(selectObj);
+				}else if(label == "已开通申请单"){
+					businessDispatchRemote.getOpenedFiberCircuit(selectObj);
+				}
+				Application.application.showLoading();  
+				businessDispatchRemote.addEventListener(ResultEvent.RESULT, setDataProvide);
+			}
+			
+			public function setDataProvide(e:ResultEvent):void{
+				Application.application.removeLoading();
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				if(e.result){
+					if(label == '待制作申请单'){
+						var XMLData:XML = new XML(e.result.toString());
+						var orgData:ArrayCollection = new ArrayCollection();
+						for each(var arrxml:XML in XMLData.children()){
+							orgData.addItem(arrxml);
+						}
+						todobusinessGrid.dataProvider = orgData;
+						todobusinessGrid.invalidateList();
+						todobusinessGridPagingBar.dataGrid = todobusinessGrid;
+						todobusinessGridPagingBar.orgData = orgData;
+						todobusinessGridPagingBar.dataBind();
+					}else{
+						var result:ResultModel = e.result as ResultModel;
+						if(label == "待作废申请单"){
+							repealedLstGrid.dataProvider = result.orderList;
+						}else if(label == "未通过申请单"){
+							failedLstGrid.dataProvider = result.orderList;
+						}else if(label == "已完成申请单"){
+							completedLstGrid.dataProvider = result.orderList;
+						}else if(label == "已开通申请单"){
+							OpenGrid.dataProvider = result.orderList;
+						}
+						this.onResult(result);
+					}
+					createTreeMenuItem();
+				}
+			}
+			
+			public function onResult(re:ResultModel):void 
+			{	
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				
+				if(label=="待作废申请单"){
+					repealedLstGridPagingBar.orgData=re.orderList;
+					repealedLstGridPagingBar.totalRecord=re.totalCount;
+					repealedLstGridPagingBar.dataBind(true);		
+				}else if(label=="未通过申请单"){
+					failedLstGridPagingBar.orgData=re.orderList;
+					failedLstGridPagingBar.totalRecord=re.totalCount;
+					failedLstGridPagingBar.dataBind(true);		
+				}else if(label=="已完成申请单"){
+					completedLstGridPagingBar.orgData=re.orderList;
+					completedLstGridPagingBar.totalRecord=re.totalCount;
+					completedLstGridPagingBar.dataBind(true);		
+				}else if(label=="已开通申请单"){
+					OpenGridPagingBar.orgData=re.orderList;
+					OpenGridPagingBar.totalRecord=re.totalCount;
+					OpenGridPagingBar.dataBind(true);
+				}
+			}
+			//添加右键菜单
+			public function createTreeMenuItem(): void{
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				if(label == "待制作申请单" && todobusinessGrid.dataProvider != null){
+					look_MenuItem = new ContextMenuItem("查看申请单");
+					fiber_MenuItem = new ContextMenuItem("制作方式单");
+					contextMeau = new ContextMenu();
+					contextMeau.hideBuiltInItems();
+					contextMeau.customItems = [look_MenuItem, fiber_MenuItem];
+					todobusinessGrid.contextMenu = contextMeau;
+				}else if(label =="待作废申请单" && repealedLstGrid.dataProvider!=null && repealedLstGrid.dataProvider!=""){
+					lookManner_MenuItem = new ContextMenuItem("查看方式单");
+					look_MenuItem = new ContextMenuItem("查看申请单");
+					revocation_MenuItem = new ContextMenuItem("撤销方式单");
+					contextMeau = new ContextMenu();
+					contextMeau.hideBuiltInItems();
+					contextMeau.customItems = [lookManner_MenuItem, look_MenuItem, revocation_MenuItem];
+					repealedLstGrid.contextMenu= contextMeau;
+				}else if(label =="未通过申请单" && failedLstGrid.dataProvider!=null && failedLstGrid.dataProvider!=""){
+					lookManner_MenuItem = new ContextMenuItem("查看方式单");
+					look_MenuItem = new ContextMenuItem("查看申请单");
+					change_MenuItem = new ContextMenuItem("变更方式单");
+					contextMeau = new ContextMenu;
+					contextMeau.hideBuiltInItems();
+					contextMeau.customItems = [lookManner_MenuItem, look_MenuItem, change_MenuItem];
+					failedLstGrid.contextMenu = contextMeau;
+				}else if(label =="已完成申请单" && completedLstGrid.dataProvider!=null && completedLstGrid.dataProvider!=""){
+					lookManner_MenuItem = new ContextMenuItem("查看方式单");
+					look_MenuItem = new ContextMenuItem("查看申请单");
+					contextMeau = new ContextMenu;
+					contextMeau.hideBuiltInItems();
+					contextMeau.customItems = [lookManner_MenuItem, look_MenuItem];
+					completedLstGrid.contextMenu = contextMeau;
+				}else if(label =="已开通申请单" && OpenGrid.dataProvider!=null && OpenGrid.dataProvider!=""){
+					lookManner_MenuItem = new ContextMenuItem("查看方式单");
+					look_MenuItem = new ContextMenuItem("查看申请单");
+					contextMeau = new ContextMenu;
+					contextMeau.hideBuiltInItems();
+					contextMeau.customItems = [lookManner_MenuItem, look_MenuItem];
+					OpenGrid.contextMenu = contextMeau;
+				}
+				if(lookManner_MenuItem != null){
+					lookManner_MenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, BuildHandler);
+				}
+				if(fiber_MenuItem != null){
+					fiber_MenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, fiberCircuitInfo);
+				}
+				if(look_MenuItem != null){
+					look_MenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, look_Tmis);
+				}
+				if(revocation_MenuItem != null){
+					revocation_MenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, revocation_Oneway);
+				}
+				if(change_MenuItem != null){
+					change_MenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, change_Oneway);
+				}
+				if(contextMeau != null){
+					contextMeau.addEventListener(ContextMenuEvent.MENU_SELECT, Menu_select);
+				}
+			}
+			//查看方式单
+			public function BuildHandler(e:Event):void{
+				var low:FiberCircuitLook = new FiberCircuitLook();
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				if(label == "待作废申请单"){
+					low.CCcode = repealedLstGrid.selectedItem.circuitcode;
+					low.form_name = repealedLstGrid.selectedItem.form_name;
+				}else if(label == "未通过申请单"){
+					low.CCcode = failedLstGrid.selectedItem.circuitcode;
+					low.form_name = failedLstGrid.selectedItem.form_name;
+				}else if(label == "已完成申请单"){
+					low.CCcode = completedLstGrid.selectedItem.circuitcode;
+					low.form_name = completedLstGrid.selectedItem.form_name;
+				}else if(label == "已开通申请单"){
+					low.CCcode = OpenGrid.selectedItem.circuitcode;
+					low.form_name = OpenGrid.selectedItem.form_name;
+				}
+				MyPopupManager.addPopUp(low, true);
+			}
+			//查看申请单
+			private var form_id:String;
+			public function look_Tmis(e:ContextMenuEvent):void{
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				if(label == "待制作申请单"){
+					form_id = todobusinessGrid.selectedItem.@form_id;
+				}else if(label == "待作废申请单"){
+					form_id = repealedLstGrid.selectedItem.form_id;
+				}else if(label == "未通过申请单"){
+					form_id = failedLstGrid.selectedItem.form_id;
+				}else if(label == "已完成申请单"){
+					form_id = completedLstGrid.selectedItem.sq_form_id;
+				}else if(label == "已开通申请单"){
+					form_id = OpenGrid.selectedItem.sq_form_id;
+				}
+				var ro:RemoteObject = new RemoteObject("login");
+				ro.showBusyCursor = true;
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.addEventListener(ResultEvent.RESULT, getServerIPHandler);
+				ro.getServerIP();
+			}
+			private function getServerIPHandler(event:ResultEvent):void{
+				navigateToURL(new URLRequest(
+					"http://" + event.result.toString() + "/tmis/sddl/fangshi/apply/workflow/fangshiInfoView.jsp?form_id=" + form_id)
+				);
+			}
+			//撤销方式单
+			public function revocation_Oneway(cme:ContextMenuEvent):void{
+				Alert.show("撤销会删除选中的方式单\n所有信息，请确认？", "温馨提示", Alert.YES | Alert.NO, this, function(ce:CloseEvent):void{
+					var fccode:String = repealedLstGrid.selectedItem.circuitcode;
+					var obj:RemoteObject = new RemoteObject("businessDispatch");
+					obj.endpoint = ModelLocator.END_POINT;
+					obj.repealFiberCircuit(fccode);
+					obj.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+						if(e.result.toString() == "yes"){
+							Alert.show("撤销成功！", "温馨提示");
+							tabnavigator_changeHandler();
+						}else{
+							Alert.show("撤销失败！", "温馨提示");
+						}
+					});
+				});
+			}
+			//新建方式单
+			private function fiberCircuitInfo(e:ContextMenuEvent):void{
+				fiberCircuit.initialize();
+				MyPopupManager.addPopUp(fiberCircuit, true);
+				//初始化变量数据
+				fiberCircuit.whichOne = "new";
+				if(todobusinessGrid.selectedItem != null){
+					fiberCircuit.form_id = todobusinessGrid.selectedItem.@form_id;//申请单主键
+					fiberCircuit.info_id = todobusinessGrid.selectedItem.@info_id;//电路单主键
+					fiberCircuit.infTpyename = todobusinessGrid.selectedItem.@porttype;//端口类型名称
+					fiberCircuit.ratename = todobusinessGrid.selectedItem.@speedname;//速率名称
+					fiberCircuit.optyname = todobusinessGrid.selectedItem.@type;//业务类型名称
+					//初始化表单数据
+					fiberCircuit.modeName.text = todobusinessGrid.selectedItem.@specialtyname;//申请单名称
+					fiberCircuit.aStationnName.text = todobusinessGrid.selectedItem.@station_a;//起始站名称
+					fiberCircuit.zStationnName.text = todobusinessGrid.selectedItem.@station_z;//终止站名称
+					fiberCircuit.leaser.text = todobusinessGrid.selectedItem.@appdepartment;//申请单位名称
+					fiberCircuit.userCom.text = todobusinessGrid.selectedItem.@usedepartment;//使用单位名称
+					fiberCircuit.requestionID.text = todobusinessGrid.selectedItem.@form_no;//申请单号
+					fiberCircuit.purpose.text = todobusinessGrid.selectedItem.@purpose;//用途名称
+					if(todobusinessGrid.selectedItem.@finish_time == "" || todobusinessGrid.selectedItem.@finish_time == null){
+						var formatter:DateFormatter = new DateFormatter();
+						formatter.formatString = "YYYY-MM-DD";
+						fiberCircuit.finishtime.text = formatter.format(new Date());
+					}else{
+						fiberCircuit.finishtime.text = todobusinessGrid.selectedItem.@finish_time;//完成时间
+					}
+				}else{
+					fiberCircuit.modeName.editable = true;
+					fiberCircuit.aStationnName.editable = true;
+					fiberCircuit.zStationnName.editable = true;
+					fiberCircuit.leaser.editable = true;
+					fiberCircuit.requestionID.editable = true;
+				}
+			}
+			//修改方式单
+			private function change_Oneway(e:ContextMenuEvent):void{
+				fiberCircuit.initialize();
+				MyPopupManager.addPopUp(fiberCircuit, true);
+				//初始化变量数据
+				var selectItem:SelectOthersCircuit = failedLstGrid.selectedItem as SelectOthersCircuit;
+				fiberCircuit.whichOne = "change";
+				fiberCircuit.circuitcode = selectItem.circuitcode;//方式单号
+				fiberCircuit.form_id = selectItem.form_id;//申请单主键
+				fiberCircuit.info_id = selectItem.form_id;//电路单主键
+				fiberCircuit.infTpyename = selectItem.interfacetype;//端口类型名称
+				fiberCircuit.ratename = selectItem.rate;//速率名称
+				fiberCircuit.optyname = selectItem.operationtype;//业务类型名称
+				fiberCircuit.modeName.text = selectItem.form_name;//申请单名称
+				fiberCircuit.aStationnName.text = selectItem.station1;//起始站名称
+				fiberCircuit.zStationnName.text = selectItem.station2;//终止站名称
+				fiberCircuit.leaser.text = selectItem.requestcom;//申请单位名称
+				fiberCircuit.requestionID.text = selectItem.requisitionid;//申请单号
+				fiberCircuit.purpose.text = selectItem.state;//用途
+				if(selectItem.usetime == "" || selectItem.usetime == null){
+					var formatter:DateFormatter = new DateFormatter();
+					formatter.formatString = "YYYY-MM-DD";
+					fiberCircuit.finishtime.text = formatter.format(new Date());
+				}else{
+					fiberCircuit.finishtime.text = selectItem.usetime;//完成时间
+				}
+			}
+			
+			public function Menu_select(e:ContextMenuEvent):void{
+				todobusinessGrid.selectedIndex = lastRollOverIndex;
+				repealedLstGrid.selectedIndex = lastRollOverIndex;
+				failedLstGrid.selectedIndex = lastRollOverIndex;
+				completedLstGrid.selectedIndex = lastRollOverIndex;
+				OpenGrid.selectedIndex = lastRollOverIndex;
+			}
+			
+			private function DealFault(event:FaultEvent):void {
+				Application.application.removeLoading();
+				Alert.show(event.fault.toString());
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:RemoteObject id="businessDispatchRemote" 
+					 destination="businessDispatch" 
+					 showBusyCursor="false" 
+					 endpoint="{ModelLocator.END_POINT}" 
+					 fault="DealFault(event)"/>
+	
+	<mx:TabNavigator id="tabnavigator" creationPolicy="all" width="100%" height="100%" change="tabnavigator_changeHandler()">
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="待制作申请单">
+			<mx:DataGrid id="todobusinessGrid" width="100%" height="100%" 
+						 horizontalScrollPolicy="auto" itemRollOver="{lastRollOverIndex = event.rowIndex}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/>
+					<mx:DataGridColumn headerText="申请单号" dataField="@form_no" width="170"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="@type" width="150"/>
+					<mx:DataGridColumn headerText="业务名称" dataField="@specialtyname" width="200"/>
+					<mx:DataGridColumn headerText="速率" dataField="@speedname" width="150"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="@porttype" width="100"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="@appdepartment" width="150"/>
+					<mx:DataGridColumn headerText="申请人" dataField="@applier" width="100"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="@start_time" width="150"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="@finish_time" width="150"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="@station_a" width="150"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="@station_z" width="150"/>
+					<mx:DataGridColumn headerText="申请目的" dataField="@purpose" width="100"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<view:pagetoolbarforWay id="todobusinessGridPagingBar" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="待作废申请单">
+			<mx:DataGrid id="repealedLstGrid" width="100%" height="100%" 
+						 horizontalScrollPolicy="auto" itemRollOver="lastRollOverIndex = event.rowIndex">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/>
+					<mx:DataGridColumn headerText="申请单号" dataField="requisitionid" width="170"/>
+					<mx:DataGridColumn headerText="方式单号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="方式单名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<view:pagetoolbarforWay id="repealedLstGridPagingBar" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="未通过申请单">
+			<mx:DataGrid id="failedLstGrid" width="100%" height="100%" 
+						 horizontalScrollPolicy="auto" itemRollOver="lastRollOverIndex = event.rowIndex">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/>
+					<mx:DataGridColumn headerText="申请单号" dataField="requisitionid" width="170"/>
+					<mx:DataGridColumn headerText="方式单号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="方式单名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<view:pagetoolbarforWay id="failedLstGridPagingBar" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="已完成申请单">
+			<mx:DataGrid id="completedLstGrid" width="100%" height="100%" 
+						 horizontalScrollPolicy="auto" itemRollOver="lastRollOverIndex = event.rowIndex">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/>
+					<mx:DataGridColumn headerText="申请单号" dataField="requisitionid" width="170"/>
+					<mx:DataGridColumn headerText="方式单号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="方式单名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<view:pagetoolbarforWay id="completedLstGridPagingBar" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="已开通申请单">
+			<mx:DataGrid id="OpenGrid" width="100%" height="100%" 
+						 horizontalScrollPolicy="auto" itemRollOver="lastRollOverIndex = event.rowIndex">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/>
+					<mx:DataGridColumn headerText="申请单号" dataField="requisitionid" width="170"/>
+					<mx:DataGridColumn headerText="方式单号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="方式单名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<view:pagetoolbarforWay id="OpenGridPagingBar" width="100%"/>
+		</mx:VBox>
+	</mx:TabNavigator>
+</mx:VBox>

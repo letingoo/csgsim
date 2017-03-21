@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--渲染方法-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   implements="mx.controls.listClasses.IDropInListItemRenderer"
+		   horizontalScrollPolicy="off" verticalScrollPolicy="off"
+		   clipContent="false"
+		    updateComplete="initial()"
+		   >
+	
+	
+	
+	<!--
+	* This item renderer shows how to apply a custom background
+	* color to a datagrid cell when the user mouses over it
+	*
+	* Author: Tony Fendall
+	* Date: 05/03/2009
+	-->
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.controls.listClasses.BaseListData;
+			
+			public var alarmGrade:String;  //告警级别
+			public var alarmstatus:String;
+			public var isAcked:String;
+			public var isCleared:String;
+			public var attentioninfo:String 
+			
+			/**
+			 * 初始化渲染值
+			 */
+			private function initial():void{
+				cellLabel.useHandCursor=false;
+				cellLabel.buttonMode=false;
+				cellLabel.mouseChildren=false;
+				cellImage.visible=false;
+				cellImage2.visible=false;
+				cellImage3.visible=false;
+				cellImage4.visible=false;
+				cellImage5.visible=false;
+				cellBackground.visible = false;
+				cellLabel.setStyle("color", "");
+				cellLabel.setStyle("textDecoration","");
+				if(alarmGrade == "rowno"){
+					if(isAcked == "0" && attentioninfo != "已转根告警处理"){
+						cellImage5.visible=true;
+					}else{
+						cellBackground.visible = false;
+						if(attentioninfo=="已转根告警处理"){
+							cellImage.visible=true;
+						}else if(attentioninfo=="已关注"){
+							cellImage2.visible=true;
+						}else if(attentioninfo=="已忽略"){
+							cellImage3.visible=true;
+						}else if(attentioninfo=="未做关注处理"){
+							cellImage4.visible=true;
+						}
+					}
+				}else if(alarmGrade == "alarmobjdesc")
+				{
+					cellBackground.visible = false;
+					if(isCleared == "0" && isAcked == "0" && attentioninfo != "已转根告警处理")
+					{
+						cellLabel.setStyle("color", 0xFF0000);
+						cellLabel.setStyle("textDecoration","underline");
+						cellLabel.useHandCursor=true;
+						cellLabel.buttonMode=true;
+						cellLabel.mouseChildren=false;
+					}else if(isCleared == "0" && isAcked == "1" && attentioninfo != "已转根告警处理"){
+						if(attentioninfo == "未做关注处理"){
+							cellLabel.setStyle("color", 0xFF0000);
+							cellLabel.setStyle("textDecoration","underline");
+							cellLabel.useHandCursor=true;
+							cellLabel.buttonMode=true;
+							cellLabel.mouseChildren=false;
+						}else{
+							cellLabel.setStyle("color", 0xFF0000);
+						}
+					}else if(isCleared == "1" && isAcked == "0" && attentioninfo != "已转根告警处理"){
+						cellLabel.setStyle("textDecoration","underline");
+						cellLabel.useHandCursor=true;
+						cellLabel.buttonMode=true;
+						cellLabel.mouseChildren=false;
+					}else if(attentioninfo == "未做关注处理"){
+						cellLabel.setStyle("textDecoration","underline");
+						cellLabel.useHandCursor=true;
+						cellLabel.buttonMode=true;
+						cellLabel.mouseChildren=false;
+					}
+				}
+			}
+			
+			/**
+			 * Update the DataGrid Cell on Mouse Over
+			 * and on Mouse Out
+			 */
+			private function onMouseOver():void {
+				if(alarmstatus == "-1" || alarmstatus == "-2"){
+					cellBackground.visible = true;
+					cellLabel.setStyle("fontWeight","bold");
+					cellLabel.setStyle("fontSize", "14");
+				}else{
+					
+				}
+			}
+			private function onMouseOut():void {
+				cellBackground.visible = true;
+				cellLabel.setStyle("fontWeight","normal");
+				cellLabel.setStyle("fontSize", "12");
+				
+			}
+			
+			
+			
+			/**
+			 * Using the 'listData' property instead of 
+			 * the 'data' property simply to make this
+			 * component more reusable.
+			 */
+			private var _listData:BaseListData;
+			
+			public function set listData(value:BaseListData):void
+			{
+				_listData = value;
+				
+				// listData.label is set to data["dataField"]
+				cellLabel.text = _listData ? _listData.label : "";
+			}
+			
+			public function get listData():BaseListData
+			{ return _listData; }
+			
+			
+		]]>
+	</mx:Script>
+	
+	<!-- 
+	* Custom Roll Over Background
+	* This is required because the backgroundAlpha of the root component is always 0 for an itemRenderer 
+	* Extra height allows for default padding between datagrid cells
+	-->
+	<mx:Canvas id="cellBackground" width="100%" height="100%"  backgroundColor="0xFF0000"  visible="false" />
+	
+	<!-- Cell Data Label -->
+	<mx:Label id="cellLabel"  verticalCenter="0"  width="{this.width}" fontSize="12" fontWeight="normal" truncateToFit="true" />
+	<mx:Image id="cellImage" verticalCenter="0" source="assets/images/mntsubject/icons00_r4_c2.png" visible="false" />
+	<mx:Image id="cellImage2" verticalCenter="0" source="assets/images/mntsubject/icons00_r4_c4.png" visible="false" />
+	<mx:Image id="cellImage3" verticalCenter="0" source="assets/images/mntsubject/icons00_r4_c6.png" visible="false" />
+	<mx:Image id="cellImage4" verticalCenter="0" source="assets/images/mntsubject/unsolved.png" visible="false" />
+	<mx:Image id="cellImage5" verticalCenter="0" source="assets/images/mntsubject/unsolvedalarm.png" visible="false" />
+</mx:Canvas>

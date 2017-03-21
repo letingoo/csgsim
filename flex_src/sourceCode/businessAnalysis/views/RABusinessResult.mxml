@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+			   layout="absolute"
+			   fontFamily="宋体"
+			   fontSize="12"
+			   showCloseButton="true"
+			   width="900"
+			   height="500"
+			   creationComplete="init()"
+			   backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+			   backgroundSize="100%"
+			   close="close()">
+	<!--<mx:layout>
+		<mx:BasicLayout/>
+	</mx:layout>
+	<mx:Declarations> -->
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	<!--</mx:Declarations> -->
+	<mx:Script>
+		<![CDATA[       
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import twaver.DemoUtils;
+			
+			[Bindable]
+			private var fail1:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var re1:ArrayCollection = new ArrayCollection();
+			
+			public function init():void{
+				//定制右键菜单
+				var contextMenu:ContextMenu=new ContextMenu();
+				failBus.contextMenu=contextMenu;
+				failBus.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(e:ContextMenuEvent):void{
+					var item:ContextMenuItem = new ContextMenuItem("查看电路路由");
+					item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler);
+					var flexVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					var playerVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					if(failBus.selectedItems.length==0){//选中元素个数
+						failBus.contextMenu.hideBuiltInItems();
+						failBus.contextMenu.customItems = [flexVersion,playerVersion];
+					}
+					else{
+						failBus.contextMenu.hideBuiltInItems();
+						failBus.contextMenu.customItems = [item];
+					}
+				});
+				
+				var contextMenu1:ContextMenu=new ContextMenu();
+				reBus.contextMenu=contextMenu1;
+				reBus.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(e:ContextMenuEvent):void{
+					var item:ContextMenuItem = new ContextMenuItem("查看电路路由");
+					item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, item2SelectHandler);
+					var flexVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					var playerVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					if(reBus.selectedItems.length==0){//选中元素个数
+						reBus.contextMenu.hideBuiltInItems();
+						reBus.contextMenu.customItems = [flexVersion,playerVersion];
+					}
+					else{
+						reBus.contextMenu.hideBuiltInItems();
+						reBus.contextMenu.customItems = [item];
+					}
+				});
+			}
+			
+			
+			private function itemSelectHandler(e:ContextMenuEvent):void{
+				if(failBus.selectedItem!=null){
+					var busname:String= failBus.selectedItem.BUSINESS_ID;
+					if(busname!=""){
+						var rtCarry:RemoteObject = new RemoteObject("businessAnalysis");
+						rtCarry.addEventListener(ResultEvent.RESULT,resultCarryHandler);
+						rtCarry.endpoint = ModelLocator.END_POINT;
+						rtCarry.showBusyCursor = true;
+						rtCarry.getBusinessInfo(busname);//add by xgyin
+					}
+				}
+			}
+			
+			private function item2SelectHandler(e:ContextMenuEvent):void{
+				if(reBus.selectedItem!=null){
+					var busname:String= reBus.selectedItem.BUSINESS_ID;
+					if(busname!=""){
+						var rtCarry:RemoteObject = new RemoteObject("businessAnalysis");
+						rtCarry.addEventListener(ResultEvent.RESULT,resultCarryHandler);
+						rtCarry.endpoint = ModelLocator.END_POINT;
+						rtCarry.showBusyCursor = true;
+						rtCarry.getBusinessInfo(busname);//add by xgyin
+					}
+				}
+			}
+			
+			public function resultCarryHandler(event:ResultEvent):void{
+				var arr:Array = event.result.toString().split("==");
+				
+				if(arr.length==2){
+					Registry.register("para_circuitcode", arr[0]);
+					Registry.register("para_circuitype", arr[1]);
+					Application.application.openModel("方式信息", false);
+				}else{
+					Alert.show("没有相应的电路！","提示！");
+				}
+			}
+			
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+			public function setInfo(a:ArrayCollection,b:ArrayCollection,c:String):void{
+				fail1 = a;
+				re1 = b;
+				this.title = c + "故障时，可影响的业务和不可恢复的业务是：";
+			}
+			
+			
+	]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" paddingTop="5" paddingBottom="5" paddingLeft="5" paddingRight="5">
+		<mx:HBox width="100%" height="100%" horizontalGap="5" verticalGap="5">
+			<mx:DataGrid id="failBus" width="50%" height="100%" dataProvider="{fail1}" >
+				<mx:columns>
+					<mx:DataGridColumn dataField="BUSINESS_NAME" headerText="受影响业务"/>
+					<mx:DataGridColumn dataField="BUSINESS_ID" headerText="业务ID" visible="false" />
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:DataGrid id="reBus" width="50%" height="100%" dataProvider="{re1}">
+				<mx:columns>
+					<mx:DataGridColumn dataField="BUSINESS_NAME" headerText="中断业务"/>
+					<mx:DataGridColumn dataField="BUSINESS_ID" headerText="业务ID" visible="false" />
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

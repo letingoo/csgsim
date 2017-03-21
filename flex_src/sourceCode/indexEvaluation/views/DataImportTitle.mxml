@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+				fontFamily="宋体"
+				fontSize="12"
+				width="100%" 
+				height="100%"
+				verticalGap="0"
+				creationComplete="init()"
+				backgroundSize="100%">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			private var fileRefer:FileReference = new FileReference();
+			private var flag:Boolean = false;
+			private var fileName:String="";
+			private var start:String="";
+			
+			/**
+			 * 
+			 * 初始化
+			 * 
+			 * */
+			private function init():void{
+				this.flag=false;
+			}
+			//浏览按钮，选择文件
+			private function importClick(event:MouseEvent):void {
+				//过滤文件
+				var fileType:FileFilter = new FileFilter("Excel","*.xls");
+				var fileTypes:Array = new  Array(fileType);
+				//导入
+				fileRefer.addEventListener(Event.SELECT,parseExcel);//上传处理
+				fileRefer.addEventListener(Event.COMPLETE, file_complete);//上传完成处理
+				fileRefer.browse(fileTypes);
+			}
+			
+			private function parseExcel(evt:Event):void {
+				//调用Servlet
+				fileName = fileRefer.name;
+				var url:URLRequest=new  URLRequest("upload?loadType=parseExcel");
+				fileRefer.upload(url);
+			}
+			private function file_complete (e:Event):void {
+				Alert.show("上传完毕,请点击下一步");
+				this.flag=true;
+			}
+			
+			/**
+			 * 
+			 * 下载模板
+			 * 
+			 * */
+			protected function Download_clickHandler(event:MouseEvent):void
+			{
+				var uriStr:String = "assets/Templates/indexEvaluation.xls";
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(uriStr))); 
+				navigateToURL(request,"_blank");
+			}
+			
+			/**
+			 * 
+			 * 下一步,数据入库操作，验证文件的正确性
+			 * 
+			 * */
+			protected function NEXT_clickHandler(event:MouseEvent):void
+			{
+				if(flag==true)
+				{
+					var remoteobj:RemoteObject = new RemoteObject("indexEvaluation"); 
+					remoteobj.endpoint = ModelLocator.END_POINT;
+					remoteobj.showBusyCursor = true;
+					remoteobj.addEventListener(ResultEvent.RESULT,dataHandler);
+					remoteobj.importDataProcess(fileName);
+				}else
+				{
+					Alert.show("您还没上传文件！","提示");				
+				}
+			}
+			
+			private function dataHandler(event:ResultEvent):void{
+				this.flag=false;
+				var arr = event.result.toString().split(";");
+				if("success"==arr[0]){
+					//入库正确
+					//给start赋值
+					start = arr[1];
+					Alert.show("数据入库成功!是否查看？","提示",3,this,openDataJSP);
+				}else{
+					Alert.show("文件入库失败，请检查上传文件内容，然后重试！","提示");
+				}
+			}
+			//需要传入时间和单位
+			private function openDataJSP(event:CloseEvent):void{
+				if(event.detail==Alert.YES){
+					var url:String ="show.jsp?start="+start+"&dept=gz";//乱码
+					navigateToURL(new URLRequest(url),null);
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:Label x="9" y="28" text="首先，您需要下载数据模板：" width="475" height="26"/>
+	<mx:Button x="319" y="69" label="下载" width="100" styleName="loginprimary" click="Download_clickHandler(event)"/>
+	<mx:Label x="10" y="146" text="或者，如果您有已经编辑好的Excel文件，可以浏览上传。" width="369" height="21"/>
+	<mx:Button label="上传" click="importClick(event);" styleName="loginprimary" x="408" y="189" width="100"/>
+	<mx:Spacer height="26"/>
+	<mx:Button x="321" y="261" label="下一步" width="100" styleName="loginprimary" click="NEXT_clickHandler(event)"/>
+</mx:VBox>

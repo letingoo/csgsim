@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				title="选择机房"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="App(event);initEvent();"
+				layout="absolute" minWidth="955" minHeight="600" width="400" height="400" fontSize="13">
+	
+	<mx:Script source="../actionscript/eRoomTree.as" />
+	
+<!--	itemclick="stationsRoomTree_itemclickhandler(event)"-->
+	<mx:Tree x="0" y="0" 
+			 width="100%" height="100%" 
+			 dataProvider="{folderCollection}"
+			 labelField="@label"
+			 defaultLeafIcon="{leafPic}" 
+			 borderStyle="none"
+			 doubleClickEnabled="true"
+			 doubleClick="stationsRoomTree_doubleClickHandler(event)"
+			 change="stationsRoomTree_changeHandler()"
+			 itemClick="tree_itemClick(event)"
+			 itemOpen="stationsRoomTree_changeHandler()"
+			 itemRollOver="curIndex = event.rowIndex"
+			 verticalScrollPolicy="auto"
+			 id="stationsRoomTree"/>
+	
+</mx:TitleWindow>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="800" height="400"
+				creationComplete="initApp()"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.businessDispatch.model.ResultModel;
+			import sourceCode.businessDispatch.model.SelectOthersCircuit;
+			public var XMLData:XML;
+			private var lastRollOverIndex:int;
+			private var createCircuitMenuItem:ContextMenuItem;
+			private var contextMeau:ContextMenu;
+			
+			protected function initApp():void{         
+				var mode:SelectOthersCircuit = new SelectOthersCircuit();
+				var obj:RemoteObject = new RemoteObject("businessDispatch");
+				obj.showBusyCursor=true;
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.getNotPicItems(mode);
+				obj.addEventListener(ResultEvent.RESULT,resultHandler);
+				
+			}
+			private function resultHandler(e:ResultEvent):void{
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				var result:ResultModel=e.result as ResultModel;
+				//this.datanumbers = result.totalCount;
+				if(result!=null){
+					addedPicGrid.dataProvider = result.orderList;
+				}
+				createMenuItem();
+			}
+			public function createMenuItem():void{
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				if(label=='补充方式图' && addedPicGrid.dataProvider!=null && addedPicGrid.dataProvider!=""){
+					createCircuitMenuItem = new ContextMenuItem("创建方式制作图");
+					contextMeau = new ContextMenu();
+					contextMeau.hideBuiltInItems();
+					contextMeau.customItems =[createCircuitMenuItem];
+					addedPicGrid.contextMenu = contextMeau;
+				}
+				if(createCircuitMenuItem != null) createCircuitMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,cCMItemHandler);
+				if(contextMeau != null) contextMeau.addEventListener(ContextMenuEvent.MENU_SELECT,Menu_select);
+			}
+			public function Menu_select(e:ContextMenuEvent):void{
+				addedPicGrid.selectedIndex = lastRollOverIndex;
+			}
+			public function cCMItemHandler(e:Event):void{
+				var draw:drawCircuitPic = new drawCircuitPic;
+				PopUpManager.addPopUp(draw,this,true);
+				draw.obj = addedPicGrid.selectedItem as SelectOthersCircuit;
+				
+			}
+
+		]]>
+	</mx:Script>
+	<mx:TabNavigator width="100%" height="100%"  id="tabnavigator" creationPolicy="all" y="0" fontSize="12" fontFamily="Verdana">
+		<mx:VBox label="补充方式图" >
+			<mx:DataGrid width="100%" height="100%" id="addedPicGrid" dragEnabled="true" 
+						 horizontalScrollPolicy="auto" horizontalCenter="16" verticalCenter="-152" editable="false" 
+						 itemRollOver="lastRollOverIndex = event.rowIndex">
+				<mx:columns>
+					<!--<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/>--> 
+					<mx:DataGridColumn headerText="序号" width="50" dataField="no"/>
+					<mx:DataGridColumn headerText="申请单号/原方式单号" dataField="requisitionid" width="170"/> 
+					<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="业务名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:DataGrid width="100%" height="100%">
+				
+			</mx:DataGrid>
+		</mx:VBox>
+	</mx:TabNavigator>
+</mx:TitleWindow>

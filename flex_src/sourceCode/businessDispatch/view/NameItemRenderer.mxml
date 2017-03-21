@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Button styleName="{data.isOpen == true ? 'subBtn' : 'norBtn'}" id="btn" x="3" y="3" click="btnExpandSub()" visible="{data.parent==true}"/>
+	<mx:Label text="{data.name}" x="22" y="0"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.utils.ObjectProxy;
+			
+			private function btnExpandSub():void{
+				if(data.isOpen == false){
+					data.isOpen = true;
+					this.btn.styleName = "subBtn";
+					var arr:Array = String(data.path).split("->");
+					arr.pop();
+					arr.reverse();
+					for(var i:int = 0; i < arr.length; i++){
+						DataGrid(this.owner).dataProvider.addItemAt(new ObjectProxy({name:"◆ "+arr[i],path:"",pathcode:"",parent:false,sum:data.sum}),DataGrid(this.owner).selectedIndex+1);
+					}
+				}else{
+					data.isOpen = false;
+					this.btn.styleName = "norBtn";
+					for(var j:int = 0; j < DataGrid(this.owner).dataProvider.length; j++){
+						if(DataGrid(this.owner).dataProvider[j].parent == false &&  DataGrid(this.owner).dataProvider[j].sum == data.sum){
+							DataGrid(this.owner).dataProvider.removeItemAt(j);
+							j--;
+						}
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

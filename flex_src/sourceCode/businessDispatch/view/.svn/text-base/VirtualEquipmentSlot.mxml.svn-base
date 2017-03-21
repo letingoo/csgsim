@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="294" height="398"
+				creationComplete="initApp()"
+				title="配置时隙"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				fontSize="13">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import twaver.Link;
+			public var link:Link;
+			protected function initApp():void
+			{
+				var rtobj11:RemoteObject = new RemoteObject("equInfo");
+				rtobj11.endpoint = ModelLocator.END_POINT;
+				rtobj11.showBusyCursor = true;
+				rtobj11.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率) YW0102__
+				rtobj11.addEventListener(ResultEvent.RESULT, function(e:ResultEvent){
+					var XMLData_Rate:XMLList = new XMLList(e.result.toString())
+					linerate.dataProvider = XMLData_Rate.children();
+					linerate.labelField = "@label";
+					if(link.getClient("virtualTopoLinkProperty")!=null){
+						var obj:Object= link.getClient("virtualTopoLinkProperty") as Object;
+						linerate.selectedItem = new XML("<name label =\""+obj.linerateName+"\" code=\""+obj.linerate+"\" />");
+					}
+					
+				});
+
+				
+				
+			}
+			private function controlTimeSlotDisplay(e:ListEvent):void{
+				var xml:XML = linerate.selectedItem as XML;
+				var code = xml.@code;
+				if (code == 'ZY110601' || code == 'ZY110602' || code == 'ZY110603' || code == 'ZY110604') {
+					timeSlot.enabled = true;
+				}else{
+					timeSlot.enabled = false;
+				}
+				
+				
+			}
+			private function getVirtualSlot(e:Event):void{
+				if(timeSlot.enabled==true){
+					var slot_tree:virtualslottree = new virtualslottree();
+					slot_tree.rate = "YW010201";
+					slot_tree.linerate=linerate.selectedItem.@code;
+					slot_tree.parent_page = this;
+					slot_tree.flag = 'virtualtopoforVES';
+					slot_tree.e_link = link;
+					PopUpManager.addPopUp(slot_tree, this, true);
+					PopUpManager.centerPopUp(slot_tree);
+				}
+				
+			}
+
+
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				if(this.currentState!='rate'){
+				if(linerate.text==null||linerate.text==""){
+					Alert.show("速率不能为空！","温馨提示");
+				}else if(timeSlot.text==null||timeSlot.text==""){
+					Alert.show("时隙不能为空！","温馨提示");
+				}else{
+					link.name=timeSlot.text;
+					link.setClient('linerate',new String(linerate.selectedItem.@code));
+					link.setClient('systemcode','虚拟系统');
+					PopUpManager.removePopUp(this);
+				}
+				}else{
+					if(linerate.text==null||linerate.text==""){
+						Alert.show("速率不能为空！","温馨提示");
+					}else{
+//						link.name=timeSlot.text;
+						link.setClient('linerate',new String(linerate.selectedItem.@code));
+						link.setClient('systemcode','虚拟系统');
+						PopUpManager.removePopUp(this);
+					}
+					
+				}
+			}
+
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				if(link.name==null||link.name==""){
+					this.dispatchEvent(new Event("closeVES"));
+				}
+			}
+
+		]]>
+	</mx:Script>
+	<mx:states>
+		<mx:State name="rate">
+			<mx:RemoveChild target="{formitem1}"/>
+		</mx:State>
+	</mx:states>
+	<mx:VBox width="100%" height="100%">
+	<mx:Form x="0" y="0" width="100%" height="300">
+		<mx:FormItem label="速率:">
+			<mx:ComboBox id="linerate" change="controlTimeSlotDisplay(event)" />
+		</mx:FormItem>
+		<mx:FormItem label="时隙:" id="formitem1">
+			<mx:TextInput  click="getVirtualSlot(event)" id="timeSlot" />
+		</mx:FormItem>
+	</mx:Form>
+		<mx:Canvas width="100%" height="100%" backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%" >
+			<mx:Button x="40" y="15" label="保存" width="80" styleName="loginprimary" click="button2_clickHandler(event)"/>
+			<mx:Button x="150" y="15" label="取消" width="80" styleName="loginsecondary" click="button1_clickHandler(event)"/>
+			
+		</mx:Canvas>
+	</mx:VBox>
+</mx:TitleWindow>

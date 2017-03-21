@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="30" 
+		 verticalAlign="middle"
+		 horizontalGap="1"
+		 rollOver="rollOverHandler(event)" 
+		 rollOut="rollOutHandler(event)"  >
+	<mx:Spacer width="5"/>
+	<mx:Image source="assets/images/sysManager/log_on.png" width="16" height="16"/>
+	<mx:Label text="{_usename}"/>
+	<mx:Label text="{_ip}" fontSize="11" color="green"/>
+    <mx:Label text="{_time}" fontSize="11" color="red"/>
+	<mx:Script source="../../actionscript/comp/User.as"/>
+</mx:HBox>

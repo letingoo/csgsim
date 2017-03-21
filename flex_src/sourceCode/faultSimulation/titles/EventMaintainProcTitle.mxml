@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="700"
+				height="388"
+				creationComplete="init()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{MyPopupManager.removePopUp(this)}">
+	<mx:Script source="../actionscript/EventMaintainProcTitle.as" />
+	
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center"
+			 verticalGap="0">
+		
+		<mx:HBox width="100%"
+				 height="80%">
+			<mx:Form width="100%" height="100%">
+				<mx:FormItem label="处理方法" required="{isRequired}" enabled="{isEnabled}">
+					<mx:TextInput id="operatetype" width="180" />
+				</mx:FormItem>
+		
+				<mx:FormItem label="本端设备类型" >
+					<mx:ComboBox id="a_equiptype"  width="180" editable="false" />
+				</mx:FormItem>
+				
+				<mx:FormItem label="对端设备类型" >
+					<mx:ComboBox id="z_equiptype"  width="180" editable="false" />
+				</mx:FormItem>
+				
+				<mx:FormItem label="设备异常状态" required="{isRequired}">
+					<mx:TextInput id="operatedes" width="180" />
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+			<mx:Form width="100%" height="100%">
+			
+				<mx:FormItem label="是否有本端设备" required="{isRequired}">
+					<mx:ComboBox id="hasA_equip" width="180" editable="false" selectedIndex="-1">
+						<mx:ArrayCollection> 
+							<mx:Object label="是" data="0"/> 
+							<mx:Object label="否" data="1"/> 
+						</mx:ArrayCollection> 
+					</mx:ComboBox>
+				</mx:FormItem>
+				
+				<mx:FormItem label="是否有对端设备" required="{isRequired}">
+					<mx:ComboBox id="hasZ_equip" width="180" editable="false" selectedIndex="-1">
+						<mx:ArrayCollection> 
+							<mx:Object label="是" data="0"/> 
+							<mx:Object label="否" data="1"/> 
+						</mx:ArrayCollection> 
+					</mx:ComboBox>
+				</mx:FormItem>
+				<!--
+				<mx:FormItem label="干预性方法" required="{false}">
+					<mx:ComboBox id="isinterposeoperate" width="180" editable="false" selectedIndex="-1">
+						<mx:ArrayCollection> 
+							<mx:Object label="是" data="0"/> 
+							<mx:Object label="否" data="1"/> 
+						</mx:ArrayCollection> 
+					</mx:ComboBox>
+				</mx:FormItem>
+				-->
+				<mx:FormItem label="设备默认状态" required="{isRequired}">
+					<mx:TextInput id="expectedresult" width="180"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="备注" >
+					<mx:TextArea id="remark" width="180" height="50"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+		</mx:HBox>
+		
+		<mx:HBox width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			
+			<mx:Button id="btn"
+					   label="{this.title}"
+					   styleName="loginprimary"
+					   width="80"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="80"/>
+			<mx:Button label="关闭"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="PopUpManager.removePopUp(this)"/>
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+</mx:TitleWindow>

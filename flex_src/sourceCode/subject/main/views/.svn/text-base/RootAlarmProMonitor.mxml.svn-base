@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--根告警处理跟踪监视 -->
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml"
+		  xmlns:cellrender="sourceCode.subject.main.actionscript.*"
+		  creationComplete="init()"
+		  borderThickness="1" borderThicknessBottom="2"  borderThicknessLeft="2"
+		  borderThicknessRight="2" borderThicknessTop="2"
+		  headerHeight="0"  backgroundAlpha="1" borderColor="#157baa"
+		  >
+	<mx:Style>
+		.DataGrid1 {
+			alternatingItemColors: #ffffff, #eef4ff;
+			verticalGridLineColor: #d3e9ff;
+			borderColor: #d3e9ff;
+			headerBackgroundSkin: Embed(source="assets/images/mntsubject/theme_formbg.png");
+			horizontalGridLines: false;
+			verticalGridLineColor: #dadada;
+			fontFamily: Arial;
+			fontSize: 12;
+			headerStyleName: "mydataGridHeaderStyle1";
+		}
+		.mydataGridHeaderStyle1 {
+			fontFamily: Arial;
+			fontWeight: normal;
+			fontSize: 12;
+			fontStyle: normal;
+			textDecoration: none;
+			textAlign: center;
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			
+			import mx.charts.events.ChartItemEvent;
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.alarmmgr.views.AlarmManager;
+			import sourceCode.subject.main.actionscript.*;
+			
+			public var tableFlag:int=0;
+			private var getRootMonitorData:RemoteObject;
+			private var medalsAC:ArrayCollection=new ArrayCollection();
+			private var rootAlarmWin:TitleWindow;
+			private var alarmWin:TitleWindow;
+			//private var manageralarm:manageralarmwin=new manageralarmwin();
+			[Bindable]
+			public var ts:ArrayCollection = new ArrayCollection(); 
+			[Embed(source="assets/images/rootalarm/alarm_message.png")]
+			public var Icon:Class; 
+			public var param:ArrayCollection =new ArrayCollection();
+			public var params:ArrayCollection= new ArrayCollection();
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class;
+			private var flag:int=0;
+			
+			public function init(){
+				tableFlag=1;
+				pic.percentHeight=100;
+				pic.percentWidth=100;
+				dg.visible=false;
+				dg.includeInLayout=false;
+				pic.visible=true;
+				pic.includeInLayout=true;
+				getDate();
+			}
+			
+			private function getDate():void{
+				var rtobj:RemoteObject=new RemoteObject("RootAlarmProMonitorDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getDateEquip();       
+				rtobj.addEventListener(ResultEvent.RESULT,setDateEquip);
+			}
+			
+			private function setDateEquip(event:ResultEvent):void{
+				param.removeAll();
+				param=event.result as ArrayCollection;
+				var changedate:String=param[0].CHANGEDATE;
+				var starttime:String=param[0].STARTTIME;
+				var endtime:String=param[0].ENDTIME;
+				if(param[0].ALARMCOUNT=="1"){
+					alarmTotal.visible=true;
+				}else{
+					alarmTotal.visible=false;
+				}if(param[0].ACKEDCOUNT=="1"){
+					ackedAlarmcount.visible=true;
+				}else{
+					ackedAlarmcount.visible=false;
+				}if(param[0].ACKEDTIME=="1"){
+					avAckedtime.visible=true;
+				}else{
+					avAckedtime.visible=false;
+				}if(param[0].COMPLETECOUNT=="1"){
+					completeInfocount.visible=true;
+				}else{
+					completeInfocount.visible=false;
+				}
+				dg.dataProvider = params;
+				pagingFunction(starttime,endtime,changedate);
+			}
+			
+			public function linkRelationUI(obj:Object,alarmGrade:String):void{
+				rootAlarmWin=new TitleWindow();
+				rootAlarmWin.layout="absolute";
+				rootAlarmWin.x=0;rootAlarmWin.y=0;
+				rootAlarmWin.width=Capabilities.screenResolutionX;
+				rootAlarmWin.height=Capabilities.screenResolutionY-260;
+				rootAlarmWin.styleName="popwindow";
+				rootAlarmWin.showCloseButton="true";
+				rootAlarmWin.title="根告警查询";
+				var currentRootAlarm:AlarmManager=new AlarmManager();
+				currentRootAlarm.flag=1;
+				currentRootAlarm.iscleared='0';
+				currentRootAlarm.dealperson=obj.DEALPERSON;
+				if(tableFlag==0){
+					if(alarmGrade=="ackedalarmcount"){
+						currentRootAlarm.isacked='1';
+					}else if (alarmGrade=="alarmtotal"){
+						currentRootAlarm.isacked="2";
+					}
+				}else{
+					if(alarmGrade=="当值内自确认告警数"){
+						currentRootAlarm.isacked='1';
+					}else if (alarmGrade=="当值内根告警数"){
+						currentRootAlarm.isacked="2";
+					}
+				}
+				rootAlarmWin.addEventListener(CloseEvent.CLOSE,titlewinclose1);
+				rootAlarmWin.addChild(currentRootAlarm);
+				PopUpManager.addPopUp(rootAlarmWin,main(Application.application),true);
+				PopUpManager.centerPopUp(rootAlarmWin);
+				
+				
+			}
+			private function titlewinclose1(evt:CloseEvent):void{
+				PopUpManager.removePopUp(rootAlarmWin);
+			}
+			
+			private function load(event:ResultEvent):void{
+				params=event.result as ArrayCollection;
+				dg.dataProvider=params;
+				drawGraphic(params);
+				
+			}
+			
+			public function pagingFunction(starttime,endtime,changedate):void {
+				if(dg.dataProvider){
+					dg.dataProvider.removeAll();
+				}
+				var rtobj:RemoteObject = new RemoteObject("RootAlarmProMonitorDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getRootAlarmProMonitor(starttime,endtime,changedate);
+				rtobj.addEventListener(ResultEvent.RESULT, load);
+			}
+			private function drawGraphic(pieArrayCollection:ArrayCollection):void{
+				if(tableFlag==1){
+					pic.percentHeight=100;
+					pic.percentWidth=100;
+				}
+				medalsAC.removeAll();
+				medalsAC = pieArrayCollection;
+				column.setStyle("columnWidthRatio",0.5);
+				column.dataProvider=medalsAC;
+			}
+			private function faultHandler(evt:FaultEvent):void{
+				Alert.show(evt.fault.toString(),"提示信息",4,this,null,iconClass);
+			}
+			
+			
+			protected function liebiao_clickHandler(event:MouseEvent):void
+			{
+				tableFlag=0;
+				pic.visible=false;
+				pic.includeInLayout=false;
+				dg.visible=true;
+				dg.includeInLayout=true;
+				getDate();
+			}
+			public function createPie():void{
+				tableFlag=1;
+				pic.percentHeight=100;
+				pic.percentWidth=100;
+				dg.visible=false;
+				dg.includeInLayout=false;
+				pic.visible=true;
+				pic.includeInLayout=true;
+			}
+			
+			protected function column_doubleClickHandler(evt:ChartItemEvent):void
+			{   
+				var data:Object=new Object();
+				data.DEALPERSON=evt.hitData.item.DEALPERSON;
+				var alarmGrade:String=ColumnSeries(evt.hitData.element).displayName;
+				linkRelationUI(data,alarmGrade);
+			}
+			public function rootAlarmProEquip():void{
+				var rootalarmproequip:RootAlarmProEquip = new RootAlarmProEquip();
+				rootalarmproequip.flag=flag;
+				rootalarmproequip.rp=this;
+				rootalarmproequip.x=0;rootalarmproequip.y=-20;
+				PopUpManager.addPopUp(rootalarmproequip,this,true);
+				PopUpManager.centerPopUp(rootalarmproequip);
+			}
+		]]>
+	</mx:Script>
+	
+	
+	<mx:Stroke id="chartAxisStroke" color="0x666666" weight="3"/>
+	<mx:Stroke id="chartAxisStrokeThick" caps="round" color="0x666666" weight="3" />    
+	<mx:Stroke id="yline" caps="round" color="0xFFFFFF" weight="0" />    
+	<mx:SolidColor id="sc1" color="#ffd400"/>	
+	<mx:SolidColor id="sc2" color="#00FF00"/> 
+	<mx:SolidColor id="sc3" color="#009dff"/>
+	<mx:SolidColor id="sc4" color="#006633"/>
+	<mx:Grid width="100%" height="100%" verticalGap="0" horizontalGap="0"  backgroundColor="#FFFFFF">
+		<mx:GridRow width="100%" height="28" >
+			<!-- 以下banner 条部分-->
+			<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="100%" height="100%" >						
+				<mx:Grid id="transline" width="100%" height="28" verticalGap="0" horizontalGap="0" backgroundColor="#FFFFFF">
+					<mx:GridRow width="100%" height="28" backgroundImage="@Embed(source='assets/images/mntsubject/themeheader.png')" backgroundSize="100%" >
+						<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="30%" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerbg.png')" backgroundSize="100%" color="#FFFFFF">				          
+							<mx:Label text="根告警处理跟踪监视"  />
+						</mx:GridItem>
+						<mx:GridItem horizontalAlign="right"  width="35" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerrightbg.png')" >
+						</mx:GridItem>
+						<mx:GridItem horizontalAlign="right" verticalAlign="middle" width="55%" height="100%" >
+							<mx:HBox>
+								<mx:LinkButton  icon="@Embed(source='assets/images/mntsubject/falshalarmequip.png')" click="rootAlarmProEquip()"/>
+								<mx:LinkButton icon="@Embed(source='assets/images/mntsubject/Form.png')" click="liebiao_clickHandler(event)"/>
+								<mx:LinkButton icon="@Embed(source='assets/images/mntsubject/Columnar.png')" click="createPie()"/>
+							</mx:HBox>
+						</mx:GridItem>
+					</mx:GridRow>
+				</mx:Grid>
+			</mx:GridItem>	
+			<!-- 以上banner 条部分-->
+		</mx:GridRow>	
+		<mx:GridRow width="100%" height="100%">
+			<mx:GridItem width="100%" height="100%" >
+				<!-- 以下监控拓扑区-->
+				<mx:DataGrid id="dg"  sortableColumns="false"   horizontalScrollPolicy="off"  wordWrap="true" styleName="DataGrid1"
+							 width="100%"  height="100%" rowHeight="30" textAlign="center" >
+					<mx:columns>
+						<mx:DataGridColumn headerText="值班人员" textAlign="left" dataField="DEALPERSON" />
+						<mx:DataGridColumn headerText="当值内根告警数量"  dataField="ALARMTOTAL"  >
+							<mx:itemRenderer>
+								<mx:Component>
+									<cellrender:RollOverItemRenderer alarmGrade="alarmtotal" click="outerDocument.linkRelationUI(data,'alarmtotal')"/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+						
+						<mx:DataGridColumn headerText="当值内自确认数量" dataField="ACKEDALARMCOUNT" >
+							<mx:itemRenderer>
+								<mx:Component>
+									<cellrender:RollOverItemRenderer alarmGrade="ackedalarmcount" click="outerDocument.linkRelationUI(data,'ackedalarmcount')"/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="当值内平均确认时间" dataField="AVACKEDTIME" >
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="完整填写确认信息的数量" dataField="COMPLETEINFOCOUNT" >
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>
+				<mx:VBox id="pic" visible="false" includeInLayout="false">
+					<!--<mx:Legend dataProvider="{column}" horizontalAlign="center" />-->
+					<mx:Legend width="100%" horizontalGap="0" direction="horizontal">
+						<mx:LegendItem label="当值内根告警数量" fontWeight="normal" fontSize="12">
+							<mx:fill>
+								<mx:SolidColor color="#ffd400"/>
+							</mx:fill>
+							<mx:stroke>
+								<mx:Stroke color="0x000000" weight="1"/>
+							</mx:stroke>
+						</mx:LegendItem>
+						<mx:LegendItem label="当值内自确认数量" fontWeight="normal" fontSize="12">
+							<mx:fill>
+								<mx:SolidColor color="#00FF00"/>
+							</mx:fill>
+							<mx:stroke>
+								<mx:Stroke color="0x000000" weight="1"/>
+							</mx:stroke>
+						</mx:LegendItem>
+						<mx:LegendItem label="当值内平均确认时间" fontWeight="normal" fontSize="12">
+							<mx:fill>
+								<mx:SolidColor color="#009dff"/>
+							</mx:fill>
+							<mx:stroke>
+								<mx:Stroke color="0x000000" weight="1" />
+							</mx:stroke>
+						</mx:LegendItem>
+						
+						<mx:LegendItem label="完整填写确认信息的数量" fontWeight="normal" fontSize="12">
+							<mx:fill>
+								<mx:SolidColor color="#006633"/>
+							</mx:fill>
+							<mx:stroke>
+								<mx:Stroke color="0x000000" weight="1" />
+							</mx:stroke>
+						</mx:LegendItem>
+					</mx:Legend>
+					
+					<mx:ColumnChart id="column" height="100%" color="0x323232" width="100%"
+									showDataTips="true" dataProvider="{medalsAC}"  itemDoubleClick="column_doubleClickHandler(event)" doubleClickEnabled="true">
+						
+						
+						<mx:horizontalAxis >
+							<mx:CategoryAxis id="chartXAxis" categoryField="DEALPERSON"/>
+						</mx:horizontalAxis>
+						<mx:horizontalAxisRenderers>
+							<!-- 定制横坐标 -->
+							<mx:AxisRenderer axis="{chartXAxis}" axisStroke="{chartAxisStroke}" color="#000000" tickStroke="{chartAxisStroke}" />
+						</mx:horizontalAxisRenderers>
+						<!-- 定制纵坐标 -->
+						<mx:verticalAxis>
+							<mx:LinearAxis id="chartYAxis"/>
+						</mx:verticalAxis>
+						<mx:verticalAxisRenderers>
+							<mx:AxisRenderer axis="{chartYAxis}" fontSize="12" axisStroke="{chartAxisStrokeThick}" color="#000000" canDropLabels="true" tickStroke="{yline}" />
+						</mx:verticalAxisRenderers>
+						<mx:series>
+							<mx:ColumnSeries id="alarmTotal" xField="DEALPERSON" yField="ALARMTOTAL" displayName="当值内根告警数量" fill="{sc1}" fontSize="12" fontFamily="Arial" fontWeight="normal"/>
+							<mx:ColumnSeries id="ackedAlarmcount" xField="DEALPERSON" yField="ACKEDALARMCOUNT" displayName="当值内自确认数量" fill="{sc2}" fontSize="12" fontFamily="Arial" fontWeight="normal"/>
+							<mx:ColumnSeries id="avAckedtime" xField="DEALPERSON" yField="AVACKEDTIME" displayName="当值内平均确认时间" fill="{sc3}" fontSize="12" fontFamily="Arial" fontWeight="normal"/>
+							<mx:ColumnSeries id="completeInfocount" xField="DEALPERSON" yField="COMPLETEINFOCOUNT" displayName="完整填写确认信息的数量" fill="{sc4}" fontSize="12" fontFamily="Arial" fontWeight="normal"/>
+						</mx:series>
+					</mx:ColumnChart>
+				</mx:VBox>
+			</mx:GridItem>	
+		</mx:GridRow>
+	</mx:Grid>				
+</mx:Panel>

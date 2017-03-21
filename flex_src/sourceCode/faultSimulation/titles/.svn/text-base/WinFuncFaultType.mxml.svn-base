@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*"
+				   layout="absolute" width="100%" height="100%"
+				   showControls="true" enableResize="true"
+				   windowContainer="{Application.application.windowContainer}"
+				   title="{winTitle}">
+	
+	<mx:ViewStack id="vs" width="100%" height="100%">
+		<mx:Canvas>
+			<mx:Label text="节点编码:" x="15" y="6"/>
+			<mx:TextInput id="txtId" enabled="false" x="16" y="22" width="245" text="{operationModel.oper_id}"/>
+			<mx:Label text="节点类型:" x="15" y="52"/>
+			<mx:ComboBox id="cmbOperType" x="16" y="68" width="245" enabled="true"/>
+			<mx:Label text="节点名称:" x="15" y="98" id="l_Name"/>
+			<mx:TextInput id="txtName" x="16" y="114" width="245" text="{operationModel.projectname}" />
+			
+			<mx:HBox width="100%" x="0" y="190" height="30" verticalAlign="middle"
+					 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+				<mx:Spacer width="20%"/>
+				<mx:Button x="156" y="190" label="保存" styleName="loginprimary" click="saveFunc('Update')"/>
+				<mx:Button x="212" y="190" label="取消" styleName="loginsecondary" click="closeWin()"/>
+			</mx:HBox>
+		</mx:Canvas>
+		<mx:Canvas>
+			<mx:Label text="节点类型:" x="15" y="6"/>
+			<mx:ComboBox id="cmbNodeOperType" x="16" y="22" width="245"  enabled="true"/>
+			<mx:Label x="13" y="52" text="请输入名称:"  id="l_NodeName"/>
+			<mx:TextInput id="txtNodeName" x="15" y="68" width="245" text="{operationModel.projectname}" />
+			<mx:HBox width="100%" x="0" y="154" height="30" verticalAlign="middle"
+					 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+				<mx:Spacer width="20%"/>
+				<mx:Button x="145" y="154" label="保存" styleName="loginprimary" click="saveFunc('Add')"/>
+				<mx:Button x="201" y="154" label="取消" styleName="loginsecondary" click="closeWin()"/>
+			</mx:HBox>
+		</mx:Canvas>
+	</mx:ViewStack>
+	<mx:RemoteObject id="roOperManager" 
+					destination="faultSimulation" 
+					showBusyCursor="true" 
+					endpoint="{ModelLocator.END_POINT}"
+					result="resultHandler(event)"
+					fault="faultHandler(event)"/>
+	<mx:Script source="../actionscript/WinFuncFaultType.as"/>
+</panel:PanelWindow>

@@ -1,0 +1,58 @@
+create table MNT_SUGJECT_RESOURCE_TOTALGRID
+(
+  BRANCHID         VARCHAR2(20) not null,
+  RSCODE           VARCHAR2(20) not null,
+  BRANCHDESC       VARCHAR2(50),
+  FIXGRIDALIGN     VARCHAR2(10),
+  CONTENTGRIDALIGN VARCHAR2(10),
+  ODD              VARCHAR2(50),
+  EVEN             VARCHAR2(50),
+  FIXWIDTH         NUMBER(10),
+  FIXHEIGHT        NUMBER(10),
+  HORIZONTAL       VARCHAR2(10),
+  VERTICAL         VARCHAR2(10),
+  DSCODE           VARCHAR2(20),
+  SERIALNO         NUMBER,
+  ISDEFAULT        VARCHAR2(10),
+  UPDATEDATE       DATE,
+  UPDATEPERSON     VARCHAR2(50),
+  REMARK           VARCHAR2(100)
+)
+;
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.BRANCHID
+  is '主题子项';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.RSCODE
+  is '主题编号';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.BRANCHDESC
+  is '主题描述';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.FIXGRIDALIGN
+  is '表头对齐方式';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.CONTENTGRIDALIGN
+  is '内容对齐方式';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.ODD
+  is '奇数行颜色';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.EVEN
+  is '偶数行颜色';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.FIXWIDTH
+  is '固定行宽度';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.FIXHEIGHT
+  is '固定行高度';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.HORIZONTAL
+  is '是否有水平滚动条';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.VERTICAL
+  is '是否有垂直滚动条';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.DSCODE
+  is '数据源';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.SERIALNO
+  is '主题子项显示顺序';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.ISDEFAULT
+  is '是否默认显示';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.UPDATEDATE
+  is '更新日期';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.UPDATEPERSON
+  is '更新人';
+comment on column MNT_SUGJECT_RESOURCE_TOTALGRID.REMARK
+  is '备注';
+alter table MNT_SUGJECT_RESOURCE_TOTALGRID
+  add primary key (BRANCHID);
+

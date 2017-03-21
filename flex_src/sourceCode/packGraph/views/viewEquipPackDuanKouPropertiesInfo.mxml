@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="266" height="546"  
+				title="查看端口属性"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}" fontFamily="宋体" fontSize="12"> 
+	<mx:Metadata>  
+		[Event(name="savePortInfo")]   
+	</mx:Metadata>  
+	<mx:Script>  
+		<![CDATA[  
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.MyPopupManager;
+			
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.core.Application;
+			import twaver.*;
+			import twaver.Data;  
+			
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+			private function save():void  
+			{  
+				this.dispatchEvent(new Event("savePortInfo"));  
+			} 
+		]]>  
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" backgroundImage="assets/images/popwindowbg.png"
+			 backgroundSize="100%">
+		
+	
+	<mx:Canvas width="100%" height="447">
+		
+	
+	<mx:Label text="逻辑端口编号"  y="14" height="25" fontFamily="宋体" x="19" textAlign="center" fontSize="12" visible="false"/>  
+	<mx:TextInput id="logicport" width="120" x="109" y="12" fontFamily="宋体" fontSize="12" visible="false"/> 
+	
+	<mx:Label text="设备名称"  y="46" x="10" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="109" y="44" editable="false" id="equipname" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="端口速率"  y="79" x="17" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="73"/>
+	<mx:ComboBox id="x_capability" width="120" x="108" y="76" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="端口类型"  y="108" x="26" height="25" fontFamily="宋体" fontSize="12" width="72"/>
+	<mx:ComboBox x="108" y="112" editable="true" id="y_porttype" width="120" fontFamily="宋体" fontSize="12"></mx:ComboBox>
+	
+	<mx:Label text="端口状态"  y="143" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:ComboBox id='portstatus' width="120" x="107" y="143" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="端口序号"  y="178" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput x="107" y="176" editable="false" id="portserial" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="机盘序号"  y="211" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput id="packserial" editable="false" width="120" x="108" y="209" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="机槽序号"  y="246" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput id="slotserial" width="120" editable="false" x="108" y="244" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="机框序号"  y="277" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput x="108" y="281" editable="false" id="frameserial" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="更新时间"  y="312" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:DateField  yearNavigationEnabled="true" 
+				   dayNames="['日','一','二','三','四','五','六']" 
+				   monthNames="['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']"
+				   x="107" y="312" id="updatedate" width="120" fontFamily="宋体" fontSize="12" showToday="true" formatString="YYYY-MM-DD"/>
+	
+	<mx:Label text="更新人"  y="345" x="37" height="25" fontFamily="宋体" fontSize="12" width="45"/>
+	<mx:TextInput id="updateperson"  width="120" x="107" y="343" fontFamily="宋体" fontSize="12" />
+	
+	<mx:Label text="备用端口"  y="379" x="26" height="25" fontFamily="宋体" fontSize="12" width="56"/>
+	<mx:TextInput x="107" y="376" width="120" id="connport"/>
+	<mx:Label x="46" y="412" text="备注"/>
+	<mx:TextInput x="107" y="409" width="120" id="remark"/>
+	</mx:Canvas>
+	<mx:Canvas width="100%" height="100%" backgroundImage="assets/images/popwindowbtnbg.png" backgroundSize="100%">
+		<mx:Button label="保存" click="save()"   styleName="loginprimary"   x="28" y="21" height="22" textAlign="center" fontFamily="宋体" fontSize="12" width="80"/>
+		<mx:Button label="关闭" click="close()" styleName="loginsecondary"   x="141" y="21" height="22" textAlign="center" fontFamily="宋体" fontSize="12" width="80"/> 
+		
+	</mx:Canvas>
+	
+	</mx:VBox>
+	
+	
+</mx:TitleWindow>  

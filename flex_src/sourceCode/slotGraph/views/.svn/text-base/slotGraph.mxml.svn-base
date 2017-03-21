@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--时隙分布图-->
+<mx:VBox width="100%" height="100%"
+		 		xmlns:mx="http://www.adobe.com/2006/mxml" 
+				fontSize="12" 
+				creationComplete="initEvent()" 
+				verticalGap="0"
+				horizontalGap="0"
+				paddingLeft="0" 
+				paddingRight="0"
+				paddingTop="0" 
+				paddingBottom="0" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:code="http://code.google.com/p/flexlib/" 
+				xmlns:component="common.component.*" >
+	<mx:Script source="../actionscript/slotGraph.as"/>	
+
+	<mx:RemoteObject  destination="timeslotMap"  showBusyCursor="true" id="timeslottreeremote" 
+					  endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" 
+					  result="resultHandler(event)"/>
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="时隙分布图" 
+						  imgName="timeslot"/>
+	<mx:HDividedBox width="100%" height="100%" >
+		<mx:Tree id="treetimeslot"
+				 width="200" height="100%"
+				 dataProvider="{folderCollection}" 
+				 itemRenderer="twaver.PermissionsTreeItemRenderer"			
+				 labelField="@name"
+				 backgroundImage="@Embed(source='assets/images/treebg.png')"
+				 backgroundSize="100%"
+				 showRoot="false"
+				 defaultLeafIcon="{Sloticon}" 
+				 borderStyle="none"
+				 change="treeChange(event)"
+				 itemOpen="treeChange(event)"
+				 click="treeCheck(event)"
+				 itemRollOver="curIndex = event.rowIndex"
+				 itemClick="tree_itemClick(event)"/>			
+	
+	<code:SuperTabNavigator tabClose="deleteTab(event)"  width="100%" horizontalAlign="left"
+							      id="tabtest" height="100%" />
+	</mx:HDividedBox>
+</mx:VBox>

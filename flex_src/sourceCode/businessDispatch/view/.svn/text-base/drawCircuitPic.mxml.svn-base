@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+				minWidth="955" minHeight="600"  creationComplete="init();initEvent()" 
+				showCloseButton="true"  
+				close="{PopUpManager.removePopUp(this)}" 
+				xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+				title="选取路由设备" titleIcon="@Embed('assets/images/btn/resdispatcher.png')"
+				fontSize="13" width="{parentApplication.workspace.width}" height="{parentApplication.workspace.height+70}">
+	<mx:Style>
+		mx|Alert{
+			background-color:#ffffff;
+		}
+	</mx:Style>
+	
+	<mx:Script>
+		<![CDATA[
+			protected function LookXML_clickHandler(event:MouseEvent):void
+			{
+				/* 	if(this.currentState !="ConfigurationPort" && this.currentState!="Slot" && this.currentState!="CircuitRouting"){
+				Alert.show("起始");
+				
+				
+				}else if(this.currentState=="ConfigurationPort"){
+				Alert.show("1");
+				}else if(this.currentState=="Slot"){
+				Alert.show("2");
+				}else if(this.currentState=="CircuitRouting"){
+				Alert.show("3");
+				} */
+				var serializer:XMLSerializer = new XMLSerializer(circuitPic.elementBox);
+				var xmlString:String = serializer.serialize();//去掉中间的换行
+				var lookXML:ViewXML = new ViewXML();
+				lookXML.xml = xmlString;
+//				lookXML.parent_page = this;
+				MyPopupManager.addPopUp(lookXML,true);
+				//	Alert.show(xmlString);
+			}
+			
+			
+			
+			
+			
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Script source="../actionscript/DrawCircuitPic.as"/>    
+	<mx:states>
+		<mx:State name="ConfigurationPort">
+			<mx:SetProperty target="{hdividedbox1}" name="width" value="0"/>
+			<mx:SetProperty target="{hdividedbox1}" name="height" value="0"/>
+			<mx:SetProperty target="{vbox1}" name="height" value="100%"/>
+			<mx:SetProperty target="{circuitPic}" name="height" value="95%"/>
+			<mx:SetProperty name="title" value="配置端口"/>
+			<mx:SetEventHandler target="{linkbutton2}" name="click"  handlerFunction="toSlot"/>
+			<mx:SetEventHandler target="{linkbutton3}" name="click" handler="this.currentState ='';state=null;"/>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton label="起始端" 
+							   click="configportButton_start_clickHandler(event)"
+							   toolTip=""
+							   icon="@Embed('assets/images/btn/startequip_.png')" id="configportButton_start" enabled="{T}" bottom="0" left="100" width="90" fontSize="12"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton label="终止端"  icon="@Embed('assets/images/btn/endequip_.png')" id="configportButton_end" click="configportButton_end_clickHandler(event)"  enabled="{T}" bottom="0" left="190" fontSize="12" width="90"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton label="默认端口" icon="@Embed('assets/images/btn/port_add_.png')" id="configportButton_defaultport" click="configportButton_defaultport_clickHandler(event)" enabled="{T}" bottom="0" left="280" fontSize="12" width="90"/>
+			</mx:AddChild>
+			<mx:SetProperty target="{linkbutton1}" name="y"/>
+			<mx:SetProperty target="{linkbutton1}" name="x"/>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:Image source="@Embed('../../../assets/images/btn/line.png')" bottom="4" left="100"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:Image source="@Embed('../../../assets/images/btn/line.png')" bottom="4" left="190" id="image2"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:Image source="@Embed('../../../assets/images/btn/line.png')" left="280" bottom="4" id="image1"/>
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="Slot" basedOn="ConfigurationPort">
+			<mx:SetProperty name="title" value="配置时隙及虚拟复用段"/>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<!--<mx:LinkButton x="98" y="2" label="默认时隙" icon="@Embed('assets/images/btn/solt_make.png')"/>-->
+			</mx:AddChild>
+			<mx:SetEventHandler target="{linkbutton2}" name="click" handlerFunction="circuitRouting" />
+			<mx:SetEventHandler target="{linkbutton3}" name="click" handler="this.currentState ='ConfigurationPort';state='ConfigurationPort';"/>
+			<mx:RemoveChild target="{configportButton_defaultport}"/>
+			<mx:RemoveChild target="{configportButton_end}"/>
+			<mx:RemoveChild target="{configportButton_start}"/>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton label="默认时隙"  enabled="{F}"
+							   toolTip="配置默认时隙"
+							   icon="@Embed('assets/images/btn/solt_make1.png')"
+							   id="configslotButton_defaultslot" click="configslotButton_defaultslot_clickHandler(event)" width="90" left="100" bottom="0" fontSize="12"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton toolTip="配置系统转接"  enabled="{F}" label="系统转接"   icon="@Embed('assets/images/btn/huaxian_.png')" id="drawlinkbutton"   click="button1_clickHandler(event)"  left="190" bottom="0" width="90" fontSize="12"/>
+			</mx:AddChild>
+			<mx:RemoveChild target="{image1}"/>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton id="click" label="全选" toolTip="选中所有复用段" 
+							   icon="@Embed('assets/images/btn/quanxuan.png')"
+							   width="90" bottom="0" left="280" click="click_clickHandler(event)" fontSize="12"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton id="portVisible" enabled="{O}" label="端口信息"  toolTip="显示/隐藏端口信息"
+							   icon="@Embed('assets/images/btn/xianshi.png')"
+							   toggle="true" skin="sourceCode.businessDispatch.actionscript.ToggleLinkButtonSkin"  click="portVisible_clickHandler(event)" bottom="0" left="370" width="90" height="24" fontSize="12"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:Image bottom="4" left="280" source="@Embed('../../../assets/images/btn/line.png')" id="image3"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:Image bottom="4" left="370" source="@Embed('../../../assets/images/btn/line.png')" id="image4"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:Image bottom="4" left="460" source="@Embed('../../../assets/images/btn/line.png')" id="image5"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton  id="ResetTopo" label="重置复用段"
+								enabled="{O}"
+								icon="@Embed('assets/images/btn/chongzhi.png')"
+								toolTip="重置复用段信息" bottom="0" left="460" click="ResetTopo_clickHandler(event)" width="110" height="24" fontSize="12"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton label="默认状态" bottom="0" left="580" fontSize="12" id="linkbutton4" click="linkbutton4_clickHandler(event)" icon="@Embed('assets/images/btn/moren.png')"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:Image bottom="4" left="580" source="@Embed('../../../assets/images/btn/line.png')"/>
+			</mx:AddChild>
+			<!--	<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+			<mx:LinkButton id="abcd" label="隐藏端口" bottom="0" left="550" click="abcd_clickHandler(event)"/>
+			</mx:AddChild>-->
+			
+		</mx:State>
+		<mx:State name="CircuitRouting" basedOn="Slot">
+			<mx:SetProperty name="title" value="电路信息及路由"/>
+			<mx:SetProperty target="{linkbutton2}"  name="label" value="完成"/>
+			<mx:SetStyle target="{linkbutton2}" name="icon" value="@Embed('assets/images/btn/finished_.png')"/>
+			<mx:SetEventHandler target="{linkbutton2}" name="click"  handlerFunction="submit"/>
+			<mx:SetEventHandler target="{linkbutton3}" name="click" handler="this.currentState ='Slot';state='Slot';"/>
+			<mx:RemoveChild target="{configslotButton_defaultslot}"/>
+			<mx:RemoveChild target="{drawlinkbutton}"/>
+			<mx:AddChild relativeTo="{canvas1}" position="lastChild">
+				<mx:LinkButton id="excelButton" click="excelButton_clickHandler(event)"  enabled="false" label="导出Excel"
+							   icon="@Embed('assets/images/btn/fanshi_excel.png')"
+							   bottom="0" left="100" width="100" fontSize="12"/>
+			</mx:AddChild>
+			<mx:RemoveChild target="{image2}"/>
+			<mx:RemoveChild target="{ResetTopo}"/>
+			<mx:RemoveChild target="{portVisible}"/>
+			<mx:RemoveChild target="{click}"/>
+			<mx:RemoveChild target="{image3}"/>
+			<mx:RemoveChild target="{image4}"/>
+			<mx:RemoveChild target="{image5}"/>
+			<mx:RemoveChild target="{linkbutton4}"/>
+			<!--<mx:SetProperty target="{linkbutton1}" name="label" value="导出Excel"/>-->
+			<!--<mx:SetProperty target="{linkbar}" name="dataProvider[1].label" value="aaaa"/>-->
+		</mx:State>
+	</mx:states>
+	<mx:RemoteObject id="fw" destination="fiberWire" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" result="resultHandler(event)"/>
+	<mx:VDividedBox width="100%" height="100%"   verticalGap="3">
+		<mx:HDividedBox width="100%" height="46%" id="hdividedbox1" horizontalGap="3" borderStyle="solid">
+			<mx:VBox width="200" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+				<mx:Tree id="tree" width="100%" height="100%" labelField="@title" 
+						 dataProvider="{XMLData}" 
+						 dragEnabled="true" 
+						 iconFunction="iconFun"
+						 doubleClickEnabled="true"
+						 doubleClick="tree_itemDblClick(event)"
+						 />
+			</mx:VBox>
+			<mx:VBox width="70%" height="100%">
+				<servasoftware:Network id="systemorgmap" keyboardRemoveEnabled="false" width="100%" height="100%" backgroundColor="0xffffff" >
+				</servasoftware:Network>
+			</mx:VBox>
+			
+			<mx:TabNavigator    width="200" change="change(event)"  id="righttab" height="100%"   >
+				<mx:VBox width="100%" height="100%" label="传输设备"  name="deviceTree"  >
+					<mx:Tree id="deviceTree" width="100%" height="100%" dataProvider="{DeviceXML}"	
+							 verticalScrollPolicy="auto"
+							 iconFunction="deviceiconFun"
+							 change="treeChange()" 
+							 labelField="@label"						
+							 defaultLeafIcon="{null}" 
+							 borderStyle="none"
+							 dropEnabled="false"
+							 dragEnabled="true"
+							 dragMoveEnabled="false"
+							 itemClick="ModelLocator.tree_itemClick(event,deviceTree)" 
+							 itemOpen="treeChange()"
+							 itemRollOver="curIndex = event.rowIndex"/>
+				</mx:VBox>
+				<mx:VBox width="100%" height="100%" label="通信图标" name="vendorTree">
+					<mx:Tree id="virtualTree" width="100%" height="100%" dataProvider="{VirtualXML}"	
+							 verticalScrollPolicy="auto"
+							 iconFunction="deviceiconFun"
+							 change="treeChange1()" 
+							 labelField="@label"						
+							 defaultLeafIcon="{null}" 
+							 borderStyle="none"
+							 dropEnabled="false"
+							 dragEnabled="true"
+							 dragMoveEnabled="false"
+							 itemClick="ModelLocator.tree_itemClick(event,virtualTree)" 
+							 itemOpen="treeChange1()"
+							 itemRollOver="curIndex = event.rowIndex"/>
+				</mx:VBox>
+			</mx:TabNavigator>
+			
+		</mx:HDividedBox>
+		<mx:VBox width="100%" height="30%"  id="vbox1" borderColor="#B7BABC" borderStyle="solid">
+			<servasoftware:Network id="circuitPic" width="100%" height="100%" dragEnter="onDragEnter(event)"
+								   dragOver="onDragOver(event)"
+								   dragDrop="onGridDragDrop(event)" 
+								   dragExit="onDragExit(event)" backgroundColor="0xffffff" 
+								   mouseDown="circuitPic_mouseDownHandler(event)" >
+			</servasoftware:Network>
+			<mx:Canvas width="100%" height="25" id="canvas1" styleName="myCanvas">
+				<mx:LinkButton label="方式单" toolTip="查看方式单" 
+							   icon="@Embed('assets/images/btn/bogus_.png')" fontSize="12" click="linkbutton1_clickHandler(event)" id="linkbutton1" width="90" bottom="0" left="10"/>
+				<mx:LinkButton label="上一步" icon="@Embed('assets/images/btn/back__.png')" toolTip="返回上一步会丢失当前所做的数据！" right="190" bottom="0" id="linkbutton3" click="linkbutton3_clickHandler(event)" fontSize="12" width="90"/>
+				<mx:LinkButton label="下一步" icon="@Embed('assets/images/btn/next_.png')" toolTip="至少选择两个设备才能点击此按钮！" right="100" bottom="0" click="linkbutton2_clickHandler(event)" id="linkbutton2"  fontSize="12" width="90" />
+				
+				<mx:LinkButton label="操作说明" icon="@Embed('assets/images/btn/help_.png')" toolTip="操作说明" bottom="0" right="10" click="OperatingInfo(event)" fontSize="12" width="90"/>
+				<mx:Image source="@Embed('../../../assets/images/btn/line.png')" right="190" bottom="4"/>
+				<mx:Image source="@Embed('../../../assets/images/btn/line.png')" right="100" bottom="4"/>
+				<mx:Button  id="LookXML" label="显示XML" bottom="-1" right="400" width="84" click="LookXML_clickHandler(event)"/>
+			</mx:Canvas>
+		</mx:VBox>
+	</mx:VDividedBox>
+	
+</mx:TitleWindow>

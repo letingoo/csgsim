@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="user">
+    <resultMap id="userMap" class="sysManager.user.model.UserModel">
+    </resultMap>
+ 
+	
+    <select id="getUserInfoById" parameterClass="String" resultClass="sysManager.user.model.UserModel">
+        select user_id,user_name,user_pwd,decode(user_sex,'M','男 ','F','女','男') as user_sex
+     	,getuserdepartment(user_dept) user_dept, user_dept user_deptcode,decode(user_post,null,' ',user_post) as user_post,
+     	decode(birthday,null,' ',birthday) as birthday,
+   		decode(education,null,' ',education) as education,
+   		decode(telephone,null,' ',telephone) as telephone,
+   		decode(mobile,null,' ',mobile) as mobile,
+   		decode(email,null,' ',email) as email,
+   		decode(address,null,' ',address) as address,
+     	createtime,remark
+     	 from 
+     	(
+     	select t.username as  user_id,t.truename as user_name,t.userpassword as user_pwd,
+     	user_sex,t.UNIT as user_dept,user_post,birthday,
+     	education,telephone,mobile,email, t.MAILADDRESS as address,
+     	createtime,remark,rownum no from sec_userinfo t where username  = #user_id# ) order by user_name         
+    </select>
+    <select id="getUserId" parameterClass="String" resultClass="String">
+        select decode(username,null,' ',username) as user_id from sec_userinfo where username= #user_id#
+    </select> 
+     <select id="getMaxUserId" parameterClass="String" resultClass="String">
+        select  max(userid)+1 as user_id from sec_userinfo
+    </select>    
+    <select id="getUserInfos" resultClass="sysManager.user.model.UserModel">
+        select t.username as  user_id,
+	       t.truename as  user_name,
+	       t.userpassword as user_pwd,
+	       decode(t.user_sex, 'M', '男', 'F', '女', '男') user_sex,
+	       getuserdepartment(t.UNIT) user_dept,
+	       t.UNIT as user_deptcode,
+	       t.user_post,
+	       t.birthday,
+	       t.education,
+	       t.telephone,
+	       t.mobile,
+	       t.email,
+	       t.MAILADDRESS as address,
+	       t.createtime,
+	       t.remark
+	  from sec_userinfo t
+	  order by t.username         
+    </select>
+    <insert id="insertUser" parameterClass="sysManager.user.model.UserModel">
+<!--      	insert into sec_userinfo(userid,groupname,createtime,username,truename,userpassword,user_sex,UNIT, -->
+<!--      	user_post,birthday,education,telephone,mobile,email,MAILADDRESS) -->
+<!--      	values((select  max(userid)+1  from sec_userinfo),'roots',sysdate,#user_id#,#user_name#,#user_pwd#,#user_sex#, -->
+<!--      	#user_dept#,#user_post#,#birthday#,#education#,#telephone#,#mobile#,#email#,#address#) -->
+     	insert into sec_userinfo(userid,groupname,createtime,username,truename,userpassword,passwd,user_sex,UNIT,
+     	user_post,birthday,education,telephone,mobile,email,MAILADDRESS)
+     	values((select  max(userid)+1  from sec_userinfo),'roots',sysdate,#user_id#,#user_name#,#user_pwd#,#user_pwd#,#user_sex#,
+     	#user_dept#,#user_post#,#birthday#,#education#,#telephone#,#mobile#,#email#,#address#)
+     	
+    </insert>
+
+ 
+   <parameterMap id="synrestomis" class="java.util.HashMap">
+	   <parameter property="PUSERID" jdbcType="VARCHAR" javaType="java.lang.String" mode="IN" />
+	   <parameter property="PSTATUS" jdbcType="VARCHAR" javaType="java.lang.String" mode="OUT" />  
+	</parameterMap>
+  
+     <procedure  id="pro_synResToMis" parameterMap="synrestomis"  >
+     	 <![CDATA[
+     	 　call sdtmis.pro_synrestomis(?,?)	     	 
+     	 ]]>
+    </procedure >
+    <delete id="delUser" parameterClass="java.lang.String">
+    	delete from sec_userinfo t where t.username=#value#
+    </delete>
+    <update id="updateUser" parameterClass="sysManager.user.model.UserModel">
+      	update sec_userinfo set truename=#user_name#,userpassword=#user_pwd#,
+      	user_sex=#user_sex#,UNIT=#user_dept#,user_post=#user_post#,
+      	birthday=#birthday#,education=#education#,telephone=#telephone#,
+      	mobile=#mobile#,email=#email#,MAILADDRESS=#address#
+      	where username=#user_id#
+    </update>
+    <select id="queryUser" resultClass="sysManager.user.model.UserModel" parameterClass="sysManager.user.model.UserModel">
+     	select * from (select rownum no, user_id,user_name,
+     	decode(user_sex,'M','男 ','F','女','M') as user_sex,
+     	decode( getuserdepartment(user_dept),null,' ', getuserdepartment(user_dept)) as user_dept,
+     	user_dept user_deptcode,
+     	decode(user_post,null,' ',user_post) as user_post,
+     	decode(user_pwd,null,' ',user_pwd) as user_pwd,
+     	decode(birthday,null,' ',birthday) as birthday,
+   		decode(education,null,' ',education) as education,
+   		decode(telephone,null,' ',telephone) as telephone,
+   		decode(mobile,null,' ',mobile) as mobile,
+   		decode(email,null,' ',email) as email,
+   		decode(address,null,' ',address) as address,
+     	createtime,
+     	decode(remark,null,' ',remark) as remark
+     	 from 
+     	(
+     	select t.username as  user_id,t.truename as  user_name,t.userpassword as user_pwd,
+     	user_sex,t.UNIT as user_dept,user_post,birthday,
+     	education,telephone,mobile,email,t.MAILADDRESS as address,
+     	createtime,remark,rownum no from sec_userinfo t
+     	<dynamic prepend="where">
+     		<isNotEmpty prepend="and" property="user_id">
+     		 	username like '%$user_id$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_name">
+     		 	truename like '%$user_name$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_sex">
+     		 	user_sex=decode(#user_sex#, '男', 'M', '女', 'F', 'M')
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_dept">
+     		 	unit in(select dept_code from sec_dept where dept_name like '%$user_dept$%')
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_post">
+     		 	user_post like '%$user_post$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="telephone">
+     		 	telephone like '%$telephone$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="mobile">
+     		 	mobile like '%$mobile$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="email">
+     		 	email like '%$email$%'
+     		</isNotEmpty>
+     	</dynamic>
+     	order by username)) a  where  a.no>#start:VARCHAR# and a.no &lt;=#end:VARCHAR# 
+     	
+    </select>
+    
+    <select id="queryUser_Excel" resultClass="sysManager.user.model.UserModel" parameterClass="sysManager.user.model.UserModel">
+     	select user_id,user_name,
+     	decode(user_sex,'M','男 ','F','女','男') as user_sex	,
+     	decode(getuserdepartment(user_dept),null,' ',getuserdepartment(user_dept)) as user_dept,
+     	decode(user_post,null,' ',user_post) as user_post,
+     	decode(birthday,null,' ',birthday) as birthday,
+   		decode(education,null,' ',education) as education,
+   		decode(telephone,null,' ',telephone) as telephone,
+   		decode(mobile,null,' ',mobile) as mobile,
+   		decode(email,null,' ',email) as email,
+   		decode(address,null,' ',address) as address,
+     	createtime,decode(remark,null,' ',remark) as remark
+     	 from 
+     	(
+     	select t.username as  user_id,t.truename as  user_name,t.userpassword as user_pwd,
+     	user_sex,t.UNIT as user_dept,user_post,birthday,
+     	education,telephone,mobile,email,t.MAILADDRESS as address,
+     	createtime,remark,rownum no from sec_userinfo t
+     	<dynamic prepend="where">
+     		<isNotEmpty prepend="and" property="user_id">
+     		 	username like '%$user_id$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_name">
+     		 	truename like '%$user_name$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_sex">
+     		 	user_sex=#user_sex#
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_dept">
+     		 	user_dept like '%$user_dept$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_post">
+     		 	user_post like '%$user_post$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="telephone">
+     		 	telephone like '%$telephone$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="mobile">
+     		 	mobile like '%$mobile$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="email">
+     		 	email like '%$email$%'
+     		</isNotEmpty>
+     	</dynamic>
+     	) a 
+     	order by a.username
+    </select>
+    <select id="getUserCounts" resultClass="java.lang.Integer" parameterClass="sysManager.user.model.UserModel">
+    	select count(*) from  sec_userinfo
+    	<dynamic prepend="where">
+     		<isNotEmpty prepend="and" property="user_id">
+     		 	username like '%$user_id$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_name">
+     		 	truename like '%$user_name$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_sex">
+     		 	user_sex=decode(#user_sex#, '男', 'M', '女', 'F', 'M')
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_dept">
+     		 	UNIT in(select dept_code from sec_dept where dept_name like '%$user_dept$%')
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_post">
+     		 	user_post like '%$user_post$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="telephone">
+     		 	telephone like '%$telephone$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="mobile">
+     		 	mobile like '%$mobile$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="email">
+     		 	email like '%$email$%'
+     		</isNotEmpty>
+     	</dynamic>
+     </select>
+    <select id="queryUserRoles" resultClass="java.lang.String" parameterClass="java.lang.String">
+    	select b.role_name from sec_role_user a,sec_role_res b
+		where a.role_id=b.role_id and a.user_id=#user_id#
+    </select>
+     <select id="queryUserRoleModel" resultClass="sysManager.role.model.RoleModel" parameterClass="java.lang.String">
+    	select b.role_id,b.role_name,b.role_desc from sec_role_user a,sec_role_res b
+		where a.role_id=b.role_id and a.user_id=#user_id#
+    </select>
+    <select id="queryUserNotRoleModel" resultClass="sysManager.role.model.RoleModel" parameterClass="java.lang.String">
+    	select b.role_id,b.role_name,b.role_desc from sec_role_res b
+    	where  b.role_id not in
+		(select role_id from sec_role_user where user_id=#user_id#)
+    </select>
+    <delete id="delUserRoleForms" parameterClass="java.lang.String">
+    	delete from sec_role_user where user_id=#user_id#
+    </delete>
+    <insert id="insertUserRoleForms" parameterClass="java.util.Map">
+    	insert into sec_role_user(role_id,user_id) values(#role_id#,#user_id#)
+    </insert>
+
+    <select id="getUserInfoByRoleId" parameterClass="java.util.Map" resultClass="sysManager.user.model.UserModel">
+   		select no, user_id,user_name,user_sex,user_dept,user_post,telephone,address from
+   		(
+	   		select rownum no, decode(a.username,null,' ',a.username) user_id,
+	   		decode(a.truename,null,' ',a.truename) user_name,
+            decode(user_sex, 'M', '男 ', 'F', '女', '男') as user_sex,
+            decode(getuserdepartment(a.UNIT),null,' ',getuserdepartment(a.UNIT)) as user_dept,
+	   		decode(a.user_post,null,' ',a.user_post) user_post,
+	   		decode(a.telephone,null,' ',a.telephone) telephone,
+	   		decode(a.MAILADDRESS,null,' ',a.MAILADDRESS) address
+	   		from sec_userinfo a,sec_role_user b 
+	   		where a.username = b.user_id and b.role_id = #role_id#
+   		) where no >#start# and no &lt;=#end#
+    </select>
+      <select id="getSingleUserInfoByRoleId" parameterClass="java.lang.String" resultClass="sysManager.user.model.UserModel">
+   		select decode(a.username,null,' ',a.username) user_id,
+   		decode(a.truename,null,' ',a.truename) user_name,
+   		decode(a.user_sex,null,' ',a.user_sex) user_sex,
+   		decode(a.UNIT,null,' ',a.UNIT) user_dept,
+   		decode(a.user_post,null,' ',a.user_post) user_post,
+   		decode(a.telephone,null,' ',a.telephone) telephone,
+   		decode(a.MAILADDRESS,null,' ',a.MAILADDRESS) address
+   		from sec_userinfo a,sec_role_user b where a.username=b.user_id
+   		and b.role_id=#value#
+    </select>
+    <select id="getUserCountsByRoleId" resultClass="java.lang.Integer" parameterClass="java.lang.String">
+    	select count(*) from      
+    	(select rownum no, decode(a.username,null,' ',a.username) user_id,       
+		decode(a.truename,null,' ',a.truename) user_name,       
+		decode(a.user_sex,null,' ',a.user_sex) user_sex,       
+		decode(a.UNIT,null,' ',a.UNIT) user_dept,       
+		decode(a.user_post,null,' ',a.user_post) user_post,       
+		decode(a.telephone,null,' ',a.telephone) telephone,       
+		decode(a.MAILADDRESS,null,' ',a.MAILADDRESS) address       
+		from sec_userinfo a,sec_role_user b
+		where a.username = b.user_id and b.role_id = #role_id#)
+     </select>
+    
+    <select id="expUserInfo" parameterClass="sysManager.user.model.UserModel" resultClass="sysManager.user.model.UserModel">
+    	select username as user_id,truename as user_name,user_pwd,decode(user_sex,null,' ',user_sex) as user_sex
+     	,decode(UNIT,null,' ',UNIT) as user_dept,decode(user_post,null,' ',user_post) as user_post,
+     	decode(birthday,null,' ',birthday) as birthday,
+   		decode(education,null,' ',education) as education,
+   		decode(telephone,null,' ',telephone) as telephone,
+   		decode(mobile,null,' ',mobile) as mobile,
+   		decode(email,null,' ',email) as email,
+   		decode(MAILADDRESS,null,' ',MAILADDRESS) as address,
+     	createtime,remark,rownum no from sec_userinfo 
+     	<dynamic prepend="where">
+     		<isNotEmpty prepend="and" property="user_id">
+     		 	username like '%$user_id$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_name">
+     		 	truename like '%$user_name$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_sex">
+     		 	user_sex=#user_sex#
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="unit">
+     		 	user_dept like '%$user_dept$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="user_post">
+     		 	user_post like '%$user_post$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="telephone">
+     		 	telephone like '%$telephone$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="mobile">
+     		 	mobile like '%$mobile$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="email">
+     		 	email like '%$email$%'
+     		</isNotEmpty>
+     	</dynamic>
+    </select>
+    <select id="getPSWByUserId" parameterClass="String" resultClass="sysManager.user.model.UserModel">
+    	select t.userpassword as user_pwd from sec_userinfo t where t.username = #user_id#
+    </select>
+    
+    <select id="getOnlineUser" resultClass="sysManager.user.model.UserStateModel">
+        select distinct t.user_ip,t.* from sec_user_state t     
+    </select>
+    
+    <select id="getOnlineUserByUserId" parameterClass="java.util.Map" resultClass="sysManager.user.model.UserStateModel">
+    	select distinct t.user_ip,t.* from sec_user_state t where t.user_id = '$user_id$' and t.user_ip = '$user_ip$'
+    </select>
+    
+    <insert id="insertUserState" parameterClass="java.util.Map">
+    	insert into sec_user_state(user_id,user_ip,user_state,log_time) values(#user_id#,#user_ip#,#user_state#,sysdate)
+    </insert>
+    
+    <delete id="delUserState" parameterClass="java.util.Map">
+    	delete from sec_user_state t where t.user_id = #user_id# and t.user_ip = #user_ip#
+    </delete>
+    
+    <update id="updateUserState" parameterClass="java.util.Map">
+        update sec_user_state t set t.user_ip = #user_ip# where t.user_id = #user_id# 
+    </update>
+    
+     <delete id="deleteUserAllShortcut" parameterClass="java.util.Map">    		
+		<![CDATA[	
+			delete from User_Shortcuts where user_id='$user_id$'
+		]]>
+    </delete>
+    <!-- 用户操作单位配置 -->
+    <select id="getConfigOperateModel" resultClass="sysManager.user.model.OperateDepartModel" parameterClass="String">
+   		<![CDATA[
+    		select distinct re.dept_code departCode,re.dept_name departName
+              from sec_dept re where re.dept_code in (select depart from sec_user_operate_dept where user_id=#user_id#) 			
+          	]]>
+    </select>
+    <select id="getNotConfigOperateModel" resultClass="sysManager.user.model.OperateDepartModel" parameterClass="String">
+   		<![CDATA[
+    		select distinct re.dept_code departCode,re.dept_name departName
+              from sec_dept re where re.dept_code not in (select depart from sec_user_operate_dept where user_id=#user_id#)
+            ]]>
+    </select>
+    <delete id="deleteUserIdOperateDepart" parameterClass="String">
+   		<![CDATA[
+   			delete from sec_user_operate_dept sod where sod.user_id=#user_id#
+   		]]>
+    </delete>
+    <insert id="insertUserIdOperateDepart" parameterClass="java.util.Map">
+    		insert into sec_user_operate_dept(user_id,depart) values(#user_id#,#depart#)
+    </insert>
+     <select id="getServerIPByUser_IP" parameterClass="String" resultClass="String">
+	     <![CDATA[
+	    	select server_ip from tmis_ip_map where user_ip=#user_ip#
+    	]]>
+    </select>
+
+    <delete id="delAllUserState">
+            delete from sec_user_state
+    </delete>
+
+     <select id="getFirstDept"  resultClass="sysManager.function.model.Department">
+	     <![CDATA[
+	    	 select dept_code,dept_name from sec_dept where length(dept_code)=2
+    	 ]]>
+    </select>
+     <select id="getDeptByLevel" parameterClass="java.util.Map" resultClass="sysManager.function.model.Department">
+	     <![CDATA[
+	    	select dept_code,dept_name,decode(ud.user_id,null,0,1) checked from sec_dept d,sec_user_operate_dept ud where d.dept_code=ud.depart(+) and ud.user_id(+)=#user_id# and length(dept_code)=#level#*2 and substr(dept_code,0,(#level#-1)*2)=#parentid#
+	   	 ]]>
+    </select>
+      <select id="getDeptByLevelWithoutUser" parameterClass="java.util.Map" resultClass="sysManager.function.model.Department">
+	     <![CDATA[
+	    	 select dept_code,dept_name from sec_dept where length(dept_code)=#level#*2 and substr(dept_code,0,(#level#-1)*2)=#parentid#
+	   	 ]]>
+    </select>
+<!--    <update id="updateCurDutyMan" parameterClass="String">-->
+<!--    <![CDATA[-->
+<!--    	update en_adapter_domain set curdutyman='$userid$'-->
+<!--    ]]>-->
+<!--    </update>-->
+    
+        <select id="selectLoginByUserName" resultClass="sysManager.user.model.UserModel" parameterClass="sysManager.user.model.UserModel">
+        <![CDATA[
+            select t.username as  user_id,t.truename as user_name,t.userpassword as user_pwd,(select distinct t.curdutyman from en_adapter_domain t where not t.curdutyman is null) as zby  from sec_userinfo t where t.username='$user_name$'
+        ]]> 
+    </select>
+</sqlMap>

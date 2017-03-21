@@ -1,0 +1,348 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="equipPack">
+  <typeAlias alias="equipPackModel" type="equipPack.model.EquipPackModel"/>
+  <typeAlias alias="BusinessModel" type="equipPack.model.BusinessModel"/>
+  <typeAlias alias="AlarmModel" type="equipPack.model.AlarmModel"/>
+  <typeAlias alias="StatisModel" type="equipPack.model.StatisModel"/>
+  <typeAlias alias="PortUseStatsModel" type="devicepanel.model.PortUseStatsModel"/>
+  <typeAlias alias="logicPortModel" type="equipPack.model.LogicPortModel"/>
+  <typeAlias alias = "parameterModel" type = "equipPack.model.ParameterModel"/>
+  <typeAlias alias = "opticalPortListModel" type = "equipPack.model.OpticalPortListModel"/>
+  <typeAlias alias = "opticalPortDetail" type = "equipPack.model.OpticalPortDetailModel"/>
+  <typeAlias alias = "opticalPortStatusModel" type = "equipPack.model.OpticalPortStatusModel"/>
+  
+    <resultMap id="PackYewuMap" class="BusinessModel">        
+        <result column="circuitcode" property="circuitcode" />  
+        <result column="rate" property="rate" /> 
+        <result column="portserialno1" property="portserialno1" /> 
+        <result column="slot1" property="slot1" /> 
+        <result column="portserialno2" property="portserialno2" /> 
+		<result column="slot2" property="slot2" /> 		
+    </resultMap>
+    <resultMap id="PackAlarmMap" class="AlarmModel">
+        <result column="alarmlevel" property="alarmlevel" />
+        <result column="objectinfo" property="objectinfo" />  
+        <result column="alarmdesc" property="alarmdesc" /> 
+        <result column="alarmtext" property="alarmtext" /> 
+        <result column="starttime" property="starttime" /> 
+        <result column="isacked" property="isacked" /> 
+		<result column="acktime" property="acktime" /> 
+		<result column="ackperson" property="ackperson" />
+		<result column="arrivetime" property="arrivetime" />
+		<result column="alarmnumber" property="alarmnumber" />    
+    </resultMap>
+     <resultMap id="StatisMap" class="StatisModel">
+        <result column="logicport" property="logicport" />
+        <result column="x_capability" property="x_capability" />  
+        <result column="allvc4" property="allvc4" /> 
+        <result column="usrvc4" property="usrvc4" /> 
+        <result column="usrvc12" property="usrvc12" /> 
+        <result column="freevc4" property="freevc4" /> 
+		<result column="rate" property="rate" />    
+    </resultMap>
+    <resultMap id="PortUseStatsMap" class="PortUseStatsModel">
+        <result column="portnum" property="portnum" />
+        <result column="portusenum" property="portusenum" />  
+    </resultMap>
+
+	<select id="getEquipList" resultClass="java.util.HashMap" parameterClass="String">
+		select S_SBMC  as EQUIPNAME,equipcode from equipment where equipcode=#equipcode# order by S_SBMC
+	</select>
+    <select id="getPortDetail" resultClass="java.util.HashMap" parameterClass="String">
+     select A.frameserial,
+	       A.slotserial,
+	       A.packserial,
+	       A.s_packname,
+	       ASCII(A.slotserial) as ZZZ,
+         
+	      A.slotserial as BBB
+	
+	  from equippack A
+	 where A.equipcode = #equipcode#
+	 and packmodel!='NONE'
+	  order by length(a.slotserial),slotserial
+	</select>
+	<select id="getPackPortLabel" resultClass="java.util.HashMap" parameterClass="map">
+		select x_capability, logicport
+		from equiplogicport 
+		 where equipcode = '$equipcode$'
+		 and frameserial='$frameserial$'
+		 and slotserial = '$slotserial$'
+		 and packserial= '$packserial$'
+		 order by length(portserial),portserial
+	</select>
+     <select id="getPackYewu" resultMap="PackYewuMap" parameterClass="java.util.HashMap">
+		  select circuitcode, decode(getxtxx(rate),null,' ',getxtxx(rate)) rate, getportlabel(portserialno1) portserialno1 , slot1, getportlabel(portserialno2) portserialno2, slot2
+	   from (select * from circuit where circuitcode in(select 
+	                distinct c.circuitcode
+	           from cctmp c, equiplogicport l1, equiplogicport l2
+	          where c.aptp = l1.logicport
+	            and c.zptp = l2.logicport
+	            and ( (l1.equipcode =#equipcode#
+			           and l1.frameserial =  #frameserial#
+			           and l1.slotserial = #slotserial#
+			           and l1.packserial =  #packserial# )
+			           or 
+			           (l2.equipcode =#equipcode#
+			           and l2.frameserial = #frameserial#
+			           and l2.slotserial = #slotserial#
+			           and l2.packserial =  #packserial#)
+                  <isNotEmpty prepend = "AND" property = "id" >
+	                (c.aptp = #id# or
+	                c.zptp = #id#)
+	            </isNotEmpty >	           
+	            )))
+	  order by circuitcode ASC
+     </select>
+      <select id="getPackAlarm" resultClass="java.util.HashMap"  parameterClass="map">	
+		select alarmlevel, objectcode, alarmdesc, alarmtext, starttime, isacked, acktime, ackperson, 
+			arrivetime, alarmnumber from (select rownum num, a.* from alarminfo_bak a, equiplogicport e 
+		where 
+    		a.belongequip = e.equipcode
+            and a.belongframe = e.frameserial
+            and a.belongslot = e.slotserial
+            and a.belongpack = e.packserial
+            and a.belongport = e.portserial
+            <isNotEmpty prepend="AND" property="id">
+				(e.logicport = #id#)
+			</isNotEmpty>
+   <!-- and e.logicport = #id# -->         
+            and rownum &lt;=#end#)
+        where num &gt;=#index# order by $sort$ $dir$
+         
+    </select>
+
+	 <select id="getPackStatis" resultMap="StatisMap" parameterClass="map">
+	 	<![CDATA[
+     		select v.logicport, v.x_capability,v.allvc4, v.usrvc4,v.usrvc12, v.freevc4, v.rate  
+			from view_usedts v,equiplogicport eq where v.portcode = eq.logicport and v.equipcode = eq.equipcode 
+			and eq.equipcode = #equipcode#  and frameserial = #frameserial#  and slotserial=#slotserial#  and packserial = #packserial#
+			and eq.x_capability not in ('ZY070101','ZY070112','ZY070116') and eq.y_porttype<>'ZY03070406'
+		]]>
+     </select>
+     
+     <select id="get2MPackStatus" resultMap="PortUseStatsMap" parameterClass="map">
+     	<![CDATA[
+			select (select count(*)
+			          from equiplogicport l
+			         where l.equipcode = '$equipcode$'
+			           and l.frameserial = '$frameserial$'
+			           and l.slotserial = '$slotserial$'
+			           and l.packserial = '$packserial$'
+			           and (l.x_capability in ('ZY070101','ZY070112','ZY070116')
+			           or l.y_porttype='ZY03070406')) as portnum,
+			       (select count(*)
+			          from (select distinct c.aptp
+			                  from cc c, equiplogicport l
+			                 where c.pid = l.equipcode
+			                   and c.aptp = l.logicport
+			                   and l.equipcode = '$equipcode$'
+					           and l.frameserial = '$frameserial$'
+					           and l.slotserial = '$slotserial$'
+					           and l.packserial = '$packserial$'
+					           and (l.x_capability in ('ZY070101','ZY070112','ZY070116')
+					           or l.y_porttype='ZY03070406')
+			                union
+			                select distinct c.zptp
+			                  from cc c, equiplogicport l
+			                 where c.pid = l.equipcode
+			                   and c.zptp = l.logicport
+			                   and l.equipcode = '$equipcode$'
+					           and l.frameserial = '$frameserial$'
+					           and l.slotserial = '$slotserial$'
+					           and l.packserial = '$packserial$'
+					           and (l.x_capability in ('ZY070101','ZY070112','ZY070116')
+					           or l.y_porttype='ZY03070406'))) as portusenum
+			  from equipment
+			 where equipcode = '$equipcode$'
+		 ]]>
+     </select>
+
+     <select id="getPortNum" resultClass="int" parameterClass="map">
+		 select count(*)
+		 from equiplogicport l
+		 where l.equipcode = '$equipcode$'
+		   and l.frameserial = '$frameserial$'
+		   and l.slotserial = '$slotserial$'
+		   and l.packserial = '$packserial$'
+	</select>
+
+     <!--王讲斌 机盘详情  端口属性查询-->
+     <select id="getPortPropertyInfo" resultClass="equipPack.model.LogicPortModel" parameterClass="String">
+		select equipname,frameserial,slotserial,packserial,portserial,Y_PORTTYPE, 
+		getxtxx(Y_PORTTYPE) Y_PORTTYPExx , X_CAPABILITY, getxtxx(X_CAPABILITY) X_CAPABILITYxx, 
+		STATUS, getxtxx(STATUS) STATUSxx, CONNPORT,REMARK, to_char(updatedate, 'yyyy-mm-dd') as updatedate,
+		updateperson,logicport from view_equiplogicport where logicport='$port$'
+	</select>
+	<!-- 王讲斌 机盘详情  更新端口属性-->
+		<update id="updateLogicPort" parameterClass="equipPack.model.LogicPortModel">
+    	<![CDATA[ 
+    	 update EquipLogicPort set 
+    	 						equipcode='$equipcode$',
+    	 						remark='$remark$',
+    	 						frameserial='$frameserial$',
+    	 						slotserial='$slotserial$',
+    	 						packserial='$packserial$',
+    	 						portserial='$portserial$',
+    	 						y_porttype='$y_porttype$',
+    	 						   x_capability='$x_capability$',
+    	 						   status='$status$',
+    	 						   connport='$connport$',
+    	 						   updatedate=to_date('$updatedate$','YYYY-MM-DD')
+    	 						  
+    	 					 where logicport='$logicport$'
+    	]]>
+	</update>
+	<select id="getZPort" resultClass="String" parameterClass="String">
+		select portcode2 from circuit where portcode1=#a_port#
+	</select>
+	<select id="getAPort" resultClass="String" parameterClass="String">
+		select portcode1 from circuit where portcode2=#a_port#
+	</select>
+	<!--  王讲斌 机盘详情 端口属性上的combobox 框查询-->
+		<select id="getItemByXTBM" resultClass="java.util.HashMap"
+		parameterClass="String">
+    	<![CDATA[
+    		select xtbm,xtxx from xtbm where xtbm like #xtbm#
+    	]]>
+	</select>
+	
+   <resultMap id = "logicPortResult" class = "logicPortModel">
+	  <result column="portserial" property="portserial" />
+	  <result column="logicport" property="logicport" />
+	  <result column="status" property="status" />
+	  <result column="totalCount" property="totalCount" />
+	  <result column="circuitcode" property="circuitcode" />
+	  <result column="connport" property="connport"/>
+   </resultMap>
+	 <select id="getLogicPortFlex" resultClass="equipPack.model.LogicPortModel"
+		parameterClass="parameterModel">
+			select portserial,
+			       logicport,
+			       status,
+			       equipcode,
+			       frameserial,
+			       slotserial,
+			       packserial,
+			       getIsHasYeWuForPort(logicport) as totalCount,
+			       '' as connport,
+			       circuit as circuitcode,
+			       GETCIRUSERNAMEBY2MPORT(logicport) as username,
+			       getequipname(equipcode) as equipname,
+			       slotserial || '槽-' || portserial || '端口' as portlabel
+			  from equiplogicport
+			 where equipcode = #equipcode#
+			   and frameserial = #frameserial#
+			   and slotserial = #slotserial#
+			   and packserial = #packserial#
+			   and (x_capability in ('ZY070101', 'ZY070112', 'ZY070116') or
+			       y_porttype = 'ZY03070406')
+			 order by to_number(substr(portserial, instr(portserial, '-', -1, 1) + 1)),
+			          portserial
+	</select>
+	<select id="getLogicPort2MFlex" resultMap="logicPortResult"
+		parameterClass="parameterModel"> 
+		 select portserial,logicport,status,getIsHasYeWuForPort(logicport) as totalCount,getCircuitcodeBy2MPort(logicport) as circuitcode
+	  	  from equiplogicport
+	  	  where equipcode = #equipcode#
+	   		 and frameserial =  #frameserial#
+			 and slotserial = #slotserial#
+			 and packserial = #packserial#
+		  order by to_number(substr(portserial, instr(portserial ,'-',-1,1)+1)),portserial
+	</select>
+	<select id="getLogicPortNot2MFlex" resultMap="logicPortResult"
+		parameterClass="parameterModel"> 
+		 select portserial,logicport,status,getIsHasYeWuForPort(logicport) as totalCount,getCircuitcodeBy2MPort(logicport) as circuitcode
+	  	  from equiplogicport
+	  	  where equipcode = #equipcode#
+	   		 and frameserial =  #frameserial#
+			 and slotserial = #slotserial#
+			 and packserial = #packserial#
+		   order by to_number(portserial) 	 
+	</select>
+	
+	<select id="getPortStatusFlex" resultClass="int" parameterClass="String">
+     	select count(id) as totalCount from cc where aptp='$portid$' or zptp='$portid$'
+     </select>
+     <select id="getPortServiceFlex" resultClass="String" parameterClass="String">
+     	select circuitcode from circuit c where c.portserialno1='$portid$' or c.portserialno2 = '$portid$'
+     </select>
+    
+    <select id = "getOpticalPortList" parameterClass = "parameterModel" resultClass = "opticalPortListModel">
+    	<![CDATA[
+			select e.logicport, e.x_capability, portserial||'端口' as logicportname, r.systemcode,e.portserial,e.status
+			  from equiplogicport e, re_sys_equip r
+			 where e.equipcode = r.equipcode
+			   and e.equipcode = #equipcode#
+			   and e.frameserial = #frameserial#
+			   and e.slotserial = #slotserial#
+			   and e.packserial = #packserial# 
+			   and e.x_capability is not null
+			   and e.x_capability not in ('ZY070101','ZY070112','ZY070116') and e.y_porttype<>'ZY03070406'
+			 order by to_number(e.portserial),e.logicport
+		 ]]>
+    </select>
+    
+     <select id = "getOpticalPortDetail" parameterClass = "Map" resultClass = "opticalPortDetail">
+		select v.logicport,v.portcode, v.x_capability, v.allvc4, v.usrvc4, v.usrvc12, v.rate
+		  from view_usedts v, equiplogicport eq
+		 where v.portcode = eq.logicport
+		   and v.equipcode = eq.equipcode
+		   and eq.equipcode = #equipcode#
+		   and eq.logicport = #logicport#
+    </select>
+    
+    <select id="getOpticalPortStatus" resultClass="opticalPortStatusModel" parameterClass="String">	
+    <!-- 	              
+		  select aptp, aslot, rate,getCircuitcodeByPortAndSlot(aptp,aslot) as circuitcode
+		          from cc
+		         where (rate = 'VC12' or rate = 'VC4')
+		           and aptp =#logicport# 
+		        union
+		        select zptp, zslot, rate,getCircuitcodeByPortAndSlot(zptp,zslot) as circuitcode
+		          from cc
+		         where (rate = 'VC12' or rate = 'VC4')
+		           and zptp =#logicport#
+		           -->
+		     
+		      select c12.aptp, c12.aslot, c12.rate, c11.circuitcode
+			  from circuit_cc c11, cc c12
+			 where c11.ccid(+) = c12.id
+			   and c12.aptp = #logicport#
+			union
+			select c12.zptp, c12.zslot, c12.rate, c11.circuitcode
+			  from circuit_cc c11, cc c12
+			 where c11.ccid(+) = c12.id
+			   and c12.zptp = #logicport#
+     </select>
+     
+     <select id="getPackserialByIds" parameterClass="map" resultClass="string">
+     	select t.packserial
+		  from equippack t
+		 where t.equipcode =#equipcode#
+		   and t.frameserial = #frameserial#
+		   and t.slotserial = #slotserial#
+		   and rownum = '1'
+     </select>
+     
+     <select id="getEquipPortAlarm" resultClass="java.util.HashMap" parameterClass="java.util.Map">
+     	
+     		select p.alarmport,p.alarmlevel,p.alarmcount from v_alarm_for_equippannel_port p 
+			where p.belongequip='$equipcode$' and p.belongframe='$frameserial$' and p.belongslot='$slotserial$' 
+			and p.belongpack='$packserial$'
+     	    <isNotEmpty prepend="AND" property="alarmman">
+				( p.alarmman is null or p.alarmman =#alarmman#)
+			</isNotEmpty>
+			order by p.alarmport,p.alarmlevel
+     </select> 
+     <select id="getPackType" resultClass="String" parameterClass="java.util.Map">
+     	<![CDATA[
+     		select distinct decode(decode(y_porttype,'ZY03070406','ZY070101',x_capability),'ZY070101','1','ZY070112','1','ZY070116','1','2') type 
+     		from equiplogicport 
+     		where equipcode=#equipcode# and frameserial=#frameserial# and slotserial=#slotserial# and packserial=#packserial#
+     	]]>
+     </select>
+
+</sqlMap>

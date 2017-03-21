@@ -1,0 +1,262 @@
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				   xmlns:pgtb="common.component.*"
+				   width="1024" height="610" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+				   xmlns:views="sourceCode.ocableResource.views.*"
+				   creationComplete="titlewindow1_creationCompleteHandler(event)" 
+				   backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				   backgroundSize="100%"
+				   windowContainer="{Application.application.windowContainer}"
+				   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			import common.other.blogagic.util.mapNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.ocableResource.model.FiberRouteDataModel;
+			import sourceCode.ocableTopo.views.CarryBusiness;
+			import sourceCode.ocableTopo.views.businessInfluenced;
+			import sourceCode.sysGraph.model.OcableRoutInfoData;
+			import sourceCode.sysGraph.views.OcableRoutInfo;
+			import sourceCode.sysGraph.views.SysOrgMap;
+			import sourceCode.ocableResource.model.FiberDetailsModel;
+			import sourceCode.ocableResource.model.FiberDetailsResultModel;
+			
+			import twaver.DemoUtils;
+			import twaver.SequenceItemRenderer;
+			
+			[Bindable] public var node:mapNode;
+			[Bindable] public var systemcode:String;
+			
+			public var sectioncode:String;
+			public var pageIndex:int=0;
+			public var pageSize:int=50;
+			public var fdml:FiberDetailsModel = new FiberDetailsModel();
+			public var titles:Array = new Array("纤芯号","光缆段名称","产权","状态","起始ODF端口","终止ODF端口","备注");
+			private var indexRenderer:Class = SequenceItemRenderer;
+			
+			protected function closeHandler():void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var fdm:FiberDetailsModel = new FiberDetailsModel();
+				fdm.sectioncode= sectioncode;
+				fdm.start ="0";
+				fdm.end = pageSize.toString();
+				var remoteObject:RemoteObject = new RemoteObject("wireConfiguration");
+				remoteObject.endpoint = ModelLocator.END_POINT;
+				remoteObject.showBusyCursor=true;
+				remoteObject.addEventListener(ResultEvent.RESULT,getFiberDetailsHandler);
+				remoteObject.getFiberDetails(fdm);
+				serverPagingBar1.exportLinkBtn.visible=true;
+				serverPagingBar1.addEventListener("exportExcel",ExportExcel);
+				serverPagingBar1.pagingFunction = PagingFunction;
+				serverPagingBar1.dataGrid =fibergrid;
+				
+				//定制右键菜单
+				var contextMenu:ContextMenu=new ContextMenu();
+				contextMenu.hideBuiltInItems();
+				fibergrid.contextMenu=contextMenu;
+				fibergrid.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(e:ContextMenuEvent):void{
+					
+					//var item1:ContextMenuItem = new ContextMenuItem("系统组织图");
+					//item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, item1SelectHandler);
+					
+					//					var item2:ContextMenuItem = new ContextMenuItem("光纤承载业务");
+					//					item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, item2SelectHandler);
+					//					
+					//					
+					//					var item3:ContextMenuItem = new ContextMenuItem("\"N-1\"分析");
+					//					item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, item3SelectHandler);
+					//					
+					//					var item4:ContextMenuItem = new ContextMenuItem("光纤路由");
+					//					item4.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, item4SelectHandler);
+					//					
+					//					var item5:ContextMenuItem = new ContextMenuItem("光路路由");
+					//					item5.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, item5SelectHandler);
+					//					
+					//					var flexVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					//					var playerVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					//					if(fibergrid.selectedItems.length==0){//选中元素个数
+					//						fibergrid.contextMenu.hideBuiltInItems();
+					//						fibergrid.contextMenu.customItems = [flexVersion,playerVersion];
+					//					}
+					//					else{
+					//						fibergrid.contextMenu.hideBuiltInItems();
+					//						fibergrid.contextMenu.customItems = [item2,item3,item4,item5];
+					//					}
+				})
+				
+			}
+			
+			//系统组织图
+			//	private function item1SelectHandler(e:ContextMenuEvent):void{
+			//	    var systemcode:String = fibergrid.selectedItem.systemcode;
+			//		var sys:SysOrgMap = new SysOrgMap();
+			//		parentApplication.openModel("系统组织图",true,sys);
+			//	}
+			
+			private function item2SelectHandler(e:ContextMenuEvent):void{
+				//				var winCarryBusiness:CarryBusiness = new CarryBusiness();
+				//				winCarryBusiness.sectioncode = sectioncode;
+				//				//var ocablecode:String = fibergrid.selectedItem.ocablecode;
+				//				//Alert.show(ocablecode);
+				//				parentApplication.openModel("光纤承载业务",true,winCarryBusiness);
+			}
+			
+			private function item3SelectHandler(e:ContextMenuEvent):void{
+				//				var ocablecode:String = sectioncode;
+				//				var winBusinessInfluenced:businessInfluenced = new businessInfluenced();
+				//				winBusinessInfluenced.setParameters(ocablecode,"ocable");
+				//				parentApplication.openModel("\"N-1\"分析",true,winBusinessInfluenced);
+				
+			}
+			
+			private function item4SelectHandler(e:ContextMenuEvent):void{
+				//				var fibc:String = fibergrid.selectedItem.fibercode;
+				//				var fri:FiberRoutInfo = new FiberRoutInfo();
+				//				fri.title = "光纤路由";
+				//				fri.fibercode = fibc;
+				//				MyPopupManager.addPopUp(fri);
+				
+			}
+			
+			private function item5SelectHandler(e:ContextMenuEvent):void{
+				//				var fiberserial = fibergrid.selectedItem.fiberserial;
+				//				var remoteobj:RemoteObject = new RemoteObject("fiberWire"); 
+				//				remoteobj.endpoint = ModelLocator.END_POINT;
+				//				remoteobj.showBusyCursor = true;
+				//				remoteobj.addEventListener(ResultEvent.RESULT,getOcableRoutInfoByFiberHandler);
+				//				remoteobj.getOcableRoutInfoByFiber(sectioncode,fiberserial);
+				
+			}
+			
+			private function getOcableRoutInfoByFiberHandler(event:ResultEvent):void{
+				//				var datas:OcableRoutInfoData=event.result as OcableRoutInfoData;
+				//				var ori:OcableRoutInfo=new OcableRoutInfo();
+				//				if (datas != null && datas.channelRoutModelData != null && datas.stationNames != null && datas.systemName != null)
+				//				{
+				//					ori.datas=datas;
+				//					ori.title = "光路路由";
+				//					MyPopupManager.addPopUp(ori);
+				//				}
+				//				else
+				//				{
+				//					Alert.show("无相关数据!", "提示");
+				//				}
+				
+			}
+			
+			
+			
+			private function getFiberDetailsHandler(event:ResultEvent):void{
+				var fiberdatas:FiberDetailsResultModel = event.result as FiberDetailsResultModel;
+				this.onResult(fiberdatas);
+			}
+			
+			public function onResult(data:FiberDetailsResultModel):void 
+			{	
+				serverPagingBar1.orgData=data.datas;
+				serverPagingBar1.totalRecord=data.datascounts;
+				serverPagingBar1.dataBind(true);	
+			}
+			
+			public function PagingFunction(pageIndex:int,pageSize:int):void
+			{
+				this.pageSize=pageSize;
+				fdml.sectioncode = sectioncode;
+				fdml.start=(pageIndex*pageSize).toString();
+				fdml.end =(pageIndex*pageSize+pageSize).toString();
+				var remoteobj:RemoteObject = new RemoteObject("wireConfiguration"); 
+				remoteobj.endpoint = ModelLocator.END_POINT;
+				remoteobj.showBusyCursor = true;
+				remoteobj.addEventListener(ResultEvent.RESULT,dataHandler);
+				remoteobj.getFiberDetails(fdml); 
+				
+			}
+			
+			public function dataHandler(event:ResultEvent):void{
+				var fiberdatas2:FiberDetailsResultModel = event.result as FiberDetailsResultModel;
+				this.onResult(fiberdatas2);
+			}
+			
+			public function returnALL(event:Event = null):void
+			{
+				this.serverPagingBar1.navigateButtonClick("firstPage");
+			}
+			
+			public function ExportExcel(event:Event = null):void{
+				//Export
+				var fdml:FiberDetailsModel = new FiberDetailsModel(); 
+				fdml.sectioncode = sectioncode;
+				var remoteobj2:RemoteObject = new RemoteObject("wireConfiguration"); 
+				remoteobj2.endpoint = ModelLocator.END_POINT;
+				remoteobj2.showBusyCursor = true;
+				remoteobj2.addEventListener(ResultEvent.RESULT,ExportExcelHandler);
+				remoteobj2.ExportExcel("光纤详细信息",titles,fdml); 
+			}
+			
+			public function ExportExcelHandler(event:ResultEvent):void{
+				var path:String = event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(path))); 
+				navigateToURL(request,"_blank");
+				
+			}
+			
+			
+			
+			public function itemClick(event:MouseEvent):void{
+				
+				//				Registry.register("systemcode", fibergrid.selectedItem.systemcode);
+				//				
+				//				Application.application.openModel("系统组织图", false);
+				
+			}
+			
+			
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:HBox width="100%" height="100%">
+			<mx:DataGrid id="fibergrid" width="100%" height="100%" wordWrap="true" horizontalScrollPolicy="on" sortableColumns="false">
+				<mx:columns>
+					<mx:DataGridColumn headerText="光缆段编号" dataField="ocablecode" visible="false"/>
+					<mx:DataGridColumn headerText="纤芯序号" dataField="fiberserial" width="70"/>
+					<mx:DataGridColumn headerText="光缆段名称" dataField="ocablesectionname" width="200" />
+					<mx:DataGridColumn headerText="长度" dataField="length" width="50" visible="false"/>
+					<mx:DataGridColumn headerText="产权" dataField="property" width="120" />
+					<mx:DataGridColumn headerText="状态" dataField="status" />
+					<mx:DataGridColumn headerText="类型" dataField="fibermodel" visible="false" />
+					<mx:DataGridColumn headerText="起始设备端口" dataField="aendeqport" visible="false" />
+					<mx:DataGridColumn headerText="终止设备端口" dataField="zendeqport" visible="false"/>
+					<mx:DataGridColumn headerText="起始ODF端口" dataField="aendodfport" width="200" />
+					<mx:DataGridColumn headerText="终止ODF端口" dataField="zendodfport" width="200" />
+					<mx:DataGridColumn headerText="备注" dataField="remark" />
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+		<pgtb:pagetoolbar x="1" id="serverPagingBar1" width="100%"/>
+	</mx:VBox>
+</panel:PanelWindow>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--网络状态监视配置-->
+
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute"
+				creationComplete="init();" 
+				title="网络状态监视配置" x="200" y="0"
+				width="322" maxHeight="308"
+				showCloseButton="true"
+				close="titleWindow_close(event)"
+				horizontalScrollPolicy="off" verticalScrollPolicy="off"
+				>
+	
+	<mx:Script>
+		<![CDATA[
+			
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.DateField;
+			import mx.controls.Text;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			public var kb:NetStateMonitor;
+			public var flag:int = 0;
+			public var subtitile:String="";
+			public var subname:String ="";
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class;
+			
+			public function init():void{
+				var rtobj :RemoteObject= new RemoteObject("subject");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getChooseSys();
+				rtobj.addEventListener(ResultEvent.RESULT,getChooseSysResult);
+				rtobj.addEventListener(FaultEvent.FAULT,fault);
+			}
+			public function getChooseSysResult(event:ResultEvent):void{
+				if(event.result==null || event.result == ""){
+					Alert.show("初始化配置表失败","提示信息",4,this,null,iconClass);
+					return;
+				}
+				
+				var Array:ArrayCollection=event.result as ArrayCollection;
+				for each(var a:Object in Array){
+					var check:CheckBox=new CheckBox();
+					check.label=a.SYSTEMCODE;
+					check.id=a.SYSTEMCODE;
+					check.styleName="checkbox";
+					a.ISUSERD==1?check.selected=true:check.selected=false;
+					cbussiness.addChild(check);
+				}
+				
+			}
+			
+			[Bindable]
+			private var paraArray:ArrayCollection=new ArrayCollection()
+			private function save():void{
+				paraArray.removeAll();
+				var sysNum:int=0;
+				for(var i:int=0;i<cbussiness.getChildren().length;i++){
+					var obj:Object=new Object();
+					obj.id=CheckBox(cbussiness.getChildren()[i]).id;
+					if(CheckBox(cbussiness.getChildren()[i]).selected==true){
+						obj.isuserd="1";
+						sysNum++;
+					}else{
+						obj.isuserd="0";
+					}
+					paraArray.addItem(obj);
+				}
+				if(sysNum>6){
+					Alert.show('系统最多显示6个！');
+					return;
+				}
+				var rtobj :RemoteObject= new RemoteObject("subject");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.updateSysChoose(paraArray);
+				rtobj.addEventListener(ResultEvent.RESULT,updateSysChooseReturn);
+				rtobj.addEventListener(FaultEvent.FAULT,fault);
+			}
+			private function updateSysChooseReturn(event:ResultEvent):void{
+				
+				if(event.result=="成功"){
+					Alert.show('保存成功');
+					PopUpManager.removePopUp(this);
+					kb.drawRound();
+				}else{
+					Alert.show('保存失败');
+				}
+			}
+			
+			private function titleWindow_close(evt:CloseEvent):void {
+				PopUpManager.removePopUp(this);
+			}
+			private function reset():void{
+				PopUpManager.removePopUp(this);
+			}
+			private function fault(event:FaultEvent):void{
+				Alert.show(event.fault.toString(),"提示信息",4,this,null,iconClass);	
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" verticalGap="0" maxHeight="272" verticalScrollPolicy="off">
+		<mx:HBox width="100%" height="100%" verticalAlign="top" maxHeight="225" verticalScrollPolicy="off">
+			<mx:Image source="assets/images/rootalarm/xs.png"/>
+			<mx:VBox width="100%" height="100%" verticalGap="0" maxHeight="225" verticalScrollPolicy="off">
+				<mx:Label text="选择您需要检测重点业务" fontSize="12" color="#5B5B5B"/>
+				<mx:Image source="assets/images/rootalarm/setting_groupline.png" width="100%"/>
+				<mx:VBox id="cbussiness" width="100%" height="100%" verticalGap="3" maxHeight="195">
+				</mx:VBox>
+			</mx:VBox>
+		</mx:HBox>
+		<mx:HBox width="100%" height="45" styleName="btnbg">
+			<mx:Button label="保 存" styleName="normal" click="save()"/>
+			<mx:Button label="取 消" styleName="normal" click="reset()"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

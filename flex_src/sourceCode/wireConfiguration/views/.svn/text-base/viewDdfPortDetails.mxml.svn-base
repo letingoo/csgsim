@@ -1,0 +1,155 @@
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				   xmlns:pgtb="common.component.*"
+				   width="1024" height="610" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+				   xmlns:views="sourceCode.ocableResource.views.*"
+				   creationComplete="titlewindow1_creationCompleteHandler(event)" 
+				   backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				   backgroundSize="100%"
+				   windowContainer="{Application.application.windowContainer}"
+				   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			import common.other.blogagic.util.mapNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.ocableResource.model.FiberDetailsModel;
+			import sourceCode.ocableResource.model.FiberDetailsResultModel;
+			import sourceCode.ocableResource.model.FiberRouteDataModel;
+			import sourceCode.ocableTopo.views.CarryBusiness;
+			import sourceCode.ocableTopo.views.businessInfluenced;
+			import sourceCode.sysGraph.model.OcableRoutInfoData;
+			import sourceCode.sysGraph.views.OcableRoutInfo;
+			import sourceCode.sysGraph.views.SysOrgMap;
+			import sourceCode.wireConfiguration.model.DdfPortDetails;
+			import sourceCode.wireConfiguration.model.ResultModel;
+			
+			import twaver.DemoUtils;
+			import twaver.SequenceItemRenderer;
+			import twaver.core.util.h._ED;
+			
+			[Bindable] public var node:mapNode;
+			[Bindable] public var systemcode:String;
+			
+			public var ddfddmcode:String;
+			public var pageIndex:int=0;
+			public var pageSize:int=50;
+			public var titles:Array = new Array("端口序号","端口名称","端口类型","状态","业务名称","备注");
+			
+			private function closeHandler():void
+			{
+				PopUpManager.removePopUp(this);
+				
+			}
+			
+			private  function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				getDdfPOrts("0",pageSize.toString());
+				serverPagingBar1.exportLinkBtn.visible=true;
+				serverPagingBar1.addEventListener("exportExcel",ExportExcel);
+				serverPagingBar1.pagingFunction = PagingFunction;
+				serverPagingBar1.dataGrid =dg;
+				//定制右键菜单
+				var contextMenu:ContextMenu=new ContextMenu();
+				contextMenu.hideBuiltInItems();
+				dg.contextMenu=contextMenu;
+				
+				dg.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(e:ContextMenuEvent):void{
+					
+				})
+				
+			}
+			
+			private function getDdfPOrts(start:String,end:String):void{
+				var ddf:DdfPortDetails = new DdfPortDetails();
+				ddf.ddfddmcode = ddfddmcode;
+				ddf.start = start;
+				ddf.end = end;
+				var remoteObject:RemoteObject = new RemoteObject("wireConfiguration");
+				remoteObject.endpoint = ModelLocator.END_POINT;
+				remoteObject.showBusyCursor=true;
+				remoteObject.addEventListener(ResultEvent.RESULT,getDdfPortDetailsHandler);
+				remoteObject.getDdfPortDetails(ddf);
+			}
+			
+			
+			private function getDdfPortDetailsHandler(event:ResultEvent):void{
+				var result:ResultModel = event.result as ResultModel;
+				this.onResult(result);
+			}
+			
+			public function onResult(result:ResultModel):void 
+			{	
+				serverPagingBar1.orgData=result.orderList;
+				serverPagingBar1.totalRecord=result.totalCount;
+				serverPagingBar1.dataBind(true);	
+			}
+			
+			public function PagingFunction(pageIndex:int,pageSize:int):void
+			{
+				getDdfPOrts((pageIndex*pageSize).toString(),(pageIndex*pageSize+pageSize).toString());
+			}
+			
+			public function dataHandler(event:ResultEvent):void{
+				var result:ResultModel = event.result as ResultModel;
+				this.onResult(result);
+
+			}
+			
+			public function returnALL(event:Event = null):void
+			{
+				getDdfPOrts("0",serverPagingBar1.totalRecord.toString());
+			}
+			
+			public function ExportExcel(event:Event = null):void{
+				var ddf:DdfPortDetails = new DdfPortDetails();
+				ddf.ddfddmcode = ddfddmcode;
+				var ro:RemoteObject = new RemoteObject("wireConfiguration"); 
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.showBusyCursor = true;
+				ro.addEventListener(ResultEvent.RESULT,ExportExcelHandler);
+				ro.exportDdfPortDetails("DDF模块端口信息",titles,ddf); 
+			}
+			
+			public function ExportExcelHandler(event:ResultEvent):void{
+				var path:String = event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(path))); 
+				navigateToURL(request,"_blank");
+				
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:HBox width="100%" height="100%">
+			<mx:DataGrid id="dg" width="100%" height="100%" wordWrap="true" horizontalScrollPolicy="on" sortableColumns="false"  variableRowHeight="true">
+				<mx:columns>
+					<mx:DataGridColumn headerText="端口序号" dataField="portserial" width="70"/>
+					<mx:DataGridColumn headerText="端口名称" dataField="name_std" width="200" />
+					<mx:DataGridColumn headerText="端口类型" dataField="porttype" width="70" />
+					<mx:DataGridColumn headerText="端口状态" dataField="status" width="120" />
+					<mx:DataGridColumn headerText="业务名称" dataField="circuit" width="200" />
+					<mx:DataGridColumn headerText="备注" dataField="remark" />
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+		<pgtb:pagetoolbar x="1" id="serverPagingBar1" width="100%"/>
+	</mx:VBox>
+</panel:PanelWindow>

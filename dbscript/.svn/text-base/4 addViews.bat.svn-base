@@ -1,0 +1,1 @@
+sqlplus -s sdmonitor/sdmonitor@MONITORDB @".\addViews.sql"

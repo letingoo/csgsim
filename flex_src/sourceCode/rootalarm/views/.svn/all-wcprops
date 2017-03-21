@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views
+END
+RealRootAlarm.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/RealRootAlarm.mxml
+END
+HisRootAlarm.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/HisRootAlarm.mxml
+END
+update_alarmexperience.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/update_alarmexperience.mxml
+END
+RootAlarmMgr.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/RootAlarmMgr.mxml
+END
+RootAlarmDetails.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/RootAlarmDetails.mxml
+END
+TransferRealRootAlarm.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/TransferRealRootAlarm.mxml
+END
+add_alarmexperience.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/add_alarmexperience.mxml
+END
+FollowAlarm.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/FollowAlarm.mxml
+END
+ChangeFaultProcess.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/ChangeFaultProcess.mxml
+END
+AlarmHelpEXP.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/AlarmHelpEXP.mxml
+END
+ChangToRepair.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/ChangToRepair.mxml
+END
+ChangToCompanyAlarm.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/ChangToCompanyAlarm.mxml
+END
+TreeAlarmEXP.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/TreeAlarmEXP.mxml
+END
+RootAlarmFlowMgr.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/RootAlarmFlowMgr.mxml
+END
+ChangeExistFault.mxml
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/rootalarm/views/ChangeExistFault.mxml
+END

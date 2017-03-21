@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="460" height="232" layout="absolute" showCloseButton="true" close="close()"
+				title="修改ODF子模块标签" 
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+			    creationComplete="init()"
+				backgroundSize="100%" >
+	<mx:Script source="../actionscript/OdfOdmSubLabel.as" />
+	<mx:Label text="原起始标签：" x="19" y="39" width="81" enabled="true" textAlign="right"/>
+	<mx:Label text="新起始标签：" x="227" y="39" width="80" textAlign="right"/>
+	<mx:TextInput x="99" y="37" width="111" id="txtoldlabel" restrict="a-z\A-Z\0-9" maxChars="3" editable="true" enabled="false"/>
+	<mx:TextInput x="306" y="37" width="111" id="txtnewlabel" restrict="a-z\A-Z\0-9" maxChars="3"/>
+	<mx:HBox id="buttomhbox"
+			 width="100%"
+			 height="100%"
+			 verticalAlign="middle"
+			 horizontalAlign="center"
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+			 backgroundSize="100%" x="0" y="142">
+		<mx:Button label="确定" styleName="primary" click="save()" width="70" />
+		<mx:HRule width="16" visible="false"/>
+		<mx:Button label="取消" styleName="secondary" click="close()" width="70"/>
+	</mx:HBox>
+	<mx:Label text="终止子模块：" x="227" y="86" width="80" enabled="true" textAlign="right"/>
+	<mx:Label text="起始子模块：" x="19" y="86" width="81" textAlign="right"/>
+	<mx:ComboBox id="cmbStart" x="99" y="84" width="111" labelField="label" enabled="false"/>
+	<mx:ComboBox id="cmbEnd" x="306" y="84" width="111" labelField="label"/>
+</mx:TitleWindow>
+	

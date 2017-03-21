@@ -1,0 +1,265 @@
+// ActionScript file
+
+
+import common.actionscript.ModelLocator;
+import common.actionscript.MyPopupManager;
+import common.other.events.CustomEvent;
+
+import flash.events.Event;
+import flash.events.MouseEvent;
+
+import mx.controls.Alert;
+import mx.core.Application;
+import mx.events.CloseEvent;
+import mx.events.FlexEvent;
+import mx.events.ListEvent;
+import mx.formatters.DateFormatter;
+import mx.managers.PopUpManager;
+import mx.rpc.events.ResultEvent;
+import mx.rpc.remoting.mxml.RemoteObject;
+import mx.utils.StringUtil;
+
+import sourceCode.faultSimulation.model.InterposeModel;
+import sourceCode.faultSimulation.model.InterposeSearchEvent;
+import sourceCode.faultSimulation.titles.SelectCheckUserInfoTitle;
+
+public var days:Array = new Array("日", "一", "二", "三", "四", "五","六");
+public var monthNames:Array = new Array("一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月");	
+
+public var interposeModel:InterposeModel = new InterposeModel();
+//public var user_id:String="";
+public var interposeid:String="";
+public var type:String="";
+
+[Bindable] public var paraValue:String="";
+
+[Bindable] public var ismaininterposeid:String;
+[Bindable] public var interposetypeid:String;
+[Bindable] public var faulttypeid:String;
+[Bindable] public var equiptypeid:String;
+
+
+public var myCallBack:Function;//定义的方法变量
+public var mainApp:Object = null;//回调刷新方法
+
+/**
+ * 初始化函数
+ */ 
+protected function init():void{
+	//初始化 科目名称
+	interposename.text="演习科目"+ getNowTime();
+	//
+	if("ocable"==type){
+		equiptype.text="光缆";
+		equiptypeid="ET0000007";
+	}else{
+		equiptype.text="光纤";
+		equiptypeid="ET0000006";
+	}
+	
+	interposetype.text = "线缆故障";
+	interposetypeid = "IT0000002";
+	resourcecode.text=paraValue;
+	//查找光缆名称
+	getOcableNameById(paraValue,type);
+}
+
+/**
+ *添加或修改按钮的处理函数 
+ * @param event
+ * 
+ */
+protected function btn_clickHandler(event:MouseEvent):void
+{
+	var remoteObject:RemoteObject=new RemoteObject("faultSimulation");
+	remoteObject.endpoint = ModelLocator.END_POINT;
+	remoteObject.showBusyCursor = true;
+	if (interposename.text ==null ||interposename.text =="")
+	{
+		Alert.show("科目名称不能为空", "提示");
+		return;
+	}
+	else
+	{
+		interposeModel.interposename=interposename.text;
+	}
+	if (user_name.text == null ||user_name.text =="")
+	{
+		Alert.show("参演人员不能为空", "提示");
+		return;
+	}else{
+		interposeModel.user_name = user_name.text;
+	}
+	interposeModel.user_id = user_id.text;
+
+	
+	interposeModel.interposetype = "IT0000002";
+	interposeModel.interposetypeid="IT0000002";
+	if (faulttype.selectedItem == null){
+		Alert.show("请选择故障类型", "提示");
+		return;
+	}else{
+		interposeModel.faulttype = faulttype.selectedItem.@id;
+		interposeModel.faulttypeid = faulttype.selectedItem.@id;
+	}
+	
+	interposeModel.resourcecode=resourcecode.text;
+	interposeModel.resourcename=resourcename.text;
+	interposeModel.equiptype =type=="ocable"?"光缆":"光纤";
+	interposeModel.equipcode=equipcode.text;//设备编码
+	
+	interposeModel.remark = remark.text;
+	interposeModel.updateperson = Application.application.curUser;
+	interposeModel.updatetime = this.getNowTime();
+	interposeModel.s_event_title="演习";
+	remoteObject.addEventListener(ResultEvent.RESULT,addInterposeResult);
+	Application.application.faultEventHandler(remoteObject);
+	remoteObject.addInterpose(interposeModel);
+}
+/**
+ *添加经数据交互后的的界面提示处理
+ * @param event
+ * 
+ */
+protected function addInterposeResult(event:ResultEvent):void{
+	var result:Array=event.result.toString().split(";");
+	if(result.length>1&&result[0]=="success"){
+		//添加完成后直接进行激活操作
+		interposeModel.interposeid=result[1];
+		var remoteObject:RemoteObject=new RemoteObject("faultSimulation");
+		remoteObject.endpoint = ModelLocator.END_POINT;
+		remoteObject.showBusyCursor = true;
+		remoteObject.checkEventHasSolution(interposeModel);
+		remoteObject.addEventListener(ResultEvent.RESULT,checkEventHasSolutionResultHandler);
+		Application.application.faultEventHandler(remoteObject);
+
+	}else
+	{
+		Alert.show("请按要求填写数据！","提示");
+	}
+}
+//激活操作
+protected function checkEventHasSolutionResultHandler(event:ResultEvent):void{
+	var remoteObject:RemoteObject=new RemoteObject("faultSimulation");
+	remoteObject.endpoint = ModelLocator.END_POINT;
+	remoteObject.showBusyCursor = true;
+	remoteObject.setSimulateEventIsActive(interposeModel,type);//生成告警方法
+	
+	remoteObject.addEventListener(ResultEvent.RESULT,setEventIsActiveResultHandler);
+	Application.application.faultEventHandler(remoteObject);
+}
+//激活操作后返回结果
+protected function setEventIsActiveResultHandler(event:ResultEvent):void{
+	if(event.result.toString()=="success"){
+		Alert.show("添加成功,是否查看告警列表？","提示",3,this,openAlarmCallBack);
+		
+		MyPopupManager.removePopUp(this);
+	}else{
+		
+		Alert.show("操作失败！","提示");
+	}
+}
+
+private function openAlarmCallBack(event:CloseEvent):void{
+	if(event.detail==Alert.YES){
+		subMessage.stopSendMessage("stop");
+		subMessage.startSendMessage(interposeModel.user_id);
+	}
+}
+
+protected function subMessage_resultHandler(event:ResultEvent):void  
+{} 
+
+/**
+ * 清空所选用户信息
+ * @param event
+ */ 
+private function clearUserInfoHandler(event:MouseEvent):void{
+	user_name.text="";
+	user_id.text = "";
+}
+
+
+/**
+ * 用户选择的处理函数，弹出界面；选择用户
+ * @param event
+ * 
+ */
+protected function selectCheckUserInfo(event:MouseEvent):void{
+	var sqsearch:SelectCheckUserInfoTitle=new SelectCheckUserInfoTitle();
+	sqsearch.user_id=user_id.text;
+	//	sqsearch.page_parent=this;
+	PopUpManager.addPopUp(sqsearch,this,true);
+	PopUpManager.centerPopUp(sqsearch);
+	sqsearch.myCallBack=this.UserInfo_changeHandler;
+}
+
+/**
+ * 
+ * 选择用户处理
+ * 双击选择用户
+ * */
+public function UserInfo_changeHandler(obj:Object):void
+{	
+	var name:String=obj.name;
+	var id:String=obj.id;
+	if(name.length>0){
+		name=name.substr(0,name.length-1);
+	}
+	if(id.length>0){
+		id=id.substr(0,id.length-1);
+	}
+	user_name.text=name;
+	user_id.text = id;
+
+}
+
+private function getOcableNameById(ocablecode:String,type:String):void{
+	var remoteObject:RemoteObject=new RemoteObject("faultSimulation");
+	remoteObject.endpoint = ModelLocator.END_POINT;
+	remoteObject.showBusyCursor = true;
+	remoteObject.getOcableNameById(ocablecode,type);
+	remoteObject.addEventListener(ResultEvent.RESULT,getOcableNameByIdHandler);
+	Application.application.faultEventHandler(remoteObject);
+}
+
+private function getOcableNameByIdHandler(event:ResultEvent):void{
+	if(event.result!=null){
+		var value:String=event.result.toString();
+		resourcename.text=value;
+		equipname.text = value;
+	}
+	var remoteObject:RemoteObject=new RemoteObject("faultSimulation");
+	remoteObject.endpoint = ModelLocator.END_POINT;
+	remoteObject.showBusyCursor = true;
+	remoteObject.getFaulttypeLst(interposetypeid,type);
+	remoteObject.addEventListener(ResultEvent.RESULT,getFaultTypeInfoByInterposeTypeHandler);
+	Application.application.faultEventHandler(remoteObject);
+}
+
+protected function getFaultTypeInfoByInterposeTypeHandler(event:ResultEvent):void{
+	if(event.result!=null&&event.result!=""){
+		var list:XMLList = new XMLList(event.result);
+		faulttype.dataProvider = list;
+		faulttype.dropdown.dataProvider = list;
+		faulttype.labelField="@label";
+		faulttype.text="";
+		faulttype.selectedIndex=-1;
+	}
+	else{
+		Alert.show("无相关故障类型！","提示");
+		faulttype.dataProvider = null;
+		faulttype.dropdown.dataProvider = null;
+		faulttype.text="";
+	}
+}
+
+/**
+ * 获取当前时间
+ */
+protected function getNowTime():String{
+	var dateFormatter:DateFormatter = new DateFormatter();
+	dateFormatter.formatString = "YYYY-MM-DD JJ:NN:SS";
+	var nowDate:String= dateFormatter.format(new Date());
+	return nowDate;
+}

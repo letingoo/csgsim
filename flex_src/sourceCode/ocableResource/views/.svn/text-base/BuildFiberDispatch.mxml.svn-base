@@ -1,0 +1,1139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex" 
+				layout="absolute" title="选择纤芯" fontSize="13" 
+				minWidth="955" minHeight="600"
+				width="{parentApplication.workspace.width}" 
+				height="{parentApplication.workspace.height + 70}" 
+				showCloseButton="true" 
+				close="this_closeHandler()" 
+				creationComplete="initApp(event)">
+	<mx:Style>
+		Grid.gridout
+		{
+			borderStyle: solid;
+			borderThickness: 1;
+			borderSides: top,left;
+			horizontalGap: 0;
+			verticalGap: 0;
+			borderColor: #d5e1fd;
+		}
+		GridItem.griditem
+		{
+			borderThickness: 1;
+			borderStyle: solid;
+			borderSides: bottom,right;
+			horizontalAlign: left;
+			verticalAlign: middle;
+			borderColor: #D5E1FD;
+			fontFamily: Arial;
+			fontSize: 12;
+		}
+		GridItem.griditemlabel
+		{
+			borderThickness: 1;
+			borderStyle: solid;
+			borderSides: bottom,right;
+			horizontalAlign: center;
+			verticalAlign: middle;
+			borderColor: #D5E1FD;
+			backgroundColor: #ecf2fe;
+			fontFamily: Arial;
+			fontWeight: bold;
+			fontSize: 12;
+			backgroundImage: Embed(source='assets/images/gridlabelbg.png');
+			backgroundSize: "100%";
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.graphics.codec.PNGEncoder;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.ocableResource.model.ModeInfo;
+			import sourceCode.ocableResource.views.OneWay;
+			
+			import twaver.*;
+
+			public var circuitObj:Object;
+			public var eles:ICollection;
+			public var box:ElementBox;
+			
+			
+			public var stationIcon:String = "twaverImages/businessDispatch/equip_dispatch.png";
+			public var station1:String = "twaverImages/twaverimages_sx/sx_station1.png";
+			public var station2:String = "twaverImages/twaverimages_sx/sx_station2.png";
+			public var pointIcon:String = "twaverImages/twaverimages_sx/sx_station.png";
+			
+			private var item_selectFiber:ContextMenuItem = new ContextMenuItem("选择纤芯");
+			private var item_addPoint:ContextMenuItem = new ContextMenuItem("添加拐点");
+			private var item_changeLabelPosition:ContextMenuItem = new ContextMenuItem("切换标识位置");
+			private var item_delPoint:ContextMenuItem = new ContextMenuItem("删除拐点");
+			private var item_setMainOrBackup:ContextMenuItem = new ContextMenuItem("设置主备用");
+			private var item_selectEquip:ContextMenuItem = new ContextMenuItem("选择已有设备");
+			private var item_addEquip:ContextMenuItem = new ContextMenuItem("添加虚拟设备");
+			private var item_selectPort:ContextMenuItem = new ContextMenuItem("选择端口");
+			private var item_addPort:ContextMenuItem = new ContextMenuItem("添加虚拟端口");
+			private var item_changeIcon:ContextMenuItem = new ContextMenuItem("切换图标");
+			private var item_alignH:ContextMenuItem = new ContextMenuItem("水平对齐");
+			private var item_alignV:ContextMenuItem = new ContextMenuItem("垂直对齐");
+			
+			protected function this_closeHandler():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function initApp(event:FlexEvent):void
+			{
+				SerializationSettings.registerGlobalClient("flag", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("stationcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("ocablecode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("ocabledata", Consts.TYPE_DATA);
+				SerializationSettings.registerGlobalClient("usedfiber", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("isStart", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("isEnd", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("vendorcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("vendorname", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipmodel", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equiptype", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portinfo", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("porttype", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portrate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipment_follow", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipment_equipcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipment_follow_virtual", Consts.TYPE_STRING);
+				
+				
+				box = network.elementBox;
+				addHandlerForContextMenuItem();
+				getMaxRequestid();
+				
+				changeState("fiber");
+				
+				createElements(eles);
+			}
+
+			private function addHandlerForContextMenuItem():void{
+				item_selectFiber.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectFiberForOcable);
+				item_addPoint.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, addPointHandler);
+				item_changeLabelPosition.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, changeLabelPositionHandler);
+				item_delPoint.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, delPointHandler);
+				item_setMainOrBackup.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, setMainOrBackupHandler);
+				item_selectEquip.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectEquipForStation);
+				item_addEquip.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, addEquipForStation);
+				item_selectPort.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectPortForEquip);
+				item_addPort.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, addPortForEquip);
+				item_changeIcon.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, changeIconHandler);
+				item_alignH.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, horizontalAlignHandler);
+				item_alignV.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, verticalAlignHandler);
+			}
+			
+			private function getMaxRequestid():void{
+				var ro:RemoteObject = new RemoteObject("ocableResources");
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.getMaxRequestID();
+				ro.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+					requestID.text = e.result.toString();
+				});
+			}
+			
+			private function createElements(ic:ICollection):void
+			{
+				//遍历出所有node和link
+				var linkic:Collection = new Collection();
+				var nodeic:Collection = new Collection();
+				for(var i:int=0; i<ic.count; i++){
+					var ele:Element = ic.getItemAt(i);
+					if(ele is Link){
+						var olink:Link = ele as Link;
+						linkic.addItem(olink);
+						var nodeA:Node = olink.fromNode;
+						var nodeZ:Node = olink.toNode;
+						if(!nodeic.contains(nodeA)){
+							nodeic.addItem(nodeA);
+						}
+						if(!nodeic.contains(nodeZ)){
+							nodeic.addItem(nodeZ);
+						}
+					}
+				}
+				//创建所有node
+				var nn:int = nodeic.count;
+				for(var j:int=0; j<nn; j++){
+					var locatx:Number = 100 + 300 * j;
+//					var locaty:Number = 100;
+					var locaty:Number = 100 + 10;
+					if((j+1) % 2 == 0){
+						locaty = 100 - 10;
+					}
+					var node:Node = createNode(nodeic.getItemAt(j), locatx, locaty, station1);
+					nodeic.setItemAt(node, j);
+				}
+				//创建所有link
+				for(var k:int=0; k<linkic.count; k++){
+					var link:Link = linkic.getItemAt(k);
+					var link1:Link = new Link();
+					for(var m:int=0; m<nodeic.count; m++){
+						var nodef:Node = nodeic.getItemAt(m);
+						if(nodef.icon == link.fromNode.id.toString()){
+							link1.fromNode = nodef;
+							break;
+						}
+					}
+					for(var n:int=0; n<nodeic.count; n++){
+						var nodet:Node = nodeic.getItemAt(n);
+						if(nodet.icon == link.toNode.id.toString()){
+							link1.toNode = nodet;
+							break;
+						}
+					}
+					link1.setClient("flag", "ocable");
+					link1.setClient("ocablecode", link.id.toString());
+					link1.setClient("ocabledata", link.getClient("ocabledata"));
+					link1.toolTip = link.toolTip;
+					link1.setStyle(Styles.LINK_COLOR, 0x000000);
+					link1.setStyle(Styles.LINK_WIDTH, 2);
+					box.add(link1);
+				}
+			}
+			
+			private function createNode(node:Node, x:Number, y:Number, image:String):Node{
+				var node1:Node = new Node();
+				node1.name = (node.followers.getItemAt(0) as Follower).name;
+				node1.setLocation(x, y);
+				node1.setClient("flag", "station");
+				node1.setClient("stationcode", node.getClient("stationcode"));
+				node1.image = image;
+				node1.setSize(50, 50);
+				node1.toolTip = node.toolTip;
+				node1.icon = node.id.toString();
+				node1.setStyle(Styles.LABEL_POSITION, Consts.POSITION_TOP_TOP);
+			//	node1.setStyle(Styles.LABEL_SIZE, 16);
+				box.add(node1);
+				return node1;
+			}
+			
+//			private function createLink(node_a:Node, node_z:Node, link:Link):Link{
+//				var link1:Link = new Link(node_a, node_z);
+//				link1.setClient("flag", "ocable");
+//				link1.setClient("ocablecode", link.id.toString());
+//				link1.setClient("ocabledata", link.getClient("ocabledata"));
+//				link1.toolTip = link.toolTip;
+//				link1.setStyle(Styles.LINK_COLOR, 0x000000);
+//				link1.setStyle(Styles.LINK_WIDTH, 3);
+//				box.add(link1);
+//				return link1;
+//			}
+			
+			private function addContextMenu(state:String):void{
+				network.contextMenu = new ContextMenu();
+				network.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, function(cme:ContextMenuEvent):void{
+					network.contextMenu.hideBuiltInItems();
+					if(network.selectionModel.count == 1){
+						if(state == "fiber"){
+							if(network.selectionModel.selection.getItemAt(0).getClient("flag") == "ocable"){
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [item_selectFiber, item_addPoint, item_changeLabelPosition];
+							}else if(network.selectionModel.selection.getItemAt(0).getClient("flag") == "station"){
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [item_changeIcon];
+							}else if(network.selectionModel.selection.getItemAt(0).getClient("flag") == "breakPoint"){
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [item_delPoint];
+							}else{
+								network.contextMenu.customItems = [];
+							}
+						}
+						if(state == "station"){
+							if(network.selectionModel.selection.getItemAt(0).getClient("flag") == "station"){
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [item_setMainOrBackup, item_changeIcon];
+							}else{
+								network.contextMenu.customItems = [];
+							}
+						}
+						if(state == "equip"){
+							if(network.selectionModel.selection.getItemAt(0).getClient("flag") == "station"){
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [item_selectEquip, item_addEquip, item_changeIcon];
+							}else{
+								network.contextMenu.customItems = [];
+							}
+						}
+						if(state == "port"){
+							if(network.selectionModel.selection.getItemAt(0).getClient("flag") == "equipment" || network.selectionModel.selection.getItemAt(0).getClient("flag") == "vequipment"){
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [item_selectPort, item_addPort];
+							/* }else if(network.selectionModel.selection.getItemAt(0).getClient("flag") == "station"){
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [item_changeIcon]; */
+							}else if(network.selectionModel.selection.getItemAt(0).getClient("equipment_follow")=="ok"){//新增加的右键设备框而不是右键设备名称
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [item_selectPort, item_addPort];
+							}else if(network.selectionModel.selection.getItemAt(0).getClient("equipment_follow_virtual")=="ok"){//虚拟的新增加的右键设备框而不是右键设备名称
+								network.contextMenu.customItems = [];
+								network.contextMenu.customItems = [ item_addPort];
+							}else{
+								network.contextMenu.customItems = [];
+							}
+						}
+					}else if(network.selectionModel.count > 1){
+						network.contextMenu.customItems = [];
+						network.contextMenu.customItems = [item_alignH, item_alignV];
+					}else{
+						network.contextMenu.customItems = [];
+					}
+				});
+			}
+			
+			//右键-切换局站图片方法
+			private function changeIconHandler(e:ContextMenuEvent):void{
+				var node:Node = network.selectionModel.selection.getItemAt(0);
+				if(node.image == station1){
+					node.image = station2;
+					node.setStyle(Styles.LABEL_POSITION, Consts.POSITION_BOTTOM_BOTTOM);
+				}else if(node.image == station2){
+					node.image = station1;
+					node.setStyle(Styles.LABEL_POSITION, Consts.POSITION_TOP_TOP);
+				}
+			}
+			//右键-水平对齐方法
+			private function horizontalAlignHandler(e:ContextMenuEvent):void{
+				var element:Element;
+				var node:Node;
+				var nodetemp:Node;
+				var array:Array = new Array();
+				for(var i:int=0; i<network.selectionModel.selection.count; i++){
+					element = (Element)(network.selectionModel.selection.getItemAt(i));
+					if(element is Node){
+						array.push(element);
+					}
+				}
+				if(array.length > 0){
+					node = array[0] as Node;
+					for(i=1; i<array.length; i++){
+						nodetemp = array[i];
+						nodetemp.setCenterLocation(nodetemp.centerLocation.x, node.centerLocation.y);
+					}
+				}
+			}
+			//右键-垂直对齐方法
+			private function verticalAlignHandler(e:ContextMenuEvent):void{
+				var element:Element;
+				var node:Node;
+				var nodetemp:Node;
+				var array:Array = new Array();
+				for(var i:int=0; i<network.selectionModel.selection.count; i++){
+					element = (Element)(network.selectionModel.selection.getItemAt(i));
+					if(element is Node){
+						array.push(element);
+					}
+				}
+				if(array.length > 0){
+					node = array[0] as Node;
+					for(i=1; i<array.length; i++){
+						nodetemp = array[i];
+						nodetemp.setCenterLocation(node.centerLocation.x, nodetemp.centerLocation.y);
+					}
+				}
+			}
+			//右键-选择纤芯方法
+			private function selectFiberForOcable(e:ContextMenuEvent):void{
+				var ocable:Link = network.selectionModel.selection.getItemAt(0);
+				if(ocable != null){
+					var tw:SelectFiberPanel = new SelectFiberPanel();
+					tw.link = ocable;
+					PopUpManager.addPopUp(tw, this, true);
+					PopUpManager.centerPopUp(tw);
+				}else{
+					Alert.show("请先选择光缆段！", "提示");
+				}
+			}
+			//右键-添加拐点方法 
+			private function addPointHandler(e:ContextMenuEvent):void{
+				var p:Point = new Point(e.mouseTarget.mouseX / network.zoom, e.mouseTarget.mouseY / network.zoom);
+				var ocable:Link = network.selectionModel.selection.getItemAt(0);
+				var node:Node = new Node();
+				node.image = pointIcon;
+				node.setSize(4, 4);
+				node.setCenterLocation(p.x, p.y);
+				node.setClient("flag", "breakPoint");
+				node.setStyle(Styles.INNER_COLOR, 0x000000);
+				box.add(node);
+				var link1:Link = new Link(ocable.fromNode, node);
+				link1.setClient("flag", "ocable");
+				link1.setClient("ocablecode", ocable.getClient("ocablecode"));
+				link1.setClient("ocabledata", ocable.getClient("ocabledata"));
+				link1.toolTip = ocable.toolTip;
+				link1.setStyle(Styles.LINK_COLOR, 0x000000);
+				link1.setStyle(Styles.LINK_WIDTH, 2);
+				box.add(link1);
+				var link2:Link = new Link(node, ocable.toNode);
+				link2.setClient("flag", "ocable");
+				link2.setClient("ocablecode", ocable.getClient("ocablecode"));
+				link2.setClient("ocabledata", ocable.getClient("ocabledata"));
+				link2.toolTip = ocable.toolTip;
+				link2.setStyle(Styles.LINK_COLOR, 0x000000);
+				link2.setStyle(Styles.LINK_WIDTH, 2);
+				box.add(link2);
+				box.remove(ocable);
+			}
+			//右键-删除拐点
+			private function delPointHandler(e:ContextMenuEvent):void{
+				var node:Node = network.selectionModel.selection.getItemAt(0);
+				var link1:Link = node.toLinks.getItemAt(0);
+				var link2:Link = node.fromLinks.getItemAt(0);
+				link1.toNode = link2.toNode;
+				box.remove(node);
+				box.remove(link2);
+			}
+			//右键-切换label显示位置180度
+			private function changeLabelPositionHandler(e:ContextMenuEvent):void{
+				var link:Link = network.selectionModel.selection.getItemAt(0);
+				if(link.getStyle(Styles.LABEL_POSITION) == Consts.POSITION_TOP_TOP){
+					link.setStyle(Styles.LABEL_POSITION, Consts.POSITION_BOTTOM_BOTTOM);
+				}else{
+					link.setStyle(Styles.LABEL_POSITION, Consts.POSITION_TOP_TOP);
+				}
+			}
+			//右键-设置主\备用光缆
+			private function setMainOrBackupHandler(e:ContextMenuEvent):void{
+				var node:Node = network.selectionModel.selection.getItemAt(0);
+				var fo:Follower = new Follower();
+				fo.image = null;
+				fo.setSize(40, 20);
+				fo.setLocation(node.x + 60, node.y - 10);
+				fo.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+				fo.setStyle(Styles.LABEL_COLOR, 0xFF0000);
+				var tw:LabelEditPanel = new LabelEditPanel();
+				tw.fo = fo;
+				PopUpManager.addPopUp(tw, this, true);
+				PopUpManager.centerPopUp(tw);
+				box.add(fo);
+			}
+			//右键-选择设备方法
+			private function selectEquipForStation(e:ContextMenuEvent):void{
+				var node:Node = network.selectionModel.selection.getItemAt(0);
+				if(node.getClient("isStart") != null || node.getClient("isEnd") != null){
+					if(node.getClient("isStart") == 'true' || node.getClient("isEnd") == 'true'){
+						var tw:SelectEquipPanel = new SelectEquipPanel();
+						tw.box = this.box;
+						tw.node = node;
+						node_equipment = node;
+						PopUpManager.addPopUp(tw, this, true);
+						PopUpManager.centerPopUp(tw);
+						tw.addEventListener("addequipment",addObj);
+						
+					}else{
+						Alert.show("只能在起止站添加！","提示");
+					}
+				}else{
+					Alert.show("只能在起止站添加！","提示");
+				}
+			}
+			public var node_equipment:Node;
+			private function addObj(e:Event):void{
+				for(var i:int=0;i<node_equipment.followers.count;i++){
+					var fo:Follower = node_equipment.followers.getItemAt(i);
+					if(fo.getClient("flag")=="equipment" && fo.getClient("equipcode")!=null){
+						node_equipment.setClient("equipment_follow","ok");
+						node_equipment.setClient("equipment_equipcode",fo.getClient("equipcode"));
+					}
+				}
+				
+			}
+			//右键-添加虚拟设备方法
+			private function addEquipForStation(e:ContextMenuEvent):void{
+				var node:Node = network.selectionModel.selection.getItemAt(0);
+				if(node.getClient("isStart") != null || node.getClient("isEnd") != null){
+					if(node.getClient("isStart") == 'true' || node.getClient("isEnd") == 'true'){
+						var tw:SelectVirtualEquipPanel = new SelectVirtualEquipPanel();
+						tw.box = this.box;
+						tw.node = node;
+						node_vitrual = node;
+						PopUpManager.addPopUp(tw, this, true);
+						PopUpManager.centerPopUp(tw);
+						tw.addEventListener("addVirtualEquipment",addVirtualObj);
+					}else{
+						Alert.show("只能在起止站添加！","提示");
+					}
+				}else{
+					Alert.show("只能在起止站添加！","提示");
+				}
+			}
+			private var node_vitrual:Node;
+			private function addVirtualObj(e:Event):void{
+				for(var i:int=0;i<node_vitrual.followers.count;i++){
+					var fo:Follower = node_vitrual.followers.getItemAt(i);
+					if(fo.getClient("flag")=="vequipment" && fo.getClient("equipmodel")!=null){
+						node_vitrual.setClient("equipment_follow_virtual","ok");
+//						node_vitrual.setClient("equipment_equipcode",fo.getClient("equipcode"));
+					}
+				}
+			}
+			//右键-选择端口方法
+			private function selectPortForEquip(e:ContextMenuEvent):void{
+//				var fo:Follower = network.selectionModel.selection.getItemAt(0);
+//				var node:Node = fo.host;
+				var node:Node = network.selectionModel.selection.getItemAt(0);
+//				for(var j:int=0;j<node.followers.count;j++){
+//					var fo:Follower = node.followers.getItemAt(j);
+//					if(fo)
+//				}
+				if(node.getClient("isStart") != null || node.getClient("isEnd") != null){
+					if(node.getClient("isStart") == 'true' || node.getClient("isEnd") == 'true'){
+						var tw:SelectPortPanel = new SelectPortPanel();
+//						tw.equipcode = fo.getClient("equipcode");
+						tw.equipcode = node.getClient("equipment_equipcode");
+						tw.node = node;
+						tw.box = box;
+						PopUpManager.addPopUp(tw, this, true);
+						PopUpManager.centerPopUp(tw);
+					}else{
+						Alert.show("只能在起止站设备上添加！","提示");
+					}
+				}else{
+					Alert.show("只能在起止站设备上添加！","提示");
+				}
+			}
+			//右键-添加虚拟端口
+			private function addPortForEquip(e:ContextMenuEvent):void{
+//				var fo:Follower = network.selectionModel.selection.getItemAt(0);
+				var node:Node = network.selectionModel.selection.getItemAt(0);
+//				var node:Node = fo.host;
+				if(node.getClient("isStart") != null || node.getClient("isEnd") != null){
+					if(node.getClient("isStart") == 'true' || node.getClient("isEnd") == 'true'){
+						var tw:SelectVirtualPortPanel = new SelectVirtualPortPanel();
+						tw.node = node;
+						tw.box = box;
+						PopUpManager.addPopUp(tw, this, true);
+						PopUpManager.centerPopUp(tw);
+					}else{
+						Alert.show("只能在起止站设备上添加！","提示");
+					}
+				}else{
+					Alert.show("只能在起止站设备上添加！","提示");
+				}
+			}
+			//选择纤芯-上下步操作
+			protected function buttDefualtPrev_clickHandler(event:MouseEvent):void{
+				Alert.show("确定要重新选择光缆吗？", "提示", Alert.YES | Alert.NO, this, function(e:CloseEvent):void{
+					if(e.detail == Alert.YES){
+						this_closeHandler();
+					}
+				});
+			}
+			protected function buttDefualtNext_clickHandler(event:MouseEvent):void{
+				//判断有没有没有选择纤芯的
+				var f:Boolean = true;
+				var ic:ICollection = this.network.elementBox.datas;
+				for(var i:int=0; i<ic.count; i++){
+					var ie:IElement = ic.getItemAt(i);
+					if(ie is Link && (ie.name == "" || ie.name == null)){
+						f = false;
+						break;
+					}
+				}
+				if(!f){
+					Alert.show("请确认所有光缆段都已选择纤芯！", "提示");
+				}else{
+					changeState("station");
+				}
+			}
+			//设置起止局站方法
+			protected function buttStationStart_clickHandler(event:MouseEvent):void
+			{
+				var sie:IElement = network.selectionModel.selection.getItemAt(0);
+				if(sie.getClient("isStart") == "true"){
+					sie.setStyle(Styles.INNER_COLOR, 0xFFFFFF);
+					sie.setStyle(Styles.LABEL_COLOR, 0x000000);
+					sie.setClient("isStart", "");
+				}else if(sie.getClient("isEnd") == "true"){
+					sie.setStyle(Styles.INNER_COLOR, 0xFFFFFF);
+					sie.setStyle(Styles.LABEL_COLOR, 0x000000);
+					sie.setClient("isEnd", "");
+				}
+				
+				var ic:ICollection = network.elementBox.datas;
+				if(ic != null && ic.count > 0){
+					for(var i:int=0; i<ic.count; i++){
+						var ie:IElement = ic.getItemAt(i);
+						if(ie.id != sie.id && ie.getClient("isStart") == "true"){
+							ie.setStyle(Styles.INNER_COLOR, 0xFFFFFF);
+							ie.setStyle(Styles.LABEL_COLOR, 0x000000);
+							ie.setClient("isStart", "");
+						}
+					}
+				}
+				
+				setStartOrEndStation("isStart");
+			}
+			protected function buttStationEnd_clickHandler(event:MouseEvent):void
+			{
+				var sie:IElement = network.selectionModel.selection.getItemAt(0);
+				if(sie.getClient("isStart") == "true"){
+					sie.setStyle(Styles.INNER_COLOR, 0xFFFFFF);
+					sie.setStyle(Styles.LABEL_COLOR, 0x000000);
+					sie.setClient("isStart", "");
+				}else if(sie.getClient("isEnd") == "true"){
+					sie.setStyle(Styles.INNER_COLOR, 0xFFFFFF);
+					sie.setStyle(Styles.LABEL_COLOR, 0x000000);
+					sie.setClient("isEnd", "");
+				}
+				
+				var ic:ICollection = network.elementBox.datas;
+				if(ic != null && ic.count > 0){
+					for(var i:int=0; i<ic.count; i++){
+						var ie:IElement = ic.getItemAt(i);
+						if(ie.id != sie.id && ie.getClient("isEnd") == "true"){
+							ie.setStyle(Styles.INNER_COLOR, 0xFFFFFF);
+							ie.setStyle(Styles.LABEL_COLOR, 0x000000);
+							ie.setClient("isEnd", "");
+						}
+					}
+				}
+				
+				setStartOrEndStation("isEnd");
+			}
+			private function setStartOrEndStation(type:String):void{
+				if(network.selectionModel.count == 1 && network.selectionModel.selection.getItemAt(0).getClient("flag") == "station"){
+					var node:Node = network.selectionModel.selection.getItemAt(0);
+					if(type == "isStart"){
+						node.setClient("isStart", "true");
+						node.setStyle(Styles.INNER_COLOR, 0x00FF00);
+						node.setStyle(Styles.LABEL_COLOR, 0x00FF00);
+					}
+					if(type == "isEnd"){
+						node.setClient("isEnd", "true");
+						node.setStyle(Styles.INNER_COLOR, 0xFF0000);
+						node.setStyle(Styles.LABEL_COLOR, 0xFF0000);
+					}
+				}else{
+					Alert.show("请先选择一个局站！", "提示");
+				}
+			}
+			//设置起止局站-上下步操作
+			protected function buttStationPrev_clickHandler(event:MouseEvent):void{
+				var ic:ICollection = this.network.elementBox.datas;
+				for(var i:int=0; i<ic.count; i++){
+					var ie:IElement = ic.getItemAt(i);
+					if(ie.getClient("isStart") == "true"){
+						ie.setStyle(Styles.INNER_COLOR, 0xFFFFFF);
+						ie.setStyle(Styles.LABEL_COLOR, 0x000000);
+						ie.setClient("isStart", "");
+					}else if(ie.getClient("isEnd") == "true"){
+						ie.setStyle(Styles.INNER_COLOR, 0xFFFFFF);
+						ie.setStyle(Styles.LABEL_COLOR, 0x000000);
+						ie.setClient("isEnd", "");
+					}
+				}
+				changeState("fiber");
+			}
+			protected function buttStationNext_clickHandler(event:MouseEvent):void{
+				var fs:Boolean = false;
+				var fe:Boolean = false;
+				var ic:ICollection = this.network.elementBox.datas;
+				for(var i:int=0; i<ic.count; i++){
+					var ie:IElement = ic.getItemAt(i);
+					if(ie.getClient("isStart") == "true"){
+						fs = true;
+					}
+					if(ie.getClient("isEnd") == "true"){
+						fe = true;
+					}
+				}
+				if(fs && fe){
+					changeState("equip");
+				}else{
+					Alert.show("请先设置起始终止局站！", "提示");
+				}
+			}
+			//添加设备-上下步操作
+			protected function buttEquipPrev_clickHandler(event:MouseEvent):void{
+				var ic:ICollection = this.network.elementBox.datas;
+				var arr:Array = new Array();
+				for(var i:int=0; i<ic.count; i++){
+					var ie:IElement = ic.getItemAt(i);
+					if(ie.getClient("isStart") == "true" || ie.getClient("isEnd") == "true"){
+						var node:Node = ie as Node;
+						node.image = station1;
+						node.setSize(50, 50);
+						node.setStyle(Styles.INNER_COLOR, node.getStyle(Styles.LABEL_COLOR));
+					}
+					if(ie is Follower){
+						arr.push(ie.id);
+					}
+				}
+				for(var j:int=0; j<arr.length; j++){
+					box.removeByID(arr[j]);
+				}
+				changeState("station");
+			}
+			protected function buttEquipNext_clickHandler(event:MouseEvent):void{
+				var f:int = 0;
+				var ic:ICollection = this.network.elementBox.datas;
+				for(var i:int=0; i<ic.count; i++){
+					var ie:IElement = ic.getItemAt(i);
+					if(ie.getClient("flag") == "equipment" || ie.getClient("flag") == "vequipment"){
+						f++;
+					}
+				}
+				if(f == 2){
+					changeState("port");
+				}else{
+					Alert.show("请添加设备！", "提示");
+				}
+			}
+			//添加端口-上下步操作
+			protected function buttPortPrev_clickHandler(event:MouseEvent):void{
+				var ic:ICollection = this.network.elementBox.datas;
+				var arr:Array = new Array();
+				for(var i:int=0; i<ic.count; i++){
+					var ie:IElement = ic.getItemAt(i);
+					if(ie.getClient("flag") == "port" || ie.getClient("flag") == "vport" || ie.getClient("flag") == "ratelabel"){
+						arr.push(ie.id);
+					}
+				}
+				for(var j:int=0; j<arr.length; j++){
+					box.removeByID(arr[j]);
+				}
+				changeState("equip");
+			}
+			protected function buttPortNext_clickHandler(event:MouseEvent):void{
+				var f:int = 0;
+				var ic:ICollection = this.network.elementBox.datas;
+				for(var i:int=0; i<ic.count; i++){
+					var ie:IElement = ic.getItemAt(i);
+					if(ie.getClient("flag") == "port" || ie.getClient("flag") == "vport"){
+						f++;
+					}
+				}
+				if(f == 2){
+					Alert.show("确定保存吗？", "提示", Alert.YES|Alert.NO, this, saveAlertHandler, null, Alert.YES);
+				}else{
+					Alert.show("请添加端口！", "提示");
+				}
+			}
+			//保存方法
+			private function saveAlertHandler(e:CloseEvent):void{
+				if(e.detail == Alert.YES){
+					this.dispatchEvent(new Event("closeAllPages"));
+					var obj:Object = circuitObj;
+					var ser:XMLSerializer = new XMLSerializer(box);
+					var xmlstr:String = ser.serialize();
+					obj.xml = xmlstr;//图信息
+					obj.remark = circuitname.text;//话路名称
+					obj.work_content = workcontent.text;//工作内容
+					obj.beizhu = memo.text;//备注
+					obj.requestionID = requestID.text;//文件编号
+					obj.builddate = issueDate.text;//下发时间
+					obj.requestdate = finishDate.text;//要求完成时间
+					for(var i:int=0; i<box.datas.count; i++){
+						var iet:IElement = box.datas.getItemAt(i) as IElement;
+						if(iet is Node && !(iet is Follower)){
+							if(iet.getClient("isStart") == "true"){
+								var node:Node = iet as Node;
+								if(iet.getClient("flag") != null && iet.getClient("flag") == "station"){
+									obj.station_a = iet.getClient("stationcode");
+									for(var j:int=0; j<node.followers.count; j++){
+										var follow:Follower = node.followers.getItemAt(j);
+										if(follow.getClient("equipcode") != null){
+											obj.equipcode_a = new String(follow.getClient("equipcode"));
+										}
+										if(follow.getClient("portcode") != null){
+											obj.portcode_a = new String(follow.getClient("portcode"));
+										}
+									}
+								}
+							}
+							if(iet.getClient("isEnd") == "true"){
+								var node:Node = iet as Node;
+								if(iet.getClient("flag") != null && iet.getClient("flag") == "station"){
+									obj.station_z = iet.getClient("stationcode");
+									for(var j:int=0; j<node.followers.count; j++){
+										var follow:Follower = node.followers.getItemAt(j);
+										if(follow.getClient("equipcode") != null){
+											obj.equipcode_z = new String(follow.getClient("equipcode"));
+										}
+										if(follow.getClient("portcode") != null){
+											obj.portcode_z = new String(follow.getClient("portcode"));
+										}
+									}
+								}
+							}
+						}
+					}
+					//保存
+					var ro:RemoteObject = new RemoteObject("businessDispatch");
+					ro.endpoint = ModelLocator.END_POINT;
+					ro.showBusyCursor = true;
+					ro.addEventListener(ResultEvent.RESULT, resultHandler);
+					ro.addEventListener(FaultEvent.FAULT, faultHandler);
+					ro.saveFiberDis(obj);
+				}
+				
+			}
+
+			private function resultHandler(e:ResultEvent):void{
+				if(e.result != null){
+					buttPortNext.enabled = false;
+					Alert.show("已保存，方式单号为：" + e.result.toString(), "提示");
+				}else{
+					Alert.show("保存失败，请重试！", "错误提示");
+				}
+			}
+			
+			private function faultHandler(e:FaultEvent):void{
+				Alert.show(e.fault.toString(), "错误提示");
+			}
+			
+//			protected function lookxml_clickHandler(event:MouseEvent):void
+//			{
+//				var lookXML:viewXML = new viewXML();
+//				lookXML.network = this.network;
+//				PopUpManager.addPopUp(lookXML, this, true);
+//				PopUpManager.centerPopUp(lookXML);
+//			}
+			//即时弹出方式单信息小窗口
+			protected function btnCircuit_clickHandler(event:MouseEvent):void
+			{
+				var oy:OneWay = new OneWay();
+				oy.str = circuitObj;
+				PopUpManager.addPopUp(oy, this, true);
+				PopUpManager.centerPopUp(oy);
+			}
+			//操作说明
+			protected function btnGuide_clickHandler(event:MouseEvent):void
+			{
+				if(currentState == "fiber"){
+					Alert.show("选中光缆点击右键：选择纤芯", "提示");
+				}else if(currentState == "station"){
+					Alert.show("选中局站设置起始局站或终止\n局站", "提示");
+				}else if(currentState == "equip"){
+					Alert.show("选中局站点击右键：选择已有\n设备或添加虚拟设备", "提示");
+				}else if(currentState == "port"){
+					Alert.show("选中设备名称点击右键：选择\n已有端口或添加虚拟端口", "提示");
+				}
+			}
+			//导出Excel
+			protected function buttExport_clickHandler(event:MouseEvent):void
+			{
+				Alert.show("确定要导出吗？", "提示", Alert.YES | Alert.NO, this, function(e:CloseEvent):void{
+					if(e.detail == Alert.YES){
+						exportImage();
+					}
+				});
+			}
+			private function exportImage():void{
+				var bitmapData:BitmapData = network.exportAsBitmapData();
+				var encoder:PNGEncoder = new PNGEncoder();
+				var data:ByteArray = encoder.encode(bitmapData);
+				var  rtobj:RemoteObject = new RemoteObject("businessDispatch");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getByteData(data);
+				rtobj.addEventListener(ResultEvent.RESULT, function():void{
+					exportExcel();
+				});
+				rtobj.addEventListener(FaultEvent.FAULT, faultHandler);
+			}
+			public function exportExcel():void{
+				var mode:ModeInfo = new ModeInfo();
+				mode.remark = memo.text;//备注
+				mode.circultName = circuitname.text;//话路名称
+				mode.workContent = workcontent.text;//工作内容
+				mode.makePerson = drawer.text;//拟制
+				mode.receiveCompany = receiver.text;//接收人\单位
+				mode.check = auditor.text;//审核
+				mode.receiveDate = receiveDate.text;//接单时间
+				mode.countersign = signer.text;//会签
+				mode.executor = executor.text;//执行人
+				mode.approval = approver.text;//批准
+				mode.executeDate = executeDate.text;//执行时间
+				mode.preparationDate = issueDate.text;//下发时间
+				mode.completion = progress.text;//完成情况
+				mode.issuedDate = finishDate.text;//要求完成日期
+				mode.problem = problem.text;//遗留问题
+				var url:String = getURL();
+				var rtobj:RemoteObject = new RemoteObject("businessDispatch");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.exportExcel(mode, url, requestID.text);
+				rtobj.addEventListener(ResultEvent.RESULT, exportExcelResult);
+				rtobj.addEventListener(FaultEvent.FAULT, faultHandler);
+			}
+			public function exportExcelResult(event:ResultEvent):void{
+					var path:String = event.result.toString();
+					var request:URLRequest = new URLRequest(encodeURI(path));
+					navigateToURL(request, "_blank");
+			}
+			private static function getURL():String{
+				var currSwfUrl:String;
+				var doMain:String = Application.application.stage.loaderInfo.url;
+				var doMainArray:Array = doMain.split("/");
+				if (doMainArray[0] == "file:") {  
+					if(doMainArray.length<=3){  
+						currSwfUrl = doMainArray[2];  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf(currSwfUrl.charAt(2)));  
+					}else{  
+						currSwfUrl = doMain;  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+					}  
+				}else{  
+					currSwfUrl = doMain;  
+					currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+				}  
+				currSwfUrl += "/";
+				return currSwfUrl;
+			}
+			//切换状态通用方法
+			private function changeState(state:String):void{
+				currentState = state;
+				addContextMenu(state);
+			}
+
+		]]>
+	</mx:Script>
+	<mx:states>
+		<mx:State name="fiber">
+			<mx:SetProperty name="title" value="选择纤芯"/>
+			<mx:SetProperty target="{boxName}" name="visible" value="false"/>
+			<mx:SetProperty target="{boxContent}" name="visible" value="false"/>
+			<!--
+			<mx:SetProperty target="{boxMemo}" name="visible" value="false"/>
+			<mx:SetProperty target="{grid1}" name="visible" value="false"/>
+			-->
+			<mx:SetProperty target="{buttDefualtPrev}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttDefualtNext}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttStationPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttStationNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttEquipPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttEquipNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttPortPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttPortNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{setbar}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttExport}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttDefualtNext}" name="x" value="488"/>
+			<mx:SetProperty target="{buttDefualtNext}" name="y" value="0"/>
+			<mx:SetProperty target="{buttDefualtPrev}" name="x" value="390"/>
+			<mx:SetProperty target="{buttDefualtPrev}" name="y" value="0"/>
+		</mx:State>
+		<mx:State name="station" basedOn="fiber">
+			<mx:SetProperty name="title" value="设置起始终止局站"/>
+			<mx:SetProperty target="{boxName}" name="visible" value="false"/>
+			<mx:SetProperty target="{boxContent}" name="visible" value="false"/>
+			<!--
+			<mx:SetProperty target="{boxMemo}" name="visible" value="false"/>
+			<mx:SetProperty target="{grid1}" name="visible" value="false"/>
+			-->
+			<mx:SetProperty target="{buttDefualtPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttDefualtNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttStationPrev}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttStationNext}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttEquipPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttEquipNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttPortPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttPortNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{setbar}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttExport}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttStationNext}" name="x" value="488"/>
+			<mx:SetProperty target="{buttStationNext}" name="y" value="0"/>
+			<mx:SetProperty target="{buttStationPrev}" name="x" value="390"/>
+			<mx:SetProperty target="{buttStationPrev}" name="y" value="0"/>
+		</mx:State>
+		<mx:State name="equip" basedOn="station">
+			<mx:SetProperty name="title" value="添加设备"/>
+			<mx:SetProperty target="{boxName}" name="visible" value="false"/>
+			<mx:SetProperty target="{boxContent}" name="visible" value="false"/>
+			<!--
+			<mx:SetProperty target="{boxMemo}" name="visible" value="false"/>
+			<mx:SetProperty target="{grid1}" name="visible" value="false"/>
+			-->
+			<mx:SetProperty target="{buttDefualtPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttDefualtNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttStationPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttStationNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttEquipPrev}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttEquipNext}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttPortPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttPortNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{setbar}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttExport}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttEquipNext}" name="x" value="488"/>
+			<mx:SetProperty target="{buttEquipNext}" name="y" value="0"/>
+			<mx:SetProperty target="{buttEquipPrev}" name="x" value="390"/>
+			<mx:SetProperty target="{buttEquipPrev}" name="y" value="0"/>
+			<mx:AddChild relativeTo="{network}" position="before">
+			</mx:AddChild>
+		</mx:State>
+		<mx:State name="port" basedOn="equip">
+			<mx:SetProperty name="title" value="添加端口"/>
+			<mx:SetProperty target="{boxName}" name="visible" value="true"/>
+			<mx:SetProperty target="{boxContent}" name="visible" value="true"/>
+			<!--
+			<mx:SetProperty target="{boxMemo}" name="visible" value="true"/>
+			<mx:SetProperty target="{grid1}" name="visible" value="true"/>
+			-->
+			<mx:AddChild relativeTo="{vbox1}" position="lastChild">
+				<mx:HBox id="boxMemo" width="100%" height="10%" verticalAlign="middle">
+					<mx:Label text="备注：" width="10%" height="100%" textAlign="center"/>
+					<mx:TextArea id="memo" width="80%" borderStyle="none"/>
+				</mx:HBox>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{vbox1}" position="lastChild">
+				<mx:Grid id="grid1" width="100%" height="10%" verticalGap="0" horizontalGap="0" styleName="gridout">
+					<mx:GridRow width="100%">
+						<mx:GridItem width="8%" styleName="griditemlabel">
+							<mx:Label text="拟制"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditem">
+							<mx:TextInput id="drawer" width="100%" height="100%" text="{parentApplication.curUser}"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditemlabel">
+							<mx:Label text="审核"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditem">
+							<mx:TextInput id="auditor" width="100%" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditemlabel">
+							<mx:Label text="会签"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditem">
+							<mx:TextInput id="signer" width="100%" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditemlabel">
+							<mx:Label text="批准"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditem">
+							<mx:TextInput id="approver" width="100%" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="9%" styleName="griditemlabel">
+							<mx:Label text="下发日期"/>
+						</mx:GridItem>
+						<mx:GridItem width="9%" styleName="griditem">
+							<mx:DateField id="issueDate" width="100%" height="100%" formatString="YYYY-MM-DD" dayNames="{ModelLocator.days}" monthNames="{ModelLocator.monthNames}" yearNavigationEnabled="true" text="{dateFormatter.format(new Date())}"/>
+						</mx:GridItem>
+						<mx:GridItem width="9%" styleName="griditemlabel">
+							<mx:Label text="要求完成日期"/>
+						</mx:GridItem>
+						<mx:GridItem width="9%" styleName="griditem">
+							<mx:DateField id="finishDate" width="100%" height="100%" formatString="YYYY-MM-DD" dayNames="{ModelLocator.days}" monthNames="{ModelLocator.monthNames}" yearNavigationEnabled="true"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%">
+						<mx:GridItem width="8%" styleName="griditemlabel">
+							<mx:Label text="接收单位/人"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditem">
+							<mx:TextInput id="receiver" width="100%" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditemlabel">
+							<mx:Label text="接单时间"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditem">
+							<mx:DateField id="receiveDate" width="100%" height="100%" formatString="YYYY-MM-DD" dayNames="{ModelLocator.days}" monthNames="{ModelLocator.monthNames}" yearNavigationEnabled="true"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditemlabel">
+							<mx:Label text="执行人"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditem">
+							<mx:TextInput id="executor" width="100%" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditemlabel">
+							<mx:Label text="执行日期"/>
+						</mx:GridItem>
+						<mx:GridItem width="8%" styleName="griditem">
+							<mx:DateField id="executeDate" width="100%" height="100%" formatString="YYYY-MM-DD" dayNames="{ModelLocator.days}" monthNames="{ModelLocator.monthNames}" yearNavigationEnabled="true"/>
+						</mx:GridItem>
+						<mx:GridItem width="9%" styleName="griditemlabel">
+							<mx:Label text="完成情况"/>
+						</mx:GridItem>
+						<mx:GridItem width="9%" styleName="griditem">
+							<mx:TextInput id="progress" width="100%" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="9%" styleName="griditemlabel">
+							<mx:Label text="遗留问题"/>
+						</mx:GridItem>
+						<mx:GridItem width="9%" styleName="griditem">
+							<mx:TextInput id="problem" width="100%" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+				</mx:Grid>
+			</mx:AddChild>
+			<mx:SetProperty target="{buttDefualtPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttDefualtNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttStationPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttStationNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttEquipPrev}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttEquipNext}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttPortPrev}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttPortNext}" name="visible" value="true"/>
+			<mx:SetProperty target="{setbar}" name="visible" value="false"/>
+			<mx:SetProperty target="{buttExport}" name="visible" value="true"/>
+			<mx:SetProperty target="{buttPortNext}" name="x" value="488"/>
+			<mx:SetProperty target="{buttPortNext}" name="y" value="0"/>
+			<mx:SetProperty target="{buttPortPrev}" name="x" value="399"/>
+			<mx:SetProperty target="{buttPortPrev}" name="y" value="0"/>
+			<mx:SetProperty target="{buttExport}" name="x" value="301"/>
+			<mx:SetProperty target="{buttExport}" name="y" value="0"/>
+		</mx:State>
+	</mx:states>
+	<mx:DateFormatter id="dateFormatter" formatString="YYYY-MM-DD"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0">
+		<mx:VBox width="100%" height="10%" verticalGap="0">
+			<mx:Label width="100%" height="50%" text="通信电路开通方式单" fontSize="18" fontWeight="bold" textAlign="center"/>
+			<mx:HBox width="100%" height="50%" horizontalAlign="right" verticalAlign="middle">
+				<mx:TextInput id="requestID" borderStyle="none"/>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox id="vbox1" width="100%" height="85%" borderStyle="solid" verticalGap="0">
+			<mx:HBox id="boxName" width="100%" height="6%" verticalAlign="middle">
+				<mx:Label text="一、话路名称：" width="10%" textAlign="center"/>
+				<mx:TextInput id="circuitname" width="80%" borderStyle="none"/>
+			</mx:HBox>
+			<mx:HBox id="boxContent" width="100%" height="10%" verticalAlign="middle">
+				<mx:Label text="二、工作内容：" width="10%" height="100%" textAlign="center"/>
+				<mx:TextArea id="workcontent" width="80%" borderStyle="none"/>
+			</mx:HBox>
+			<mx:HBox width="100%" height="100%">
+				<twaver:Network id="network" width="100%" height="100%"/>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:HBox width="100%" height="5%" horizontalGap="0" styleName="btnbg">
+			<mx:HBox width="20%" height="100%" verticalAlign="middle">
+				<mx:LinkButton id="btnCircuit" label="方式单" icon="@Embed('assets/images/btn/bogus_.png')" fontSize="12" width="90" click="btnCircuit_clickHandler(event)"/>
+				<mx:LinkButton id="btnGuide" label="操作说明" icon="@Embed('assets/images/btn/help_.png')" fontSize="12" width="90" click="btnGuide_clickHandler(event)"/>
+			</mx:HBox>
+			<mx:HBox id="setbar" width="30%" height="100%" verticalAlign="middle">
+				<mx:LinkButton id="buttStationStart" label="起始局站" icon="@Embed('assets/images/btn/startequip_.png')" fontSize="12" width="90" click="buttStationStart_clickHandler(event)"/>
+				<mx:LinkButton id="buttStationEnd" label="终止局站" icon="@Embed('assets/images/btn/endequip_.png')" fontSize="12" width="90" click="buttStationEnd_clickHandler(event)"/>
+			</mx:HBox>
+			<mx:Canvas width="50%" height="100%">
+				<mx:LinkButton id="buttDefualtPrev" label="上一步" icon="@Embed('assets/images/btn/back__.png')" fontSize="12"  width="90" click="buttDefualtPrev_clickHandler(event)"/>
+				<mx:LinkButton id="buttDefualtNext" label="下一步" icon="@Embed('assets/images/btn/next_.png')" fontSize="12"  width="90" click="buttDefualtNext_clickHandler(event)"/>
+				
+				<mx:LinkButton id="buttStationPrev" label="上一步" icon="@Embed('assets/images/btn/back__.png')" fontSize="12"  width="90" click="buttStationPrev_clickHandler(event)"/>
+				<mx:LinkButton id="buttStationNext" label="下一步" icon="@Embed('assets/images/btn/next_.png')" fontSize="12"  width="90" click="buttStationNext_clickHandler(event)"/>
+				
+				<mx:LinkButton id="buttEquipPrev" label="上一步" icon="@Embed('assets/images/btn/back__.png')" fontSize="12"  width="90" click="buttEquipPrev_clickHandler(event)"/>
+				<mx:LinkButton id="buttEquipNext" label="下一步" icon="@Embed('assets/images/btn/next_.png')" fontSize="12"  width="90" click="buttEquipNext_clickHandler(event)"/>
+				
+				<mx:LinkButton id="buttExport" label="导出" icon="@Embed('assets/images/btn/fanshi_excel.png')" fontSize="12" width="90" click="buttExport_clickHandler(event)"/>
+				<mx:LinkButton id="buttPortPrev" label="上一步" icon="@Embed('assets/images/btn/back__.png')" fontSize="12"  width="90" click="buttPortPrev_clickHandler(event)"/>
+				<mx:LinkButton id="buttPortNext" label="完成" icon="@Embed('assets/images/btn/finished_.png')" fontSize="12" width="90" click="buttPortNext_clickHandler(event)"/>
+			</mx:Canvas>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

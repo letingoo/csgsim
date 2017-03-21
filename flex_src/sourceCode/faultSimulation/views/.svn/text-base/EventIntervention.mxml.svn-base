@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100%" 
+		 creationComplete="init()" 
+		 preinitialize="preinitialize()"
+		 xmlns:views="sourceCode.tableResurces.views.*" xmlns:component="common.component.*">
+
+	
+	<mx:Script source="../actionscript/EventIntervention.as" />
+	<mx:RemoteObject id="subMessage" destination="RemoteMessage"  endpoint="{ModelLocator.END_POINT}" 
+					 result="subMessage_resultHandler(event)" /> 
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off" >
+		
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="演习科目管理" imgName="alarmexperience"
+							  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="{isSearch}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}" showIsActiveButton="{isActive}" showMonitorButton="{sceneMonitor}"
+							  showScreanVideoButton="true" showAutoAddButton="true" showUnselectedButton="true" controlAdd="toolbar_toolEventAddHandler(event)" controlEdit="toolbar_toolEventEditHandler(event)" 
+							  controlDel="toolbar_toolEventDeleteHandler(event)" controlSearch="toolbar_toolEventSearchHandler(event)"
+							  controlExportExcel="toolbar_toolEventEmpExcelHandler(event)" controlImport="toolbar_toolEventImpExcelHandler(event)"
+							  showIsActive="toolbar_toolEventIsActiveHandler(event)" showMonitor="toolbar_toolEventShowMonitorHandler(event)"
+							  showAutoAdd="autoAddInterposeHandler(event)" showScreanVideo="controlBar_showScreanVideoHandler(event)" showUnselected="clearSelected(event)"/>
+		
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true"
+		    headerRelease="dg_headerReleaseHandler(event)"
+			allowMultipleSelection="true" dataProvider="{allBusiness}">
+			<mx:columns>
+				<mx:DataGridColumn headerText="选择" editable="false" visible="{showVisible}" dataField="isselect" textAlign="center" width="40"> 
+					<mx:itemRenderer> 
+						<mx:Component> 
+							<mx:HBox horizontalAlign="center">
+								
+								<mx:CheckBox id="abox" label="" selected="{data.available}" textAlign="center"
+											 click="data.available = !data.available" />
+							</mx:HBox>
+						</mx:Component> 
+					</mx:itemRenderer> 
+				</mx:DataGridColumn> 
+				<mx:DataGridColumn headerText="序号" dataField="NO" width="50" sortable="false"/>
+				<!--<mx:DataGridColumn headerText="演习ID" dataField="projectid" width="250" visible="false"/>-->
+				<mx:DataGridColumn headerText="科目ID" dataField="INTERPOSEID" width="250" visible="false"/>
+				<mx:DataGridColumn headerText="科目名称" dataField="INTERPOSENAME" width="250"/>
+				<!--<mx:DataGridColumn headerText="演习名称" dataField="projectname" width="250" sortable="false"/>-->
+				<mx:DataGridColumn headerText="参演人员" dataField="USER_ID"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="参演人员" dataField="USER_NAME"  width="270" sortable="false"/>
+				<mx:DataGridColumn headerText="科目类型" dataField="INTERPOSETYPE"  width="170" />
+				<mx:DataGridColumn headerText="科目类型id" dataField="INTERPOSETYPEID"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="故障类型" dataField="FAULTTYPE"  width="170" />
+				<mx:DataGridColumn headerText="故障类型id" dataField="FAULTTYPEID"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="是否主科目" dataField="ISMAININTERPOSE"  width="100" visible="false"/>
+				<mx:DataGridColumn headerText="科目状态" dataField="ISACTIVE"  width="70"/>
+				<mx:DataGridColumn headerText="处理状态" dataField="ISOPERATED"  width="170" />
+				<mx:DataGridColumn headerText="资源类型" dataField="EQUIPTYPE" width="170"/>
+				<mx:DataGridColumn headerText="设备编号" dataField="EQUIPCODE"  width="100" visible="false"/>
+				<mx:DataGridColumn headerText="设备名称" dataField="EQUIPNAME"  width="300"/>
+				<mx:DataGridColumn headerText="资源名称" dataField="RESOURCENAME"  width="170"/>
+				<mx:DataGridColumn headerText="资源编号" dataField="RESOURCECODE"  width="170" visible="false"/>
+				<mx:DataGridColumn headerText="科目种类" dataField="S_EVENT_TITLE"  width="70" />
+				<mx:DataGridColumn headerText="更新人员" dataField="UPDATEPERSON"  width="170" />
+				<mx:DataGridColumn headerText="更新时间" dataField="UPDATETIME"  width="170" />
+				<mx:DataGridColumn headerText="备注说明" dataField="REMARK"  width="300"/>
+			</mx:columns>
+			
+		</mx:DataGrid>
+		<!--
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>-->
+		
+	</mx:VBox>
+	
+	
+</mx:VBox>

@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   width="226"
+		   height="370" 
+		   backgroundColor="#373232"
+		   creationComplete="initMeau()" click="clickHandler(event)">
+	<mx:Canvas id="cvs" width="100%" height="299" backgroundColor="white" y="33" x="1"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.controls.Menu;
+			import mx.events.MenuEvent;
+			
+			import sourceCode.systemManagement.views.FunctionManager;
+			import sourceCode.systemManagement.views.RoleManager;
+			import common.actionscript.CustomMenu;
+			//告警管理菜单
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/alert_square_red.png")]
+			public var alert_square_red:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/gaojingchoongding.png")]
+			public var gaojingchoongding:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/gaojingchuli.png")]
+			public var gaojingchuli:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/gaojingguanli.png")]
+			public var gaojingguanli:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/gaojingpeizhi.png")]
+			public var gaojingpeizhi:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/gengaojing.png")]
+			public var gengaojing:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/lishi.png")]
+			public var lishi:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/yanshi.png")]
+			public var yanshi:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/mntsubject/mntsubjectmenu/zonghe.png")]
+			public var zonghe:Class;
+			//告警管理菜单
+			[Bindable]
+			[Embed(source="assets/images/startmenu/normal.png")]
+			public var normalIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/ressIcon.png")]
+			public var ressIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/nettopo.png")]  
+			public var nettopoIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/operatopo.png")]  
+			public var operatopoIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/accountmgr.png")]  
+			public var accountmgrIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/modemgr.png")]  
+			public var modemanagerIcon:Class;
+			
+			//网络拓扑
+			[Bindable]
+			[Embed(source="assets/images/startmenu/ocablewiring.png")]  
+			public var ocablewiringIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/equippackmodel.png")]  
+			public var equippackmodelIcon:Class;
+			
+			//业务拓扑
+			[Bindable]
+			[Embed(source="assets/images/startmenu/business.png")]	
+			public var businessIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/eachoperatopo.png")]  
+			public var eachoperatopoIcon:Class;			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/eachoperatopo.png")]  
+			public var safecontrolIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/eachoperatopo.png")]  
+			public var protectIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/eachoperatopo.png")]  
+			public var automaticIcon:Class;
+			[Embed(source="assets/images/startmenu/eachoperatopo.png")]  
+			public var networksIcon:Class;
+			
+			//风险分析
+			[Bindable]
+			[Embed(source="assets/images/startmenu/safecontrol.png")]  
+			public var safeAnalyIcon:Class;
+			//电源图纸资料
+			[Bindable]
+			[Embed(source="assets/images/startmenu/publicinformation.png")]  
+			public var pubinformationIcon:Class;
+			
+			//电源管理
+			[Bindable]
+			[Embed(source="assets/images/startmenu/hookup.png")]  
+			public var hookupIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/hookupWiring.png")]  
+			public var hookupWiringIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/powerResources.png")]  
+			public var powerResourcesIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/floor.png")]  
+			public var floorIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/devicepanelmodel.png")]  
+			public var devicepanelmodelIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/statis.png")]  
+			public var statisIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/materialmgr.png")]  
+			public var materialmgrIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/sysmgr.png")]  
+			public var sysmgrIcon:Class;
+			
+			//台帐管理
+			[Bindable]
+			[Embed(source="assets/images/startmenu/port.png")]  
+			public var portIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/topolink.png")]  
+			public var topolinkIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/equipment.png")]  
+			public var equipmentIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/ocable.png")]  
+			public var ocableIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/slot.png")]  
+			public var slotIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/frame.png")]  
+			public var frameIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/equippack.png")]  
+			public var equippackIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/station.png")]  
+			public var stationIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/cablewiring.png")]  
+			public var cablewiringIcon:Class;
+			
+			//告警管理
+			[Bindable]
+			[Embed(source="assets/images/startmenu/alarmHis.png")]  
+			public var alarmHisIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/alarm.png")]  
+			public var alarmIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/sysorgmap.png")]  
+			public var sysorgmapIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/rootAlarm.png")]  
+			public var rootAlarmIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/monitoring.png")]  
+			public var monitoringIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/room.png")]  
+			public var roomIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/devicepanel.png")]  
+			public var devicepanelIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/timeslot.png")]  
+			public var timeslotIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/circuitroute.png")]  
+			public var circuitrouteIcon:Class;
+//			[Bindable]
+//			[Embed(source="assets/images/shortcuts/st_circuitroute.png")]  
+//			public var st_circuitroute:Class;
+			
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/dispatcher.png")]  
+			public var dispatcherIcon:Class;
+			
+			//统计分析
+			[Bindable]
+			[Embed(source="assets/images/startmenu/reporthome.png")]  
+			public var reporthomeIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/ppt.png")]  
+			public var pptIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/spareparts.png")]  
+			public var sparepartsIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/mode.png")]  
+			public var modeIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/fault.png")]  
+			public var faultIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/trends.png")]  
+			public var trendsIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/account.png")]  
+			public var accountIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/powerAccount.png")]  
+			public var powerAccountIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/ocableAccount.png")]  
+			public var ocableAccountIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/equipAccount.png")]  
+			public var equipAccountIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/boardAccount.png")]  
+			public var boardAccountIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/modetrends.png")]  
+			public var modetrendsIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/modetype.png")]  
+			public var modetypeIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/modecircuit.png")]  
+			public var modecircuitIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/alarmtrends.png")]  
+			public var alarmtrendsIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/sparepartsstock.png")]  
+			public var sparepartsstockIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/rework.png")]  
+			public var reworkIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/factorystock.png")]  
+			public var factorystockIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/maintenance.png")]  
+			public var maintenanceIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/faulttrends.png")]  
+			public var faulttrendsIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/faultinfo.png")]  
+			public var faultinfoIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/publicres.png")]  
+			public var publicresIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/powerfile.png")]  
+			public var powerfileIcon:Class;
+			
+			
+			
+			//系统管理
+			[Bindable]
+			[Embed(source="assets/images/startmenu/role.png")]  
+			public var roleIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/syslog.png")]  
+			public var syslogIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/filemgr.png")]  
+			public var filemgrIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/userself.png")]  
+			public var userselfIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/track.png")]  
+			public var trackIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/task.png")]  
+			public var taskIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/accountstatis.png")]  
+			public var accountstatisIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/UserOnline.png")]
+			public var userOnline:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/selfmonitoring.png")]
+			public var selfmonitoringIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/refresh.png")]
+			public var refreshIcon:Class;			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/user.png")]  
+			public var userIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/oper.png")]  
+			public var operIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/fiberIcon.png")]
+			public var fiberIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/WDMIcon.png")]
+			public var WDMIcon:Class;
+			[Bindable]
+			[Embed(source="assets/images/startmenu/microwaveIcon.png")]
+			public var microwaveIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/control.png")]  
+			public var controlIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/system.png")]  
+			public var systemIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/moderes.png")]  
+			public var moderesIcon:Class;
+			
+			//系统帮助
+			[Bindable]
+			[Embed(source="assets/images/startmenu/sysHelp.png")]
+			public var sysHelpIcon:Class;
+			
+			//站点平面图
+			[Bindable]
+			[Embed(source="assets/images/startmenu/innerWiring.png")]
+			public var innerWiringIcon:Class;
+			//台帐管理 - 配线统计
+			[Bindable]
+			[Embed(source="assets/images/startmenu/wireStats.png")]
+			public var wireStatsIcon:Class;
+			
+            //电力线  
+			[Bindable]
+			[Embed(source="assets/images/startmenu/powerLine.png")]
+			public var powerlineIcon:Class;
+			
+			//代码维护
+			[Bindable]
+			[Embed(source="/assets/images/startmenu/syscodeManage.png")]
+			public var syscodeManageIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/odf.png")]
+			public var odfIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/ddf.png")]
+			public var ddfIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/vdf.png")]
+			public var vdfIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/mdf.png")]
+			public var mdfIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/ddf.png")]
+			public var sdhIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/alarm.png")]
+			public var alarmexperienceIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/alarmHis.png")]
+			public var alarmInfoHistoryIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/alarmtrends.png")]
+			public var alarmInfoNowIcon:Class;
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/faultinfo.png")]
+			public var nowalarmIcon:Class;
+			//------------------------------------------------
+			
+			private var myMenu:CustomMenu = new CustomMenu();
+			private var roleManager:RoleManager;
+			private var funcManager:FunctionManager;
+			
+			
+			public function initMeau():void{
+				if(cvs != null){
+					cvs.removeAllChildren();
+					myMenu = CustomMenu.createMenu(this, parentApplication.startXMLList, false);
+					myMenu.width = cvs.width;
+					myMenu.height = cvs.height;
+					myMenu.rowHeight = 25;
+					myMenu.labelField = "@oper_name";
+					myMenu.iconField = "@menuicon";
+					myMenu.addEventListener("itemClick", menuHandler);
+					cvs.addChild(myMenu);
+				}
+			}
+			
+			public function showMenu(point:Point):void{
+				myMenu.visible = true;
+				myMenu.show();
+			}
+			
+			public function hideMenu():void{
+				if(myMenu){
+					myMenu.visible = false; 
+					myMenu.hide();
+				}
+			}
+			
+			private function menuHandler(event:MenuEvent):void  {
+			
+				parentApplication.openModel(event.item.@oper_name,true);
+			}
+			
+			private function clickHandler(event:MouseEvent):void{
+				myMenu.visible = true;
+			}
+
+		]]>
+	</mx:Script>
+	<mx:Label x="4" y="6" text="{parentApplication.curUser}" width="131" height="20" color="white" fontSize="15"/>
+	<mx:LinkButton x="45" y="340" label="显示桌面" color="white" width="88" fontWeight="normal"
+				    fontSize="11.5" icon="{controlIcon}" click="parentApplication.showDesptop()"/>
+	<mx:LinkButton x="132" y="340" label="退出系统" color="white" width="88" fontWeight="normal" 
+				   fontSize="11.5" icon="{systemIcon}" click="parentApplication.exitSystem()"/>
+</mx:Canvas>

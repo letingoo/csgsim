@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" minWidth="955" minHeight="600"
+				backgroundGradientAlphas="[1.0, 1.0]" 
+				backgroundGradientColors="[#006699, #0099FF]" fontSize="12"
+				creationComplete="validateUser()">
+	
+	
+	<mx:RemoteObject id="roLogin" destination="logintest" endpoint="{ModelLocator.END_POINT}"
+					 result="loginResultHandler(event)" fault="faultHandler(event)"/>
+	<mx:Style source="assets/css/login.css"/>
+	
+
+
+<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+	<mx:ViewStack id="vs" width="700" height="460" creationPolicy="all" >
+		<mx:Canvas id="cvsFirst" width="100%" height="100%" >
+			<mx:Label x="70" y="195" width="80" text="用户名：" styleName="loginlabel"/>
+			<mx:Label x="70" y="235" width="80" text="密码：" styleName="loginlabel"/>
+			<mx:TextInput id="txtUserName" x="150" y="190" styleName="login" width="200" height="28"/>
+			<mx:TextInput id="txtPwd" x="150" y="230" displayAsPassword="true" styleName="login" width="200" height="28"  maxChars="20"
+						  enter="login()"/>
+			<mx:Button x="150" y="330" label="登  录" styleName="loginprimary" click="login()"/>
+			<mx:Button x="245" y="330" label="重  置" styleName="loginsecondary" click="reset()"/>
+			<mx:Label x="150" y="290" text="提示:作为提示信息" styleName="logininfo" visible="false"/>
+			<mx:Label x="70" y="150" text="请输入您的用户名和密码：" styleName="logininfob"/>
+			<mx:Image x="390" y="170" source="assets/images/loginline1.png"/>
+			<mx:Image x="410" y="190" source="assets/images/login_icon_tips.png"/>
+			<mx:Text x="445" y="190" text="this is a brief version using css from index page。&#xa;&#xa;" styleName="logintips" width="200" height="120"/>
+		</mx:Canvas>
+		<mx:Canvas id="cvsSecond" width="100%" height="100%" backgroundImage="assets/images/integratedloginarea.png"
+				   visible="false" includeInLayout="false">
+			<mx:Label x="70" y="260" text="请选择您要进入的系统：" styleName="logininfob"/>
+			<mx:Image id="login_image" x="60" y="150" source="assets/images/login_male.png"/>
+			<mx:Label x="150" y="160" text="您好，{txtUserName.text}，欢迎登录通信网自愈能力仿真平台。" styleName="logininfo"/>
+			<!--<mx:LinkButton x="150" y="193" label="修改个人信息" styleName="loginlinkbutton" icon="@Embed(source='assets/images/icon_editinfo16.png')"/>-->
+			<mx:Image x="30" y="240" source="assets/images/loginline2.png"/>
+		</mx:Canvas>
+	</mx:ViewStack>
+</mx:VBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.systemManagement.model.UserModel;
+			public var so:SharedObject;
+			private var userModel:UserModel;
+			
+			
+			private function validateUser():void{
+				this.txtUserName.setFocus();
+			}
+			private function login():void{
+				
+				if(txtUserName.text == "" || txtPwd.text == ""){
+					ModelLocator.showErrorMessage("用户名和密码不能为空!",this);
+				}else{
+					var userModel:UserModel = new UserModel();
+					userModel.user_name = txtUserName.text;
+					userModel.user_pwd = txtPwd.text;
+					txtUserName.enabled = false;
+					txtPwd.enabled = false;
+					roLogin.login(userModel);
+				}
+			}
+			private function reset():void{
+				txtUserName.enabled = true;
+				txtPwd.enabled = true;
+				txtUserName.text = "";
+				txtPwd.text = "";
+			}
+			protected function loginResultHandler(event:ResultEvent):void
+			{
+				x=(int)(event.result);
+				if(x==1){
+					//int x=(int)(event.result);
+					//userModel=(UserModel)(event.result);
+					ModelLocator.showSuccessMessage("user login successful!",this);
+					
+				}else{
+					reset();
+					ModelLocator.showErrorMessage("登录失败!请检查输入的用户名和密码是否正确!",this);
+				}
+			}
+			protected function faultHandler(event:FaultEvent):void
+			{
+				Alert.show(event.message.toString());
+			}
+		]]>
+	</mx:Script>
+	
+	
+</mx:Application>

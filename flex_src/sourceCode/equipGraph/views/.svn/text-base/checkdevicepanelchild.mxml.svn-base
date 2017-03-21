@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" fontSize="12" 
+		 width="100%"
+		 height="100%"
+		 xmlns:controls="ht.*" 
+		 xmlns:demo="twaver.*" 
+		 xmlns:element="twaver.editor.element.*"
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex" 
+		 xmlns:common="twaver.common.*" xmlns:local="*"
+		 xmlns:devicepanel="devicepanel.*"
+		 creationComplete="initApp()" preinitialize="preinitialize()" xmlns:views="sourceCode.equipGraph.views.*">
+	<mx:Script source="../actionscript/checkdevicepanelchild.as"/>
+	<mx:HBox id="childtoolbar" width="100%" horizontalGap="0"/>
+
+	<mx:VBox id="vdb" width="100%" height="100%" verticalScrollPolicy="off">
+		<twaver:Network id="devicePic" width="100%" height="100%" keyboardRemoveEnabled="false" dragDrop="dragDropFunction(event)"/>
+		<!--<views:devicetabpanel id="devicetab" alarmequip="{alarmequip}" height="0" width="0" visible="false"/>-->
+	</mx:VBox>
+
+</mx:VBox>

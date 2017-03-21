@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" 
+	width="604" 
+	height="362" 
+	showCloseButton="true" 
+	close="closeHandler()" 
+	backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+	backgroundSize="100%">
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.other.blogagic.util.mapNode;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import org.flexunit.runner.Result;
+			
+			
+			[Bindable] public var node:mapNode;
+			
+			public var stationCode:String;
+			public var province:String;
+			public var property:String;
+			public var stationtype:String;
+			
+			public var days:Array = new Array("日", "一", "二", "三", "四", "五","六");
+			public var monthNames:Array = new Array("一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月");			
+			protected function closeHandler():void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	
+		<mx:Label text="光缆接续段名称" x="22.5" y="20" fontSize="12"/>
+		<mx:Label text="起点" x="22.5" y="50" fontSize="12"/>
+		<mx:Label text="终点" x="22.5" y="80" fontSize="12"/>
+		<mx:Label text="起始点类型" x="22.5" y="110" fontSize="12"/>
+		<mx:Label text="终点类型" x="22.5" y="140" fontSize="12"/>
+		<mx:Label text="纤芯数目" x="22.5" y="170" fontSize="12"/>
+	    <mx:Label text="光缆类型" x="22.5" y="200" fontSize="12"/>
+		<mx:Label text="占用纤芯" x="22.5" y="230" fontSize="12"/>
+		<!--<mx:Label text="设备厂家" x="22.5" y="260" fontSize="12"/>-->
+		<mx:Label text="光纤型号" x="22.5" y="260" fontSize="12"/>
+	    <mx:Label text="一次线路名称" x="304.5" y="200" fontSize="12"/>
+		<mx:Label text="电压等级" x="304.5" y="230" fontSize="12"/>
+	
+		<mx:Label text="长度(Km)" x="306.5" y="20" fontSize="12"/>
+		<mx:Label text="敷设方式" x="306.5" y="50" fontSize="12"/>
+		<mx:Label text="敷设方式(详细)" x="306.5" y="80" fontSize="12"/>
+		<mx:Label text="运行班组" x="306.5" y="110" fontSize="12"/>
+		<mx:Label text="资产所属单位" x="306.5" y="140" fontSize="12"/>
+		<mx:Label text="运行维护单位" x="306.5" y="170" fontSize="12"/>
+		<!--<mx:Label text="安装日期" x="306.5" y="200" fontSize="12"/>
+		<mx:Label text="投运时间" x="306.5" y="230" fontSize="12"/>
+		<mx:Label text="运行状态" x="306.5" y="260" fontSize="12"/>-->
+		<mx:Label text="备注" x="306.5" y="260" fontSize="12"/>
+	    <!-- <mx:Label text="更新人" x="306.5" y="320" fontSize="12"/>
+		<mx:Label text="更新时间" x="306.5" y="350" fontSize="12"/>-->
+		
+	    <mx:TextInput id="OCABLESECTIONNAME" width="160" x="119.5" y="20" editable="false"/>
+		<mx:TextInput id="ANAME" width="160" x="119.5" y="50" editable="false"/>
+		<mx:TextInput id="ZNAME" width="160" x="119.5" y="80" editable="false"/>
+	    <mx:TextInput id="A_POINTTYPE" width="160" x="119.5" y="110" editable="false"/>
+	    <mx:TextInput id="Z_POINTTYPE" width="160" x="119.5" y="140" editable="false"/>
+		<mx:TextInput id="FIBERCOUNT" width="160" x="119.5" y="170" editable="false"/>
+	    <mx:TextInput id="OCABLEMODEL" width="160" x="119.5" y="200" editable="false"/>
+		<mx:TextInput id="OCCUPYFIBERCOUNT" width="160" x="119.5" y="230" editable="false"/>
+		<!--<mx:TextInput id="X_VENDOR" width="160" x="119.5" y="260" editable="false"/>-->
+		<mx:TextInput id="X_MODEL" width="160" x="119.5" y="260" editable="false"/>
+		<mx:TextInput id="ONE_NAME" width="160" x="401.5" y="200" editable="false"/>
+		<mx:TextInput id="VOLTLEVEL" width="160" x="401.5" y="230" editable="false"/>
+	    <mx:TextInput id="LENGTH" width="160" x="401.5" y="20" editable="false"/>
+		<mx:TextInput id="LAYMODE" width="160" x="401.5" y="50" editable="false"/>
+		<mx:TextInput id="LAYMODELEN" width="160" x="401.5" y="80" editable="false"/>
+		<mx:TextInput id="RUN_UNIT" width="160" x="401.5" y="110" editable="false"/>
+		<mx:TextInput id="ASSET_UNIT" width="160" x="401.5" y="140" editable="false"/>
+		<mx:TextInput id="FUNCTION_UNIT" width="160" x="401.5" y="170" editable="false"/>
+		<!--<mx:TextInput id="INSTALLDATE" width="160" x="401.5" y="200" editable="false"/>
+		<mx:TextInput id="RUNDATE" width="160" x="401.5" y="230" editable="false"/>
+		<mx:TextInput id="RUN_STATUS" width="160" x="401.5" y="260" editable="false"/>-->
+	    <mx:TextInput id="REMARK" width="160" x="401.5" y="260" editable="false"/>
+	    <!--<mx:TextInput id="updateperson" width="160" x="401.5" y="320" editable="false"/>
+	    <mx:TextInput id="updatedate" width="160" x="401.5" y="350" editable="false"/>-->
+</mx:TitleWindow>

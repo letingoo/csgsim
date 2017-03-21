@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   implements="mx.controls.listClasses.IDropInListItemRenderer"
+		   horizontalScrollPolicy="off" verticalScrollPolicy="off"
+		   clipContent="false"
+		   mouseOver="onMouseOver()" creationComplete="initial()"
+		   mouseOut="onMouseOut()">
+	
+	
+	
+	<!--
+	* This item renderer shows how to apply a custom background
+	* color to a datagrid cell when the user mouses over it
+	*
+	* Author: Tony Fendall
+	* Date: 05/03/2009
+	-->
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.controls.listClasses.BaseListData;
+			
+			public var alarmGrade:String;  //告警级别
+			
+			/**
+			 * 初始化渲染值
+			 */
+			private function initial():void{
+				if(alarmGrade == "ackedcount" || alarmGrade == "alarmcount" || alarmGrade == "rootalarm"
+				|| alarmGrade == "ackedalarmcount" || alarmGrade == "ackedalarmcount" || alarmGrade == "alarmtotal"
+				|| alarmGrade == "ackedcount" || alarmGrade == "ackingcount"
+				|| alarmGrade == "breakcount" || alarmGrade == "circuittotal"||alarmGrade == "OPER"||alarmGrade == "oper")
+					cellLabel.setStyle("color", 0xFF0000);
+				    cellLabel.setStyle("textDecoration","underline");
+//				else if(alarmGrade == "critical")
+//					cellLabel.setStyle("color", 0xFF0000);
+//				else if(alarmGrade == "major")
+//					cellLabel.setStyle("color", 0xFFBF00);
+//				else if(alarmGrade == "minor")
+//					cellLabel.setStyle("color", 0xFFFF00);	
+//				else if(alarmGrade == "warning")
+//					cellLabel.setStyle("color", "blue");		
+//				else if(alarmGrade == "indeterminate")
+//					cellLabel.setStyle("color", "red");			
+//				else if(alarmGrade == "cleared")
+//					cellLabel.setStyle("color", "green");
+			}
+			
+			/**
+			 * Update the DataGrid Cell on Mouse Over
+			 * and on Mouse Out
+			 */
+			private function onMouseOver():void {				
+				cellBackground.visible = true;
+				cellLabel.setStyle("fontWeight","bold");
+				cellLabel.setStyle("fontSize", "14");
+			}
+			private function onMouseOut():void {
+				cellBackground.visible = false;
+				cellLabel.setStyle("fontWeight","normal");
+				cellLabel.setStyle("fontSize", "12");
+			}
+			
+			
+			
+			/**
+			 * Using the 'listData' property instead of 
+			 * the 'data' property simply to make this
+			 * component more reusable.
+			 */
+			private var _listData:BaseListData;
+			
+			public function set listData(value:BaseListData):void
+			{
+				_listData = value;
+				
+				// listData.label is set to data["dataField"]
+				cellLabel.text = _listData ? _listData.label : "";
+			}
+			
+			public function get listData():BaseListData
+			{ return _listData; }
+			
+		]]>
+	</mx:Script>
+	
+	<!-- 
+	* Custom Roll Over Background
+	* This is required because the backgroundAlpha of the root component is always 0 for an itemRenderer 
+	* Extra height allows for default padding between datagrid cells
+	-->
+	<mx:Canvas id="cellBackground" y="-2" width="100%" height="{this.height+4}" backgroundColor="#009dff" visible="false" />
+	
+	<!-- Cell Data Label -->
+	<mx:Label id="cellLabel"  verticalCenter="0" width="{this.width}" fontSize="12" fontWeight="normal" truncateToFit="true" useHandCursor="true" buttonMode="true" mouseChildren="false"/>
+	
+</mx:Canvas>

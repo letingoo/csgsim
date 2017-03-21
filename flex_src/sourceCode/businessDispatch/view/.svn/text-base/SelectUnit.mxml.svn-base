@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" title="选择单位"
+				minWidth="955" minHeight="600" width="345" height="400"
+				showCloseButton="true"
+				closeButtonSkin="@Embed('assets/images/panelIcon/closeButton.png')"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="intApp()" fontSize="12">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.RichTextEditor;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.businessDispatch.view.NewCircuitInfo;
+			private var treeXML:XMLList = new XMLList();
+			[Bindable]private var folderCollection:XMLList;
+			[Bindable]public var dtStr:String = "";
+			[Bindable]public var dtidStr:String = "";
+			//public var newccInfo:NewCircuitInfo = new NewCircuitInfo();
+			protected function intApp():void{
+				var orbj:RemoteObject = new RemoteObject("businessDispatch");
+				orbj.endpoint= ModelLocator.END_POINT;
+				orbj.showBusyCursor = true;
+				orbj.gerSUTree();
+				orbj.addEventListener(ResultEvent.RESULT,SUTree);
+				
+			}
+			private function SUTree(e:ResultEvent):void{
+				treeXML = new XMLList(e.result.toString());
+				folderCollection = new XMLList(treeXML);
+				selectUnitTree.dataProvider = folderCollection.node;
+			}
+			public function treeCheck(e:Event):void{
+				if(e.target is CheckBox){//有问题，暂时没解决
+					if(e.target.selected){
+						if(selectUnitTree.selectedItem.@checked == "1"){
+							selectUnitTree.selectedItem.@checked = "1";
+							dtStr += selectUnitTree.selectedItem.@name+",";
+							dtidStr += selectUnitTree.selectedItem.@id+",";
+							
+						}
+					}else{
+						selectUnitTree.selectedItem.@checked = "0";
+						var aaa:Array = dtStr.split(",");
+						var bbb:Array = dtidStr.split(",");
+						for(var i:int=0;i<aaa.length;i++){
+							if(selectUnitTree.selectedItem.@name == aaa[i]){
+								aaa.splice(i,1);
+							}
+						}
+						dtStr = aaa.toString();
+						
+						for(var j:int=0;j<bbb.length;j++){ 
+							if(selectUnitTree.selectedItem.@id == bbb[j]){
+								bbb.splice(j,1);
+							}
+						}
+						dtidStr = bbb.toString();
+					}
+				}
+				/* if(treetimeslot.selectedItem.@isBranch==false)
+				{
+				if(e.target.hasOwnProperty('selected')){
+				if(e.target.selected)
+				{  
+				if(treetimeslot.selectedItem.@selected!="1"){
+				
+				treetimeslot.selectedItem.@checked="1";
+				var equipcode:String=treetimeslot.selectedItem.@qtip; 
+				
+				getPanelModel();
+				}
+				}else {
+				var child1 = tabtest.getChildByName("tabpanel"+treetimeslot.selectedItem.@qtip);
+				tabtest.removeChild(child1);
+				} 
+				}
+				}
+				} */
+				
+			}
+			private function ok(e:Event):void{
+				//	dtStr += selectUnitTree.selectedItem.@name+",";
+				//	Alert.show(dtStr+"     "+this.parent+"    "+this.parentDocument);
+				//NewCircuitInfo.department.id = selectUnitTree.selectedItem.@id;
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:VBox x="0" y="0" width="100%" height="90%" backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+			 backgroundSize="100%">
+		<mx:Tree backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				 backgroundSize="100%"
+				 width="100%" height="100%" id="selectUnitTree"  dataProvider="{folderCollection}" itemRenderer="twaver.PermissionsTreeItemRenderer"
+				 labelField="@name"
+				 defaultLeafIcon="{null}" 
+				 borderStyle="none"
+				 click="treeCheck(event)"
+				 showRoot="true"/>
+	</mx:VBox>
+	<mx:Canvas backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%" x="0" width="100%" height="10%" bottom="0"  borderStyle="solid">
+		<mx:Button label="确 定" styleName="loginprimary" click="ok(event)" bottom="5" width="80" left="13"/>
+	</mx:Canvas>
+	
+</mx:TitleWindow>

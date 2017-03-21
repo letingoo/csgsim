@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" 
+				fontFamily="宋体" 
+				fontSize="12" 
+				showCloseButton="true" 
+				width="600" 
+				height="410"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{MyPopupManager.removePopUp(this)}">
+	
+	
+	<mx:Script source="../actionscript/EquipmentSearch.as" />
+	
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingTop="0" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		horizontalAlign="center">
+		
+		<mx:HBox width="100%" height="50%">
+			<mx:Form width="100%" height="100%">
+				
+				<mx:FormItem label="设备名称">
+					<mx:TextInput id="s_sbmc" width="180"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="设备型号">
+					<mx:ComboBox id="x_model"  width="180" labelField="@label"/>
+				</mx:FormItem>
+				<!--<mx:FormItem label="设备类型">
+					<mx:ComboBox id="equiptype" width="180" labelField="@label"/>
+				</mx:FormItem>-->
+				
+			</mx:Form>
+			
+			<mx:Form width="100%" height="100%">
+				
+				<mx:FormItem label="设备厂商">
+					<mx:ComboBox id="x_vendor" width="180"  labelField="@label" change="comX_vendor_changeHandler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="所属系统">
+					<mx:ComboBox id="system_name"  width="180" labelField="@label"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox width="100%" height="5%">
+			<mx:Label text="更新时间范围"/>
+		</mx:HBox>
+		
+		<mx:HBox width="100%" height="25%">
+			
+			<mx:Form width="100%" height="100%">
+				
+				<mx:FormItem label="      从">
+					<mx:DateField id="updatedate_start" 
+								  width="180" 
+								  dayNames="{days}" 
+								  monthNames="{monthNames}" 
+								  yearNavigationEnabled="true" 
+								  formatString="YYYY-MM-DD"/>
+				</mx:FormItem>
+			</mx:Form>
+			<mx:Form width="100%" height="100%">
+				<mx:FormItem label="至">
+					<mx:DateField  id="updatedate_end"  
+								   width="180" 
+								   dayNames="{days}" 
+								   monthNames="{monthNames}" 
+								   yearNavigationEnabled="true" 
+								   formatString="YYYY-MM-DD"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+		</mx:HBox>
+		<mx:HBox 
+			width="100%" height="20%" verticalAlign="middle" horizontalAlign="center" 
+			backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+			
+			<mx:Button label="查询"  styleName="loginprimary"
+					   width="80" click="searchClickHandler(event)"/>
+			
+			<mx:Spacer width="80"/>
+			
+			<mx:Button label="重置" styleName="loginsecondary"
+					   width="80" 
+					   click="button1_clickHandler(event)"/>
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+</mx:TitleWindow>

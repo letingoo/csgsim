@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="530" height="276"  
+				title="海量数据导出向导 :第二步"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12" x="323" y="204"> 
+	
+	<mx:Script>  
+		<![CDATA[  			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			import mx.collections.ArrayCollection;
+			
+			import sourceCode.resManager.resBusiness.model.CircuitBusinessModel;
+			import sourceCode.resManager.resNode.model.Fiber;
+			import sourceCode.resManager.resNode.model.Ocable;
+			import sourceCode.resManager.resNode.model.Pack;
+			import sourceCode.resManager.resNode.model.Station;
+			import sourceCode.alarmmgr.model.AlarmMangerModel;	
+			
+		    public var dataNumber:int;
+			public var exportTypes:String;
+			public var labels:String;
+			public var titles:Array = null;
+			public var model:Object;
+			
+			public var selectItem:ArrayCollection = new ArrayCollection();
+			/**
+			 * 
+			 * 关闭窗体
+			 * 
+			 * */
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+			
+			/**
+			 * 
+			 * 退出
+			 * 
+			 * */
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				this.close();
+			}
+			/**
+			 * 
+			 * 导出操作
+			 * 
+			 * */
+			protected function Confirm_clickHandler(event:MouseEvent):void
+			{
+				if(event.target.label=="导出")
+				{
+					if(this.exportTypes == "站点")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.StationExportEXCEL(labels,titles,"站点",model as Station );
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}else if(this.exportTypes == "光缆")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.OcableExportEXCEL(labels,titles,"光缆",model as Ocable);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}else if(this.exportTypes == "光纤")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.FiberExportEXCEL(labels,titles,"光纤",model as Fiber);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}else if(this.exportTypes == "机盘")
+					{
+						var remote:RemoteObject = new RemoteObject("resNodeDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.EquipPackExportEXCEL(labels,titles,"机盘",model as Pack);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}else if(this.exportTypes == "电路业务关系")
+					{
+						var remote:RemoteObject = new RemoteObject("resBusinessDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						remote.circuitBusinessExportEXCEL(labels,titles,"电路业务关系表",model as CircuitBusinessModel);
+						remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+					}
+					else if(this.exportTypes == "告警查询"){
+						var remote:RemoteObject = new RemoteObject("AlarmManagerComboboxDwr");
+						remote.endpoint = ModelLocator.END_POINT;
+						remote.showBusyCursor = true;
+						Alert.show(""+selectItem.length);
+						if(selectItem.length != 0){
+							remote.AlarmManageResSelectExportEXCEL(labels,titles,"告警查询",selectItem);
+							remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+						}else{
+							remote.AlarmManageResExportEXCEL(labels,titles,"告警查询",model as AlarmMangerModel);
+							remote.addEventListener(ResultEvent.RESULT,ResultHandler);
+						}
+					}
+				}
+
+			}
+			/**
+			 * 
+			 * 获取了要导出的数据之后的操作
+			 * 
+			 * */
+			public function ResultHandler(event:ResultEvent):void{
+				var path = event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(path))); 
+				navigateToURL(request,"_blank");
+				
+			}
+			
+			
+		]]>  
+	</mx:Script>
+	<mx:Button id="btn_confirm" label="导出"  x="320" y="163" width="75" click="Confirm_clickHandler(event)"/>
+	<mx:Button x="403" y="163" label="退出" width="75" click="button1_clickHandler(event)"/>
+	<mx:Label x="10" y="28" text="由于您的数据量过大，所以导出时间将会相当漫长。请您耐心等待！" width="475" height="33"/>
+	<mx:Label x="10" y="78" text="共：" width="75" height="28"/>
+	<mx:RemoteObject id="upRM" destination="netresDao" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"/>
+	<mx:Label x="10" y="165" text="注：数据文件将被打包为压缩文件" width="298"/>
+	<mx:Label x="67" y="78" text="{dataNumber.toString()}" width="93"/>
+	<mx:Label x="168" y="78" text="条数据，系统将分" width="109"/>
+	<mx:Label x="285" y="78" text="{((int)(dataNumber/20000)+1).toString()}" width="50"/>
+	<mx:Label x="343" y="78" text="个EXCEL文件导出。" width="125"/>
+</mx:TitleWindow>  

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	
+	<mx:Script source="../actionscript/toolbar.as" />
+	
+	<mx:Metadata>
+		[Event(name="toolEventAdd",type="sourceCode.tableResurces.Events.ToopEvent")]
+		[Event(name="toolEventEdit",type="sourceCode.tableResurces.Events.ToopEvent")]
+		[Event(name="toolEventDelete",type="sourceCode.tableResurces.Events.ToopEvent")]
+		[Event(name="toolEventSearch",type="sourceCode.tableResurces.Events.ToopEvent")]
+		[Event(name="toolEventEmpExcel",type="sourceCode.tableResurces.Events.ToopEvent")]
+		[Event(name="toolEventImpExcel",type="sourceCode.tableResurces.Events.ToopEvent")]
+		[Event(name="toolEventAddShortcut",type="sourceCode.tableResurces.Events.ToopEvent")]
+		[Event(name="toolEventDelShortcut",type="sourceCode.tableResurces.Events.ToopEvent")]
+	</mx:Metadata>
+	
+	<mx:LinkBar 
+		width="100%" 
+		height="30"  
+		labelField="label" 
+		iconField="ico" 
+		backgroundColor="0xC0C0C0" 
+		fontSize="12" 
+		itemClick="toolbar_itemClickHandler(event)">
+		
+		<mx:Object label="添加" ico="@Embed('assets/images/btn/add.png')"/>
+		<mx:Object label="修改" ico="@Embed('assets/images/btn/cog_edit.png')"/>
+		<mx:Object label="删除" ico="@Embed('assets/images/btn/del.png')"/>
+		<mx:Object label="查询" ico="@Embed('assets/images/btn/search.png')"/>
+		<mx:Object label="导出Excel" ico="@Embed('assets/images/btn/excel.png')"/>
+		<mx:Object label="导入数据" ico="@Embed('assets/images/btn/excel.png')"/>
+		<mx:Object label="添加快捷方式" ico="{ModelLocator.addshortcutIcon}"/>
+		<mx:Object label="删除快捷方式" ico="{ModelLocator.delshortcutIcon}"/>
+	</mx:LinkBar>
+	
+</mx:VBox>

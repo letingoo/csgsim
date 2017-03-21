@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+		 xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+		 creationComplete="init()">
+	<mx:HDividedBox width="100%" height="100%">
+		<mx:Tree id="treeOcable" width="20%" height="100%" dataProvider="{ocableCollection}"
+				 labelField="@label" itemClick="treeItemClickHandler(event)"
+				 doubleClickEnabled="true" doubleClick="treeDoubleClickHandler()"/>
+		<servasoftware:Network id="network" width="80%" height="100%" click="networkClickHandler()"/>
+	</mx:HDividedBox>
+	<mx:RemoteObject id="ro" destination="wireConfiguration" 
+					 endpoint="{ModelLocator.END_POINT}" showBusyCursor="true"
+					 result="getOcableHandler(event)" fault="getFaultHandler(event)"/>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import twaver.Consts;
+			import twaver.ElementBox;
+			import twaver.Follower;
+			import twaver.Grid;
+			import twaver.ICollection;
+			import twaver.IElement;
+			import twaver.Layer;
+			import twaver.LayerBox;
+			import twaver.Link;
+			import twaver.Node;
+			import twaver.Styles;
+			import twaver.Utils;
+			
+			[Embed(source="assets/images/wireConfiguration/guanglanDown.png")]
+			public static const guanglanDown:Class;
+			[Embed(source="assets/images/wireConfiguration/PORT-NODE.png")]
+			public static const PORT_NODE:Class;
+			[Embed(source="assets/images/wireConfiguration/PORT.png")]
+			public static const PORTIcon:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_port.png")]
+			public static const odfport:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_a.png")]
+			public static const odf_a:Class; 
+			[Embed(source="assets/images/wireConfiguration/odf_b.png")]
+			public static const odf_b:Class; 
+			[Embed(source="assets/images/wireConfiguration/odf_c.png")]
+			public static const odf_c:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_d.png")]
+			public static const odf_d:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_e.png")]
+			public static const odf_e:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_f.png")]
+			public static const odf_f:Class;			
+			[Embed(source="assets/images/wireConfiguration/odf_0.png")]
+			public static const odf_0:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_1.png")]
+			public static const odf_1:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_2.png")]
+			public static const odf_2:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_3.png")]
+			public static const odf_3:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_4.png")]
+			public static const odf_4:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_5.png")]
+			public static const odf_5:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_6.png")]
+			public static const odf_6:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_7.png")]
+			public static const odf_7:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_8.png")]
+			public static const odf_8:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_9.png")]
+			public static const odf_9:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_10.png")]
+			public static const odf_10:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_11.png")]
+			public static const odf_11:Class;
+			[Embed(source="assets/images/wireConfiguration/odf_12.png")]
+			public static const odf_12:Class;
+			[Embed(source="assets/images/wireConfiguration/ODF-PORT-1-GREEN.png")]
+			public static const odf_green:Class;
+			[Embed(source="assets/images/wireConfiguration/ODF-PORT-1-YELLOW.png")]
+			public static const odf_yellow:Class;
+			[Embed(source="assets/images/wireConfiguration/ODF-PORT-1-RED.png")]
+			public static const odf_red:Class;			
+			[Embed(source="assets/images/wireConfiguration/DDF-PORT-1-YELLOW.png")]
+			public static const ddf_yellow:Class;
+			[Embed(source="assets/images/wireConfiguration/DDF-PORT-1-RED.png")]
+			public static const ddf_red:Class;
+			[Embed(source="assets/images/wireConfiguration/DDF-PORT-1-GREEN.png")]
+			public static const ddf_green:Class;
+			[Embed(source="assets/images/fiber.png")]
+			public static const fiber:Class;
+			[Embed(source="assets/images/ODFBg.png")]
+			public static const odfBg:Class;
+			[Embed(source="assets/images/luyou_port.png")]
+			public static const luyou_port:Class;
+			
+			[Bindable]   
+			public var ocableCollection:XMLList;
+			private var stationcode:String;
+			private var stationname:String;
+			private var acFiber:ArrayCollection;
+			private var acODFData:ArrayCollection;
+			private var titleNode:Follower;
+			private var box:ElementBox;
+			private var layerBox:LayerBox;
+			private var layer:Layer = new Layer("port");
+			private var layer1:Layer = new Layer("link");
+			private var layer2:Layer = new Layer("odfport");
+			
+			private function init():void{
+				registerImage();
+				box = network.elementBox;
+				layerBox = box.layerBox;
+				layer.editable = false;
+				layer1.editable = false;
+				layer2.editable = false;
+				layer2.movable = false;
+				layerBox.add(layer);
+				layerBox.add(layer2);
+				layerBox.add(layer1);
+				network.interactionHandlers = null;
+				stationcode = Registry.lookup("stationcode");
+				stationname = Registry.lookup("stationname");
+				Registry.unregister("stationcode");
+				Registry.unregister("stationname");
+				ro.getOcableByStationcode(String(stationcode),String(stationname));
+			}
+			
+			private function registerImage():void{
+				Utils.registerImageByClass("PORT_NODE",PORT_NODE);
+				Utils.registerImageByClass("guanglanDown",guanglanDown);
+				Utils.registerImageByClass("PORTIcon",PORTIcon);
+				Utils.registerImageByClass("odfport",odfport);
+				Utils.registerImageByClass("odf_a",odf_a); 
+				Utils.registerImageByClass("odf_b",odf_b);
+				Utils.registerImageByClass("odf_c",odf_c);
+				Utils.registerImageByClass("odf_d",odf_d);
+				Utils.registerImageByClass("odf_e",odf_e);
+				Utils.registerImageByClass("odf_0",odf_0);
+				Utils.registerImageByClass("odf_f",odf_f);
+				Utils.registerImageByClass("odf_1",odf_1);
+				Utils.registerImageByClass("odf_2",odf_2);
+				Utils.registerImageByClass("odf_3",odf_3);
+				Utils.registerImageByClass("odf_4",odf_4);
+				Utils.registerImageByClass("odf_5",odf_5);
+				Utils.registerImageByClass("odf_6",odf_6);
+				Utils.registerImageByClass("odf_7",odf_7);
+				Utils.registerImageByClass("odf_8",odf_8);
+				Utils.registerImageByClass("odf_9",odf_9);
+				Utils.registerImageByClass("odf_10",odf_10);
+				Utils.registerImageByClass("odf_11",odf_11);
+				Utils.registerImageByClass("odf_12",odf_12);
+				Utils.registerImageByClass("odf_green",odf_green);
+				Utils.registerImageByClass("odf_yellow",odf_yellow);
+				Utils.registerImageByClass("odf_red",odf_red);
+				Utils.registerImageByClass("ddf_green",ddf_green);
+				Utils.registerImageByClass("ddf_yellow",ddf_yellow);
+				Utils.registerImageByClass("ddf_red",ddf_red);
+				Utils.registerImageByClass("fiber",fiber);
+				Utils.registerImageByClass("odfBg",odfBg);
+				Utils.registerImageByClass("luyou_port",luyou_port);
+			}
+			
+			private var ocable:String;
+			
+			private function getOcableHandler(event:ResultEvent):void{
+				ocableCollection = new XMLList(event.result.toString());
+				setTimeout(openTreeNode,300);
+				if(ocableCollection.children().length() > 0){
+					ocable = String(ocableCollection.children()[0].@code);
+					var ro:RemoteObject = new RemoteObject("wireConfiguration");
+					ro.endpoint = ModelLocator.END_POINT;
+					ro.showBusyCursor = true;
+					ro.addEventListener(ResultEvent.RESULT,getFiberHandler);
+					ro.getFiberByOcable(ocable);
+				}
+			}
+			
+			private function getFiberHandler(event:ResultEvent):void{
+				acFiber = event.result as ArrayCollection;
+				acFiber.source.sortOn("zendOdfPort");
+				
+				var roODF:RemoteObject = new RemoteObject("wireConfiguration");
+				roODF.endpoint = ModelLocator.END_POINT;
+				roODF.showBusyCursor = true;
+				roODF.addEventListener(ResultEvent.RESULT,getODFPortHandler);
+				roODF.getODFPortByOcable(ocable);
+				
+				this.createFiber();
+//				this.CreateFiberModule(300,30,276);
+				
+				var ocableName:String = "";
+				if(ocableCollection)
+					ocableName = ocableCollection.children()[0].@label;
+				var node:Node = new Node();
+				node.name = ocableName;
+				node.image = "";
+				node.setStyle(Styles.LABEL_BOLD,true);
+				node.setStyle(Styles.LABEL_SIZE,15);
+				node.setLocation(200,3);
+				box.add(node);
+			}
+			
+			private function createFiber():void{
+				if(acFiber.length > 0){
+					var grid:Grid=new Grid();
+					grid.setLocation(20, 100);
+					grid.setSize(140, 50);
+					grid.setStyle(Styles.GRID_BORDER_TOP,30);
+					grid.setStyle(Styles.CONTENT_TYPE,Consts.CONTENT_TYPE_VECTOR_DEFAULT);
+					grid.setStyle(Styles.VECTOR_FILL_COLOR,0xD5DD7A);
+					grid.setStyle(Styles.LABEL_POSITION,Consts.POSITION_TOP_BOTTOM);
+					grid.name = "光缆";
+					grid.setStyle(Styles.LABEL_YOFFSET, 13);
+					grid.setStyle(Styles.LABEL_BOLD, true);
+					grid.setStyle(Styles.LABEL_SIZE, 13);
+					grid.setStyle(Styles.GRID_BORDER, 10);
+					grid.setStyle(Styles.GRID_ROW_COUNT, acFiber.length);
+					grid.setStyle(Styles.GRID_COLUMN_COUNT, 1);
+					grid.setStyle(Styles.GRID_PADDING_TOP,7);
+					box.add(grid);
+					var follower:Follower;
+					for(var i:int = 0 ; i < acFiber.length; i++){
+						if(acFiber[i].zendOdfPort != null){
+							follower = new Follower("fiber-"+acFiber[i].zendOdfPort);
+						}else{
+							follower = new Follower();
+						}
+						follower.image = "fiber";
+						follower.name = "光纤"+(i+1);
+						follower.setSize(50,30);
+						follower.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+						follower.setStyle(Styles.FOLLOWER_COLUMN_INDEX,0);
+						follower.setStyle(Styles.FOLLOWER_ROW_INDEX,i);
+						follower.host = grid;
+						box.add(follower);
+						grid.height += 50;
+					}
+				}
+			}
+			
+			private function getODFPortHandler(event:ResultEvent):void{
+				acODFData = event.result as ArrayCollection;
+				acODFData.source.sortOn("odfportcode");
+//				this.CreateODFModule(300,400,290);
+				
+				createODFPort();
+			}
+			
+			private function createODFPort():void{
+				if(acODFData.length > 0){
+					var grid:Grid=new Grid();
+					grid.setLocation(280, 100);
+					grid.setSize(280, 50);
+					grid.setStyle(Styles.GRID_BORDER_TOP,30);
+					grid.setStyle(Styles.CONTENT_TYPE,Consts.CONTENT_TYPE_VECTOR_DEFAULT);
+					grid.setStyle(Styles.VECTOR_FILL_COLOR,0x74BACE);
+					grid.setStyle(Styles.LABEL_POSITION,Consts.POSITION_TOP_BOTTOM);
+					
+					grid.name = acODFData[i].name_std;
+					grid.setStyle(Styles.LABEL_SIZE, 13);
+					grid.setStyle(Styles.LABEL_YOFFSET,13);
+					grid.setStyle(Styles.LABEL_BOLD,true);
+					grid.setStyle(Styles.GRID_BORDER, 10);
+					grid.setStyle(Styles.GRID_ROW_COUNT, acODFData.length);
+					grid.setStyle(Styles.GRID_COLUMN_COUNT, 1);
+					grid.setStyle(Styles.GRID_PADDING_TOP,12);
+					box.add(grid);
+					for(var i:int = 0 ; i < acODFData.length; i++){
+						var follower:Follower = new Follower();
+						follower.image = "odfBg";
+	//					follower.name = acODFData[i].port_name_std;
+						follower.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+						follower.setStyle(Styles.FOLLOWER_COLUMN_INDEX,0);
+						follower.setStyle(Styles.FOLLOWER_ROW_INDEX,i);
+						follower.host = grid;
+						box.add(follower);
+						grid.height += 50;
+						
+						var fo:Follower = new Follower(acODFData[i].odfportcode);
+						fo.image = "luyou_port";
+						fo.name = acODFData[i].port_name_std;
+						fo.setStyle(Styles.LABEL_POSITION,Consts.POSITION_BOTTOMLEFT_BOTTOMRIGHT);
+						fo.setLocation(follower.x+20,follower.y+5);
+						fo.host = follower;
+						box.add(fo);
+					}
+					createFiberODFLink();
+				}
+			}
+			
+			private function openTreeNode():void{
+				this.treeOcable.selectedIndex = 0;
+				this.treeOcable.dispatchEvent(new ListEvent(ListEvent.ITEM_CLICK));
+				this.treeOcable.selectedIndex = 1;
+			}
+			
+			private function treeItemClickHandler(e:Event):void {
+				var item:Object = treeOcable.selectedItem;
+				if (treeOcable.dataDescriptor.isBranch(item)) {
+					treeOcable.expandItem(item, !treeOcable.isItemOpen(item), true);
+				}
+			}
+			
+			private function treeDoubleClickHandler():void{
+				if(treeOcable.selectedItem){
+					network.elementBox.clear();
+					ocable = String(treeOcable.selectedItem.@code);
+					var ro:RemoteObject = new RemoteObject("wireConfiguration");
+					ro.endpoint = ModelLocator.END_POINT;
+					ro.showBusyCursor = true;
+					ro.addEventListener(ResultEvent.RESULT,getFiberHandler);
+					ro.getFiberByOcable(ocable);
+				}
+			}
+			
+			private function getFaultHandler(event:FaultEvent):void{
+				Alert.show(event.message.toString(),"错误");
+			}
+			
+			/**
+			 * 此函数用于在NETWORK中绘制一个ODF模块.
+			 *@param ModuleName:模块的名称.
+			 *@param PositionX:模块的X坐标.
+			 *@param PositionY:模块的Y坐标.
+			 *@param ModuleWidth:模块宽度. 
+			 *@param Graphdata:绘制模块所需数据. 
+			 *@author luoshuai
+			 *@version ver.1.0
+			 * */
+			public function CreateODFModule(PositionX:int,PositionY:int,ModuleWidth:int):void{
+				if(acODFData.length > 0)
+				{
+					var ModuleName:String = acODFData[0].name_std;
+					var portSize:int = acODFData.length;
+					var colcount:int = 12;// 列数
+					var rowcount:int =0;
+					if (portSize % colcount != 0) {
+						rowcount = portSize / colcount + 1;
+					} else {
+						rowcount = portSize / colcount;
+					}
+					var pid:int =0;
+					var name:int =0;
+					var xLocation:int ;
+					var yLocation:int;  
+					var grid:Grid = new Grid();
+					grid.setStyle(Styles.GRID_BORDER, 0.0);
+					grid.setStyle(Styles.GRID_DEEP, 0);
+					grid.setStyle(Styles.GRID_PADDING, 0);
+					grid.setStyle(Styles.GRID_DEEP, 0);
+					grid.setStyle(Styles.GRID_CELL_DEEP, 1);
+					grid.setStyle(Styles.GRID_FILL, false);
+					grid.setStyle(Styles.GRID_ROW_COUNT, rowcount + 1);
+					grid.setStyle(Styles.GRID_COLUMN_COUNT, colcount + 1);
+					grid.setSize((colcount + 1) * 20, (rowcount + 1) * 20);
+					grid.setLocation(PositionX+10, PositionY+10);
+					grid.layerID = layer.id;
+					
+					var MainPanel:Follower = createFollower(ModuleName, "", new Point(PositionX, PositionY),Consts.POSITION_BOTTOM_BOTTOM,grid);
+					grid.parent = MainPanel;
+					grid.host = MainPanel; 
+					MainPanel.width = ModuleWidth;
+					MainPanel.height = (rowcount + 1) * 25;
+					var port:Follower;
+					var image:String = "";
+					for (var row:int = 0; row < rowcount + 1; row++) {
+						for (var col:int = 0; col < colcount + 1; col++) {
+							if (row == 0) {
+								port = new Follower();
+								port.image="odf_" + col;
+								port.icon = "odf_" + col;
+								port.setStyle(Styles.LABEL_COLOR, "black");
+								port.setStyle(Styles.FOLLOWER_ROW_INDEX, 0);
+								port.setStyle(Styles.FOLLOWER_COLUMN_INDEX, col);
+								port.layerID=layer2.id;
+								port.host = grid;
+								port.parent = grid;
+								box.add(port);
+							} else {
+								if (col == 0) {
+									port = new Follower();
+									switch (row) {
+										case 1:
+											image = "odf_a";
+											break;
+										case 2:
+											image = "odf_b";
+											break;
+										case 3:
+											image = "odf_c";
+											break;
+										case 4:
+											image = "odf_d";
+											break;
+										case 5:
+											image = "odf_e";
+											break;
+										case 6:
+											image = "odf_f";
+											break;
+									}
+									port.icon = image;
+									port.image = image;
+									port.setStyle(Styles.LABEL_COLOR, "black");
+									port.setStyle(Styles.FOLLOWER_ROW_INDEX, row);
+									port.setStyle(Styles.FOLLOWER_COLUMN_INDEX,col);
+									port.layerID=layer2.id;
+									port.host = grid;
+									port.parent = grid;
+									box.add(port);
+								} else {
+									var count:int = (row - 1) * colcount + (col - 1);
+									if (count < portSize) {
+										port = new Follower(acODFData.getItemAt(count).odfportcode);
+										port.layerID=layer2.id;
+										port.toolTip=acODFData.getItemAt(count).name_std;
+										port.setClient("porttype", "ZY23010499");
+										if (acODFData.getItemAt(count).linecount == 0) {
+											image = "odfport";
+										} else if (acODFData.getItemAt(count).linecount == 1) {
+											image = "odf_yellow";
+										} else if (acODFData.getItemAt(count).linecount == 2) {
+											image = "odf_green";
+										} else {
+											image = "odf_red";
+										}
+										port.icon = image;
+										port.image = image;
+										port.setStyle(Styles.FOLLOWER_ROW_INDEX,row);
+										port.setStyle(Styles.FOLLOWER_COLUMN_INDEX,col);
+										port.host = grid;
+										port.parent = grid;
+										box.add(port);
+									}
+								}
+							}
+							
+						}
+					}
+				}
+				createFiberODFLink();
+			}
+			
+			private function createFiberODFLink():void{
+				for(var j:int =0;j<acFiber.length;j++){
+					var elementa:IElement = box.getElementByID("fiber-"+acFiber.getItemAt(j).zendOdfPort);
+					var elementb:IElement = box.getElementByID(acFiber.getItemAt(j).zendOdfPort);
+					if(elementa && elementb){
+						var link:Link = createLink(elementa as Follower,elementb as Follower, 0x005e9b,Consts.LINK_TYPE_PARALLEL);
+						link.setClient("ODFLINES","ODFLINES");
+//						link.layerID=layer1.id;
+					}
+				}
+			}
+			
+			/**
+			 * 此函数用于在NETWORK中绘制一个光缆的模块.
+			 *@param PositionX:模块的X坐标.
+			 *@param PositionY:模块的Y坐标.
+			 *@param ModuleWidth:模块宽度. 
+			 *@param Graphdata:绘制模块所需数据. 
+			 *@author xiezhikui
+			 *@version ver.1.0
+			 * */
+			public function CreateFiberModule(PositionX:int,PositionY:int,ModuleWidth:int):void{
+				if(acFiber[0].ocableCode != null)
+				{  
+					var ocableName:String = "";
+					if(ocableCollection)
+						ocableName = ocableCollection.children()[0].@label;
+//					Alert.show(ocableName);
+					titleNode = createFollower(ocableName,"", new Point(PositionX, PositionY),Consts.POSITION_TOP_TOP);
+					titleNode.width = ModuleWidth;
+					titleNode.setClient("ocablecode",acFiber[0].ocableCode);
+					var ocableNode:Follower = createFollower("","guanglanDown", new Point(PositionX+100,PositionY+10),Consts.POSITION_TOP_TOP);
+					ocableNode.layerID = layer.id;
+					ocableNode.parent = titleNode;
+					ocableNode.host = titleNode;
+					titleNode.host = ocableNode;
+					
+					var groupsize:int = acFiber.length % 12 == 0 ? acFiber.length / 12 : (int)(acFiber.length / 12) + 1;
+					var node:Follower;
+					var isRun:Boolean;
+					var tempX:int;
+					var tempY:int;
+					for(var j:int=0;j<groupsize;j++)
+					{
+						tempX = ocableNode.x - 50 + 100 * j;
+						tempY = ocableNode.y + ocableNode.height + 40;
+						node = createFollower(j*12+1+"-"+(((j+1)*12)<= acFiber.length?(j+1)*12:acFiber.length),"PORT_NODE", new Point(tempX,tempY),Consts.POSITION_BOTTOM_BOTTOM);
+						node.host = ocableNode;
+						node.parent = ocableNode;
+						var myLink:Link = createLink(ocableNode, node, 0x005e9b,Consts.LINK_TYPE_ORTHOGONAL_VERTICAL);
+						node.layerID = layer.id;
+						myLink.layerID= layer.id;
+						if(!isRun){
+							isRun = true;
+							var tempLength:int;
+							if(acFiber.length > 12)
+								tempLength = 12;
+							else
+								tempLength = acFiber.length;
+							addPortToFiber(0,tempLength,node,acFiber[0].name_std);
+						}
+					}
+				}
+			}
+			
+			private function addPortToFiber(startIndex:int,endIndex:int,node:Node,name:String):void{
+				var tempInt:int = 0;
+				for(var i:int = startIndex ; i < endIndex; i++)
+				{   
+					var port:int = i+1;
+					var follower:Follower;
+					if(acFiber[i].zendOdfPort != null)
+						follower = createFollower(port.toString(),"PORTIcon", new Point(40 * tempInt + node.x - 100,node.y + 70),Consts.POSITION_RIGHT_RIGHT,"fiber-"+acFiber[i].zendOdfPort);
+					else
+						follower = createFollower(port.toString(),"PORTIcon", new Point(40 * tempInt + node.x - 100,node.y + 70),Consts.POSITION_RIGHT_RIGHT);
+					follower.host = node;
+					follower.parent = node;
+					var link:Link = createLink(node, follower, 0x005e9b);
+					follower.layerID = layer1.id;
+					link.layerID= layer1.id;
+					link.parent = node;
+					tempInt++;
+				}
+				createFiberODFLink();
+			}
+			
+			public function createFollower(name:String, image:String, location:Point,labelPosition:String = null,id:Object = null):Follower{
+				var follower:Follower = new Follower(id);
+				follower.name = name;
+				follower.image = image;
+				follower.location = location;
+				if(labelPosition){
+					follower.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				box.add(follower);
+				return follower;
+			}
+			
+			private function createLink(from:Node, to:Node, color:uint, linkType:String = null,linkFromPosition:String = null,name:String = null, dashed:Boolean = false, labelPosition:String = null, lineWidth:int = 2):Link{
+				var link:Link = new Link(from,to);
+				link.setStyle(Styles.LINK_COLOR, color);
+				link.setStyle(Styles.LINK_WIDTH, lineWidth);
+				link.setStyle(Styles.LINK_BUNDLE_GAP, -2);
+				link.setStyle(Styles.LINK_BUNDLE_OFFSET,-1);
+				link.setStyle(Styles.LINK_FROM_POSITION,linkFromPosition);
+				if(linkType == null){
+					linkType = Consts.LINK_TYPE_ORTHOGONAL_VERTICAL;
+					link.setStyle(Styles.LINK_SPLIT_VALUE, 34);
+					link.setStyle(Styles.LINK_CORNER, Consts.LINK_CORNER_NONE);
+				}
+				link.setStyle(Styles.LINK_TYPE, linkType);
+				if(name){
+					link.name = name;
+				}
+				if(dashed){
+					link.setStyle(Styles.LINK_PATTERN, [25,10]);
+				}
+				if(labelPosition){
+					link.setStyle(Styles.LABEL_POSITION, labelPosition);
+				}
+				if(!box.getDataByID(link.id))
+					box.add(link);
+				return link;
+			}
+			
+			private function networkClickHandler():void{
+				if(network.selectionModel.count > 0){
+					if(network.selectionModel.selection.getItemAt(0) is Node && (Node(network.selectionModel.selection.getItemAt(0)).image == "PORT_NODE" || Node(network.selectionModel.selection.getItemAt(0)).image == "grounpNode")){
+						var follower:Follower = network.selectionModel.selection.getItemAt(0) as Follower;
+						var tempArr:Array = follower.name.split("-");
+						if(tempArr.length == 2){
+							removeAllFollower(Follower(follower.parent).followers,"PORT_NODE");
+							addPortToFiber(parseInt(tempArr[0])-1,parseInt(tempArr[1]),follower,follower.parent.parent.name);
+						}
+					}
+				}
+			}
+			
+			private function removeAllFollower(followers:ICollection,type:String):void{
+				for(var i:int = 0; i < followers.count; i ++){
+					var fo:Follower = followers.getItemAt(i);
+					if(fo.image == type){
+						box.selectionModel.clearSelection();
+						box.selectionModel.selection.addAll(fo.followers);
+						box.removeSelection();
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

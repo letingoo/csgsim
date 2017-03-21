@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="tuopu">
+
+   <select id="getTopo_business"  resultClass="java.util.HashMap"   parameterClass="String">
+       <![CDATA[ 
+           select distinct business_id,business_name from business_circuit where circuitcode in (select circuitcode from circuit_cc  where equipcode in (select equip_a from (select equip_a,label from en_topolink union select equip_z,label from en_topolink) where LABEL=#label#))
+        ]]>	
+  </select>
+     <select id="getreTopo_business"  resultClass="java.util.HashMap"  parameterClass="String">
+  <![CDATA[
+       select  business_id,business_name from business_circuit where circuitcode in (select circuitcode from circuit_cc  where equipcode in (select equip_a from (select equip_a,label from en_topolink union select equip_z,label from en_topolink) where LABEL=#label#)) 
+        ]]>	
+  </select>
+  <select id="getTopolabel"  resultClass="java.util.HashMap" >
+  <![CDATA[
+       select  label,name from en_topolink
+        ]]>	
+  </select>
+    <select id="business_type"  resultClass="String"  parameterClass="String">
+  <![CDATA[
+       select  business_type from business where business_name = #name#
+        ]]>	
+  </select>
+  <select id="getTopoV"  resultClass="String"    parameterClass="String">
+  <![CDATA[
+       select xtxx from xtbm where xtbm in (select linerate from en_topolink where label=#label#)
+        ]]>	
+  </select>
+    <select id="getToponame"  resultClass="String"    parameterClass="String">
+  <![CDATA[
+       select equipcode from equiplogicport where logicport =#port#
+        ]]>	
+  </select>
+<!--     select t1.s_sbmc,t1.equipcode,t2.x,t2.y from(select s_sbmc,equipcode from(select distinct(equipcode) as equip from circuit_cc) t3,equipment t2 where t3.equip=t2.equipcode) t1,re_sys_equip t2 where t1.equipcode=t2.equipcode -->
+      
+   <select id="getsbnameaa"  resultClass="java.util.HashMap"  >
+    <![CDATA[
+          select t1.s_sbmc,t1.equipcode,t2.x,t2.y from equipment t1,re_sys_equip t2 where t1.equipcode=t2.equipcode 
+  ]]>	
+    </select>
+    <select id="getsbzbaa"  resultClass="java.util.HashMap" >
+    <![CDATA[
+     select label,name_a,name_z from v_en_topolink_name
+  ]]>	
+  </select> 
+    <select id="getqszd"  resultClass="String" >
+    <![CDATA[
+    select station1 as startstaion  from (select station1 from circuit where circuitcode in (select circuitcode from business_circuit)
+      UNION 
+      select station2 from circuit where circuitcode in (select circuitcode from business_circuit))
+  ]]>	
+  </select> 
+      <select id="getqssb"  resultClass="String"   parameterClass ="String">
+    <![CDATA[
+                select  s_sbmc from equipment where s_sbmc like '%' || #name# || '%'
+                
+  ]]>	
+  </select> 
+        <select id="getywmc"  resultClass="String"   parameterClass ="String">
+    <![CDATA[
+            select circuitcode from business_circuit where business_name = #name#
+                
+  ]]>	
+  </select> 
+        <select id="getsqsb"  resultClass="String"   parameterClass ="String">
+    <![CDATA[
+          select s_sbmc from equipment where equipcode in(select equipcode from equiplogicport where logicport in (select portserialno1 from circuit where circuitcode=#code#))                
+  ]]>	
+  </select> 
+     <select id="getsqsbs"  resultClass="String"   parameterClass ="String">
+    <![CDATA[
+          select s_sbmc from equipment where equipcode in(select equipcode from equiplogicport where logicport in (select portserialno2 from circuit where circuitcode=#code#))                
+  ]]>	
+  </select> 
+      <select id="getsqsl"  resultClass="String"   parameterClass ="String">
+    <![CDATA[
+        select business_type from business where business_name = #name#
+  ]]>	
+  </select> 
+   <select id="getsqsls"  resultClass="String"   parameterClass ="String">
+    <![CDATA[
+        select rate from circuit where circuitcode = #name#
+  ]]>	
+  </select> 
+   <select id="getocablecode"  resultClass="String"   parameterClass ="String">
+    <![CDATA[
+       select stationcode from equipment where equipcode in(select equipcode from equiplogicport where logicport = #port#)
+  ]]>	
+  </select> 
+    <select id="getocablename"  resultClass="String"   parameterClass ="map">
+    <![CDATA[
+           select ocablename from en_ocable where station_a in (#sta#,#stz#) and station_z in (#sta#,#stz#)
+  ]]>	
+  </select> 
+</sqlMap> 

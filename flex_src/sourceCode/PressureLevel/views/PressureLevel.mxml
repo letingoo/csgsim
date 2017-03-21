@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+			    xmlns:views="sourceCode.tableResurces.views.*" 
+				xmlns:component="common.component.*"
+				verticalGap="0"
+				creationComplete="init()">
+	
+	
+	<mx:HBox>
+		
+		<mx:Button label="分析风险情况" click="analyse()"/>
+		
+	</mx:HBox>
+	
+	<mx:VBox id="graph_area" width="100%" height="100%"
+			 paddingBottom="0" 
+			 paddingLeft="0" paddingRight="0" paddingTop="0"  
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		
+		<mx:HBox width="100%" height="100%" verticalAlign="top">
+			<mx:Panel title="复用段压力指数分布图" width="648" height="100%">
+				<mx:HBox width="512">
+					
+					
+					<mx:LegendItem label="1级（大于300）" fontWeight="bold">
+						<mx:fill>
+							<mx:SolidColor color="0xEE0000"/>
+						</mx:fill>
+					</mx:LegendItem>
+					
+					<mx:LegendItem label="2级(200到300之间)" fontWeight="bold">
+						<mx:fill>
+							<mx:SolidColor color="0xEE7600"/>
+						</mx:fill>
+					</mx:LegendItem>
+					
+					<mx:LegendItem label="3级(90到200之间)" fontWeight="bold">
+						<mx:fill>
+							<mx:SolidColor color="0xEEEE00"/>
+						</mx:fill>
+					</mx:LegendItem>
+					
+					<mx:LegendItem label="4级(小于90)" fontWeight="bold">
+						<mx:fill>
+							<mx:SolidColor color="0x71C671"/>
+						</mx:fill>
+					</mx:LegendItem>
+				
+					
+				</mx:HBox>
+				
+				
+				<mx:ColumnChart id="chart" dataProvider="{topoCollection}" showDataTips="true" width="100%" height="100%"
+								itemClick="columnClick(event)">
+					<mx:horizontalAxis>
+						<mx:CategoryAxis displayName="风险等级" title="风险等级" dataProvider="{topoCollection}" categoryField="level"/>
+					</mx:horizontalAxis>
+					
+					<mx:verticalAxis>
+						<mx:LinearAxis title="复用段数量"
+									   displayName="复用段数量"
+									   autoAdjust="true">
+						</mx:LinearAxis>
+					</mx:verticalAxis>
+					
+					<mx:series>
+						<mx:ColumnSeries id="chartColumn" xField="level" yField="weight" displayName="级别"
+										 fillFunction="chartFill"/>
+					</mx:series>
+					
+				</mx:ColumnChart>
+				
+				
+				</mx:Panel>
+			
+			
+				
+				<mx:Panel title="复用段压力风险详细信息" width="100%" height="100%" fontSize="12">
+					<mx:DataGrid id="dataGrid" width="100%" height="100%" visible="true" dataProvider="{detailCollection}" doubleClick="dataGridDoubleClickHandler(event)" doubleClickEnabled="true">
+						<mx:columns>
+							<mx:DataGridColumn headerText="复用段名称" dataField="name" width="80" />
+							<mx:DataGridColumn headerText="承载业务个数" dataField="buz_numbers" width="40"/>
+						</mx:columns>
+					</mx:DataGrid>
+				</mx:Panel>
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.as3xls.xls.ExcelFile;
+			import com.as3xls.xls.Sheet;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.charts.ChartItem;
+			import mx.charts.events.ChartItemEvent;
+			import mx.charts.series.items.ColumnSeriesItem;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.graphics.IFill;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.PressureLevel.actionScript.TopoLink;
+			import sourceCode.SecureAnalysis.views.level;
+			
+			[Bindable]
+			private var topoCollection:ArrayCollection = new ArrayCollection();
+			
+			
+			[Bindable]
+			private var detailCollection:ArrayCollection = new ArrayCollection();
+			
+			private function init():void {
+
+				
+			}
+			
+			
+			
+			
+			private function analyse():void {
+				var remo:RemoteObject = new RemoteObject("PressureLevel");
+				remo.endpoint = ModelLocator.END_POINT;
+				remo.showBusyCursor = true;
+				remo.addEventListener(ResultEvent.RESULT, resultHandler);
+				remo.FxLevel();
+			}
+			
+			
+			
+			
+			private function resultHandler(event:ResultEvent):void {
+				
+				//var temp:ArrayCollection = event.result as ArrayCollection;
+				topoCollection = event.result as ArrayCollection;
+			
+			} 
+			
+			
+			
+			
+			
+			
+			
+			private function chartFill(element:ChartItem, index:Number):IFill {
+				
+				var item:ColumnSeriesItem = ColumnSeriesItem(element);
+				var profit:String = String(item.xValue);
+				
+				if (profit == "1级") {
+					return new SolidColor(0xEE0000);
+				}
+				
+				else if (profit == "2级") {
+					return new SolidColor(0xEE7600);
+				}
+				
+				else if (profit == "3级") {
+					return new SolidColor(0xEEEE00);
+				}
+				
+				else {
+					return new SolidColor(0x71C671);
+				}
+			}
+			
+			
+			
+			
+			
+			private function columnClick(event:ChartItemEvent):void {
+				
+				var level:String = event.hitData.item.level;
+				
+				var remo:RemoteObject = new RemoteObject("PressureLevel");
+				remo.endpoint = ModelLocator.END_POINT;
+				remo.showBusyCursor = true;
+				remo.addEventListener(ResultEvent.RESULT, levelDetailHandler);
+				remo.getLevelTopoLinkItem(level);
+			}
+			
+			
+			private function levelDetailHandler(event:ResultEvent):void {
+				
+				detailCollection = event.result as ArrayCollection;
+			}
+			
+			
+			
+			private function dataGridDoubleClickHandler(event:MouseEvent):void {
+				
+				var buzList:ArrayCollection = dataGrid.selectedItem.busNameList;
+				var label:String = dataGrid.selectedItem.label;
+				
+				var buzMessageList:ArrayCollection = new ArrayCollection();
+				
+				if (buzList.length == 0) {
+					Alert.show("该复用段不影响业务");
+					return;
+				}
+				
+				for (var i:int = 0; i < buzList.length; i++) {
+					
+					
+					var name:String = buzList.getItemAt(i) as String;
+					var item:Object = new Object();
+					item.label = label;
+					item.buzName = name;
+					item.name = dataGrid.selectedItem.name;
+					
+					buzMessageList.addItem(item);
+				}
+				
+				
+				var pressureDetail:PressureDetail = new PressureDetail();
+				pressureDetail.buzList = buzMessageList;
+				
+				MyPopupManager.addPopUp(pressureDetail, true);
+				
+				
+			}
+			
+			
+		]]>
+		
+		
+		
+	</mx:Script>
+	
+</mx:VBox>

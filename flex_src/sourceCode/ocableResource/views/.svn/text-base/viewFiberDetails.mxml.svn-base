@@ -1,0 +1,186 @@
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:pgtb="common.component.*"
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+	xmlns:views="sourceCode.ocableResource.views.*"
+	creationComplete="titlewindow1_creationCompleteHandler(event)" 
+	backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+	backgroundSize="100%"
+	windowContainer="{Application.application.windowContainer}"
+	width="{parentApplication.workspace.width}"
+	height="{parentApplication.workspace.height+70}"
+	xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			import common.other.blogagic.util.mapNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.ocableResource.model.FiberDetailsModel;
+			import sourceCode.ocableResource.model.FiberDetailsResultModel;
+			import sourceCode.ocableResource.model.FiberRouteDataModel;
+			import sourceCode.ocableResource.model.OcableRoutInfoData;
+			import sourceCode.ocableResource.model.ResultModel;
+			import sourceCode.ocableResource.views.CarryBusiness;
+			import sourceCode.ocableResource.views.FiberCarryBusiness;
+			import sourceCode.ocableResource.views.OcableRoutInfo;
+			import sourceCode.ocableResource.views.SysOrgMap;
+			import sourceCode.ocableResource.views.businessInfluenced;
+			
+			import twaver.DemoUtils;
+			import twaver.SequenceItemRenderer;
+			
+			[Bindable] public var node:mapNode;
+			
+		
+			public var sectioncode:String;//光纤编码
+			public var pageIndex:int=0;
+			public var pageSize:int=50;
+			public var circuiPageSize:int = 50;
+			public 	var fdml:FiberDetailsModel = new FiberDetailsModel();
+			public var titles:Array = new Array("纤芯号","所属光缆段","起始设备端口","终止设备端口","起始设备","终止设备","备注");
+			public var circuittitles:Array = new Array("序号","光路名称","起始设备","终止设备","业务名称","业务类型");
+			private var indexRenderer:Class = SequenceItemRenderer;
+			public var fibercode:String = "";
+			
+			protected function closeHandler():void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function showFiberBesuniss(start:String,end:String):void{
+				var obj:RemoteObject = new RemoteObject("ocableResources");
+				obj.addEventListener(ResultEvent.RESULT,showFiberBesunissResultHandler);
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				//根据光缆编号，获取光纤业务
+				obj.showFiberBesuniss(sectioncode,start,end); 
+			}
+			
+			private function showFiberBesunissResultHandler(event:ResultEvent):void{
+				var result:ResultModel=event.result as ResultModel;
+				serverPagingBar.orgData=result.orderList;
+				serverPagingBar.totalRecord=result.totalCount;
+				serverPagingBar.dataBind(true);
+				serverPagingBar.pagingFunction = PagingFunctionBusiness;
+				serverPagingBar.addEventListener("returnALL",returnBusinessALL);
+				//有问题
+				serverPagingBar.addEventListener("exportExcel",ExporBusinessExcel);
+			}
+			private function returnBusinessALL(event:Event):void{
+				var obj:RemoteObject = new RemoteObject("ocableResources");
+				obj.addEventListener(ResultEvent.RESULT,showFiberBesunissResultHandler);
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				//根据光缆编号，获取光纤业务
+				obj.showFiberBesuniss(sectioncode,"0",serverPagingBar.totalRecord.toString());
+			}
+			
+			private function ExporBusinessExcel(event:Event):void{
+				var remoteobj2:RemoteObject = new RemoteObject("ocableResources"); 
+				remoteobj2.endpoint = ModelLocator.END_POINT;
+				remoteobj2.showBusyCursor = true;
+				remoteobj2.addEventListener(ResultEvent.RESULT,ExportExcelHandler);
+				remoteobj2.ExportBusinessExcel("光纤业务信息",circuittitles,sectioncode,this.serverPagingBar.totalRecord); 
+			}
+			
+			private function PagingFunctionBusiness(pageIndex:int,pageSize:int):void{
+				this.circuiPageSize=pageSize;
+				var obj:RemoteObject = new RemoteObject("ocableResources");
+				obj.addEventListener(ResultEvent.RESULT,showFiberBesunissResultHandler);
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				//根据光缆编号，获取光纤业务
+				obj.showFiberBesuniss(sectioncode,(pageIndex*pageSize).toString(),(pageIndex*pageSize+pageSize).toString()); 
+			}
+			
+			private function returnCircuitALL(event:Event = null):void{
+				showFiberBesuniss("0",serverPagingBar.totalRecord.toString());
+			}
+			//导出光缆全部业务
+			private function ExporCircuitExcel(event:Event = null):void{
+				var remoteobj2:RemoteObject = new RemoteObject("ocableResources"); 
+				remoteobj2.endpoint = ModelLocator.END_POINT;
+				remoteobj2.showBusyCursor = true;
+				remoteobj2.addEventListener(ResultEvent.RESULT,ExportExcelHandler);
+				remoteobj2.ExportCircuitExcel("光纤业务信息",circuittitles,sectioncode,this.serverPagingBar.totalRecord); 
+			}
+			
+			private function PagingFunctionCircuit(pageIndex:int,pageSize:int):void{
+				this.circuiPageSize=pageSize;
+				showFiberBesuniss((pageIndex*pageSize).toString(),(pageIndex*pageSize+pageSize).toString());
+			}
+			
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				serverPagingBar.addEventListener("returnALL",returnCircuitALL);
+				serverPagingBar.addEventListener("exportExcel",ExporCircuitExcel);
+				serverPagingBar.pagingFunction = PagingFunctionCircuit;
+				serverPagingBar.dataGrid =dg;
+				serverPagingBar.exportLinkBtn.visible=true;
+				showFiberBesuniss("0","50");
+			}
+
+			
+//			private function getOcableRoutInfoByFiberHandler(event:ResultEvent):void{
+//				var datas:OcableRoutInfoData=event.result as OcableRoutInfoData;
+//				var ori:OcableRoutInfo=new OcableRoutInfo();
+//				if (datas != null && datas.channelRoutModelData != null && datas.stationNames != null && datas.systemName != null)
+//				{
+//					ori.datas=datas;
+//					ori.title = "光路路由";
+//					MyPopupManager.addPopUp(ori);
+//				}
+//				else
+//				{
+//					Alert.show("无相关数据!", "温馨提示");
+//				}
+//				
+//			}
+			
+			private var fiberxml:XML;
+			private var fiberdata:ArrayCollection;
+
+			public function ExportExcelHandler(event:ResultEvent):void{
+				var path:String = event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(path))); 
+				navigateToURL(request,"_blank");
+				
+			}
+
+
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:HBox width="100%" height="95%">
+			<mx:DataGrid id="dg" width="100%" height="100%" wordWrap="true"  variableRowHeight="true" horizontalScrollPolicy="on" sortableColumns="false">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="40" itemRenderer="{new ClassFactory(indexRenderer)}" />
+					<mx:DataGridColumn headerText="光路编号" dataField="circuitcode" width="220" visible="false"/>
+					<mx:DataGridColumn headerText="光路名称" dataField="circuitname" width="180"/>
+					<mx:DataGridColumn headerText="起始设备" dataField="portserialno1"  width="250"/>
+					<mx:DataGridColumn headerText="终止设备" dataField="portserialno2"  width="250"/>
+					<mx:DataGridColumn headerText="业务名称" dataField="username"  width="250"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="x_purpose"  width="120"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+		<pgtb:pagetoolbar x="1" id="serverPagingBar" width="100%" pageSize="50" height="5%"/>
+	</mx:VBox>
+</panel:PanelWindow>

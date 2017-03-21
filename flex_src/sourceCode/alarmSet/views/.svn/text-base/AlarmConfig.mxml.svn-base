@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--告警配置-->
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				width="560" height="530" styleName="popwindow"  layout="absolute"
+				 creationComplete="init()" verticalScrollPolicy="off" horizontalScrollPolicy="off"
+				 close="PopUpManager.removePopUp(this)"  title="告警配置" showCloseButton="true"
+				>
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.rootalarm.views.RealRootAlarm;
+			import sourceCode.subject.main.views.ComhensiveMonitor;
+			
+			
+			
+			
+			
+			public var cm:ComhensiveMonitor;
+			public var flag:String="0";
+			private var param:ArrayCollection=new ArrayCollection();
+			private var keyBitMonitorStatus:String="";//重点业务监视
+			private var netStateMonitorStatus:String="";//网络状态监视
+			private var rootAlarmMonitorStatus:String="";//根告警集中监视
+			private var rootAlarmProMonitorStatus:String="";//根告警处理跟踪监视
+			private var flashAlarmMonitorStatus:String="";//频闪告警监视
+			private var rootAlarmFlowStatus:String="";//根告警流向处理
+			private var rootAlarmStatu:String="";   //根告警提示音状态
+			private var mntStatu:String="";     //监视界面主题移动、大小的状态
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			
+			private function init():void{
+			
+				var rtobj :RemoteObject= new RemoteObject("AlarmSet");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getStatus();
+				rtobj.addEventListener(ResultEvent.RESULT,getStatusResult);
+				rtobj.addEventListener(FaultEvent.FAULT,fault);
+			}
+			
+			private function getStatusResult(event:ResultEvent):void{
+				if(event.result==null || event.result == ""){
+					Alert.show("初始化配置表失败","提示信息",4,this,null,iconClass);
+				}
+				
+				var rootAlarmAs:ArrayCollection = new ArrayCollection();
+				rootAlarmAs = event.result.rootAlarmStatus as ArrayCollection;
+				
+				//对根告警提示音的配置
+				for each (var a :Object in rootAlarmAs){
+					
+					if(a.ENDESC=="alarmsoundset"){
+						var status:String="";
+						status=a.ISSTATUS;
+						
+						if(status=="Y"){
+							
+							rootAlarmGroupStart.selected=true;
+							rootAlarmGroupImg.source="assets/images/rootalarm/function_open.png";
+							
+						}else{
+							
+							rootAlarmGroupClose.selected=true;
+							rootAlarmGroupImg.source="assets/images/rootalarm/function_close.png";
+							
+						}
+						
+					}
+				}
+				
+				
+				var mntAs:ArrayCollection = new ArrayCollection();
+				mntAs = event.result.mntStatus as ArrayCollection;
+				
+				var dragStatus:String="";
+//				dragStatus=mntAs[0].ISDRAG;
+				
+				//移动、大小、坐标
+				if(dragStatus=="Y"){
+					
+					mntGroupStart.selected=true;
+					mntGroupImg.source="assets/images/rootalarm/function_open.png";
+					
+				}else{
+					
+					mntGroupClose.selected=true;
+					mntGroupImg.source="assets/images/rootalarm/function_close.png";
+					
+				}
+				
+				//对综合监视的主题的配置---移动、大小、坐标
+				for each (var a :Object in mntAs){
+					
+					if(a.SUBTITILE=="重点业务监视"){
+						
+						var status:String="";
+						status=a.ISSELE;
+						
+							
+						if(status=='Y'){
+							KeyBitMonitor.selected=true;
+						}else{
+							KeyBitMonitor.selected=false;
+						}
+					
+					}else if(a.SUBTITILE=="网络状态监视"){
+						
+						var status:String="";
+						status=a.ISSELE;
+						
+						if(status=='Y'){
+							NetStateMonitor.selected=true;
+						}else{
+							NetStateMonitor.selected=false;
+						}
+						
+						
+					}else if(a.SUBTITILE=="根告警集中监视"){
+						
+						var status:String="";
+						status=a.ISSELE;
+						
+						if(status=='Y'){
+							RootAlarmMonitor.selected=true;
+						}else{
+							RootAlarmMonitor.selected=false;
+						}
+						
+					}else if(a.SUBTITILE=="根告警处理跟踪监视"){
+						
+						var status:String="";
+						status=a.ISSELE;
+						
+						if(status=='Y'){
+							RootAlarmProMonitor.selected=true;
+						}else{
+							RootAlarmProMonitor.selected=false;
+						}
+						
+						
+					}else if(a.SUBTITILE=="频闪告警监视"){
+						
+						var status:String="";
+						status=a.ISSELE;
+						
+						if(status=='Y'){
+							FlashAlarmMonitor.selected=true;
+						}else{
+							FlashAlarmMonitor.selected=false;
+						}
+						
+						
+					}else if(a.SUBTITILE=="根告警流向处理"){
+						
+						var status:String="";
+						status=a.ISSELE;
+						
+						if(status=='Y'){
+							RootAlarmFlow.selected=true;
+						}else{
+							RootAlarmFlow.selected=false;
+						}
+						
+						
+					}
+						
+					}
+					
+				}
+				
+		
+				
+			private function save():void{
+				
+				if(rootAlarmGroup.selectedValue.toString()=="开启"){
+					rootAlarmStatu="Y";	
+				}else{
+					rootAlarmStatu="N";	
+				}
+				
+				if(mntGroup.selectedValue.toString()=="开启"){
+					mntStatu="Y";
+				}else{
+					mntStatu="N";
+				}
+				
+				if(KeyBitMonitor.selected==true){
+					keyBitMonitorStatus="1";
+				}else{
+					keyBitMonitorStatus="0";
+				}
+				
+				if(NetStateMonitor.selected==true){
+					netStateMonitorStatus="1";
+				}else{
+					netStateMonitorStatus="0";
+				}
+				
+				if(RootAlarmMonitor.selected==true){
+					rootAlarmMonitorStatus="1";
+				}else{
+					rootAlarmMonitorStatus="0";
+				}
+				
+				if(RootAlarmProMonitor.selected==true){
+					rootAlarmProMonitorStatus="1";
+				}else{
+					rootAlarmProMonitorStatus="0";
+				}
+				
+				if(FlashAlarmMonitor.selected==true){
+					flashAlarmMonitorStatus="1";
+				}else{
+					flashAlarmMonitorStatus="0";
+				}
+				
+				if(RootAlarmFlow.selected==true){
+					rootAlarmFlowStatus="1";
+				}else{
+					rootAlarmFlowStatus="0";
+				}
+				
+				
+				var rtobj :RemoteObject= new RemoteObject("AlarmSet");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.save(rootAlarmStatu,mntStatu,keyBitMonitorStatus,netStateMonitorStatus,rootAlarmMonitorStatus,rootAlarmProMonitorStatus,
+					flashAlarmMonitorStatus,rootAlarmFlowStatus);
+				rtobj.addEventListener(ResultEvent.RESULT,setSave);
+				rtobj.addEventListener(FaultEvent.FAULT,fault);
+				
+			}
+			
+			private function setSave(event:ResultEvent):void{
+				
+				if(event.result==null || event.result =="" || event.result=="失败"){
+					Alert.show("告警配置保存失败","提示信息",4,this,null,iconClass);
+					
+				}else if(event.result=="成功"){
+					Alert.show("告警配置保存成功","提示信息",4,this,null,iconClass);
+					if(flag=="1"){
+						cm.inital();
+					}
+					PopUpManager.removePopUp(this);
+					
+					param=DealAlarmUtil.titleWindow;
+					
+					if(rootAlarmStatu=="Y"){
+						for each(var a:Object in param){
+							var tw:RealRootAlarm=a as RealRootAlarm;
+							tw.sound("Y");
+						}
+					
+					}else{
+						for each(var a:Object in param){
+							var tw:RealRootAlarm=a as RealRootAlarm;
+							tw.sound("N");
+						}
+					}
+					
+					
+				}
+				
+			}
+			
+			private function fault(event:FaultEvent):void{
+				Alert.show(event.fault.toString(),"提示信息",4,this,null,iconClass);	
+			}
+				
+			
+			private function reset():void{
+				PopUpManager.removePopUp(this);
+			}
+			
+
+		]]>
+	</mx:Script>
+	
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		<mx:VBox width="100%" height="100%" paddingBottom="10" paddingLeft="20" paddingRight="20" paddingTop="10" verticalGap="5">
+			<mx:HBox width="100%" height="85" verticalAlign="top">
+				<mx:Image source="assets/images/rootalarm/icon_alarmtrip.png"/>
+				<mx:VBox width="360" height="100%" verticalGap="3">
+					<mx:Label text="根告警声音提示设置" styleName="blackbigboldleft"/>
+					<mx:Text text="发现根告警时系统自动播放根告警提示音，强烈建议您开启此功能" fontFamily="Arial" fontSize="12" color="#FF0000"/>
+					<mx:HBox width="100%" height="25">
+						<mx:RadioButtonGroup id="rootAlarmGroup" />
+						<mx:RadioButton label="开启" groupName="rootAlarmGroup" styleName="radiobutton" id="rootAlarmGroupStart"/>
+						<mx:RadioButton label="关闭" groupName="rootAlarmGroup" styleName="radiobutton" id="rootAlarmGroupClose"/>
+					</mx:HBox>
+				</mx:VBox>
+			<mx:Image id="rootAlarmGroupImg" autoLoad="true"/>
+			</mx:HBox>
+			
+			<mx:Image source="assets/images/rootalarm/setting_groupline.png" width="480"/>
+			<mx:HBox width="100%" height="220" verticalAlign="top">
+				<mx:Image source="assets/images/rootalarm/xs.png"/>
+				<mx:VBox width="100%" height="100%" verticalGap="3">
+					<mx:Label text="综合监视主题显示配置" styleName="blackbigboldleft"/>
+					<mx:Label text="选择您习惯的告警提示方式" fontSize="12" color="#5B5B5B"/>
+					<mx:CheckBox label="重点电路监视" styleName="checkbox" id="KeyBitMonitor"/>
+					<mx:CheckBox label="网络状态监视" styleName="checkbox"  id="NetStateMonitor"/>
+					<mx:CheckBox label="频闪告警监视" styleName="checkbox" id="FlashAlarmMonitor"/>
+					<mx:CheckBox label="根告警集中监视" styleName="checkbox"  id="RootAlarmMonitor"/>
+					<mx:CheckBox label="根告警处理跟踪监视" styleName="checkbox" id="RootAlarmProMonitor"/>
+					<mx:CheckBox label="根告警处理流向统计" styleName="checkbox"  id="RootAlarmFlow"/>
+				</mx:VBox>
+			</mx:HBox>
+			
+			<mx:Image source="assets/images/rootalarm/setting_groupline.png" width="480"/>
+			<mx:HBox width="100%" height="85" verticalAlign="top">
+				<mx:Image source="assets/images/rootalarm/cx.png"/>
+				<mx:VBox width="360" height="100%" verticalGap="3">
+					<mx:Label text="综合监视主题操作配置" styleName="blackbigboldleft"/>
+					<mx:Text text="对综合监视页面的主题进行移动缩放操作，强烈建议您开启此功能" fontFamily="Arial" fontSize="12" color="#FF0000"/>
+					<mx:HBox width="100%" height="25">
+						<mx:RadioButtonGroup id="mntGroup"/>
+						<mx:RadioButton label="开启" groupName="mntGroup" styleName="radiobutton" id="mntGroupStart"/>
+						<mx:RadioButton label="关闭" groupName="mntGroup" styleName="radiobutton" id="mntGroupClose"/>
+					</mx:HBox>
+				</mx:VBox>
+				<mx:Image id="mntGroupImg" autoLoad="true"/>
+			</mx:HBox>
+			
+		</mx:VBox>
+		<mx:HBox width="100%" height="100%" styleName="btnbg">
+			<mx:Button label="保存设置" styleName="primary" click="save()"/>
+			<mx:Button label="取消" styleName="secondary" click="reset()"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>
+

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				width="400" height="400"
+				title="选择部门"				
+				creationComplete="App(event);"
+				layout="vertical"
+				showControls="true"
+				enableResize="true"
+				verticalGap="0"
+				xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*"
+				windowContainer="{Application.application.windowContainer}">
+<mx:Script source="../../actionscript/comp/CheckDeptTree.as" />
+	
+<mx:VBox width="100%" height="100%">
+	<mx:Tree id="deptsTree"
+			 width="100%" 
+			 height="100%" 
+			 dataProvider="{folderCollection}"
+			 itemRenderer="twaver.PermissionsTreeItemRendererV2"
+			 labelField="@name"			
+			 borderStyle="none"	
+			 defaultLeafIcon="{null}" 
+			 verticalScrollPolicy="auto"			
+			 />
+	<mx:HBox width="100%" height="40" horizontalAlign="center" verticalAlign="middle" 
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+		<mx:Button label="保存" width="80" click="save()"  textAlign="center" styleName="loginprimary"  height="30" />
+		<mx:Button label="取消" width="80" click="closeWin()" textAlign="center" styleName="loginsecondary"  height="30"/>
+	</mx:HBox>
+	
+</mx:VBox>
+	
+	
+</panel:PanelWindow>

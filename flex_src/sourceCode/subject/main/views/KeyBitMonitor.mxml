@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--重点电路监视-->
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml"
+		  creationComplete="init()"
+		  xmlns:cellrender="sourceCode.subject.main.actionscript.*"
+		  xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+		  xmlns:ns1="com.fusioncharts.components.*"
+		  borderThickness="1" borderThicknessBottom="2"  borderThicknessLeft="2"
+		  borderThicknessRight="2" borderThicknessTop="2"
+		  headerHeight="0"  backgroundAlpha="1" borderColor="#157baa"
+		  >
+     <mx:Style>
+		.DataGrid1 {
+		alternatingItemColors: #ffffff, #eef4ff;
+		verticalGridLineColor: #d3e9ff;
+		borderColor: #d3e9ff;
+		headerBackgroundSkin: Embed(source="assets/images/mntsubject/theme_formbg.png");
+		horizontalGridLines: false;
+		verticalGridLineColor: #dadada;
+		fontFamily: Arial;
+		fontSize: 12;
+		headerStyleName: "mydataGridHeaderStyle1";
+		}
+		.mydataGridHeaderStyle1 {
+		fontFamily: Arial;
+		fontWeight: normal;
+		fontSize: 12;
+		fontStyle: normal;
+		textDecoration: none;
+		textAlign: center;
+		}
+	</mx:Style>
+
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.alarmmgr.views.PopUpKeyBusiness;
+			import sourceCode.rootalarm.views.RootAlarmMgr;
+			import sourceCode.subject.main.actionscript.*;
+			import sourceCode.subject.main.views.ComhensiveMonitor;
+			
+			public var Icon:Class;
+			private var rootAlarmWin:TitleWindow;
+			private var unAckedBizWin:TitleWindow;
+			[Bindable]
+			public var tableFlag:int=0;
+			public var param:ArrayCollection= new ArrayCollection();
+			private var getKeyMonitorData:RemoteObject;
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			
+			public function init(){
+				pagingFunction();
+				
+			}
+			private function subscriberFocusBiz(subtopic:String):void{				
+				var consumer:Consumer =new Consumer();				
+				var channelSet:ChannelSet = new ChannelSet();   
+				channelSet.addChannel(DealAlarmUtil.streamingAMF);   
+				channelSet.addChannel(DealAlarmUtil.pollingAMF);
+				consumer.destination = DealAlarmUtil.sdestination; 
+				consumer.channelSet = channelSet;
+				consumer.subtopic = subtopic;
+				consumer.addEventListener(MessageEvent.MESSAGE,handleFocusBiz);
+				consumer.addEventListener(MessageFaultEvent.FAULT,faultHandlerMsg);
+				consumer.subscribe();
+			}
+			private function handleFocusBiz(msg:MessageEvent):void{
+				if(msg.message.body==null && msg.message.body==""){
+					Alert.show('接到的消息为空',"提示信息",4,this,null,iconClass); return;
+				}
+				var focusbizAC:ArrayCollection = msg.message.body as ArrayCollection;
+				dg.dataProvider = focusbizAC;
+				
+			}
+			private function faultHandlerMsg(event:MessageFaultEvent):void{
+			}
+			
+			public function linkRelationUI(obj:Object,alarmGrade:String):void{
+				if(alarmGrade == "circuittotal"){  //选择了电路名称
+					Registry.register("para_circuitype", obj.USERNAME);
+					Application.application.openModel(obj.USERNAME, false);
+					
+				}else if(alarmGrade == "breakcount"){ //选择了确定根告警
+				unAckedBizWin =new TitleWindow();
+				unAckedBizWin.layout="absolute";
+				unAckedBizWin.x=0;
+				unAckedBizWin.y=0;
+				unAckedBizWin.horizontalScrollPolicy="off";
+				unAckedBizWin.verticalScrollPolicy="off" ;
+				unAckedBizWin.setStyle("headerHeight",0);
+//				unAckedBizWin.styleName="popwindow";
+//				unAckedBizWin.showCloseButton="true";
+//				unAckedBizWin.title="中断电路信息";
+//				unAckedBizWin.titleIcon=Icon; 
+				var pkb:MyPopUpKeyBusiness = new MyPopUpKeyBusiness();
+				pkb.circuitname = obj.USERNAME;
+				pkb.unAckedBiz = unAckedBizWin;
+//				unAckedBizWin.addEventListener(CloseEvent.CLOSE,titlewinclose1);
+				unAckedBizWin.addChild(pkb);
+				PopUpManager.addPopUp(unAckedBizWin,main(Application.application),true);
+				PopUpManager.centerPopUp(unAckedBizWin);
+				}else if(alarmGrade == "alarmcount" || alarmGrade=="ackedcount") { 
+				rootAlarmWin =new TitleWindow();
+				rootAlarmWin.layout="absolute";
+				rootAlarmWin.x=0;
+				rootAlarmWin.y=0;
+				rootAlarmWin.width=Capabilities.screenResolutionX;
+				rootAlarmWin.height=Capabilities.screenResolutionY-200;
+				rootAlarmWin.horizontalScrollPolicy="off";
+				rootAlarmWin.verticalScrollPolicy="off" ;
+				rootAlarmWin.styleName="popwindow";
+				rootAlarmWin.showCloseButton="true";
+				rootAlarmWin.title="当前根告警";
+				rootAlarmWin.titleIcon=Icon;
+				var ram:RootAlarmMgr = new RootAlarmMgr();
+				ram.flag = 1;
+				ram.circuitype = obj.USERNAME;
+				
+				if(alarmGrade=="alarmcount"){
+					ram.currentGrid = "currentrootalarm";
+				}else if(alarmGrade=="ackedcount"){
+					ram.currentGrid = "unackedrootalarm";
+				}
+				rootAlarmWin.addEventListener(CloseEvent.CLOSE,titlewinclose);
+				rootAlarmWin.addChild(ram);
+				PopUpManager.addPopUp(rootAlarmWin,main(Application.application),true);
+				PopUpManager.centerPopUp(rootAlarmWin);
+					
+			}
+			
+			}
+			private function load(event:ResultEvent):void{
+				param=event.result as ArrayCollection;
+				dg.dataProvider=param;
+				
+			}
+			
+			public function pagingFunction():void {
+				
+				var rtobj:RemoteObject = new RemoteObject("KeyBitMonitorDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getKeyBitMonitor();
+				rtobj.addEventListener(ResultEvent.RESULT, load);
+			}
+			
+			private function titlewinclose(evt:CloseEvent):void{
+				PopUpManager.removePopUp(rootAlarmWin);
+			}
+			private function titlewinclose1(evt:CloseEvent):void{
+				PopUpManager.removePopUp(unAckedBizWin);
+			}
+			protected function liebiao_clickHandler():void
+			{
+				tableFlag=0;
+				aaa.visible=false;
+				aaa.includeInLayout=false;
+				dg.visible=true;
+				dg.includeInLayout=true;
+			}
+			public function createPie():void{
+				tableFlag=1;
+				dg.visible=false;
+				dg.includeInLayout=false;
+				aaa.visible=true;
+				aaa.includeInLayout=true;
+				getKeyMonitorData=new RemoteObject("subject");
+				getKeyMonitorData.endpoint = ModelLocator.END_POINT;
+				getKeyMonitorData.addEventListener(ResultEvent.RESULT,getKeyMonitorDataCallback);
+				getKeyMonitorData.addEventListener(FaultEvent.FAULT,faultHandler);
+				getKeyMonitorData.getKeyMonitorData();
+			}
+			
+			private function getKeyMonitorDataCallback(event:ResultEvent):void{
+				getKeyMonitorData.removeEventListener(ResultEvent.RESULT,getKeyMonitorDataCallback);
+				getKeyMonitorData.removeEventListener(FaultEvent.FAULT,faultHandler);
+				var rootArrayCollection:ArrayCollection=event.result as ArrayCollection;
+				drawGraphic(rootArrayCollection);
+			}
+			private function drawGraphic(rootArrayCollection:ArrayCollection):void{
+				var xmlData:String="<chart caption=''" + 
+					"xAxisName='业务类型' yAxisName='数量' showValues='0' numberPrefix=''>"+ 
+					"<categories>";
+				for(var i:int=0;i<rootArrayCollection.length;i++){
+					xmlData+="<category label='"+rootArrayCollection[i].USERNAME+"'/>";
+				}
+				xmlData+="</categories>";
+				xmlData+="<dataset seriesName='电路总数'>"
+				for(var j:int=0;j<rootArrayCollection.length;j++){
+					xmlData+="<set value='"+rootArrayCollection[j].CIRCUITTOTAL+"'/>"; 
+				}
+				xmlData+="</dataset>";
+				xmlData+="<dataset seriesName='中断电路'>"
+				for(var j1:int=0;j1<rootArrayCollection.length;j1++){
+					xmlData+="<set value='"+rootArrayCollection[j1].BREAKCOUNT+"'/>"; 
+				}
+				xmlData+="</dataset>";
+				xmlData+="<dataset seriesName='确认根告警'>"
+				for(var j2:int=0;j2<rootArrayCollection.length;j2++){
+					xmlData+="<set value='"+rootArrayCollection[j2].ACKEDCOUNT+"'/>"; 
+				}
+				xmlData+="</dataset>";
+				xmlData+="<dataset seriesName='未确认根告警'>"
+				for(var j3:int=0;j3<rootArrayCollection.length;j3++){
+					xmlData+="<set value='"+rootArrayCollection[j3].ALARMCOUNT+"'/>"; 
+				}
+				xmlData+="</dataset>";
+				xmlData+="</chart>";
+				aaa.width=this.width*0.8;
+				aaa.height=this.height*0.8;
+				aaa.FCChartType="MSColumn3D";
+				aaa.FCDataXML=xmlData;
+				aaa.FCRender();
+			}
+			private function faultHandler(evt:FaultEvent):void{
+				Alert.show(evt.fault.toString());
+			}
+			public function keyBitEquip():void{
+				var keybitequip:KeyBitEquip = new KeyBitEquip();
+				keybitequip.kb=this;
+				PopUpManager.addPopUp(keybitequip,this,true);
+				PopUpManager.centerPopUp(keybitequip);
+			}
+		]]>
+	</mx:Script>	
+	
+	<mx:ArrayCollection id="ac">
+		<mx:Object USERNAME="保护" ackedRootAlarm="0" unAckeRootAlarm="0"/>
+		<mx:Object USERNAME="安稳" ackedRootAlarm="0" unAckeRootAlarm="0" />
+		<mx:Object USERNAME="自动化" ackedRootAlarm="0" unAckeRootAlarm="0" />
+		<mx:Object USERNAME="网络部" ackedRootAlarm="0" unAckeRootAlarm="0" />
+		<mx:Object USERNAME="总计" ackedRootAlarm="0" unAckeRootAlarm="0" />
+	</mx:ArrayCollection>
+	
+	<mx:Grid width="100%" height="100%" verticalGap="0" horizontalGap="0"  backgroundColor="#FFFFFF">
+		<mx:GridRow width="100%" height="28" >
+			<!-- 以下banner 条部分-->
+			<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="100%" height="100%" >						
+				<mx:Grid id="transline" width="100%" height="28" verticalGap="0" horizontalGap="0" backgroundColor="#FFFFFF">
+					<mx:GridRow width="100%" height="28" backgroundImage="@Embed(source='assets/images/mntsubject/themeheader.png')" backgroundSize="100%" >
+						<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="30%" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerbg.png')" backgroundSize="100%" color="#FFFFFF">				          
+							<mx:Label text="重点电路监视"  />
+						</mx:GridItem>
+						<mx:GridItem horizontalAlign="right"  width="35" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerrightbg.png')" />
+						<mx:GridItem horizontalAlign="right" verticalAlign="middle" width="55%" height="100%">
+							<mx:HBox>
+								<mx:LinkButton  icon="@Embed(source='assets/images/mntsubject/falshalarmequip.png')" click="keyBitEquip()"/>
+							</mx:HBox>
+						</mx:GridItem>
+					</mx:GridRow>
+				</mx:Grid>
+			</mx:GridItem>	
+			<!-- 以上banner 条部分-->
+		</mx:GridRow>	
+		<mx:GridRow width="100%" height="100%">
+			<mx:GridItem width="100%" height="100%" >
+				<mx:DataGrid id="dg" sortableColumns="false" horizontalScrollPolicy="off"  wordWrap="true"  styleName="DataGrid1"
+							 width="100%"  height="100%" rowHeight="30" verticalAlign="middle" textAlign="center" >
+					<mx:columns>
+						<mx:DataGridColumn headerText="业务类型" textAlign="left" dataField="USERNAME" fontWeight="normal">
+						</mx:DataGridColumn>
+
+						<mx:DataGridColumn headerText="电路总数" dataField="CIRCUITTOTAL" >
+							<mx:itemRenderer>
+								<mx:Component>
+									<cellrender:RollOverItemRenderer alarmGrade="circuittotal" click="outerDocument.linkRelationUI(data,'circuittotal')"/>
+								</mx:Component>
+							</mx:itemRenderer>	
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="中断电路" dataField="BREAKCOUNT" visible="false" width="0">
+							<mx:itemRenderer>
+								<mx:Component>
+									<cellrender:RollOverItemRenderer alarmGrade="breakcount" click="outerDocument.linkRelationUI(data,'breakcount')"/>
+								</mx:Component>
+							</mx:itemRenderer>	
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="根告警总数" dataField="ALARMCOUNT" >
+							<mx:itemRenderer>
+								<mx:Component>
+									<cellrender:RollOverItemRenderer alarmGrade="alarmcount" click="outerDocument.linkRelationUI(data,'alarmcount')"/>
+								</mx:Component>
+							</mx:itemRenderer>	
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="未确认根告警" dataField="ACKEDCOUNT" >
+							<mx:itemRenderer>
+								<mx:Component>
+									<cellrender:RollOverItemRenderer alarmGrade="ackedcount" click="outerDocument.linkRelationUI(data,'ackedcount')"/>
+								</mx:Component>
+							</mx:itemRenderer>	
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>
+				<ns1:FusionCharts id="aaa" FCFolder="FusionCharts" visible="false" includeInLayout="false" />
+			</mx:GridItem>	
+		</mx:GridRow>
+	</mx:Grid>
+</mx:Panel>

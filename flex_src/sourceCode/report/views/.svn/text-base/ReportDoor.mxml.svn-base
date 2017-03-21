@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   fontSize="14"
+		   creationComplete="init()"
+		   width="100%" height="100%" xmlns:views="sourceCode.report.views.*">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;		
+					
+			[Bindable]
+			private var _source:String;
+
+			public function get source():String
+			{
+				return _source;
+			}
+
+			public function set source(value:String):void
+			{
+				_source = value;
+			}
+
+			private function init():void{
+					
+				iFrame.source=_source;
+			
+			}
+		]]>
+	</mx:Script>
+	
+	<views:IFrame id="iFrame" visible="true" source="{this._source}"  width="100%" height="100%"  />
+	
+</mx:Canvas>

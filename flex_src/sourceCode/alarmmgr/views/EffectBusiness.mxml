@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				creationComplete="init();"
+				width="800" 
+				height="500" 
+				layout="absolute"
+				showCloseButton="true" title="影响业务" styleName="popwindow"
+				close="PopUpManager.removePopUp(this)"
+				xmlns:components="sourceCode.dealalarm.configtools.gridconfig.components.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var filterContent:Array = null;
+			
+			private var grcd:GridReadConfigData = new GridReadConfigData();
+			[Bindable]
+			public var circuitname :String= null;
+			[Bindable]
+			public var isrootalarm :String= null;
+			
+			private function init():void
+			{
+				
+				if(circuitname !=null && circuitname != ""){
+				
+					
+					
+				}
+				
+				
+			}
+			
+			public function setFilterContent(filterInfo:Array):void
+			{
+				filterContent=new Array();
+				filterContent=filterInfo;
+			} 
+			
+		]]>
+	</mx:Script>
+	
+		<mx:VBox x="0" y="0" width="100%" height="443" verticalGap="0">
+			<mx:HBox width="100%" height="70" backgroundImage="@Embed(source='assets/images/alarminfo_banner.png')" backgroundSize="100%" verticalAlign="middle">
+				<mx:Image x="0" y="0" source="assets/images/title_gen_yewu.png"/>
+			</mx:HBox>
+			<mx:HBox width="100%" backgroundImage="assets/images/iconbar_bg.png" backgroundSize="100%" verticalAlign="middle" height="35">
+				<mx:LinkButton label="导出" styleName="iconbar" icon="@Embed(source='assets/images/icon/icon_export.png')"/>
+				<mx:LinkButton label="打印" styleName="iconbar" icon="@Embed(source='assets/images/icon/icon_print.png')"/>
+				<mx:Spacer height="30" width="100%"/>
+			</mx:HBox>
+			<components:MgmtGrid id="alarmrelatecircuit" creationComplete="grcd.readGridContentAuto('N',alarmrelatecircuit,filterContent);" modelId="YW001"  width="100%" height="100%">
+			</components:MgmtGrid>
+		</mx:VBox>
+	</mx:TitleWindow>
+	
+

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" 
+	fontFamily="宋体" 
+	fontSize="12" 
+	showCloseButton="true" 
+	width="680" 
+	height="353"
+	close="{MyPopupManager.removePopUp(this)}" 
+	>
+	
+	
+	<mx:Script source="../actionscript/FibersSearch.as" />
+	
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingTop="0" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		horizontalAlign="center" verticalGap="0">
+		
+		<mx:HBox width="100%" height="80%" horizontalAlign="center">
+			<mx:Form width="100%" height="100%">
+				<mx:FormItem label="username">
+					<mx:TextInput id="txtOcablename"  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="station1">
+					<mx:TextInput id="txtAENDEQPORT"  width="180"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="station2">
+					<mx:TextInput id="txtZENDEQPORT"  width="180"/>
+				</mx:FormItem>
+
+				
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox width="100%" height="5%" paddingLeft="10" paddingRight="10" visible="false">
+			<mx:Label text="更新时间范围"/>
+		</mx:HBox>
+		
+		<mx:HBox width="100%" height="30%" visible="false">
+			<mx:Form width="100%" height="100%">
+				
+				<mx:FormItem label="      从">
+					<mx:DateField id="dfstartBuildDate"  
+								  width="90" 
+								  dayNames="{days}" 
+								  monthNames="{monthNames}" 
+								  yearNavigationEnabled="true" 
+								  formatString="YYYY-MM-DD"/>
+				</mx:FormItem>
+				
+				
+			</mx:Form>
+			
+			<mx:Form width="100%" height="100%" >
+				
+				<mx:FormItem label="至">
+					<mx:DateField id="dfendBuildDate"   
+								  width="90" 
+								  dayNames="{days}" 
+								  monthNames="{monthNames}" 
+								  yearNavigationEnabled="true" 
+								  formatString="YYYY-MM-DD"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox 
+			width="100%" verticalAlign="middle" backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" 
+			 backgroundSize="100%"
+			horizontalAlign="center" height="20%">
+			
+			<mx:Button label="查询" styleName="loginprimary" 
+				width="80" click="searchClickHandler(event)"/>
+			
+			<mx:Spacer width="20"/>
+			
+			<mx:Button label="重置" 
+				width="80" styleName="loginsecondary" 
+				click="clear_clickHandler(event)"/>
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+</mx:TitleWindow>

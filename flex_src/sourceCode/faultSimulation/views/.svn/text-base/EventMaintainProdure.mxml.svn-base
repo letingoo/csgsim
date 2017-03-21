@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100%" 
+		 creationComplete="init()" 
+		 preinitialize="preinitialize()"
+		 xmlns:views="sourceCode.tableResurces.views.*" xmlns:component="common.component.*">
+	
+	<mx:Script source="../actionscript/EventMaintainProdure.as" />
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off" >
+		
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="处理方法管理" imgName="alarmInfoHistory"
+							  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="{isSearch}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}" 
+							  controlAdd="toolbar_toolEventAddHandler(event)" controlEdit="toolbar_toolEventEditHandler(event)" 
+							  controlDel="toolbar_toolEventDeleteHandler(event)" controlSearch="toolbar_toolEventSearchHandler(event)"
+							  controlExportExcel="toolbar_toolEventEmpExcelHandler(event)" controlImport="toolbar_toolEventImpExcelHandler(event)"
+							   />
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true"
+		    headerRelease="dg_headerReleaseHandler(event)">
+			<mx:columns>
+				
+				<mx:DataGridColumn headerText="序号" dataField="no" width="50" sortable="false"/>
+				<mx:DataGridColumn headerText="处理方法ID" dataField="operatetypeid" width="250" visible="false"/>
+				<mx:DataGridColumn headerText="处理方法" dataField="operatetype" width="250"/>
+				<mx:DataGridColumn headerText="干预性方法" dataField="isinterposeoperatename"  width="150" visible="false"/>
+				<mx:DataGridColumn headerText="设备异常状态" dataField="operatedes" width="270"/>
+				<mx:DataGridColumn headerText="设备默认状态" dataField="expectedresult"  width="170"/>
+				<mx:DataGridColumn headerText="更新人员" dataField="updateperson"  width="170" />
+				<mx:DataGridColumn headerText="是否有本端设备" dataField="hasA_equip" width="150" />
+				<mx:DataGridColumn headerText="本端设备类型" dataField="a_equiptype"  width="170" />
+				<mx:DataGridColumn headerText="本端设备类型编号" dataField="a_equiptype_code"  width="170" visible="false"/>
+				<!--<mx:DataGridColumn headerText="本端设备名称" dataField="a_equipname"  width="170" />-->
+				<mx:DataGridColumn headerText="是否有对端设备" dataField="hasZ_equip"  width="170" />
+				<mx:DataGridColumn headerText="对端设备类型" dataField="z_equiptype"  width="170" />
+				<mx:DataGridColumn headerText="对端设备类型编号" dataField="z_equiptype_code"  width="170" visible="false"/>
+				<!--<mx:DataGridColumn headerText="对端设备名称" dataField="z_equipname"  width="100"/>-->
+				<mx:DataGridColumn headerText="更新时间" dataField="updatetime"  width="170" />
+				<mx:DataGridColumn headerText="备注说明" dataField="remark"  width="300"/>
+			</mx:columns>
+			
+		</mx:DataGrid>
+		
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>
+		
+	</mx:VBox>
+	
+	
+</mx:VBox>

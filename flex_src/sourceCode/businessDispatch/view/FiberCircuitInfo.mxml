@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" 
+				minWidth="955" minHeight="600" width="527" height="544" 
+				title="新建方式单"
+				titleIcon="@Embed('assets/images/btn/newCircuit.png')"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}" 
+				fontFamily="Verdana" 
+				fontSize="13"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.component.CheckDeptTree;
+			
+			import mx.controls.Alert;
+			import mx.effects.IAbstractEffect;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.errors.NoChannelAvailableError;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.businessDispatch.model.SelectOthersCircuit;
+			import sourceCode.ocableResource.views.FiberCircuitSelectOcable;
+			import sourceCode.systemManagement.events.DeptParameterEvent;
+			import sourceCode.systemManagement.views.comp.DeptTree;
+			
+			import twaver.Node;
+			
+			private var XMLData_Rates:XMLList;//速率下拉框
+			private var XMLData_opTypes:XMLList;//业务类型下拉框
+			private var XMLData_ccLevels:XMLList;//业务等级下拉框
+			private var XMLData_infTypes:XMLList;//接口类型下拉框
+			private var sss:String = "";
+			private var dlzt:String = "";
+			
+			public var select_Equip:FiberCircuitSelectOcable;//光纤方式第一步：选择光缆
+			public var ratename:String = "";
+			public var optyname:String = "";
+			public var ccLevelname:String = "";
+			public var infTpyename:String = "";
+			public var info_id:String = "";
+			public var form_id:String = "";
+			public var whichOne:String = "";
+			public var circuitcode:String = "";
+			
+			public function init():void{
+				var robj:RemoteObject = new RemoteObject("businessDispatch");
+				robj.endpoint = ModelLocator.END_POINT;
+				robj.showBusyCursor = true;
+				robj.getXTBM('ZY1106__');//速率
+				robj.addEventListener(ResultEvent.RESULT, RatesInfo);
+				
+				var robj3:RemoteObject = new RemoteObject("businessDispatch");
+				robj3.endpoint = ModelLocator.END_POINT;
+				robj3.getXTBM('YW120915__');//业务类型
+				robj3.addEventListener(ResultEvent.RESULT, opTypeInfo);
+				
+				var robj4:RemoteObject = new RemoteObject("businessDispatch");
+				robj4.endpoint = ModelLocator.END_POINT;
+				robj4.getXTBM('YW010710__');//业务等级
+				robj4.addEventListener(ResultEvent.RESULT, ccLevelInfo);
+				
+				var robj5:RemoteObject = new RemoteObject("businessDispatch");
+				robj5.endpoint = ModelLocator.END_POINT;
+				robj5.getXTBM('JK01__');//接口类型
+				robj5.addEventListener(ResultEvent.RESULT, infTypeInfo);
+			}
+			private function YwLevel(e:ResultEvent):void{
+				ccLevelname = e.result.toString();
+				circuitlevel.selectedIndex = selectccLeve(sss);
+			}   
+			private function YwLevel_gd(e:ResultEvent):void{
+				ccLevelname = e.result.toString();
+				var yewumm:String = e.result.toString();
+				circuitlevel.selectedIndex = selectccLeveOK(yewumm);
+			}   
+			private function RatesInfo(event:ResultEvent):void{
+				XMLData_Rates = new XMLList(event.result.toString());
+				rate.dataProvider = XMLData_Rates.children();
+				rate.labelField = "@xtxx";
+				rate.selectedIndex = selectRate(event.result.toString());
+			}
+			public function opTypeInfo(e:ResultEvent):void{
+				XMLData_opTypes = new XMLList(e.result.toString());
+				operationType.dataProvider = XMLData_opTypes.children();
+				operationType.labelField = "@xtxx";
+				operationType.selectedIndex = selectOpty(e.result.toString());
+			}
+			public function ccLevelInfo(e:ResultEvent):void{
+				XMLData_ccLevels = new XMLList(e.result.toString());
+				sss = e.result.toString();
+				circuitlevel.dataProvider = XMLData_ccLevels.children();
+				circuitlevel.labelField = "@xtxx";
+				
+				var robj6:RemoteObject = new RemoteObject("businessDispatch");
+				robj6.endpoint = ModelLocator.END_POINT;
+				robj6.getCircuitLevel(optyname);
+				robj6.addEventListener(ResultEvent.RESULT, YwLevel);
+			}
+			public function infTypeInfo(e:ResultEvent):void{
+				XMLData_infTypes = new XMLList(e.result.toString());
+				interfaceType.dataProvider = XMLData_infTypes.children();
+				interfaceType.labelField= "@xtxx";
+				interfaceType.selectedIndex = selectInfType(e.result.toString());
+			}
+			public function selectRate(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0; i<xml.children().length(); i++){
+					if(ratename == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectOpty(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(optyname == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectccLeve(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(ccLevelname == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectccLeveOK(s:String):int{
+				var xml:XML = XML(XMLData_ccLevels);
+				for(var i:int=0; i<xml.children().length(); i++){
+					if(s == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectInfType(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(infTpyename == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			
+			private var deptsTree:CheckDeptTree;
+			protected function department_clickHandler(event:MouseEvent):void
+			{
+				deptsTree = new CheckDeptTree();
+				deptsTree.user_id = parentApplication.curUser;
+				deptsTree.addEventListener("SaveDept", saveDeptHandler);
+				MyPopupManager.addPopUp(deptsTree, true);
+			}
+			
+			private function saveDeptHandler(event:Event):void{
+				this.department.text = deptsTree.depts;
+				this.department.text = deptsTree.depts.substr(0, deptsTree.depts.length - 1);
+				MyPopupManager.removePopUp(deptsTree);
+			}
+			
+			protected function next_clickHandler(event:MouseEvent):void
+			{
+				if(modeName.text == null || modeName.text == ""){
+					Alert.show("业务名称不能为空！","温馨提示");
+				}else if(aStationnName.text == null || aStationnName.text == ""){
+					Alert.show("起始局站不能为空！","温馨提示");
+				}else if(zStationnName.text == null || zStationnName.text == ""){
+					Alert.show("终止局站不能为空！","温馨提示");
+				}else if(leaser.text == null || leaser.text == ""){
+					Alert.show("申请单位不能为空！","温馨提示");
+				}else if(userCom.text == null || userCom.text == ""){
+					Alert.show("使用单位不能为空！","温馨提示");
+				}else if(operationType.text == null || operationType.text == ""){
+					Alert.show("业务类型不能为空！","温馨提示");
+				}else if(circuitlevel.text == null || circuitlevel.text == ""){
+					Alert.show("业务等级不能为空！","温馨提示");
+				}else if(rate.text == null || rate.text == ""){
+					Alert.show("速率不能为空！","温馨提示");
+				}else if(requestionID.text == null || requestionID.text == ""){
+					Alert.show("申请名称不能为空！","温馨提示");
+				}else if(purpose.text == null || purpose.text == ""){
+					Alert.show("用途不能为空！","温馨提示");
+				}else if(finishtime.text == null || finishtime.text == ""){
+					Alert.show("完成时间不能为空！","温馨提示");
+				}else if(interfaceType.text == null || interfaceType.text == ""){
+					Alert.show("接口类型不能为空！","温馨提示");
+				}else if(department == null || department.text == ""){
+					Alert.show("执行单位不能为空！","温馨提示");
+				}else{
+					var obj:Object = new Object();
+					if(purpose.text.indexOf("开通") != -1){
+						dlzt = "YW010301";
+					}else if(purpose.text.indexOf("撤销") != -1){
+						dlzt = "YW010302";
+					}else if(purpose.text.indexOf("其他") != -1){
+						dlzt = "YW010303";
+					}else if(purpose.text.indexOf("变更") != -1){
+						dlzt = "YW010304";
+					}
+					obj.info_id = info_id;//电路单id
+					obj.form_id = form_id;//申请单id
+					obj.rate = rate.text;//速率
+					obj.circuitLevel = circuitlevel.text;//业务等级
+					obj.requestionID = requestionID.text;//申请单号
+					obj.purpose = purpose.text;//用途
+					obj.state = dlzt;//电路状态
+					obj.cooperateDepartment = cooperateDepartment.text;//配合单位
+					obj.beizhu = beizhu.text;//备注
+					//实时方式单小窗口所需属性
+					obj.modeName = modeName.text;//业务名称
+					obj.station_a = aStationnName.text;//起始站名
+					obj.station_z = zStationnName.text;//终止站名
+					obj.applicantCom = leaser.text;//申请单位
+					obj.useOfUnits = userCom.text;//使用单位
+					obj.operationType = operationType.text;//业务类型
+					obj.rateName = rate.text;//速率
+					obj.interfaceType = interfaceType.text;//接口类型
+					obj.stateName = purpose.text;//状态
+					obj.reqendtime = finishtime.text;//完成时间
+					obj.depar = department.text;//执行单位
+					
+					select_Equip = new FiberCircuitSelectOcable();
+					select_Equip.obj = obj;//方式单数据
+					select_Equip.changeOrNot = whichOne;//新建or修改
+					select_Equip.circuitcode = circuitcode;//方式单号
+					PopUpManager.addPopUp(select_Equip, this, true);
+				}
+			}			
+			protected function return_clickHandler(event:MouseEvent):void{
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function operationType_changeHandler(event:ListEvent):void
+			{
+				var YewuName:String = operationType.selectedItem.@xtxx;
+				var robj6:RemoteObject = new RemoteObject("businessDispatch");
+				robj6.endpoint = ModelLocator.END_POINT;
+				robj6.getCircuitLevel(YewuName);
+				robj6.addEventListener(ResultEvent.RESULT, YwLevel_gd);
+			}
+		]]>
+	</mx:Script>
+	<mx:Label x="9" y="12" text="业务名称：" fontSize="13" textAlign="right"/>
+	<mx:TextInput id="modeName" x="83" y="10" width="415" editable="false"/>
+	<mx:Validator source="{modeName}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="42" text="起始局站：" fontSize="13" textAlign="right"/>
+	<mx:TextInput id="aStationnName" x="83" y="40" width="160" editable="false"/>
+	<mx:Validator source="{aStationnName}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="42" text="终止局站：" fontSize="13" textAlign="right"/>
+	<mx:TextInput id="zStationnName" x="338" y="40" width="160" editable="false"/>
+	<mx:Validator source="{zStationnName}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="72" text="申请单位：" fontSize="13" textAlign="right"/>
+	<mx:TextInput id="leaser" x="83" y="70" width="160" editable="false"/>
+	<mx:Validator source="{leaser}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="72" text="使用单位：" fontSize="13" textAlign="right"/>
+	<mx:TextInput id="userCom" x="338" y="70" width="160"/>
+	<mx:Validator source="{userCom}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="102" text="业务类型：" fontSize="13" textAlign="right"/>
+	<mx:ComboBox id="operationType" x="83" y="100" width="160" change="operationType_changeHandler(event)" cornerRadius="0"/>
+	<mx:Validator source="{operationType}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="102" text="业务等级：" fontSize="13" textAlign="right"/>
+	<mx:ComboBox id="circuitlevel" x="338" y="102" width="160" cornerRadius="0"/>
+	<mx:Validator source="{circuitlevel}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="10" y="133" text="速     率：" fontSize="13" textAlign="right"/>
+	<mx:ComboBox id="rate" x="83" y="130" width="160" cornerRadius="0" alpha="1.0"/>
+	<mx:Validator source="{rate}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="132" text="申请单号：" fontSize="13" textAlign="right"/>
+	<mx:TextInput id="requestionID" x="338" y="130" width="160" editable="false"/>
+	<mx:Validator source="{requestionID}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="162" text="用     途：" fontSize="13" textAlign="right"/>
+	<mx:TextInput id="purpose" x="83" y="160" width="160"/>
+	<mx:Validator source="{purpose}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="267" y="162" text="完成时间：" fontSize="13" textAlign="right"/>
+	<mx:DateField id="finishtime" x="338" y="160" width="159" formatString="YYYY-MM-DD" dayNames="{ModelLocator.days}" monthNames="{ModelLocator.monthNames}"/>
+	<mx:Validator source="{finishtime}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="192" text="接口类型：" fontSize="13" textAlign="right"/>
+	<mx:ComboBox id="interfaceType" x="83" y="190" width="160" cornerRadius="0"/>
+	<mx:Validator source="{interfaceType}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="222" text="执行单位：" fontSize="13" textAlign="right"/>
+	<mx:TextArea id="department" x="83" y="223" width="415" height="83" click="department_clickHandler(event)" editable="false"/>
+	<mx:Validator source="{department}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Label x="9" y="320" text="配合单位：" fontSize="13" textAlign="right"/>
+	<mx:TextArea id="cooperateDepartment" x="83" y="321" width="415" height="83"/>
+	
+	<mx:Label x="9" y="415" text="备     注：" fontSize="13" textAlign="right"/>
+	<mx:TextArea id="beizhu" x="83" y="414" width="415" height="46"/>
+	
+	<mx:Canvas backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%" width="100%" height="32" y="475" x="0">
+		<mx:Button x="313" y="2" label="下一步" styleName="loginprimary" click="next_clickHandler(event)" width="80"    />
+		<mx:Button x="418" y="2" label="取 消" styleName="loginsecondary" click="return_clickHandler(event)" width="80"/>
+	</mx:Canvas>
+</mx:TitleWindow>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+		 xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" creationComplete="initApp()" >
+
+	<mx:Script source="../actionscript/DDFPortRelation.as" />
+	<mx:VBox id="rightpanel" width="100%" height="100%" backgroundColor="white">
+		<mx:HBox id="toolbar" width="100%"/>
+		<servasoftware:Network id="network" width="100%" 
+							   height="100%" backgroundColor="0xFFFFFF" doubleClickEnabled="true" doubleClick="network_doubleClickHandler(event)"
+							  />	
+	</mx:VBox>
+</mx:VBox>

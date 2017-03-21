@@ -1,0 +1,2547 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="faultSimulation">
+	<typeAlias alias="scenePrj" type="faultSimulation.model.SceneManager" />
+	<typeAlias alias="eventInterpose" type="faultSimulation.model.InterposeModel" />
+	<typeAlias alias="maintainModel" type="faultSimulation.model.StdMaintainProModel" />
+	<typeAlias alias="operateModel" type="faultSimulation.model.OperateList" />
+	<typeAlias alias="classicFaultModel" type="faultSimulation.model.ClassicFaultAlarmModel"/>
+
+	<select id="getUserInfoByeqsearch" resultClass="netres.model.ComboxDataModel"
+		parameterClass="map">
+		select distinct t.username id,t.truename label
+		from sec_userinfo t
+		where t.truename is not null
+		<isNotEmpty prepend="and" property="user_name">
+			t.truename like '%$user_name$%'
+		</isNotEmpty>
+		order by t.username asc
+	</select>
+	<insert id="insertSceneAndPerson" parameterClass="scenePrj">
+		insert into T_SIMULATION_PROJECT_REL_USER(I_PROJECT_ID,I_USER_ID,DATARESOURCE,STATE,S_REMARK)
+		values(#projectid#,#user_id#,#dataresource#,#state#,#s_remark#)
+	</insert>
+	
+	
+	<delete id="deleteScenePerson" parameterClass="string" >
+		delete from T_SIMULATION_PROJECT_REL_USER where I_PROJECT_ID=#interposeid#
+	</delete>
+	
+	<select id="getInterposeModelByID" parameterClass="string" resultClass="eventInterpose">
+		select t.i_event_interpose_id interposeid,
+			       t.INTERPOSE_NAME interposename,
+			       getuseridbyprj(t.i_event_interpose_id) user_id,
+			       getusernamebyprj(t.i_event_interpose_id) user_name,
+			       GetXtxx(t.i_interpose_type) interposetype,
+			       t.i_interpose_type interposetypeid,
+			       GetXtxx(t.i_fault_type) faulttype,
+			       t.i_fault_type faulttypeid,
+			       decode(t.is_main_interpose,0,'是','否') ismaininterpose,
+			       decode(t.is_active,0,'未激活','激活') isactive,
+			       t.equiptype,
+			       t.equipcode,
+			       getequipname(t.equipcode) equipname,
+			       getusername(t.updateperson) updateperson,
+			       t.updatetime,
+			       t.remark,
+			       resourcecode,
+			       resourcename,
+			       t.s_event_title
+			        from t_event_interpose t 
+			        where t.i_event_interpose_id=#interposeid#
+	</select>
+	
+	<select id="getAllInterposeList" parameterClass="eventInterpose" resultClass="java.util.HashMap">
+<!--		select * from(-->
+			select interposeid,interposename,
+			user_id,user_name,interposetype,interposetypeid,
+			faulttype,faulttypeid,ismaininterpose,isactive,
+			equiptype,equipcode,isOperated,
+			equipname,updateperson,updatetime,
+			remark,
+	        resourcecode,
+	        resourcename,
+	        s_event_title,
+			no
+			from(
+				select distinct t.i_event_interpose_id interposeid,
+			       t.INTERPOSE_NAME interposename,
+			       getuseridbyprj(t.i_event_interpose_id) user_id,
+			       getusernamebyprj(t.i_event_interpose_id) user_name,
+			       GetXtxx(t.i_interpose_type) interposetype,
+			       t.i_interpose_type interposetypeid,
+			       GetXtxx(t.i_fault_type) faulttype,
+			       t.i_fault_type faulttypeid,
+			       decode(t.is_main_interpose,0,'是','否') ismaininterpose,
+			       decode(t.is_active,0,'未激活','激活') isactive,
+			       decode(t.s_a_object_id,null,'未处理','已处理') isOperated,
+			       t.equiptype,
+			       t.equipcode,
+			       getequipname(t.equipcode) equipname,
+			       getusername(t.updateperson) updateperson,
+			       t.updatetime,
+			       t.remark,
+			       resourcecode,
+			       resourcename,
+			       t.s_event_title,
+			       row_number() over(order by $sort$ desc) no
+			  from t_event_interpose t where 1=1
+			  <isNotEmpty prepend="and" property="interposename">
+			  	t.INTERPOSE_NAME like '%$interposename$%'
+			  </isNotEmpty>
+			  
+			  <isNotEmpty prepend="and" property="resourcename">
+			  	t.resourcename like '%$resourcename$%'
+			  </isNotEmpty>
+			 
+			  <isNotEmpty prepend="and" property="user_name">
+			  	getusernamebyids(t.i_event_interpose_id,#user_name#) is not null
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="ismaininterpose">
+			  	t.is_main_interpose = #ismaininterpose#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="interposetype">
+			  	t.i_interpose_type = #interposetype#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="faulttype">
+			  	t.i_fault_type = #faulttype#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="equiptype">
+			  t.equiptype like '%$equiptype$%'
+			  </isNotEmpty>
+			   <isNotEmpty prepend="and" property="equipcode">
+			  t.equipcode = #equipcode#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="equipname">
+			  getequipname(t.equipcode) like '%$equipname$%'
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="remark">
+			  t.remark like '%$remark$%'
+			  </isNotEmpty>
+			   <isNotEmpty prepend="and" property="s_event_title">
+			  t.s_event_title = #s_event_title#
+			  </isNotEmpty>
+<!--			)where no &lt;=$end$ )where no > $start$ -->
+		)where no > $start$
+	</select>
+	
+	<select id="getAllInterposeList1" parameterClass="eventInterpose" resultClass="eventInterpose">
+		select * from(
+			select interposeid,interposename,
+			user_id,user_name,interposetype,interposetypeid,
+			faulttype,faulttypeid,ismaininterpose,isactive,
+			equiptype,equipcode,isOperated,
+			equipname,updateperson,updatetime,
+			remark,
+	        resourcecode,
+	        resourcename,
+	        s_event_title,
+			no
+			from(
+				select distinct t.i_event_interpose_id interposeid,
+			       t.INTERPOSE_NAME interposename,
+			       getuseridbyprj(t.i_event_interpose_id) user_id,
+			       getusernamebyprj(t.i_event_interpose_id) user_name,
+			       GetXtxx(t.i_interpose_type) interposetype,
+			       t.i_interpose_type interposetypeid,
+			       GetXtxx(t.i_fault_type) faulttype,
+			       t.i_fault_type faulttypeid,
+			       decode(t.is_main_interpose,0,'是','否') ismaininterpose,
+			       decode(t.is_active,0,'未激活','激活') isactive,
+			       decode(t.s_a_object_id,null,'未处理','已处理') isOperated,
+			       t.equiptype,
+			       t.equipcode,
+			       getequipname(t.equipcode) equipname,
+			       getusername(t.updateperson) updateperson,
+			       t.updatetime,
+			       t.remark,
+			       resourcecode,
+			       resourcename,
+			       t.s_event_title,
+			       row_number() over(order by $sort$ desc) no
+			  from t_event_interpose t where 1=1
+			  <isNotEmpty prepend="and" property="interposename">
+			  	t.INTERPOSE_NAME like '%$interposename$%'
+			  </isNotEmpty>
+			 
+			 <isNotEmpty prepend="and" property="resourcename">
+			  	t.resourcename like '%$resourcename$%'
+			  </isNotEmpty>
+			 
+			  <isNotEmpty prepend="and" property="user_name">
+			  	getusernamebyids(t.i_event_interpose_id,#user_name#) =#user_name#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="ismaininterpose">
+			  	t.is_main_interpose = #ismaininterpose#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="interposetype">
+			  	t.i_interpose_type = #interposetype#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="faulttype">
+			  	t.i_fault_type = #faulttype#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="equiptype">
+			  t.equiptype like '%$equiptype$%'
+			  </isNotEmpty>
+			   <isNotEmpty prepend="and" property="equipcode">
+			  t.equipcode = #equipcode#
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="equipname">
+			  getequipname(t.equipcode) like '%$equipname$%'
+			  </isNotEmpty>
+			  <isNotEmpty prepend="and" property="remark">
+			  t.remark = #remark#
+			  </isNotEmpty>
+			   <isNotEmpty prepend="and" property="s_event_title">
+			  t.s_event_title = #s_event_title#
+			  </isNotEmpty>
+			)where no &lt;=$end$ )where no > $start$ 
+	</select>
+	
+	<select id="getAllInterposeCount" parameterClass="eventInterpose" resultClass="int">
+		select count(*) from (
+		 select distinct t.i_event_interpose_id interposeid,
+			       
+			       getuseridbyprj(t.i_event_interpose_id) user_id,
+			       getusernamebyprj(t.i_event_interpose_id) user_name,
+			       GetXtxx(t.i_interpose_type) interposetype,
+			       t.i_interpose_type interposetypeid,
+			       GetXtxx(t.i_fault_type) faulttype,
+			       t.i_fault_type faulttypeid,
+			       decode(t.is_main_interpose,0,'是','否') ismaininterpose,
+			       decode(t.is_active,0,'未激活','激活') isactive,
+			       t.equiptype,
+			       t.equipcode,
+			       getequipname(t.equipcode) equipname,
+			       getusername(t.updateperson) updateperson,
+			       t.updatetime,
+			       t.remark from t_event_interpose t where 1=1
+		  <isNotEmpty prepend="and" property="interposename">
+		  	t.INTERPOSE_NAME like '%$interposename$%'
+		  </isNotEmpty>
+		  
+		  <isNotEmpty prepend="and" property="resourcename">
+		  	t.resourcename like '%$resourcename$%'
+		  </isNotEmpty>
+		  
+		  <isNotEmpty prepend="and" property="user_name">
+		  	getusernamebyids(t.i_event_interpose_id,#user_name#) =#user_name#
+		  </isNotEmpty>
+		  <isNotEmpty prepend="and" property="ismaininterpose">
+		  	t.is_main_interpose = #ismaininterpose#
+		  </isNotEmpty>
+		  <isNotEmpty prepend="and" property="interposetype">
+		  	t.i_interpose_type = #interposetype#
+		  </isNotEmpty>
+		  <isNotEmpty prepend="and" property="faulttype">
+		  	t.i_fault_type = #faulttype#
+		  </isNotEmpty>
+		  <isNotEmpty prepend="and" property="equiptype">
+		  t.equiptype like '%$equiptype$%'
+		  </isNotEmpty>
+		   <isNotEmpty prepend="and" property="equipcode">
+		  t.equipcode = #equipcode#
+		  </isNotEmpty>
+		  <isNotEmpty prepend="and" property="equipname">
+		  getequipname(t.equipcode) like '%$equipname$%'
+		  </isNotEmpty>
+		  <isNotEmpty prepend="and" property="remark">
+		  t.remark = #remark#
+		  </isNotEmpty>
+		  <isNotEmpty prepend="and" property="s_event_title">
+			  t.s_event_title = #s_event_title#
+			  </isNotEmpty>
+		  )
+	</select>
+	
+	
+	<select id="getFaultTypeByInterposeType" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		select distinct t.xtbm id,t.xtxx label from xtbm t where t.type = 'FAULTTYPE' AND t.description=#description#
+		 order by t.xtbm asc
+	</select>
+	
+	<select id="selectPortCutLst" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select t.logicport id, getportlabelnew(t.logicport) label
+  			from equiplogicport t
+ 			where t.equipcode = #equipcode#
+  			 and t.frameserial = #frameserial#
+  			 and t.slotserial = #slotserial#
+  			 and t.packserial = #packserial#
+   			and t.logicport not in
+       			(select c.tp_id_a
+          from circuit_cc c
+        union
+        select c.tp_id_z from circuit_cc c)
+     		<isNotEmpty prepend="and" property="cond">
+  			 	getportlabelnew(t.logicport) like '%$cond$%'
+  			 </isNotEmpty>
+ 		order by to_number(t.frameserial),to_number(t.slotserial),to_number(t.portserial)
+	</select>
+	
+	<select id="getInterposeType" resultClass="netres.model.ComboxDataModel">
+		select distinct t.xtbm id,t.xtxx label from xtbm t where t.type = 'INTERPOSETYPE' order by t.xtbm asc
+	</select>
+	
+	<insert id="addInterpose" parameterClass="eventInterpose">
+		<selectKey keyProperty="interposeid" resultClass="string">
+			select lpad(t_event_interpose_seq.nextval,20,0) as interposeid from dual
+		</selectKey>
+		insert into t_event_interpose(I_EVENT_INTERPOSE_ID,I_INTERPOSE_TYPE,I_FAULT_TYPE,S_EVENT_TITLE,S_A_OBJECT_ID,
+		I_A_OBJ_TYPE,S_Z_OBJECT_ID,I_Z_OBJ_TYPE,I_SOLUTION,D_CREATE_TIME,I_USER_ID,I_ALLOW_APPLY,REMARK,
+		IS_MAIN_INTERPOSE,IS_ACTIVE,EQUIPTYPE,EQUIPCODE,UPDATEPERSON,UPDATETIME,INTERPOSE_NAME,RESOURCECODE,RESOURCENAME)
+		values(#interposeid#,#interposetype#,#faulttype#,#s_event_title#,'','','','','',#updatetime#,#updateperson#,'否',#remark#,
+		#ismaininterpose#,'0',#equiptype#,#equipcode#,#updateperson#,#updatetime#,#interposename#,#resourcecode#,#resourcename#)
+	</insert>
+	
+	<select id="getEventInterposeIsActive" parameterClass="map" resultClass="eventInterpose">
+		select t.i_event_interpose_id interposeid,t.is_active 
+		from t_event_interpose t
+		where t.i_event_interpose_id=#interposeid#
+		and t.is_active=#isactive#
+	</select>
+	<update id="modifyInterpose" parameterClass="eventInterpose">
+		update t_event_interpose set
+		INTERPOSE_NAME=#interposename#,
+		is_main_interpose=#ismaininterpose#,
+		i_interpose_type=#interposetype#,
+		i_fault_type=#faulttype#,
+		equiptype=#equiptype#,
+		equipcode=#equipcode#,
+		remark=#remark#,
+		resourcename=#resourcename#,
+		resourcecode=#resourcecode#
+		where i_event_interpose_id=#interposeid#
+	</update>
+	
+	<delete id="delEventInterpose" parameterClass="string">
+		delete from t_event_interpose where i_event_interpose_id=#interposeid#
+	</delete>
+	<update id="setEventIsActive" parameterClass="eventInterpose">
+		update t_event_interpose set
+		IS_ACTIVE='1'
+		where i_event_interpose_id=#interposeid#
+	</update>
+	
+	<select id="getAllInterposeConfigList" parameterClass="eventInterpose" resultClass="eventInterpose">
+		select *
+		  from (select interposetypeid,
+		               interposetype,
+		               faulttypeid,
+		               faulttype,
+		               equiptype,
+		               equipvendor,
+		               x_vendor,
+		               updateperson,
+		               updatetime,
+		               remark,
+		               operatetype,
+		              operatetypeid,
+		               no
+		          from (select distinct t.i_interpose_type interposetypeid,
+		                                t.s_interpose_type interposetype,
+		                                t.i_fault_type faulttypeid,
+		                                t.s_fault_type faulttype,
+		                                t.equiptype,
+		                                GetXtxx(t.equipvendor) equipvendor,
+		                                t.equipvendor x_vendor,
+		                                getusername(t.updateperson) updateperson,
+		                                t.updatetime,
+		                                t.remark,
+		            			   		t.operatetype,
+		            			  		t.operatetypeid,
+		                                row_number() over(order by $sort$, t.i_fault_type $dir$) no
+		                  from t_interpose_r_fault t where 1=1
+		                  <isNotEmpty prepend="and" property="interposetype">
+		                  t.i_interpose_type =#interposetype#
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="equipvendor">
+		                  t.equipvendor =#equipvendor#
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="faulttype">
+		                  t.i_fault_type =#faulttype#
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="equiptype">
+		                  t.equiptype =#equiptype#
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="remark">
+		                  t.remark like '%$remark$%'
+		                  </isNotEmpty>
+		                   <isNotEmpty prepend="and" property="operatetype">
+		                  instr(t.operatetype,#operatetype#)>0
+		                  </isNotEmpty>
+		)where no &lt;=$end$ )where no > $start$
+	</select>
+	
+	<select id="getAllInterposeConfigCount" parameterClass="eventInterpose" resultClass="int">
+		select count(*) from (
+		 select distinct t.i_interpose_type interposetypeid,
+		                                t.s_interpose_type interposetype,
+		                                t.i_fault_type faulttypeid,
+		                                t.s_fault_type faulttype,
+		                                t.equiptype,
+		                                getusername(t.updateperson) updateperson,
+		                                t.updatetime,
+		                                t.remark from t_interpose_r_fault t where 1=1
+		                  <isNotEmpty prepend="and" property="interposetype">
+		                  t.i_interpose_type =#interposetype#
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="equipvendor">
+		                  t.equipvendor =#equipvendor#
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="faulttype">
+		                  t.i_fault_type =#faulttype#
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="equiptype">
+		                  t.equiptype =#equiptype#
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="remark">
+		                  t.remark like '%$remark$%'
+		                  </isNotEmpty>
+		                  <isNotEmpty prepend="and" property="operatetype">
+		                  instr(t.operatetype,#operatetype#)>0
+		                  </isNotEmpty>
+		                  )
+	</select>
+	
+	<delete id="delInterposeConfig" parameterClass="eventInterpose">
+		delete from t_interpose_r_fault t where t.i_interpose_type =#interposetypeid#
+		and t.i_fault_type =#faulttypeid#
+		and t.equiptype =#equiptype#
+	</delete>
+	<insert id="addInterposeConfig" parameterClass="eventInterpose">
+		insert into t_interpose_r_fault(I_INTERPOSE_TYPE,I_FAULT_TYPE,S_INTERPOSE_TYPE,S_FAULT_TYPE,
+		EQUIPTYPE,UPDATEPERSON,UPDATETIME,REMARK,EQUIPVENDOR,operatetype,operatetypeid)
+		values(#interposetypeid#,#faulttypeid#,#interposetype#,#faulttype#,#equiptype#,#updateperson#,
+		#updatetime#,#remark#,#equipvendor#,#operatetype#,#operatetypeid#)
+	</insert>
+	<insert id="modifyInterposeConfig" parameterClass="eventInterpose">
+		update t_interpose_r_fault t set REMARK=#remark#,operatetype=#operatetype#,operatetypeid=#operatetypeid#
+		where t.i_interpose_type =#interposetypeid#
+		and t.i_fault_type =#faulttypeid#
+		and t.equiptype =#equiptype#
+	</insert>
+	
+	<select id="getAllInterposeAlarmConfigList" parameterClass="eventInterpose" resultClass="eventInterpose">
+		select *
+  from (select alarmconfid,
+               interposeid,
+               interposetype,
+               interposetypeid,
+               faulttype,
+               faulttypeid,
+               equiptype,
+               equipvendor,
+               x_vendor,
+               alarmrange,
+               alarmname,
+               alarmid,
+               position,
+               updateperson,
+               updatetime,
+               remark,
+               no
+          from (select distinct t.alarm_config_id alarmconfid,
+                       t.i_event_interpose_id interposeid,
+                       GetXtxx(t.i_interpose_type) interposetype,
+                       t.i_interpose_type interposetypeid,
+                       GetXtxx(t.i_fault_type) faulttype,
+                       t.i_fault_type faulttypeid,
+                       t.equiptype,
+                       GetXtxx(t.equipvendor) equipvendor,
+                       t.equipvendor x_vendor,
+                       t.alarm_range alarmrange,
+                       t.alarm_name alarmname,
+                       t.alarm_id alarmid,
+                       t.position position,
+                       getusername(t.updateperson) updateperson,
+                       t.updatetime,
+                       t.remark,
+                       row_number() over(order by $sort$, t.i_event_interpose_id $dir$) no
+                  from T_EVENT_INTERPOSE_ALARM_CON t where 1=1
+                  <isNotEmpty prepend="and" property="interposetypeid">
+                  t.i_interpose_type = #interposetypeid#
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="faulttypeid">
+                  t.i_fault_type = #faulttypeid#
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="equiptype">
+                  t.equiptype like '%$equiptype$%'
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="equipvendor">
+                  t.equipvendor = #equipvendor#
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="position">
+                  t.position = #position#
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="alarmrange">
+                  t.alarm_range like '%$alarmrange$%'
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="alarmname">
+                  t.alarm_name like '%$alarmname$%'
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="remark">
+                  t.remark like '%$remark$%'
+                  </isNotEmpty>
+                  
+                  )where no &lt;=$end$ )where no > $start$
+	</select>
+	
+	<select id="getAllInterposeAlarmConfigCount" parameterClass="eventInterpose" resultClass="int">
+		select count(*) from (
+		 select distinct t.alarm_config_id alarmconfid,
+                       t.i_event_interpose_id interposeid,
+                       GetXtxx(t.i_interpose_type) interposetype,
+                       t.i_interpose_type interposetypeid,
+                       GetXtxx(t.i_fault_type) faulttype,
+                       t.i_fault_type faulttypeid,
+                       t.alarm_range alarmrange,
+                       t.alarm_name alarmname,
+                       t.alarm_id alarmid,
+                       t.position position,
+                       getusername(t.updateperson) updateperson,
+                       t.updatetime,
+                       t.remark from T_EVENT_INTERPOSE_ALARM_CON t where 1=1
+                  <isNotEmpty prepend="and" property="interposetypeid">
+                  t.i_interpose_type = #interposetypeid#
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="faulttypeid">
+                  t.i_fault_type = #faulttypeid#
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="equiptype">
+                  t.equiptype like '%$equiptype$%'
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="equipvendor">
+                  t.equipvendor = #equipvendor#
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="position">
+                  t.position = #position#
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="alarmrange">
+                  t.alarm_range like '%$alarmrange$%'
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="alarmname">
+                  t.alarm_name like '%$alarmname$%'
+                  </isNotEmpty>
+                  <isNotEmpty prepend="and" property="remark">
+                  t.remark like '%$remark$%'
+                  </isNotEmpty>
+                  )
+	</select>
+	
+	<delete id="delInterposeAlarmConfig" parameterClass="string">
+		delete from T_EVENT_INTERPOSE_ALARM_CON t where t.alarm_config_id=#alarmconfid#
+	</delete>
+	
+	<insert id="addInterposeAlarmConfig" parameterClass="eventInterpose">
+		<selectKey keyProperty="alarmconfid" resultClass="string">
+			select lpad(event_interpose_alarm_seq.nextval,20,0) as alarmconfid from dual
+		</selectKey>
+		insert into t_event_interpose_alarm_con(ALARM_CONFIG_ID,I_EVENT_INTERPOSE_ID,I_INTERPOSE_TYPE,
+		I_FAULT_TYPE,equiptype,ALARM_RANGE,ALARM_NAME,ALARM_ID,POSITION,UPDATEPERSON,UPDATETIME,REMARK,EQUIPVENDOR)
+		values(#alarmconfid#,#interposeid:VARCHAR#,#interposetypeid#,#faulttypeid#,#equiptype#,#alarmrange#,#alarmname#,
+		#alarmid:VARCHAR#,#position#,#updateperson#,#updatetime#,#remark#,#equipvendor#)
+	</insert>
+	<update id="modifyInterposeAlarmConfig" parameterClass="eventInterpose">
+		update t_event_interpose_alarm_con set
+		ALARM_RANGE=#alarmrange#,
+		ALARM_NAME=#alarmname#,
+		ALARM_ID = #alarmid:VARCHAR#,
+		POSITION = #position#,
+		UPDATEPERSON = #updateperson#,
+		UPDATETIME = #updatetime#,
+		REMARK = #remark#
+		where ALARM_CONFIG_ID=#alarmconfid#
+	</update>
+	
+	<select id="getAllInterposeStdMaintainList" parameterClass="maintainModel" resultClass="maintainModel">
+		select *
+  from (select maintainprocid,
+               interposeid,
+               operatetype,
+               operatetypeid,
+               operateorder,
+               isstdoperate,
+               isendoperate,
+               remark,
+               updateperson,
+               updatetime,
+               a_equipcode,
+               z_equipcode,
+               interposetype,
+               a_equipname,
+               z_equipname,
+               faulttype,
+               no
+          from (select distinct t.maintenace_procedure_id maintainprocid,
+                       t.i_event_interpose_id interposeid,
+                       getOperateType(t.operate_type) operatetype,
+                       t.operate_type operatetypeid,
+                       t.operate_order operateorder,
+                       t.is_standard_operate isstdoperate,
+                       t.is_end_oper isendoperate,
+                       t.remark,
+                       getusername(t.updateperson) updateperson,
+                       t.updatetime,
+                       t.a_equipcode,
+                       t.z_equipcode,
+                       GetXtxx(t.i_interpose_type) interposetype,
+                       getequipname(t.a_equipcode) a_equipname,
+                       getequipname(t.z_equipcode) z_equipname,
+                       GetXtxx(t.i_fault_type) faulttype,
+                       row_number() over(order by $sort$, t.i_event_interpose_id $dir$) no
+                  from t_std_maintain_proc t where t.is_standard_operate='是'
+                 <isNotEmpty prepend="and" property="interposetypeid">
+                  t.i_interpose_type =#interposetypeid#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="faulttypeid">
+                  t.i_fault_type =#faulttypeid#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="operatetype">
+                  t.operate_type =#operatetype#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="operateorder">
+                  t.operate_order =#operateorder#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="isendoperate">
+                  t.is_end_oper =#isendoperate#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="remark">
+                  t.remark like '%$remark$%'
+                 </isNotEmpty>
+                  
+                  )where no &lt;=$end$ )where no > $start$ order by operateorder asc
+	</select>
+	<select id="getAllInterposeStdMaintainCount" parameterClass="maintainModel" resultClass="int">
+		select count(*) from (
+			select distinct t.maintenace_procedure_id maintainprocid,
+                       t.i_event_interpose_id interposeid,
+                       getOperateType(t.operate_type) operatetype,
+                       t.operate_order operateorder,
+                       t.is_standard_operate isstdoperate,
+                       t.is_end_oper isendoperate,
+                       t.remark,
+                       getusername(t.updateperson) updateperson,
+                       t.updatetime,
+                       t.a_equipcode,
+                       t.z_equipcode,
+                       GetXtxx(t.i_interpose_type) interposetype,
+                       getequipname(t.a_equipcode) a_equipname,
+                       getequipname(t.z_equipcode) z_equipname,
+                       GetXtxx(t.i_fault_type) faulttype
+                 from t_std_maintain_proc t where t.is_standard_operate='是'
+                 <isNotEmpty prepend="and" property="interposetypeid">
+                  t.i_interpose_type =#interposetypeid#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="faulttypeid">
+                  t.i_fault_type =#faulttypeid#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="operatetype">
+                  t.operate_type =#operatetype#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="operateorder">
+                  t.operate_order =#operateorder#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="isendoperate">
+                  t.is_end_oper =#isendoperate#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="remark">
+                  t.remark like '%$remark$%'
+                 </isNotEmpty>
+		)
+	</select>
+	
+	<insert id="addInterposeMaintainProc" parameterClass="maintainModel">
+		<selectKey keyProperty="maintainprocid" resultClass="string">
+			select lpad(std_maintain_proc_seq.nextval,20,0) as maintainprocid from dual
+		</selectKey>
+		insert into t_std_maintain_proc(MAINTENACE_PROCEDURE_ID,I_EVENT_INTERPOSE_ID,OPERATE_TYPE,OPERATE_ORDER,EQUIPTYPE,
+		IS_STANDARD_OPERATE,IS_END_OPER,REMARK,UPDATEPERSON,UPDATETIME,A_EQUIPCODE,Z_EQUIPCODE,I_INTERPOSE_TYPE,I_FAULT_TYPE)
+		values(#maintainprocid#,#interposeid#,#operatetype#,#operateorder:VARCHAR#,#equiptype:VARCHAR#,'是',#isendoperate:VARCHAR#,#remark#,
+		#updateperson#,#updatetime#,#a_equipcode:VARCHAR#,#z_equipcode:VARCHAR#,#interposetypeid#,#faulttypeid#)
+	</insert>
+	<update id="modifyInterposeMaintainProc" parameterClass="maintainModel">
+		update t_std_maintain_proc set 
+		OPERATE_TYPE=#operatetype#,
+		OPERATE_ORDER = #operateorder#,
+		IS_END_OPER=#isendoperate#,
+		REMARK=#remark#,
+		UPDATEPERSON=#updateperson#,
+		UPDATETIME=#updatetime#
+		where MAINTENACE_PROCEDURE_ID=#maintainprocid#
+	</update>
+	<select id="selectOperateOrderByMap" parameterClass="map" resultClass="maintainModel">
+		select distinct t.maintenace_procedure_id maintainprocid,
+                       t.i_event_interpose_id interposeid,
+                       getOperateType(t.operate_type) operatetype,
+                       t.operate_order operateorder,
+                       t.is_standard_operate isstdoperate,
+                       t.is_end_oper isendoperate,
+                       t.remark,
+                       getusername(t.updateperson) updateperson,
+                       t.updatetime,
+                       t.a_equipcode,
+                       t.z_equipcode,
+                       GetXtxx(t.i_interpose_type) interposetype,
+                       getequipname(t.a_equipcode) a_equipname,
+                       getequipname(t.z_equipcode) z_equipname,
+                       GetXtxx(t.i_fault_type) faulttype
+        from t_std_maintain_proc t
+        where i_interpose_type=#interposetypeid#
+        and i_fault_type = #faulttypeid#
+		and OPERATE_ORDER=#order#
+	</select>
+	<delete id="delInterposeMaintainProc" parameterClass="string">
+		delete from t_std_maintain_proc t where t.MAINTENACE_PROCEDURE_ID=#maintainprocid#
+	</delete>
+	<select id="getOperateTypeByeqsearch" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct OPERATE_TYPE_ID id,OPERATE_TYPE label from T_MAINTENANCE_PROCEDURE where 1=1
+		<isNotEmpty prepend="and" property="operatetype">
+		OPERATE_TYPE like '%$operatetype$%'
+		</isNotEmpty>
+	</select>
+	
+	<select id="getEquiptypeLst" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct t.xtbm id,t.xtxx label from xtbm t where t.type = 'EQUIPTYPE' 
+		<isNotEmpty prepend="and" property="type">
+			t.remark=#type#
+		</isNotEmpty>
+		 order by t.xtbm asc
+	</select>
+	
+	<select id="getPackResourceByrsearch" parameterClass="map" resultClass="java.util.HashMap">
+		select distinct t.id id,
+                $labelname$ as label,t.frameserial,t.slotserial
+  from equippack t, equiplogicport e
+ where t.equipcode = #equipcode#
+   and t.equipcode = e.equipcode
+   and t.frameserial = e.frameserial
+   and t.slotserial = e.slotserial
+   and t.packserial = e.packserial
+   and t.packmodel is not null
+   and e.logicport in
+       (select t.tp_id_a
+          from circuit_cc t
+         where t.equipcode = #equipcode#
+        union
+        select c.tp_id_z
+          from circuit_cc c
+         where c.equipcode = #equipcode#)
+        <isNotEmpty prepend="and" property="cond">
+        $labelname$ like '%$cond$%'
+        </isNotEmpty> 
+        order by to_number(t.frameserial),to_number(t.slotserial)
+	</select>
+	
+	<select id="getAllEventMaintainProcList" parameterClass="maintainModel" resultClass="maintainModel">
+		select *
+  from (select operatetypeid,
+               operatetype,
+               hasA_equip,
+               a_equiptype,
+               a_equiptype_code,
+               hasZ_equip,
+               z_equiptype,
+               z_equiptype_code,
+               isinterposeoperate,
+               isinterposeoperatename,
+               operatedes,
+               expectedresult,
+               remark,
+               updateperson,
+               updatetime,
+               a_equipcode,
+               z_equipcode,
+               a_equipname,
+               z_equipname,
+               no
+               from(
+                select distinct t.operate_type_id operatetypeid,
+                                t.operate_type operatetype,
+                                t.hasa_equip hasA_equip,
+                                GetXtxx(t.a_equiptype) a_equiptype,
+                                t.a_equiptype a_equiptype_code,
+                                t.hasz_equip hasZ_equip,
+                                GetXtxx(t.z_equiptype) z_equiptype,
+                                t.z_equiptype z_equiptype_code,
+                                t.hasinterpose isinterposeoperate,
+                                GetXtxxBak(t.hasinterpose) isinterposeoperatename,
+                                t.operate_des operatedes,
+                                t.expected_result expectedresult,
+                                t.remark,
+                                getusername(t.updateperson) updateperson,
+                                t.updatetime,
+                                t.a_equipcode,
+                                t.z_equipcode,
+                                getequipname(t.a_equipcode) a_equipname,
+                                getequipname(t.z_equipcode) z_equipname,
+                                row_number() over(order by $sort$ $dir$) no
+                  from t_maintenance_procedure t
+                 where 1 = 1
+        		 <isNotEmpty prepend="and" property="operatetype">
+                  t.operate_type like '%$operatetype$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="hasA_equip">
+                  t.hasa_equip =#hasA_equip#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="a_equiptype">
+                  t.a_equiptype =#a_equiptype#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="hasZ_equip">
+                  t.hasz_equip =#hasZ_equip#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="z_equiptype">
+                  t.z_equiptype =#z_equiptype#
+                 </isNotEmpty>
+<!--                 <isNotEmpty prepend="and" property="isinterposeoperate">-->
+<!--                  t.hasinterpose =#isinterposeoperate#-->
+<!--                 </isNotEmpty>-->
+                 <isNotEmpty prepend="and" property="operatedes">
+                  t.operate_des like '%$operatedes$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="expectedresult">
+                  t.expected_result like '%$expectedresult$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="remark">
+                  t.remark like '%$remark$%'
+                 </isNotEmpty>
+                  
+                  )where no &lt;=$end$ )where no > $start$
+	</select>
+	<select id="getAllEventMaintainProcCount" parameterClass="maintainModel" resultClass="int">
+		select count(*) from (
+			select distinct t.operate_type_id operatetypeid,
+                                t.operate_type operatetype,
+                                t.hasa_equip hasA_equip,
+                                t.a_equiptype,
+                                t.hasz_equip hasZ_equip,
+                                t.z_equiptype,
+                                t.hasinterpose isinterposeoperate,
+                                t.operate_des operatedes,
+                                t.expected_result expectedresult,
+                                t.remark,
+                                getusername(t.updateperson) updateperson,
+                                t.updatetime,
+                                t.a_equipcode,
+                                t.z_equipcode
+                                from t_maintenance_procedure t
+                 where 1 = 1
+        		 <isNotEmpty prepend="and" property="operatetype">
+                  t.operate_type =#operatetype#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="hasA_equip">
+                  t.hasa_equip =#hasA_equip#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="a_equiptype">
+                  t.a_equiptype =#a_equiptype#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="hasZ_equip">
+                  t.hasz_equip =#hasZ_equip#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="z_equiptype">
+                  t.z_equiptype =#z_equiptype#
+                 </isNotEmpty>
+<!--                 <isNotEmpty prepend="and" property="isinterposeoperate">-->
+<!--                  t.hasinterpose =#isinterposeoperate#-->
+<!--                 </isNotEmpty>-->
+                 <isNotEmpty prepend="and" property="operatedes">
+                  t.operate_des like '%$operatedes$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="expectedresult">
+                  t.expected_result like '%$expectedresult$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="remark">
+                  t.remark like '%$remark$%'
+                 </isNotEmpty>
+		)
+	</select>
+	<delete id="delEventMaintainProc" parameterClass="string">
+		delete from t_maintenance_procedure t where t.operate_type_id=#operatetypeid#
+	</delete>
+	<insert id="addEventMaintainProc" parameterClass="maintainModel">
+		<selectKey keyProperty="operatetypeid" resultClass="string">
+			select lpad(maintenance_procedure_seq.nextval,20,0) as operatetypeid from dual
+		</selectKey>
+		insert into t_maintenance_procedure(OPERATE_TYPE_ID,OPERATE_TYPE,HASA_EQUIP,A_EQUIPTYPE,HASZ_EQUIP,
+		Z_EQUIPTYPE,OPERATE_DES,EXPECTED_RESULT,REMARK,UPDATEPERSON,UPDATETIME)
+		values(#operatetypeid#,#operatetype#,#hasA_equip#,#a_equiptype#,#hasZ_equip#,#z_equiptype#,
+		#operatedes#,#expectedresult#,#remark#,#updateperson#,#updatetime#)
+	</insert>
+	
+	<update id="modifyEventMaintainProc" parameterClass="maintainModel">
+		update t_maintenance_procedure set 
+		HASA_EQUIP=#hasA_equip#,
+		A_EQUIPTYPE=#a_equiptype:VARCHAR#,
+		HASZ_EQUIP=#hasZ_equip#,
+		Z_EQUIPTYPE=#z_equiptype:VARCHAR#,
+<!--		HASINTERPOSE=#isinterposeoperate:VARCHAR#,-->
+		OPERATE_DES=#operatedes#,
+		EXPECTED_RESULT=#expectedresult#,
+		REMARK=#remark:VARCHAR#,
+		UPDATEPERSON=#updateperson#,
+		UPDATETIME=#updatetime#
+		where OPERATE_TYPE_ID=#operatetypeid#
+	</update>
+	<select id="selectOperateTypeByName" parameterClass="string" resultClass="maintainModel">
+		select distinct t.operate_type_id operatetypeid,
+                        t.operate_type operatetype,
+                        t.hasa_equip hasA_equip,
+                        t.a_equiptype,
+                        t.hasz_equip hasZ_equip,
+                        t.z_equiptype,
+                        t.hasinterpose isinterposeoperate,
+                        t.operate_des operatedes,
+                        t.expected_result expectedresult,
+                        t.remark,
+                        getusername(t.updateperson) updateperson,
+                        t.updatetime,
+                        t.a_equipcode,
+                        t.z_equipcode
+         from t_maintenance_procedure t 
+         where t.operate_type=#operatetype#
+                         
+	</select>
+
+	<select id="getEventSolutionLst" parameterClass="eventInterpose" resultClass="maintainModel">
+		
+         select distinct t.maintenace_procedure_id maintainprocid,
+                       t.i_event_interpose_id interposeid,
+                       getOperateType(t.operate_type) operatetype,
+                       t.operate_order operateorder,
+                       t.is_standard_operate isstdoperate,
+                       t.is_end_oper isendoperate,
+                       t.remark,
+                       getusername(t.updateperson) updateperson,
+                       t.updatetime,
+                       t.a_equipcode,
+                       t.z_equipcode,
+                       GetXtxx(t.i_interpose_type) interposetype,
+                       getequipname(t.a_equipcode) a_equipname,
+                       getequipname(t.z_equipcode) z_equipname,
+                       GetXtxx(t.i_fault_type) faulttype
+                 from t_std_maintain_proc t where t.is_standard_operate='是'
+                 and t.is_end_oper='是'
+                 and t.i_interpose_type=#interposetypeid#
+                 and t.i_fault_type=#faulttypeid#
+	</select>
+	
+	<select id="getAllOperateListByUserList" parameterClass="operateModel" resultClass="operateModel">
+		select *
+  from (select operateid,
+               projectname,
+               interposeid,
+               operatetypeid,
+               operatetype,
+               operateresult,
+               a_equiptype,
+               z_equiptype,
+               operateorder,
+               updatetime,
+               remark,
+               a_equipcode,
+               z_equipcode,
+               a_equipname,
+               z_equipname,
+               updateperson,
+               frameserial,
+               slotserial,
+               packserial,
+               portserial,
+               no
+          from (select distinct t.operate_id operateid,
+                                getInterposeName(t.interpose_id) projectname,
+                                t.interpose_id interposeid,
+                                t.operate_type_id operatetypeid,
+                                getOperateType(t.operate_type_id) operatetype,
+                                t.operate_result operateresult,
+                                GetXtxx(s.a_equiptype) a_equiptype,
+                                GetXtxx(s.z_equiptype) z_equiptype,
+                                t.operate_order operateorder,
+                                t.updatetime,
+                                t.remark,
+                                t.a_equipcode,
+                                t.z_equipcode,
+                                getequipname(t.a_equipcode) a_equipname,
+                                getequipname(t.z_equipcode) z_equipname,
+                                getusername(t.updateperson) updateperson,
+                                t.FRAMESERIAL,t.SLOTSERIAL,
+                                t.PACKSERIAL,t.PORTSERIAL,
+                                row_number() over(order by t.updatetime desc, t.interpose_id desc,t.operate_order $dir$) no
+                  from T_OPERATE t, t_maintenance_procedure s
+                 where t.operate_type_id = s.operate_type_id
+                 <isNotEmpty prepend="and" property="interposeid">
+                 	t.interpose_id = #interposeid#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="operatetypeid">
+                 	t.operate_type_id = #operatetypeid#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="a_equiptype">
+                 	GetXtxx(s.a_equiptype) like '%$a_equiptype$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="z_equiptype">
+                 	GetXtxx(s.z_equiptype) like '%$z_equiptype$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="updateperson">
+                 	t.updateperson = #updateperson#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="remark">
+                 	t.remark like  '%$updateperson$%'
+                 </isNotEmpty>
+                
+                 <isNotEmpty prepend="and" property="operateresult">
+                 	t.operate_result like '%$operateresult$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="a_equipcode">
+                 	t.a_equipcode = #a_equipcode#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="z_equipcode">
+                 	t.z_equipcode = #z_equipcode#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="flag">
+                 	t.updateperson = #updateperson#
+                 </isNotEmpty>
+                  )where no &lt;=$end$ )where no > $start$
+                  order by no asc
+	</select>
+	<select id="getAllOperateListByUserCount" parameterClass="operateModel" resultClass="int">
+		select count(*) from (select distinct t.operate_id operateid,
+                                getInterposeName(t.interpose_id) projectname,
+                                t.interpose_id interposeid,
+                                t.operate_type_id operatetypeid,
+                                getOperateType(t.operate_type_id) operatetype,
+                                t.operate_result operateresult,
+                                GetXtxx(s.a_equiptype) a_equiptype,
+                                GetXtxx(s.z_equiptype) z_equiptype,
+                                t.operate_order operateorder,
+                                t.updatetime,
+                                t.remark,
+                                t.a_equipcode,
+                                t.z_equipcode,
+                                getequipname(t.a_equipcode) a_equipname,
+                                getequipname(t.z_equipcode) z_equipname,
+                                getusername(t.updateperson) updateperson
+                  from T_OPERATE t, t_maintenance_procedure s
+                 where t.operate_type_id = s.operate_type_id
+                 <isNotEmpty prepend="and" property="interposeid">
+                 	t.interpose_id = #interposeid#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="operatetypeid">
+                 	t.operate_type_id = #operatetypeid#
+                 </isNotEmpty>
+                  <isNotEmpty prepend="and" property="a_equiptype">
+                   GetXtxx(s.a_equiptype) like '%$a_equiptype$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="z_equiptype">
+                   GetXtxx(s.z_equiptype) like '%$z_equiptype$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="updateperson">
+                 	t.updateperson = #updateperson#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="remark">
+                 	t.remark like  '%$updateperson$%'
+                 </isNotEmpty>
+                
+                 <isNotEmpty prepend="and" property="operateresult">
+                 	t.operate_result like '%$operateresult$%'
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="a_equipcode">
+                 	t.a_equipcode = #a_equipcode#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="z_equipcode">
+                 	t.z_equipcode = #z_equipcode#
+                 </isNotEmpty>
+                 <isNotEmpty prepend="and" property="flag">
+                 	t.updateperson = #updateperson#
+                 </isNotEmpty>
+                  )
+	</select>
+	
+	<select id="getInterposeUserListById" parameterClass="map" resultClass="java.util.HashMap">
+		
+		 select t.i_user_id userid, getusername(t.i_user_id) username
+		 from t_simulation_project_rel_user t
+		 where t.i_project_id = #interposeid#
+		 order by t.i_user_id asc
+	</select>
+	<select id="getInterposeNameById" parameterClass="map" resultClass="java.util.HashMap">
+		
+		 select distinct t.i_event_interpose_id interposeid, t.interpose_name interposename from t_event_interpose t 
+		 where t.i_event_interpose_id=#interposeid#
+	</select>
+	<select id="getAlarmInfoByeqsearch" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct t.id id,t.o_alarmdesc label from alarmdefine t 
+		where t.vendor=#x_vendor# 
+		<isNotEmpty prepend="and" property="user_name">
+		 t.o_alarmdesc like '%$user_name$%'
+		</isNotEmpty>
+		order by t.o_alarmdesc asc
+	</select>
+	<select id="getX_vendorByEquipcode" parameterClass="string" resultClass="string">
+		select t.x_vendor from equipment t where t.equipcode=#equipcode#
+	</select>
+	<select id="getX_vendorNameById" parameterClass="string" resultClass="string">
+		select t.xtxx from xtbm t where t.xtbm=#x_vendor#
+	</select>
+	
+	<select id="getStdFlowByID" parameterClass="string" resultClass="maintainModel">
+		select getOperateType(s.operate_type) operatetype,
+		s.operate_order operateorder 
+		from t_event_interpose t,t_std_maintain_proc s 
+		where s.i_interpose_type=t.i_interpose_type 
+		and s.i_fault_type=t.i_fault_type 
+		and t.i_event_interpose_id=#interposeid# 
+		order by s.operate_order asc
+	</select>
+	<select id="getUserFlowByID" parameterClass="map" resultClass="operateModel">
+		select s.operate_type operatetype
+		  from t_operate t, t_maintenance_procedure s
+		 where s.operate_type_id = t.operate_type_id
+		   and t.interpose_id = #interposeid#
+		   and t.updateperson = #updateperson#
+		 order by t.updatetime asc
+	</select>
+	<select id="getResourceByrsearch" resultClass="netres.model.ComboxDataModel" parameterClass="java.util.Map">
+		select $idname$ as id,$labelname$ as label from
+			$tablename$ where $eqcodename$='$eqcode$'
+				<isNotEmpty prepend="AND" property="rsearch">
+					$labelname$ like '%$rsearch$%'
+			</isNotEmpty>
+			order by $sortid$
+	</select>
+	
+	<select id="getTransystemByEquipCode" parameterClass="string" resultClass="netres.model.ComboxDataModel" >
+		select t.systemcode id,t.sysname label from equipment e,transsystem t 
+		where e.system_name=t.systemcode and e.equipcode=#equipcode#
+	</select>
+	
+	<select id="getCutPortResourceByrsearch" parameterClass="map" resultClass="netres.model.ComboxDataModel" >
+		select t.logicport id, getportlabelnew(t.logicport) label
+		  from equiplogicport t
+		 where t.equipcode = #equipcode#
+		   and t.frameserial =#frameserial#
+		   and t.slotserial = #slotserial#
+		   and t.packserial = #packserial#
+		   and t.x_capability = #portrate#
+		   and t.y_porttype = #porttype#
+		   and t.logicport not in
+       (select c.tp_id_a
+          from circuit_cc c
+         where c.equipcode = #equipcode#
+        union
+        select c.tp_id_z
+          from circuit_cc c
+         where c.equipcode = #equipcode#) 
+		   <isNotEmpty prepend="and" property="cond">
+		   getportlabelnew(t.logicport) like '%$cond$%'
+		   </isNotEmpty>
+		   order by t.logicport
+	</select>
+	
+	<select id="getFaultTypelst" resultClass="netres.model.ComboxDataModel" >
+		select xtbm id,
+       	xtxx label
+  		from xtbm
+ 		where  type = 'FAULTTYPE'
+ 		order by xtbm
+	</select>
+	
+	<select id="getStationByEquipCode" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+	select s.stationcode id,s.stationname label from station s,equipment e 
+	where s.stationcode=e.stationcode and e.equipcode=#equipcode#
+	</select>
+	
+	<select id="selectEquipPortCutLst" parameterClass="map" resultClass="java.util.HashMap">
+		select distinct t.logicport id ,getportlabelnew(t.logicport) label,
+		t.frameserial,t.slotserial,t.portserial
+		 from equiplogicport t 
+		where t.equipcode=#equipcode#
+		 and t.logicport in
+       (select c.tp_id_a
+          from circuit_cc c
+         where c.equipcode = #equipcode#
+        union
+        select c.tp_id_z
+          from circuit_cc c
+         where c.equipcode = #equipcode#)
+		<isNotEmpty prepend="and" property="cond">
+		getportlabelnew(t.logicport) like '%$cond$%'
+		</isNotEmpty>
+		order by to_number(t.frameserial),to_number(t.slotserial),to_number(t.portserial)
+	</select>
+	
+	<select id="getSerialsByCodes" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+	select t.frameserial id,t.packserial label from $tablename$ t where $field$=#resourcecode#
+	</select>
+	<select id="getAlarmLevelById" parameterClass="string" resultClass="string">
+		select t.o_alarmlevel  from alarmdefine t where t.id=#alarmid#
+	</select>
+	
+	<insert id="insertAlarmInfo" parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos" >
+		<selectKey keyProperty="alarmnumber" resultClass="string">
+		select lpad(alarminfo_seq.nextval,20,0) as alarmnumber from dual
+		</selectKey>
+		insert into alarminfo(ALARMNUMBER,OBJCLASS,PROBABLECAUSE,ALARMDESC,ALARMLEVEL,STARTTIME,ISCLEARED,ISACKED,belonghouse,
+		I_EVENT_INTERPOSE_ID,BELONGSTATION,OBSERVEDVALUE,VENDOR,BELONGTRANSYS,ISFILTER,TRIGGEREDHOUR,ALARMMAN,BELONGSUBSHELF,
+		BELONGEQUIP,BELONGFRAME,BELONGPACK,BELONGPORT,BELONGSLOT,FIRSTSTARTTIME,BELONGTSVC3,BELONGTSSTM16,pristinerootalarm,alarmtype)
+		values(#alarmnumber#,#objClass#,#probablecause#,#alarmdesc#,#alarmlevel#,to_date(#beginTime#,'YYYY-mm-dd hh24:mi:ss'),#iscleared#,#isAck#,
+		#belonghouse:VARCHAR#,#interposeid#,#belongstation:VARCHAR#,#alarmobjdesc#,#vendor#,#belongtransys#,#isfilter#,#triggeredhour#,#alarmman#,'0',
+		#belongequip#,#belongframe:VARCHAR#,#belongpack:VARCHAR#,#belongport:VARCHAR#,#belongslot:VARCHAR#,
+		to_date(#beginTime#,'YYYY-mm-dd hh24:mi:ss'),#belongportcode#,#carrycircuit#,#isRootAlarm#,to_number(#alarmType#))
+	</insert>
+	
+	<!-- <select id="getVersionByProjectId" parameterClass="string" resultClass="string">
+		select t.version_code from t_simulation_project t where t.i_project_id=#projectid#
+	</select> -->
+	
+	<select id="getPortSerialById" parameterClass="string" resultClass="string">
+		select t.portserial from equiplogicport t where t.logicport=#code#
+	</select>
+	
+	<select id="getInterposeAlarmList" parameterClass="map" resultClass="eventInterpose">
+	select distinct t.alarm_config_id alarmconfid,
+                t.i_event_interpose_id interposeid,
+                GetXtxx(t.i_interpose_type) interposetype,
+                t.i_interpose_type interposetypeid,
+                GetXtxx(t.i_fault_type) faulttype,
+                t.i_fault_type faulttypeid,
+                t.equiptype,
+                GetXtxx(t.equipvendor) equipvendor,
+                t.equipvendor x_vendor,
+                t.alarm_range alarmrange,
+                t.alarm_name alarmname,
+                t.alarm_id alarmid,
+                t.position position,
+                getusername(t.updateperson) updateperson,
+                t.updatetime,
+                t.remark
+  from T_EVENT_INTERPOSE_ALARM_CON t
+ where t.i_interpose_type = #interposetypeid#
+   and t.i_fault_type = #faulttypeid#
+   and t.equiptype like '%$equiptype$%'
+   and t.equipvendor = #x_vendor#
+ order by t.alarm_config_id asc
+	</select>
+	
+	<select id="getInterposeIdsByMap" parameterClass="map" resultClass="string">
+	select wm_concat(distinct a.i_event_interpose_id) from alarminfo a where 
+		a.iscleared=#iscleared#
+		and a.isacked = '0'
+		and a.alarmman=#alarmman#
+		and a.i_event_interpose_id in
+		<iterate property="interposelst" open="(" close=")" conjunction=",">
+			#interposelst[]#
+		</iterate>
+	</select>
+	
+	<select id="getInterposeIdsByMap2" parameterClass="map" resultClass="string">
+		select t.i_event_interpose_id from t_event_interpose t where t.equipcode=#equipcode#
+		and t.i_event_interpose_id in 
+		<iterate property="idList" open="(" close=")" conjunction=",">
+			#idList[]#
+		</iterate>
+	</select>
+	
+	<select id="getInterposeTypeIds" parameterClass="string" resultClass="eventInterpose">
+		select GetXtxx(t.i_interpose_type) interposetype,
+       t.i_interpose_type interposetypeid,
+       GetXtxx(t.i_fault_type) faulttype,
+       t.i_fault_type faulttypeid,
+       t.equipcode,t.resourcecode,
+       t.equiptype
+		  from t_event_interpose t
+		 where t.i_event_interpose_id =#interposeid#
+	</select>
+	
+	<insert id="saveUserOperate" parameterClass="maintainModel">
+		<selectKey keyProperty="operateid" resultClass="string">
+			select lpad(maintenance_procedure_seq.nextval,20,0) as operateid from dual
+		</selectKey>
+		insert into t_operate(OPERATE_ID,INTERPOSE_ID,OPERATE_TYPE_ID,OPERATE_RESULT,UPDATEPERSON,
+		UPDATETIME,REMARK,A_EQUIPCODE,Z_EQUIPCODE,OPERATE_ORDER,FRAMESERIAL,SLOTSERIAL,PACKSERIAL,PORTSERIAL) 
+		values(#operateid#,#interposeid#,#operatetype#,#expectedresult:VARCHAR#,#updateperson#,
+		#updatetime#,#remark#,#a_equipcode#,#z_equipcode:VARCHAR#,#operateorder:VARCHAR#,#frameserial:VARCHAR#,
+		#slotserial:VARCHAR#,#packserial:VARCHAR#,#portserial:VARCHAR#)
+	</insert>
+	
+	<insert id="addInterposeLogEvent" parameterClass="map">
+		<selectKey keyProperty="id" resultClass="string">
+		select lpad(interpose_log_seq.nextval,20,0) as id from dual
+		</selectKey>
+		insert into interpose_alarm_log(id,log_id,log_type,event_name,log_time,source_obj,access_obj,event_type)
+		values(#id#,#logid#,#logtype#,#eventname#,#logtime#,#sourceobj#,#accessobj#,#eventtype#)
+	</insert>
+	
+	<select id="getFaultTypeInfoByInterposeType" parameterClass="java.util.Map" resultClass="netres.model.ComboxDataModel">
+		 select distinct t.i_fault_type id,t.s_fault_type label from t_interpose_r_fault t where  t.s_fault_type!='添加设备'
+		  and t.s_fault_type != '端口割接' and t.s_fault_type !='机盘割接'
+		 <isNotEmpty property="i_interpose_type" prepend="and">
+		 t.i_interpose_type=#i_interpose_type#
+		</isNotEmpty>
+		<isNotEmpty property="equiptype" prepend="and">
+			t.equiptype=#equiptype#
+		</isNotEmpty>
+		<isNotEmpty property="packtype" prepend="and">
+			t.equipvendor=#packtype#
+		</isNotEmpty>
+		 order by t.i_fault_type asc
+	</select>
+	
+	<select id="getFaultTypeInfoByInterposeType1" parameterClass="java.util.Map" resultClass="netres.model.ComboxDataModel">
+		 select distinct t.i_fault_type id,t.s_fault_type label from t_interpose_r_fault t where  t.s_fault_type!='添加设备'
+		 <isNotEmpty property="i_interpose_type" prepend="and">
+		 t.i_interpose_type=#i_interpose_type#
+		</isNotEmpty>
+		<isNotEmpty property="equiptype" prepend="and">
+			t.equiptype=#equiptype#
+		</isNotEmpty>
+		<isNotEmpty property="packtype" prepend="and">
+			t.equipvendor=#packtype#
+		</isNotEmpty>
+		 union 
+		 select distinct t.i_fault_type id,t.s_fault_type label from t_interpose_r_fault t where  t.s_fault_type!='添加设备'
+		 <isNotEmpty property="i_interpose_type" prepend="and">
+		 t.i_interpose_type=#i_interpose_type#
+		</isNotEmpty>
+		<isNotEmpty property="equiptype" prepend="and">
+			t.equiptype=#equiptype#
+		</isNotEmpty>
+		and t.equipvendor='机盘'
+	</select>
+	
+	<select id="getFaultTypeInfoByInterposeType2" parameterClass="java.util.Map" resultClass="netres.model.ComboxDataModel">
+		 select distinct t.i_fault_type id,t.s_fault_type label from t_interpose_r_fault t where  t.s_fault_type!='添加设备'
+		 <isNotEmpty property="i_interpose_type" prepend="and">
+		 t.i_interpose_type=#i_interpose_type#
+		</isNotEmpty>
+		<isNotEmpty property="equiptype" prepend="and">
+			t.equiptype=#equiptype#
+		</isNotEmpty>
+		<isNotEmpty property="packtype" prepend="and">
+			t.equipvendor=#packtype#
+		</isNotEmpty>
+		 union 
+		 select distinct t.i_fault_type id,t.s_fault_type label from t_interpose_r_fault t where  t.s_fault_type!='添加设备'
+		 <isNotEmpty property="i_interpose_type" prepend="and">
+		 t.i_interpose_type=#i_interpose_type#
+		</isNotEmpty>
+		<isNotEmpty property="equiptype" prepend="and">
+			t.equiptype=#equiptype#
+		</isNotEmpty>
+		and t.equipvendor='端口'
+	</select>
+	
+	<select id="getEquipNameByEqcode" resultClass="string" parameterClass="string">
+		select e.s_sbmc from
+			re_sys_equip r,equipment e where r.equipcode(+) = e.equipcode and e.equipcode = #paraValue#
+			order by e.s_sbmc
+	</select>
+	
+	<select id="getInterposeNameByeqsearch" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct t.i_event_interpose_id id,t.interpose_name label from  t_event_interpose t
+		where 1=1
+		<isNotEmpty prepend="and" property="projectname">
+		t.interpose_name like '%$projectname$%'
+		</isNotEmpty>
+		order by t.i_event_interpose_id asc
+		
+	</select>
+	
+	<select id="getEquipcodeByPortCode" parameterClass="string" resultClass="string">
+		select t.equipcode from equiplogicport t where t.logicport=#portcode#
+	</select>
+	<select id="getPortCodeByMap" parameterClass="map" resultClass="string">
+		select t.logicport
+		  from equiplogicport t
+		 where t.equipcode = #equipcode#
+		   and t.frameserial = #frameserial#
+		   and t.slotserial = #slotserial#
+		   and t.packserial = #packserial#
+		   and t.portserial = #portserial#
+		   and t.x_capability is not null
+		   and rownum='1'
+	</select>
+	
+	<select id="getPortcode2ByPortCode1" parameterClass="string" resultClass="string">
+		select distinct t.portcode2 from circuit t where t.portcode1=#portcode#
+		union
+		select distinct t.portcode1 from circuit t where t.portcode2=#portcode#
+	</select>
+	
+	<update id="deleteAlarmByMap" parameterClass="map">
+		update  alarminfo t 
+		set t.iscleared = #iscleared#
+   		where t.alarmman = #alarmman#
+	   and t.i_event_interpose_id = #interposeid#
+	</update>
+	<select id="getOperateTypeByMap" parameterClass="map" resultClass="string">
+		select distinct t.operatetypeid
+		  from t_interpose_r_fault t
+		 where t.i_interpose_type = #interposetypeid#
+		   and t.i_fault_type = #faulttypeid#
+	</select>
+
+	<select id="getAlarmOperations" resultClass="operateModel" parameterClass="java.lang.String">
+        select oper_id,alarm_name,alarm_id,parent_id,oper_desc,oper_type,vender,vendercode from  t_alarm_transmit
+        where parent_id=#value# order by oper_id         
+    </select>
+     <insert id="insertAlarmOper" parameterClass="operateModel">
+    	insert into t_alarm_transmit(oper_id,alarm_name,parent_id,alarm_id,oper_type,vender,vendercode,oper_desc)
+    	values(sysmgr.nextval,#alarm_name#,#parent_id#,#alarm_id#,#oper_type#,#vender#,#vendercode#,#oper_desc#)
+    </insert>
+    <update id="updateAlarmOperationByOperId" parameterClass="operateModel">
+        update t_alarm_transmit set alarm_name = #alarm_name# ,alarm_id = #alarm_id#    ,oper_type = #oper_type#    
+        ,vender = #vender#    ,vendercode = #vendercode#    ,oper_desc=#oper_desc#
+        where oper_id=#oper_id#
+    </update>
+    <delete id="delAlarmOperation" parameterClass="java.lang.String">
+    	delete from t_alarm_transmit where oper_id=#value#
+    </delete>
+
+	<select id="getPackResourceNameAndID" resultClass="netres.model.ComboxDataModel" parameterClass="java.util.Map">
+		select slotserial || ',' || id as id,
+        s_packname || '-' || frameserial || '框' || slotserial || '槽' ||
+        packserial || '盘' as label
+        from equippack
+        where equipcode = #equipcode# 
+        	<isNotEmpty prepend="AND" property="frameserial">
+					frameserial  = #frameserial#
+			</isNotEmpty>
+        	<isNotEmpty prepend="AND" property="slotserial">
+					slotserial  = #slotserial#
+			</isNotEmpty>
+        	<isNotEmpty prepend="AND" property="packserial">
+					packserial  = #packserial#
+			</isNotEmpty>
+        order by slotserial || ',' || id
+        
+	</select>
+	<select id="getResourceOfportNameAndID" resultClass="netres.model.ComboxDataModel" parameterClass="java.util.Map">
+			select slotserial || ',' || logicport as id,
+     	 	slotserial || '槽' || portserial as label
+  			from equiplogicport t
+      		where equipcode = #equipcode# 
+        	<isNotEmpty prepend="AND" property="frameserial">
+					frameserial  = #frameserial#
+			</isNotEmpty>
+        	<isNotEmpty prepend="AND" property="slotserial">
+					slotserial  = #slotserial#
+			</isNotEmpty>
+        	<isNotEmpty prepend="AND" property="packserial">
+					packserial  = #packserial#
+			</isNotEmpty>
+        	<isNotEmpty prepend="AND" property="portserial">
+					portserial  = #portserial#
+			</isNotEmpty>
+        order by slotserial || ',' || id
+        
+	</select>
+	
+
+	<select id="getInterposeAlarmConfigListByModel" parameterClass="eventInterpose" resultClass="eventInterpose">
+		 select distinct t.alarm_config_id alarmconfid,
+                       t.i_event_interpose_id interposeid,
+                       GetXtxx(t.i_interpose_type) interposetype,
+                       t.i_interpose_type interposetypeid,
+                       GetXtxx(t.i_fault_type) faulttype,
+                       t.i_fault_type faulttypeid,
+                       t.alarm_range alarmrange,
+                       t.alarm_name alarmname,
+                       t.alarm_id alarmid,
+                       t.position position,
+                       getusername(t.updateperson) updateperson,
+                       t.updatetime,
+                       t.remark from T_EVENT_INTERPOSE_ALARM_CON t where
+                  t.i_interpose_type = #interposetypeid#
+                  and t.i_fault_type = #faulttypeid#
+                  and t.equiptype like '%$equiptype$%'
+	</select>
+	
+	<select id="getAllOperateList" resultClass="operateModel">
+		select distinct t.operate_id operateid,
+                                getInterposeName(t.interpose_id) projectname,
+                                t.interpose_id interposeid,
+                                t.operate_type_id operatetypeid,
+                                getOperateType(t.operate_type_id) operatetype,
+                                t.operate_result operateresult,
+                                GetXtxx(s.a_equiptype) a_equiptype,
+                                GetXtxx(s.z_equiptype) z_equiptype,
+                                t.operate_order operateorder,
+                                t.updatetime,
+                                t.remark,
+                                t.a_equipcode,
+                                t.z_equipcode,
+                                getequipname(t.a_equipcode) a_equipname,
+                                getequipname(t.z_equipcode) z_equipname,
+                                getusername(t.updateperson) updateperson
+                  from T_OPERATE t, t_maintenance_procedure s
+                 where t.operate_type_id = s.operate_type_id
+                 order by t.updatetime, t.interpose_id,t.operate_order desc
+	</select>
+	
+	<select id="getAlarmIdsByAlarmId" parameterClass="string" resultClass="string">
+		 select wm_concat(distinct t.alarm_id) from t_alarm_transmit t where t.parent_id in (
+ 			select t.oper_id from t_alarm_transmit t where t.alarm_id=#alarmid#)
+	</select>
+	
+	<select id="getAlarmTransmitByAlarmId" parameterClass="string" resultClass="operateModel">
+		select distinct alarm_name, alarm_id, oper_desc, vender, vendercode
+		  from t_alarm_transmit
+		 where alarm_id = #alarmid#
+	</select>
+	
+	<select id="getZPortCodeListByEquipcode" parameterClass="string" resultClass="string">
+		select  t.zendptp from en_topolink t where t.equip_a=#equipcode#
+		union select t.aendptp zendptp from en_topolink t where  t.equip_z=#equipcode#
+	</select>
+	
+	<select id="getZ_EquipcodeByPortCode" parameterClass="string" resultClass="string">
+		<!-- select distinct t.pid from cc t where (t.aptp=#portcode# or t.zptp=#portcode#) -->
+		select equipcode from equiplogicport t where t.logicport=#portcode#
+	</select>
+	<select id="getEquipSlotSerialById" parameterClass="string" resultClass="string">
+		select t.slotserial from equiplogicport t where t.logicport=#portcode#
+	</select>
+	
+	<select id="getInterposeIdsByAlarmMap" parameterClass="map" resultClass="string">
+		select distinct a.i_event_interpose_id from alarminfo a where 
+		a.iscleared='0'
+		and a.alarmman=#alarmman#
+   		and a.pristinerootalarm='1'
+		and a.i_event_interpose_id in
+		<iterate property="templst" open="(" close=")" conjunction=",">
+			#templst[]#
+		</iterate>
+		
+	</select>
+<select id="getAllInterposeListExcel" resultClass="eventInterpose">
+		select distinct t.i_event_interpose_id interposeid,
+			       t.i_project_id projectid,
+			       t.INTERPOSE_NAME interposename,
+			       getProjectName(t.i_project_id) projectname,
+			       getuseridbyprj(t.i_project_id) user_id,
+			       getusernamebyprjnew(t.i_project_id) user_name,
+			       GetXtxx(t.i_interpose_type) interposetype,
+			       t.i_interpose_type interposetypeid,
+			       GetXtxx(t.i_fault_type) faulttype,
+			       t.i_fault_type faulttypeid,
+			       decode(t.is_main_interpose,0,'是','否') ismaininterpose,
+			       decode(t.is_active,0,'未激活','激活') isactive,
+			       t.equiptype,
+			       t.equipcode,
+			       getequipname(t.equipcode) equipname,
+			       getusername(t.updateperson) updateperson,
+			       t.updatetime,
+			       t.remark,
+			       resourcecode,
+			       resourcename,
+			       s_event_title
+			  from t_event_interpose t 
+        order by t.i_event_interpose_id asc
+	</select>
+	
+	<select id="getAllMantainListExcel" resultClass="maintainModel">
+		select distinct t.operate_type_id operatetypeid,
+                t.operate_type operatetype,
+                t.hasa_equip hasA_equip,
+                GetXtxx(t.a_equiptype) a_equiptype,
+                t.a_equiptype a_equiptype_code,
+                t.hasz_equip hasZ_equip,
+                GetXtxx(t.z_equiptype) z_equiptype,
+                t.z_equiptype z_equiptype_code,
+                t.hasinterpose isinterposeoperate,
+                t.operate_des operatedes,
+                t.expected_result expectedresult,
+                t.remark,
+                getusername(t.updateperson) updateperson,
+                t.updatetime,
+                t.a_equipcode,
+                t.z_equipcode,
+                getequipname(t.a_equipcode) a_equipname,
+                getequipname(t.z_equipcode) z_equipname
+		  from t_maintenance_procedure t
+		 order by t.operate_type_id asc
+	</select>
+		<select id="getAllFaultFunctions" resultClass="operateModel" parameterClass="java.lang.String">
+        select xtbm projectid,xtxx projectname,description operatetypeid,getxtxx(description) operatetype,ismaincode parent_id from  xtbm
+        where ismaincode=#value# and type='FAULTTYPE' order by xtbm         
+    </select>
+     <insert id="insertFaultType" parameterClass="operateModel">
+    	insert into xtbm(xtbm,xtxx,ismaincode,description,type)
+    	values(
+    	( select 'AT' || to_number(substr(#operatetypeid# , 3)) || (lpad(nvl(max(substr(xtbm, 4)), '0') + 1, 7, 0))   from xtbm x where x.description = #operatetypeid#  ),
+    	#projectname#,#parent_id#,#operatetypeid#,'FAULTTYPE')
+    </insert>
+    <update id="updateFaultTypeByOperId" parameterClass="operateModel">
+        update xtbm set xtxx = #projectname# ,description = #operatetypeid#    
+        where xtbm=#projectid# and type='FAULTTYPE'
+    </update>
+    <delete id="delFaultType" parameterClass="java.lang.String">
+    	delete from xtbm where xtbm=#projectid# and type='FAULTTYPE'
+    </delete>
+	<select id="getCruFaulterFlag" resultClass="scenePrj" parameterClass="map">
+		select user_id from sec_role_user where role_id=19214 and user_id=#user_id#
+	</select>
+	
+	<select id="getAlarmNameByAlarmId" parameterClass="string" resultClass="string">
+		select t.o_alarmdesc from alarmdefine t where t.id=#alarmId#
+	</select>
+	
+	<select id="getZportCodeListByAportcode" parameterClass="map" resultClass="string">
+<!--		select t.zendptp from en_topolink t where t.equip_a=#equipA# and t.aendptp=#code#-->
+<!--		union select t.aendptp zendptp from en_topolink t where t.equip_z=#equipA# and t.zendptp=#code#-->
+		select distinct t.zptp from cc t where t.aptp=#code# and t.pid=#equipA#
+		union
+		select distinct t.aptp zptp from cc t where t.zptp=#code# and t.pid=#equipA#
+	</select>
+	
+	<select id="getZportCodeListByPackcode" parameterClass="map" resultClass="java.util.HashMap">
+		select t.equipcode,t.frameserial,t.slotserial,t.packserial from equippack t where t.id=#code#
+	</select>
+	
+	<select id="getPortcodesByMap" parameterClass="map" resultClass="string">
+		select distinct t.logicport from equiplogicport t where t.equipcode=#equipcode# 
+		and t.frameserial=#frameserial# and t.slotserial=#slotserial# and t.packserial=#packserial#
+	</select>
+	
+	<select id="getUsePortcodesByMap" parameterClass="map" resultClass="string">
+		select t.logicport
+		  from equiplogicport t
+		 where t.equipcode = #equipcode#
+		   and t.frameserial = #frameserial#
+		   and t.slotserial = #slotserial#
+		   and t.packserial = #packserial#
+		   and t.logicport in
+		       (select c.tp_id_a
+		          from circuit_cc c
+		         where c.equipcode = #equipcode#
+		        union
+		        select c.tp_id_z
+		          from circuit_cc c
+		         where c.equipcode = #equipcode#)
+	</select>
+	
+	<select id="getZportCodeListByAportcodeLst" parameterClass="map" resultClass="string">
+		select distinct t.zptp from cc t where t.pid=#equipcode# 
+		and t.aptp in 
+		<iterate property="a_portLst" open="(" close=")" conjunction=",">
+			#a_portLst[]#
+		</iterate>
+		union 
+		select distinct t.aptp zptp from cc t where t.pid=#equipcode# 
+		and t.zptp in 
+		<iterate property="a_portLst" open="(" close=")" conjunction=",">
+			#a_portLst[]#
+		</iterate>
+	</select>
+	<select id="getInterposeIdsByEquipcode" parameterClass="map" resultClass="string">
+		select distinct t.i_event_interpose_id id from t_event_interpose t where t.equipcode=#equipcode# and t.s_event_title!='割接'
+		<isNotEmpty prepend="and" property="type">
+			instr( #type#,t.equiptype)>0
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="name">
+			t.resourcename=#name#
+		</isNotEmpty>
+		union 
+		select distinct s.i_event_interpose_id id from t_event_interpose s where s.equipcode is null 
+		and s.resourcecode in (
+			select t.label from en_topolink t where t.equip_a=#equipcode# or t.equip_z=#equipcode#)
+	</select>
+	
+	<select id="getEquippackModelByMap" parameterClass="map" resultClass="string">
+		select t.packmodel
+		  from equippack t
+		 where t.equipcode = #equipcode#
+		   and t.frameserial = #frameserial#
+		   and t.slotserial = #slotserial#
+		   and t.packserial = #packserial#
+		   and rownum = '1'
+		
+	</select>
+	
+	<select id="getOpticalIdByToplinkid" parameterClass="string" resultClass="string">
+		select t.name_std
+  from optical t
+ where t.resid =
+       (select decode(o.opticalcode, null, '', o.opticalcode)
+          from optical_topolink o
+         where o.topolinkid =
+               (select decode(e.resid, null, '', e.resid)
+                  from en_topolink e
+                 where e.label = #toplinkid#))
+		
+	</select>
+	
+	<select id="getStdMaintainProModelByType" parameterClass="string" resultClass="maintainModel"> 
+		select distinct t.operate_type_id operatetypeid,
+                t.operate_type operatetype,
+                t.hasa_equip hasA_equip,
+                GetXtxx(t.a_equiptype) a_equiptype,
+                t.a_equiptype a_equiptype_code,
+                t.hasz_equip hasZ_equip,
+                GetXtxx(t.z_equiptype) z_equiptype,
+                t.z_equiptype z_equiptype_code,
+                t.hasinterpose isinterposeoperate,
+                t.operate_des operatedes,
+                t.expected_result expectedresult,
+                t.remark,
+                getusername(t.updateperson) updateperson,
+                t.updatetime,
+                t.a_equipcode,
+                t.z_equipcode,
+                getequipname(t.a_equipcode) a_equipname,
+                getequipname(t.z_equipcode) z_equipname
+  from t_maintenance_procedure t where t.operate_type_id=#operatetype#
+	</select>
+	
+	<select id="getInterposeIdsByAlarmModel" parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos" resultClass="string">
+		select wm_concat(distinct a.i_event_interpose_id) from alarminfo a where 
+		a.iscleared=#iscleared#
+		and a.alarmman=#alarmman#
+		and a.isacked = '0'
+		and a.belongequip=#belongequip#
+		and a.i_event_interpose_id is not null
+		and a.alarmtype!='1'
+		<isNotEmpty prepend="and" property="belongframe">
+			a.belongframe=#belongframe#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="belongslot">
+			a.belongslot=#belongslot#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="belongpack">
+			a.belongpack=#belongpack#
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="belongport">
+			a.belongport=#belongport#
+		</isNotEmpty>
+	</select>
+	<delete id="deleteAlarmInfoByInterposeId" parameterClass="string">
+		delete from alarminfo where i_event_interpose_id=#interposeId#
+	</delete>
+	<delete id="deleteTOperateByInterposeId" parameterClass="string">
+		delete  from t_operate t where t.interpose_id=#interposeId#
+	</delete>
+	
+	<select id="getPortcodeAndEquipcodeGroups" parameterClass="string" resultClass="string">
+		select t.equip_a||';'||t.equip_z||';'||t.aendptp||';'||t.zendptp  from en_topolink t where t.label=#resourcecode#
+	</select>
+	
+	<select id="getSlotSerialByPortCode" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		select t.equipcode id,t.slotserial label from equiplogicport t where t.logicport=#portcode#
+	</select>
+	
+	<select id="getTopLinksByMap" parameterClass="map" resultClass="string">
+		select t.label from en_topolink t where 
+		t.label=#label# and (t.equip_a=#equipcode# or t.equip_z=#equipcode#)
+	</select>
+	
+	<select id="getEn_toplinkAndPortsByEquipcode" parameterClass="string" resultClass="string">
+		select t.label||';'||t.aendptp||';'||t.zendptp from en_topolink t where t.equip_a=#eqcode# or t.equip_z=#eqcode#
+	</select>
+	<select id="getToplinkLabelByPortcode" parameterClass="string" resultClass="string">
+		select getequipsbmc(s.equipcode)||'-'||s.slotserial||'槽'||s.portserial||'端口' from equiplogicport s where s.logicport=#portcode#
+	</select>
+	<select id="getEventIdListByEquipcode" parameterClass="string" resultClass="string">
+		select distinct t.i_event_interpose_id from t_event_interpose t 
+		where t.equipcode=#equipcode# and t.i_fault_type = 'AT10000001'
+	</select>
+	
+	<select id="getEquipModelBySysCode" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		select distinct t.x_model id, t.x_model label
+		  from equipment t
+		 where t.x_vendor = (select s.vendor
+		                       from transsystem s
+		                      where s.systemcode = #syscode#)
+		 order by id asc
+				
+	
+	</select>
+	
+	<select id="getEquipvendorBySystermcode" parameterClass="string" resultClass="string">
+		select t.vendor from transsystem t where t.systemcode=#syscode#
+	
+	</select>
+	<insert id="addEquipmentByModel" parameterClass="eventInterpose" >
+		<selectKey keyProperty="equipcode" resultClass="string">
+			select lpad(equipment_sequence.nextval,20,0) as equipcode from dual
+		</selectKey>
+		insert into equipment(EQUIPCODE,X_VENDOR,S_SBMC,equiplabel,UPDATEPERSON,UPDATEDATE,SYSTEM_NAME,X_MODEL)
+		values(#equipcode#,#x_vendor#,#equipname#,#equipname#,#updateperson#,#updatetime#,#sys_code#,#equipmodel#)
+	</insert>
+	
+	<select id="getEquipcodesAndLinerate" parameterClass="string" resultClass="string">
+		select t.equip_a||';'||t.equip_z||';'||getxtxx(t.linerate)||';'||t.linerate  from en_topolink t where t.label=#toplinkid#
+	</select>
+	
+	<insert id="insertEquippackByModel" parameterClass="eventInterpose">
+		insert into equippack
+		  (equipcode,
+		   frameserial,
+		   slotserial,
+		   packserial,
+		   s_packname,
+		   isreplace,
+		   packmodel,
+		   switchstatus,
+		   updateperson,
+		   updatedate,
+		   id)
+		values
+		  (#equipcode#,
+		   #frameserial#,
+		   #slotserial#,
+		   #packserial#,
+		   #packmodel#,
+		   'SYN',
+		   #packmodel#,
+		   'default',
+		   #updateperson#,
+		   to_date(#updatetime#, 'YYYY-MM-DD hh24:mi:ss'),
+		   METAR_UTL.gen_board_code())
+	</insert>
+	
+	<delete id="deleteToplinkById" parameterClass="string">
+		delete from en_topolink t where t.label='$toplinkid$'
+	</delete>
+	
+	<insert id="insertEn_ToplinkByModel" parameterClass="eventInterpose">
+		insert into EN_TopoLink(
+			systemcode,aendptp,zendptp,linerate,updatedate,updateperson,label,equip_a,equip_z)
+			values(#sys_code#,#porta#,#portz#,#toplinkrate#,to_date('$updatetime$','YYYY-MM-DD hh24:mi:ss'),
+			#updateperson#,#toplinkid#,#equipa#,#equipz#)
+	</insert>
+	
+	<insert id="insertPortByModel" parameterClass="eventInterpose">
+		insert into EquipLogicPort(equipcode, frameserial,slotserial,packserial,portserial,
+                      isbind,y_porttype,x_capability, status,updatedate,updateperson,sync_status,logicport) 
+                      values(#equipcode#, #frameserial#, #slotserial#, #packserial#, #portserial#, 'default',
+                       'ZY03070401', #toplinkrate#, 'ZY13100202', to_date(#updatetime#, 'YYYY-MM-DD hh24:mi:ss'),
+                        #updateperson#, 'ZT00', lpad(en_logicport_seq.nextval, 20, 0))
+	</insert>
+	<select id="getEquiplogicportByEquipcode" parameterClass="string" resultClass="string">
+		select distinct t.logicport from equiplogicport t where t.equipcode=#equipcode#
+	</select>
+	
+	<update id="updateRe_sys_equipLocation" parameterClass="map">
+		update re_sys_equip t set
+		t.x=#x#,
+		t.y=#y#
+		where t.equipcode=#equipcode#
+	</update>
+	<select id="getSlotAndRateByPortcode" parameterClass="string" resultClass="eventInterpose">
+		select t.aslot slotserial,t.rate toplinkrate from cc t where t.aptp=#temp# union
+		select t.zslot slotserial,t.rate toplinkrate from cc t where  t.zptp=#temp#
+	</select>
+	
+	<insert id="insertIntoCCByMap" parameterClass="map">
+		insert into cc(id,pid,rate,direction,aptp,aslot,zptp,zslot,type,isdefault,sync_status,updatedate) 
+		values(#ID#,#PID#,#RATE#,#DIRECTION#,#APTP#,#ASLOT#,#ZPTP#,#ZSLOT#,#TYPE#,#ISDEFAULT#,#SYNC_STATUS#,to_date(#UPDATEDATE#, 'YYYY-MM-DD hh24:mi:ss'))
+	</insert>
+	
+	<select id="getToplinkLstByEquipcode" parameterClass="string" resultClass="eventInterpose">
+		select t.linerate toplinkrate, t.label toplinkid
+		  from en_topolink t
+		 where t.equip_a = #equipcode#
+		    or t.equip_z = #equipcode#
+		
+	</select>
+	
+	<select id="getToplinkRateAndPortAndEquipzByEquipcode" parameterClass="string" resultClass="eventInterpose">
+		select t.aendptp porta,t.equip_a equipa,t.linerate toplinkrate
+		  from en_topolink t
+		 where t.equip_z = #equipcode#
+		 union 
+		 select t.zendptp porta,t.equip_z equipa,t.linerate toplinkrate
+		  from en_topolink t
+		 where t.equip_a = #equipcode#
+	</select>
+	
+	<select id="getAllBusinessRelateCircuitcode" resultClass="string">
+<!--		select distinct s.circuitcode from business_circuit s where s.business_id in(-->
+<!--			select distinct t.business_id from business t)-->
+	
+		select n.circuitcode from (
+   select m.circuitcode,no from( select distinct s.circuitcode, row_number() over(order by s.business_id desc) no from business_circuit s where s.business_id in(
+      select distinct t.business_id from business t) ) m where m.no&lt;=800)n
+	</select>
+	
+	<select id="getAllRelatedCircuitCode" parameterClass="map" resultClass="string">
+		select distinct t.circuitcode
+		  from circuit_cc t
+		 where 1=1
+		 <isNotEmpty prepend="and" property="equipcode">
+			t.equipcode = #equipcode#
+		</isNotEmpty>
+		 <isNotEmpty prepend="and" property="portcode">
+			(t.tp_id_a=#portcode# or t.tp_id_z = #portcode#)
+		</isNotEmpty>
+		
+	</select>
+	
+	<select id="getPortCodesByCCID" parameterClass="string" resultClass="string">
+		select t.aendptp||';'||t.zendptp from en_topolink t  where t.label=#ccid#
+	</select>
+	
+	<select id="getEquipcodeAndEquipName" parameterClass="string" resultClass="eventInterpose">
+		select t.equipcode,getequipsbmc(t.equipcode) equipname from equiplogicport t 
+		where t.logicport=#portcode#
+	</select>
+	
+	<select id="getCircuitByCircuitcode" parameterClass="string" resultClass="resManager.resBusiness.model.Circuit">
+		select t.circuitcode,t.portcode1,t.portcode2,t.path,t.remark 
+		from circuit t where t.circuitcode=#circuitcode#
+	</select>
+	
+	<select id="getCircuitByCircuitcode1" parameterClass="string" resultClass="resManager.resBusiness.model.Circuit">
+		select t.circuitcode, getequipcodebyportid(t.portcode1) portcode1,getequipcodebyportid(t.portcode2) portcode2,t.path,t.remark 
+		from circuit t where t.circuitcode=#circuitcode#
+	</select>
+	
+	<select id="getEquipcodeAndCounts" parameterClass="string" resultClass="resManager.resBusiness.model.Circuit">
+		select t.equipcode circuitcode,
+	       count(*) no,
+	       getequipsbmc(t.equipcode) username,
+	        t.ts_a slot1
+		  from circuit_cc t
+		 where t.circuitcode = #circuitcode#
+		 group by t.equipcode,t.ts_a
+	</select>
+	
+	<select id="getEquipcodeByEquipName" parameterClass="string" resultClass="string">
+		select equipcode from equipment t where t.s_sbmc=#equipname#
+	</select>
+	
+	<select id="getAllPortcodeLstByMap" parameterClass="map" resultClass="string">
+		select t.tp_id_a || ';' || t.tp_id_z
+  		from circuit_cc t
+ 		where t.circuitcode = #circuitcode#
+   		and t.equipcode = #equipcode#
+	</select>
+	<select id="getLogicPortInfos" parameterClass="string" resultClass="resManager.resNet.model.LogicPort">
+		select t.* from equiplogicport t where t.logicport=#portcode#
+	</select>
+	<select id="getAllRouteInfosByID" parameterClass="string" resultClass="resManager.resBusiness.model.CircuitChannel">
+		select t.equipcode channelcode, t.tp_id_a portcode1, t.tp_id_z portcode2
+  			from circuit_cc t
+			where t.circuitcode =#circuitcode# 
+	
+	</select>
+	
+	<select id="getAlarmInfosByModel" parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos" resultClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+		select distinct v.carrycircuit,
+                v.alarmnumber,
+                v.vendor,
+                v.belongtransys,
+                v.belongequip,
+                v.belongpackobject,
+                v.belongportobject,
+                v.isworkcasezh,
+                v.alarmdesc,
+                v.alarmlevel,
+                v.alarmobject,
+                v.alarmobjdesc,
+                v.firststarttime,
+                v.isackedzh,
+                v.objclasszh,
+                v.isrootalarmzh,
+                v.laststarttime,
+                v.vendorzh,
+                v.belongslot,
+                v.belongport,
+                v.belongpack,
+                v.belongportcode,
+                v.ackperson,
+                v.acktime,
+                v.flashcount,
+                v.dealresultzh,
+                v.endtime,
+                v.dealperson,
+                v.bugno,
+                v.isworkcase,
+                v.dealresult,
+                v.belongstation,
+                v.unit,
+                v.area,
+                v.isfilter,
+                v.isbugno,
+                v.ackcontent,
+                getAlarmTypeByAlarmNumber(v.alarmnumber) alarmType,
+                v.interposeid
+		  from v_alarminfonew v
+		 where v.alarmobjdesc = #alarmobjdesc#
+<!--		   and substr(to_char(v.firststarttime,'yyyy-MM-dd HH24:mi:ss'),1,16) &lt;=substr(#beginTime#,1,16)-->
+		   and substr(to_char(v.firststarttime,'yyyy-MM-dd HH24:mi:ss'),1,16)>substr(#endTime#,1,16)
+		   and v.alarmlevel =#alarmlevel#
+		   and v.interposeid = #interposeid#
+		   and v.alarmdesc = #alarmdesc#
+		   and v.carrycircuit = #carrycircuit#
+		   and v.alarmman=#alarmman#
+		   and v.iscleared='0'
+	</select>
+	<delete id="deleteAlarmByEquipcode" parameterClass="string">
+		delete from alarminfo t where t.belongequip=#equipcode#
+	</delete>
+	
+	<update id="updateAlarmInfosByInterposeid" parameterClass="string">
+		update alarminfo t set t.pristinerootalarm='1' where t.i_event_interpose_id=#interposeid#
+	</update>
+	<delete id="deleteEn_toplinkByID" parameterClass="string">
+		delete from en_topolink t where t.label=#toplinkid#
+	</delete>
+	
+	<select id="getInterposeLogCount" resultClass="java.lang.Integer" parameterClass="faultSimulation.model.InterposeLogModel">
+    	select count(*) from interpose_alarm_log  a
+    	<dynamic prepend="where">
+    	 <isNotEmpty prepend="and" property="logtype">
+     		 	a.log_type like '%$logtype$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="eventname">
+     		 	a.event_name like '%$eventname$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="logtime">
+     		 	a.log_time like '%$logtime$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="sourceobj">
+     		 	a.source_obj like '%$sourceobj$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="accessobj">
+     		 	a.access_obj like '%$accessobj$%'
+     		</isNotEmpty>
+     		<isNotEmpty prepend="and" property="eventtype">
+     		 	a.event_type like '%$eventtype$%'
+     		</isNotEmpty>
+     	</dynamic>
+    </select>
+	
+	<select id="getInterposeLogList" parameterClass="faultSimulation.model.InterposeLogModel" resultClass="faultSimulation.model.InterposeLogModel">
+    	 select * from (select rownum no, a.*
+				        from (select LOG_ID logid,
+		                     log_type logtype,
+		                     event_name eventname,
+		                     LOG_TIME logtime,
+		                     source_obj sourceobj,
+		                     access_obj accessobj,
+		                     event_type eventtype
+				              from   interpose_alarm_log
+				              order by log_time desc) a 
+					         <dynamic prepend="where">
+					    	 <isNotEmpty prepend="and" property="logtype">
+					     		 	a.logtype like '%$logtype$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="logid">
+					     		 	a.logid like '%$logid$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="eventname">
+					     		 	a.eventname like '%$eventname$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="logtime">
+					     		 	a.logtime like '%$logtime$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="sourceobj">
+					     		 	a.sourceobj like '%$sourceobj$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="accessobj">
+					     		 	a.accessobj like '%$accessobj$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="eventtype">
+					     		 	a.eventtype like '%$eventtype$%'
+					     		</isNotEmpty>
+							</dynamic>
+     	) b where b.no>#start# and b.no &lt;=#end#   		
+    </select>
+	
+	<select id="getAllInterposeLogListExcel" parameterClass="faultSimulation.model.InterposeLogModel" resultClass="faultSimulation.model.InterposeLogModel">
+		select * from (select rownum no, a.*
+				        from (select LOG_ID logid,
+		                     log_type logtype,
+		                     event_name eventname,
+		                     LOG_TIME logtime,
+		                     source_obj sourceobj,
+		                     access_obj accessobj,
+		                     event_type eventtype
+				              from   interpose_alarm_log
+				              order by log_time desc) a 
+					         <dynamic prepend="where">
+					    	 <isNotEmpty prepend="and" property="logtype">
+					     		 	a.logtype like '%$logtype$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="eventname">
+					     		 	a.eventname like '%$eventname$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="logtime">
+					     		 	a.logtime like '%$logtime$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="sourceobj">
+					     		 	a.sourceobj like '%$sourceobj$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="accessobj">
+					     		 	a.accessobj like '%$accessobj$%'
+					     		</isNotEmpty>
+					     		<isNotEmpty prepend="and" property="eventtype">
+					     		 	a.eventtype like '%$eventtype$%'
+					     		</isNotEmpty>
+							</dynamic>
+     	) b
+	</select>
+	
+	<select id="getAllEquipment" resultClass="resManager.resNet.model.Equipment">
+	
+			select t.equipcode,
+		       t.s_sbmc equiplabel,
+		       t.x_vendor,
+		       t.x_model,
+		       t.system_name
+		  from equipment t
+		 where t.equiptype != 'ODF设备'
+		   and t.equiptype != 'DDF设备'
+<!--		   and t.system_name != 'SDH'-->
+		   and t.system_name != '不存在'
+		   and t.system_name != '南网'
+	</select>
+	<select id="getAllEquippack"  parameterClass="string" resultClass="resManager.resNode.model.EquipPack">
+		select   t.equipcode,s_packname || '-' || frameserial || '框' || slotserial || '槽' ||
+       packserial || '盘' as equipname,t.frameserial,t.slotserial,t.packserial from equippack t 
+       where  t.equipcode=#equipcode#
+	</select>
+	<select id="getAllLogicport" parameterClass="string" resultClass="resManager.resNet.model.LogicPort">
+		select slotserial || ',' || logicport as equipcode,
+       	slotserial || '槽' || portserial as equipname
+  		from equiplogicport
+ 		where equipcode = #equipcode#
+ 		order by slotserial || ',' || logicport
+	</select>
+	<select id="getAllTopLink" parameterClass="string" resultClass="resManager.resNet.model.TopoLink">
+		select t.label,
+       getportlabel(t.aendptp) alabel,
+       getportlabel(t.zendptp) zlabel
+  		from en_topolink t
+		 where t.equip_a = #equipcode#
+    	or t.equip_z = #equipcode#
+		
+	</select>
+	<select id="getAllInterposeFaultList" parameterClass="string" resultClass="eventInterpose">
+		select distinct t.i_interpose_type interposetypeid,
+                t.s_interpose_type interposetype,
+                t.i_fault_type faulttypeid,
+                t.s_fault_type faulttype,
+                t.equiptype,
+                GetXtxx(t.equipvendor) equipvendor,
+                t.equipvendor x_vendor,
+                getusername(t.updateperson) updateperson,
+                t.updatetime,
+                t.remark,
+                t.operatetype,
+                t.operatetypeid
+  from t_interpose_r_fault t where t.equiptype=#equiptype#
+		
+	</select>
+	
+	<select id="getEquippackTypeByMap" parameterClass="map" resultClass="string">
+		select b.packname
+  from equippack_model b,
+       (select t.packmodel, a.x_model
+          from equippack t, equipment a
+         where a.equipcode = t.equipcode
+           and t.equipcode = #equipcode#
+           and t.frameserial = #frameserial#
+           and t.slotserial = #slotserial#
+           and t.packserial = #packserial#) m
+ where b.equipmodel = m.x_model
+   and b.packmodel = m.packmodel
+	</select>
+	<select id="getEquippackTypeByMap1" parameterClass="map" resultClass="string">
+		select b.packname
+  from equippack_model b,
+       (select t.packmodel, a.x_model
+          from equippack t, equipment a
+         where a.equipcode = t.equipcode
+           and t.id = #id#
+           and t.slotserial = #slotserial#) m
+ where b.equipmodel = m.x_model
+   and b.packmodel = m.packmodel
+	</select>
+	<select id="getEquippackTypeByMap2" parameterClass="map" resultClass="string">
+		select b.packname
+  from equippack_model b,
+       (select t.packmodel, a.x_model
+          from equippack t, equipment a,equiplogicport l
+         where a.equipcode = t.equipcode
+           and    a.equipcode=l.equipcode
+           and l.logicport = #logicport#
+           and t.slotserial = #slotserial#) m
+ where b.equipmodel = m.x_model
+   and b.packmodel = m.packmodel
+	</select>
+	
+	<select id="getAllCircuitCode" resultClass="string">
+		select distinct circuitcode from circuit
+	</select>
+	
+	<select id="getAlarmTypeByID" parameterClass="string" resultClass="string">
+		select t.s_event_title from t_event_interpose t where t.i_event_interpose_id=#interposeid#
+	</select>
+	
+	<update id="modifyInterposeInfo" parameterClass="string">
+		update t_event_interpose t set t.s_a_object_id='已处理' where t.i_event_interpose_id=#interposeid#
+	</update>
+	
+	<update id="updateAlarmInfoCleared" parameterClass="string">
+		update  alarminfo t set t.iscleared='1' where t.i_event_interpose_id=#interposeid#
+	</update>
+	
+	<update id="updateCircuit_ccABycodes" parameterClass="map">
+		update circuit_cc t set t.tp_id_a=#portcode# where t.tp_id_a=#oldportcode#
+	</update>
+	<update id="updateCircuit_ccZBycodes" parameterClass="map">
+		update circuit_cc t set t.tp_id_z=#portcode# where t.tp_id_z=#oldportcode#
+	</update>
+	
+	<select id="selectPortCircuitBycode" parameterClass="map" resultClass="string">
+		select t.circuit from equiplogicport t where t.logicport=#oldportcode#
+	</select>
+	
+	<update id="updateEquiplogicPortInfoA" parameterClass="map">
+		update equiplogicport t set t.circuit=''  where t.logicport=#oldportcode#
+	</update>
+	<update id="updateEquiplogicPortInfoZ" parameterClass="map">
+		update equiplogicport t set t.circuit=#circuitcode#  where t.logicport=#portcode#
+	</update>
+	
+	<update id="updateCircuitInfoABycodes" parameterClass="map">
+		update circuit t
+   		set t.portcode1 = #portcode#, t.portserialno1 =#portcode#
+ 		where t.circuitcode = #circuitcode#
+   		and t.portcode1 = #oldportcode#
+	</update>
+	<update id="updateCircuitInfoZBycodes" parameterClass="map">
+		update circuit t
+   		set t.portcode2 = #portcode#, t.portserialno2 =#portcode#
+ 		where t.circuitcode = #circuitcode#
+   		and t.portcode2 = #oldportcode#
+	</update>
+	
+	<select id="getCCLstByPortcode" parameterClass="map" resultClass="resManager.resNet.model.CCModel">
+		select id, pid, rate, t.direction, t.aptp, t.aslot, t.zptp, t.zslot
+  		from cc t
+ 		where (t.aptp = #oldportcode# or t.zptp = #oldportcode#)
+	</select>
+	
+	<update id="updateCCAbycodes" parameterClass="map">
+		update cc t set t.id=#id#,t.aptp=#portcode# where t.id=#oldid#
+	</update>
+	<update id="updateCCZbycodes" parameterClass="map">
+		update cc t set t.id=#id#,t.zptp=#portcode# where t.id=#oldid#
+	</update>
+	<select id="selectEn_topLinkByMap" parameterClass="map" resultClass="resManager.resNet.model.TopoLink">
+		select t.label,t.aendptp,t.zendptp,t.linerate from en_topolink t where t.aendptp=#oldportcode#
+	</select>
+	<update id="updateToplinkABycodes" parameterClass="map">
+		update en_topolink t set t.label=#label# ,t.aendptp=#portcode# where t.label=#oldlabel#
+	</update>
+	<update id="updateToplinkZBycodes" parameterClass="map">
+		update en_topolink t set t.label=#label# ,t.zendptp=#portcode# where t.label=#oldlabel#
+	</update>
+	
+	<select id="getPortrateByPortcode" parameterClass="map" resultClass="string">
+		select  t.x_capability from equiplogicport t where t.logicport=#code#
+	</select>
+	
+	<select id="getZportCodeListByToplink" parameterClass="map" resultClass="string">
+		select portcode2 portcode from circuit where portcode1=#code#
+		union 
+		select portcode1 portcode from circuit where portcode2=#code#
+	</select>
+	<select id="getEquipPackInfo" parameterClass="string" resultClass="resManager.resNode.model.EquipPack">
+		select distinct e.packmodel, t.x_capability portrate
+		  from equippack e, equiplogicport t
+		 where e.equipcode = t.equipcode
+		 and e.frameserial=t.frameserial
+		 and e.slotserial=t.slotserial
+		 and e.packserial=t.packserial
+		   and e.id = #id#
+	</select>
+	
+	<select id="getEquipPackInfoNew" parameterClass="string" resultClass="resManager.resNode.model.EquipPack">
+		select t.frameserial,t.slotserial,t.packserial from equippack t where t.resid=#resid#
+	</select>
+	
+	<select id="getPortInUseByPack" parameterClass="map" resultClass="string">
+		select logicport from (select distinct t.logicport,t.portserial
+		  from equippack e, equiplogicport t
+		 where e.equipcode = t.equipcode
+		 and e.frameserial=t.frameserial
+		 and e.slotserial=t.slotserial
+		 and e.packserial=t.packserial
+		   and e.id = #packcode#
+		   and t.logicport in(
+		   select c.tp_id_a from circuit_cc c where c.equipcode=#equipcode#
+		   union 
+		   select c.tp_id_z from circuit_cc c where c.equipcode=#equipcode#
+		   )
+		   order by to_number(t.portserial))
+	</select>
+	
+	<select id="getPackListByTypeAndRate" parameterClass="map" resultClass="string">
+		select distinct e.id
+		  from equiplogicport t, equippack e
+		 where t.equipcode = e.equipcode
+		   and t.frameserial = e.frameserial
+		   and t.slotserial = e.slotserial
+		   and t.packserial = e.packserial
+		   and t.equipcode = #equipcode#
+		   and e.packmodel = #packmodel#
+		   and t.x_capability = #portrate#
+	</select>
+	
+	<select id="getLogicPortNotUseByMap" parameterClass="map" resultClass="string">
+		select logicport from (select distinct t.logicport,t.portserial
+	  from equiplogicport t, equippack e
+	 where t.equipcode = e.equipcode
+	   and t.frameserial = e.frameserial
+	   and t.slotserial = e.slotserial
+	   and t.packserial = e.packserial
+<!--	   and t.equipcode = ##-->
+<!--	   and e.packmodel = 'PQ1'-->
+<!--	   and t.x_capability = 'ZY070101'-->
+	   and e.id = #newid#
+	   and t.logicport not in
+	       (select c.tp_id_a
+	          from circuit_cc c
+	         where c.equipcode = #equipcode#
+	        union
+	        select c.tp_id_z
+	          from circuit_cc c
+	         where c.equipcode = #equipcode#)
+	         order by to_number(t.portserial))
+	</select>
+	<select id="getCutPackResourceByrsearch" parameterClass="map" resultClass="java.util.HashMap">
+		select distinct t.id,$labelname$ as label,
+		t.frameserial,t.slotserial
+		 from equippack t where t.id in
+    	<iterate property="packlst" open="(" close=")" conjunction=",">
+			#packlst[]#
+		</iterate>
+		<isNotEmpty prepend="and" property="cond">
+			$labelname$ like '%$cond$%'
+		</isNotEmpty>
+		order by to_number(t.frameserial),to_number(t.slotserial)
+	</select>
+	
+	<select id="getPackcodeByMap" parameterClass="map" resultClass="string">
+		select e.id
+	  from equippack e
+	 where e.equipcode = #equipcode#
+	   and e.frameserial = #frameserial#
+	   and e.slotserial = #slotserial#
+	   and e.packserial = #packserial#
+	</select>
+	<select id="getPortTypeAndRate" parameterClass="string" resultClass="string">
+		select getportrate_nw(t.aendptp)||'='||getporttype(t.aendptp)||'='||getportrate_nw(t.zendptp)||'='||getporttype(t.zendptp)||'='||getportlabel(t.aendptp)||'='||getportlabel(t.zendptp) label from en_topolink t where t.label=#toplinkid#
+	</select>
+	<select id="getEquippackBysearch" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct e.id,$labelname$ label
+		  from equiplogicport t, equippack e
+		 where t.equipcode = e.equipcode
+		   and t.frameserial = e.frameserial
+		   and t.slotserial = e.slotserial
+		   and t.packserial = e.packserial
+		   and t.equipcode = #equipcode#
+		   and t.x_capability = #x_capability#
+		   and t.y_porttype = #y_porttype#
+		   and e.packmodel is not null
+		   and t.logicport not in (
+		       select c.tp_id_a from circuit_cc c where c.equipcode=#equipcode#
+		       union
+		       select c.tp_id_z from circuit_cc c where c.equipcode=#equipcode#
+		   )
+		   <isNotEmpty prepend="and" property="cond">
+		    $labelname$ like '%$cond$%'
+		   </isNotEmpty>
+		   order by e.id
+	</select>
+	<select id="getEquipportBysearch" parameterClass="map" resultClass="java.util.HashMap">
+		select distinct t.logicport id ,getportlabelnew(t.logicport) label,
+		t.frameserial,t.slotserial,t.portserial
+		  from equiplogicport t, equippack e
+		 where t.equipcode = e.equipcode
+		   and t.frameserial = e.frameserial
+		   and t.slotserial = e.slotserial
+		   and t.packserial = e.packserial
+		   and t.equipcode = #equipcode#
+		   and t.x_capability = #x_capability#
+		   and t.y_porttype = #y_porttype#
+		   <isNotEmpty prepend="and" property="id">
+		   	e.id=#id#
+		   </isNotEmpty>
+		   and e.packmodel is not null
+		   and t.logicport not in (
+		       select c.tp_id_a from circuit_cc c where c.equipcode=#equipcode#
+		       union
+		       select c.tp_id_z from circuit_cc c where c.equipcode=#equipcode#
+		   )
+		   <isNotEmpty prepend="and" property="cond">
+		    getportlabelnew(t.logicport) like '%$cond$%'
+		   </isNotEmpty>
+		order by to_number(t.frameserial),to_number(t.slotserial),to_number(t.portserial)
+	</select>
+	
+	<select id="getCircuitcodeByPorts" parameterClass="map" resultClass="string">
+		select distinct t.circuitcode from circuit_cc t where t.tp_id_a=#porta# or t.tp_id_z=#porta#
+		union 
+		select distinct t.circuitcode from circuit_cc t where t.tp_id_a=#portz# or t.tp_id_z=#portz#
+	</select>
+	<select id="getCircuitInfoBycode" parameterClass="string" resultClass="resManager.resBusiness.model.Circuit">
+		select t.portcode1,t.slot1,t.rate from circuit t where t.circuitcode=#circuitcode#
+	</select>
+	<select id="getOcableNameById" parameterClass="string" resultClass="string">
+		select t.ocablename from en_ocable t where t.ocablecode=#ocablecode#
+	</select>
+	<select id="getFaultTypelstByMap" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select t.i_fault_type id, t.s_fault_type label
+		  from t_interpose_r_fault t
+		 where t.i_interpose_type = #interposetypeid#
+		   and t.equiptype = #equiptype#
+		 order by t.i_fault_type
+	</select>
+	<select id="getFiberNameById" parameterClass="string" resultClass="string">
+		select e.ocablename || '/第' || t.fiberserial || '芯'
+		  from en_fiber t, en_ocable e
+		 where t.ocablecode = e.ocablecode
+		   and t.fibercode =#ocablecode#
+	</select>
+	<select id="getAllEquipportByOcablecode" parameterClass="map" resultClass="string">
+		select e.aendptp || '=' || e.zendptp
+		  from en_topolink e
+		 where e.resid in
+		       (select s.topolinkid
+		          from optical_topolink s
+		         where s.opticalcode in (select distinct t.opticalid
+		                                   from en_fiber t
+		                                  where $fieldname$ = #resourcecode#
+		                                    and t.opticalid != -1))
+	</select>
+	
+	<procedure id="insertCircuit_equipment_cnt" parameterClass="map">
+		 call insertcircuit_equipment_cnt(#equipcode#,#equipcode1#,#equipcode2#,#circuitcode#,'1','0')
+<!--		 insert into circuit_equipment_cnt(circuitcode,equipcode,cnt) values(#circuitcode#,#equipcode#,#cnt#)-->
+	</procedure>
+	<delete id="deleteCircuit_equipment_cnt" parameterClass="map">
+		delete from circuit_equipment_cnt where circuitcode=#circuitcode#
+	</delete>
+	
+	<select id="getAreaNameByEquipcode" parameterClass="string" resultClass="string">
+		select getxtxx(s.province)
+		  from equipment t, station s
+		 where t.stationcode = s.stationcode
+		   and t.equipcode =#equipcode#
+	</select>
+	
+	<delete id="deleteEquipmentCCByEquipcode" parameterClass="string">
+		delete from cc t where t.pid=#equipcode#
+	</delete>
+	
+	<delete id="deleteEquipLinkByEquipcode" parameterClass="string">
+		delete from en_topolink t where t.equip_a=#equipcode# or t.equip_z=#equipcode#
+	</delete>
+	
+	<delete id="deleteEquipRouteByEquipcode" parameterClass="string">
+		delete from circuit_cc t where t.equipcode=#equipcode#
+	</delete>
+	
+	<update id="updateAlarmInfosByPortcode" parameterClass="map">
+		update alarminfo t set t.belongtsvc3=#newPortCode#,
+		t.belongport=#newportserial# ,
+		t.observedvalue=#alarmobj#
+		where t.belongtsvc3=#oldPortCode# 
+		and t.belongport=#serial#
+		and t.iscleared=0 and t.isacked=0
+	</update>
+	
+	<update id="updateAlarmInfosByPortcode1" parameterClass="map">
+		update alarminfo t set t.belongtsvc3=#newPortCode#,
+		t.belongport=#newportserial# ,
+		t.belongframe =#newframserial#,
+		t.belongslot =#newslotserial#,
+		t.belongpack =#newpackserial#,
+		t.observedvalue=#alarmobj#
+		where t.belongtsvc3=#oldPortCode# 
+		and t.belongport=#serial#
+		and t.belongframe =#framserial#
+	   and t.belongslot =#slotserial#
+	   and t.belongpack =#packserial#
+		and t.iscleared=0 and t.isacked=0
+	</update>
+	
+	<select id="getAlarmobjByMap" parameterClass="map" resultClass="string">
+		select getequipname(t.belongequip)||'.'||t.belongframe||'框.'||t.belongpack||'盘'||t.belongslot||'槽' from alarminfo t 
+   where t.belongframe =#newframserial#
+     and t.belongslot =#newslotserial#
+     and t.belongpack =#newpackserial#
+     and t.belongport is null
+     and t.iscleared = 0
+     and t.isacked = 0
+	</select>
+	
+	<!--机盘上	-->
+	<update id="updateAlarmInfosBySerials" parameterClass="map">
+		update alarminfo t
+	   set t.belongframe =#newframserial#,
+	    t.belongslot =#newslotserial#,
+	     t.belongpack =#newpackserial#,
+	     t.observedvalue=#alarmobjnew#
+	 where t.belongframe =#framserial#
+	   and t.belongslot =#slotserial#
+	   and t.belongpack =#packserial#
+	   and t.belongport is null
+	   and t.iscleared = 0
+	   and t.isacked = 0
+	</update>
+	
+	<select id="getAlarmObjByPortcode" parameterClass="string" resultClass="string">
+		select getequipnamebyportid(t.logicport)||'.'|| getportlabelnew(t.logicport) from equiplogicport t 
+		where t.logicport=#portcode#
+	</select>
+	
+	<select id="getAllClassicFault" resultClass="sysManager.function.model.OperationModel" parameterClass="java.lang.String">
+        select oper_id,oper_name,parent_id,oper_desc,ischilden from  classicfault
+        where parent_id=#value# order by oper_id         
+    </select>
+    
+    <update id="updateOperationByOperIdNew" parameterClass="sysManager.function.model.OperationModel">
+        update classicfault set oper_name = #oper_name#    
+        where oper_id=#oper_id#
+    </update>
+    
+    <insert id="insertOperNew" parameterClass="sysManager.function.model.OperationModel">
+    	insert into classicfault(oper_id,oper_name,parent_id)values(sysmgr.nextval,#oper_name#,#parent_id#)
+    </insert>
+    
+    <select id="getAllClassicFaultAlarmLst" parameterClass="string" resultClass="classicFaultModel">
+    	select t.alarmid        ALARMID,
+		       t.alarmdesc      ALARMDESC,
+		       t.alarmlevel     ALARMLEVEL,
+		       t.station        STATION,
+		       t.belongequip    BELONGEQUIP,
+		       t.belongframe    BELONGFRAME,
+		       t.belongportcode BELONGPORTCODE,
+		       t.belongpack     BELONGPACK,
+		       t.belongport     BELONGPORT,
+		       t.belongslot     BELONGSLOT,
+		       t.vendor         VENDOR,
+		       t.belongtransys  BELONGTRANSYS,
+		       t.objclass       OBJCLASS,
+		       t.isrootalarm    ISROOTALARM,
+		       t.faultid        FAULTID
+		  from classicfaultalarmcof t
+		 where t.faultid = #oper_id#
+    </select>
+    
+    <insert id="insertClassicFaultAlarmConf" parameterClass="classicFaultModel">
+    	insert into classicfaultalarmcof values(#ALARMID#,#ALARMDESC#,#ALARMLEVEL#,
+    	#STATION#,#BELONGEQUIP#,#BELONGFRAME:VARCHAR#,#BELONGPACK:VARCHAR#,#BELONGPORT:VARCHAR#,#BELONGSLOT:VARCHAR#,
+    	#BELONGPORTCODE:VARCHAR#,#VENDOR#,#BELONGTRANSYS#,#OBJCLASS#,#ISROOTALARM#,#FAULTID#)
+    </insert>
+    
+    <select id="getStationCodeByStation" parameterClass="string" resultClass="string">
+    	select t.stationcode from station t where t.stationname=#station#
+    </select>
+	
+</sqlMap>

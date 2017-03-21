@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				width="800" height="500" creationComplete="intApp()"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				 title="XML" layout="absolute">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import twaver.XMLSerializer;
+			public var xml:String;
+			public var parent_page:selectEquipment;
+			protected function intApp():void
+			{
+
+				Xxml.text = xml;
+			}
+			
+
+			protected function save_clickHandler(event:MouseEvent):void
+			{
+				parent_page.circuitPic.elementBox.clear();  
+				var serializer:XMLSerializer = new XMLSerializer(parent_page.circuitPic.elementBox);
+				serializer.deserialize(Xxml.text);
+				PopUpManager.removePopUp(this);
+				
+			}
+
+		]]>
+	</mx:Script>
+	<mx:TextArea id="Xxml"  width="100%" height="95%" x="4" y="4"/>
+	<mx:Button x="722" y="438" label="保存" id="save" click="save_clickHandler(event)"/>
+	
+</mx:TitleWindow>

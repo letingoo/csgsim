@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="462" height="232" 
+				layout="absolute" title="{del==false?'建立端口连接关系':'删除端口连接关系'}" showCloseButton="true"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%" close="close()" creationComplete="initPage()">
+	<mx:Script source="../actionscript/WinVolume.as" />
+	<mx:Label x="75" y="10" text="{nameA}" width="89" height="20"/>
+	<mx:Label x="3" y="40" text="起始端口:" width="70" height="20" textAlign="right"/>
+	<mx:Label x="3" y="96" text="终止端口:" width="70" height="20" textAlign="right"/>
+	<mx:ComboBox id="cmbStartA" x="75" y="38" width="122" labelField="label"/>
+	<mx:Label x="75" y="68" text="至" width="20" height="18"/>
+	<mx:ComboBox id="cmbEndA" x="75" y="94" width="122" labelField="label"/>
+	<mx:Label x="301" y="10" text="{nameZ}" width="89" height="20"/>
+	<mx:Label x="228" y="40" text="起始端口:" width="70" height="20" textAlign="right"/>
+	<mx:Label x="228" y="96" text="终止端口:" width="70" height="20" textAlign="right"/>
+	<mx:ComboBox id="cmbStartZ" x="301" y="38" width="122"/>
+	<mx:Label x="301" y="68" text="至" width="20" height="18"/>
+	<mx:ComboBox id="cmbEndZ" x="301" y="94" width="122"/>
+	<!--<mx:CheckBox id="check" x="25" y="125" label="端口数量匹配"/>-->
+	<mx:HBox id="buttomhbox"
+			 width="100%"
+			 height="20%"
+			 verticalAlign="middle"
+			 horizontalAlign="center"
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+			 backgroundSize="100%" x="0" y="155">
+		<mx:Button x="156" y="151" label="{del==false?'建立连接':'删除关系'}" styleName="primary" click="save()"/>
+		<mx:Button x="235" y="151" label="关闭" styleName="secondary" width="70" click="close()"/>
+	</mx:HBox>
+	<mx:VRule x="222" y="10" height="130"/>
+</mx:TitleWindow>

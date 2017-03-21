@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>   
+<mx:Label xmlns:mx="http://www.adobe.com/2006/mxml" textAlign="left" >     
+	     <mx:Script><![CDATA[   	 
+			 import mx.controls.Alert;
+			 import mx.controls.DataGrid;
+			 import mx.controls.dataGridClasses.DataGridColumn;
+			 import mx.controls.listClasses.BaseListData;
+		          override public function set data(value:Object):void  
+		          {   
+			              super.data = value;   
+						  var test:String = value.@rate;
+						  var ok:Array = test.split("%");
+						  var rate:Number = parseFloat(ok[0]);
+			              if(data){   
+				                if(rate>= 0 && rate<=30){   
+					                      this.setStyle("color",0x006400);   //绿色
+					                  }   
+				                if(rate> 30 && rate <= 70){   
+					                      this.setStyle("color",0xFC7905);//橙色   
+					                  }
+								if(rate>70){
+								          this.setStyle("color",0xFF0000);//红色
+									  }
+				              }   
+			          }   
+		      ]]></mx:Script>   
+</mx:Label>  

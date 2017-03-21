@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				   xmlns:component="common.component.*"
+				   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*" 
+				   paddingLeft="0" 
+				   paddingRight="0"
+				   verticalGap="0"
+				   paddingTop="0"
+				   width="{Application.application.workspace.width}" 
+				   height="{Application.application.workspace.height+70}" 
+				   fontSize="12"
+				   close="{PanelWindow(this).closeButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK,false,false))}" 
+				   paddingBottom="0"
+				   layout="vertical"
+				   title="资源搜索"
+				   windowContainer="{Application.application.windowContainer}"
+				   creationComplete="panelwindow1_creationCompleteHandler(event)"
+				   >
+	<mx:Style> 
+		.accordion { font-size:14px; } 
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import com.mechan.MecGrid.mecGridClasses.SelectedItem;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.autoGrid.view.ShowProperty;
+			import sourceCode.ocableResource.views.viewFiberDetails;
+			import sourceCode.ocableTopo.views.CarryBusiness;
+			import sourceCode.ocableTopo.views.ocableDetails;
+			import sourceCode.sysGraph.views.CarryOpera;
+			import sourceCode.systemManagement.model.ResultModel;
+
+			protected function panelwindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				searchText.txt.percentWidth=95;
+				accordion.getHeaderAt(0).setStyle("fontsize",16);
+				addStationGridContext();
+				addEquipGridContext();
+				addSectionGridContext();
+				addCircuitGridContext();
+			}
+
+			//设置站点右键
+			private function addStationGridContext():void{
+				stationGrid.contextMenu=new ContextMenu();
+				var item1:ContextMenuItem=new ContextMenuItem("查看站点属性",false);
+				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,station_item_select_Handler);
+				var item2:ContextMenuItem=new ContextMenuItem("机房平面图",false);
+				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,station_item_select_Handler);
+				var item3:ContextMenuItem=new ContextMenuItem("站点平面图",false);
+				item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,station_item_select_Handler);
+				stationGrid.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(event:ContextMenuEvent):void{
+					stationGrid.contextMenu.hideBuiltInItems();
+					if(stationGrid.selectedItems.length>0){
+						stationGrid.contextMenu.customItems=[item1,item2,item3];
+					}else{
+						stationGrid.contextMenu.customItems=[];
+					}
+				});
+			}
+			
+			private function addEquipGridContext():void{
+				equipGrid.contextMenu=new ContextMenu();
+				var item1:ContextMenuItem=new ContextMenuItem("查看设备属性",false);
+				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,equip_item_select_Handler);
+				var item2:ContextMenuItem=new ContextMenuItem("设备面板图",false);
+				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,equip_item_select_Handler);
+				var item3:ContextMenuItem=new ContextMenuItem("查看设备承载业务",false);
+				item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,equip_item_select_Handler);
+				equipGrid.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(event:ContextMenuEvent):void{
+					equipGrid.contextMenu.hideBuiltInItems();
+					if(equipGrid.selectedItems.length>0){
+						equipGrid.contextMenu.customItems=[item1,item2,item3];
+					}else{
+						equipGrid.contextMenu.customItems=[];
+					}
+				});
+			}
+			
+			private function addSectionGridContext():void{
+				sectionGrid.contextMenu=new ContextMenu();
+				var item1:ContextMenuItem=new ContextMenuItem("光纤详细信息",false);
+				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,section_item_select_Handler);
+				var item2:ContextMenuItem=new ContextMenuItem("光缆截面图",false);
+				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,section_item_select_Handler);
+				var item3:ContextMenuItem=new ContextMenuItem("光缆承载业务",false);
+				item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,section_item_select_Handler);
+				sectionGrid.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(event:ContextMenuEvent):void{
+					sectionGrid.contextMenu.hideBuiltInItems();
+					if(sectionGrid.selectedItems.length>0){
+						sectionGrid.contextMenu.customItems=[item1,item2,item3];
+					}else{
+						sectionGrid.contextMenu.customItems=[];
+					}
+				});
+			}
+			private function addCircuitGridContext():void{
+				circuitGrid.contextMenu=new ContextMenu();
+				var item1:ContextMenuItem=new ContextMenuItem("方式信息",false);
+				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,circuit_item_select_handler);
+				circuitGrid.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(event:ContextMenuEvent):void{
+					circuitGrid.contextMenu.hideBuiltInItems();
+					if(circuitGrid.selectedItems.length>0){
+						circuitGrid.contextMenu.customItems=[item1];
+					}else{
+						circuitGrid.contextMenu.customItems=[];
+					}
+				});
+			}
+			
+			private function station_item_select_Handler(event:ContextMenuEvent):void{
+				var stationcode:String = stationGrid.selectedItem.STATIONCODE;
+				var stationname:String = stationGrid.selectedItem.STATIONNAME;
+				if(event.currentTarget.caption=="查看站点属性"){
+					var property:ShowProperty = new ShowProperty();
+					property.paraValue = stationcode;
+					property.tablename = "VIEW_STATION_PROPERTY";
+					property.key = "STATIONCODE";
+					property.title = "查看属性";
+					PopUpManager.addPopUp(property, this, true);
+					PopUpManager.centerPopUp(property);
+				}else if(event.currentTarget.caption=="机房平面图"){
+					Registry.register("stationcode",stationcode);
+					Application.application.openModel("机房平面图", false);
+				}else if(event.currentTarget.caption=="站点平面图"){
+					Registry.register("stationcode", stationcode);
+					Registry.register("stationname", stationname);
+					Application.application.openModel("站点平面图", false)
+				}
+			}
+			private function equip_item_select_Handler(event:ContextMenuEvent):void{
+				var systemcode:String=equipGrid.selectedItem.SYSTEMCODE;
+				var equipcode:String=equipGrid.selectedItem.EQUIPCODE;
+				var equipname:String=equipGrid.selectedItem.EQUIPNAME;
+				if(event.currentTarget.caption=="查看设备属性"){
+					var property:ShowProperty = new ShowProperty();
+					property.paraValue = equipcode;
+					property.tablename = "VIEW_EQUIPMENT";
+					property.key = "EQUIPCODE";
+					property.title = equipname+"—设备属性";
+					PopUpManager.addPopUp(property, this, true);
+					PopUpManager.centerPopUp(property);
+				}else if(event.currentTarget.caption=="设备面板图"){
+					Registry.register("systemcode", systemcode);
+					Registry.register("equipcode", equipcode);
+					Application.application.openModel("设备面板图", false);
+				}else if(event.currentTarget.caption=="查看设备承载业务"){
+					var carryOpera:CarryOpera=new CarryOpera();
+					carryOpera.title=equipname+"-设备承载业务";
+					carryOpera.getOperaByCodeAndType( equipcode,"equipment");
+					MyPopupManager.addPopUp(carryOpera);
+				}
+			}
+			private var winOcableDetails:ocableDetails;
+			private var winCarryBusiness:CarryBusiness;
+			private function section_item_select_Handler(event:ContextMenuEvent):void{
+				var sectioncode:String=sectionGrid.selectedItem.SECTIONCODE;
+				if(event.currentTarget.caption=="光纤详细信息"){
+					var vfd:viewFiberDetails = new viewFiberDetails();
+					vfd.sectioncode = sectioncode;
+					vfd.title = "光纤详细信息";
+					MyPopupManager.addPopUp(vfd);
+				}else if(event.currentTarget.caption=="光缆截面图"){
+					winOcableDetails = new ocableDetails();
+					winOcableDetails.apointcode =sectionGrid.selectedItem.A_POINT;
+					winOcableDetails.zpointcode = sectionGrid.selectedItem.Z_POINT;
+					winOcableDetails.ocablecode = sectioncode;
+					parentApplication.openModel("光缆截面图",true,winOcableDetails);
+				}else if(event.currentTarget.caption=="光缆承载业务"){
+					winCarryBusiness = new CarryBusiness();
+					winCarryBusiness.sectioncode = sectioncode;
+					parentApplication.openModel("光缆承载业务",false,winCarryBusiness);
+				}
+			}
+			private function circuit_item_select_handler(event:ContextMenuEvent):void{
+				var circuitcode:String=circuitGrid.selectedItem.FORMNUM;
+				Registry.register("para_circuitcode", circuitcode);
+				Application.application.openModel("方式信息", false);
+			}
+			
+			
+			protected function EnterHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var keycode:String=searchText.txt.text;
+				if(keycode==null ||keycode==""){
+					Alert.show("请输入查询关键字！","提示");
+					return;
+				}
+				var rt:RemoteObject=new RemoteObject("ResourceSearch");
+				rt.endpoint=ModelLocator.END_POINT;
+				rt.showBusyCursor=true;
+				rt.addEventListener(ResultEvent.RESULT,resultHandler);
+				rt.getSearchResult(keycode);
+			}
+			
+			private function resultHandler(event:ResultEvent):void{
+				var resultList:ArrayCollection=event.result as ArrayCollection;
+				
+				stationVbox.label="局站("+(resultList.getItemAt(0) as ResultModel).totalCount+")";
+				stationGrid.dataProvider=(resultList.getItemAt(0) as ResultModel).orderList;
+				
+				equipVbox.label="设备("+(resultList.getItemAt(1) as ResultModel).totalCount+")";
+				equipGrid.dataProvider=(resultList.getItemAt(1) as ResultModel).orderList;
+				
+				sectionVbox.label="光缆段("+(resultList.getItemAt(2) as ResultModel).totalCount+")";
+				sectionGrid.dataProvider=(resultList.getItemAt(2) as ResultModel).orderList;
+				
+				circuitVbox.label="电路("+(resultList.getItemAt(3) as ResultModel).totalCount+")";
+				circuitGrid.dataProvider=(resultList.getItemAt(3) as ResultModel).orderList;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox id="vbox" width="100%" height="100%" horizontalGap="0" verticalGap="0">
+		<mx:HBox id="searchToolbar" horizontalGap="0" verticalAlign="middle" horizontalAlign="center" width="100%"
+				 backgroundImage="@Embed(source='assets/images/iconbar_bg.png')" backgroundSize="100%">		
+			<mx:Label text="    资源名称关键字：  " fontSize="14" fontWeight="bold"/>
+			<component:SearchTextInput id="searchText" height="35" width="100%" toolTip="按照名称搜索" backgroundImage="@Embed(source='assets/images/iconbar_bg.png')"
+									   searchEnter="EnterHandler(event)" clickButton="EnterHandler(event)"/>
+			<mx:Spacer width="5%"/>
+		</mx:HBox>	
+		<mx:Accordion id="accordion" width="100%" height="100%" horizontalGap="0" verticalGap="0" headerStyleName="accordion" creationPolicy="all">
+			<mx:VBox id="stationVbox" label="局站" width="100%" height="100%" horizontalGap="0" verticalGap="0">
+				<mx:DataGrid id="stationGrid" width="100%" height="100%" headerColors="[0xFFFFFF,0xE6EEEE]">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" dataField="NO" width="50" sortable="false"/>
+						<mx:DataGridColumn headerText="局站名称" dataField="STATIONNAME"  width="135"/>
+						<mx:DataGridColumn headerText="标准命名" dataField="NAME_STD"  width="135"/>
+						<mx:DataGridColumn headerText="电压等级(kV)" dataField="VOLT"  width="135"/>
+						<mx:DataGridColumn headerText="所属区局" dataField="PROVINCE"  width="135"/>
+						<mx:DataGridColumn headerText="维护区局" dataField="PROPERTY"  width="135"/>
+						<mx:DataGridColumn headerText="经度" dataField="LNG"  width="135"/>
+						<mx:DataGridColumn headerText="纬度" dataField="LAT"  width="135"/>
+						<mx:DataGridColumn headerText="建站时间" dataField="FOUNDDATA"  width="135"/>
+						<mx:DataGridColumn headerText="更新人" dataField="UPDATEPERSON"  width="135"/>
+						<mx:DataGridColumn headerText="更新时间" dataField="UPDATEDATE"  width="135"/>
+						<mx:DataGridColumn headerText="备注" dataField="REMARK"  width="135"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+			<mx:VBox id="equipVbox" label="设备" width="100%" height="100%" horizontalGap="0" verticalGap="0">
+				<mx:DataGrid id="equipGrid" width="100%" height="100%" headerColors="[0xFFFFFF,0xE6EEEE]">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" width="50" dataField="NO" sortable="false" />
+						<mx:DataGridColumn headerText="设备名称" dataField="EQUIPNAME" width="200"/>
+						<mx:DataGridColumn headerText="设备类型" dataField="EQUIPTYPE" width="80"/>
+						<mx:DataGridColumn headerText="生产厂家" dataField="X_VENDOR" width="80"/>
+						<mx:DataGridColumn headerText="型号" dataField="X_MODEL" width="200"/>
+						<mx:DataGridColumn headerText="所属单位" dataField="PROPERTY" width="0" visible="false"/>
+						<mx:DataGridColumn headerText="使用情况" dataField="STATUS" width="0" visible="false"/>
+						<mx:DataGridColumn headerText="所属省份" dataField="PROVINCE" width="0" visible="false"/>
+						<mx:DataGridColumn headerText="更新时间" dataField="UPDATEDATE" width="80"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+			<mx:VBox id="sectionVbox" label="光缆段" width="100%" height="100%" horizontalGap="0" verticalGap="0">
+				<mx:DataGrid id="sectionGrid" width="100%" height="100%" headerColors="[0xFFFFFF,0xE6EEEE]">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" dataField="NO" width="50" sortable="false"/>
+						<mx:DataGridColumn headerText="光缆段名称" dataField="OCABLESECTIONNAME" width="150"/>
+						<mx:DataGridColumn headerText="起点" dataField="A_POINTNAME"  width="100"/>
+						<mx:DataGridColumn headerText="终点" dataField="Z_POINTNAME"  width="100"/>
+						<mx:DataGridColumn headerText="起点类型" dataField="A_POINTTYPE"  width="80"/>
+						<mx:DataGridColumn headerText="终点类型" dataField="Z_POINTTYPE"  width="80"/>
+						<mx:DataGridColumn headerText="纤芯数目" dataField="FIBERCOUNT"  width="80"/>
+						<mx:DataGridColumn headerText="占用纤芯数" dataField="OCCUPYFIBERCOUNT"  width="80"/>
+						<mx:DataGridColumn headerText="光缆段类型" dataField="OCABLEMODEL"  width="135"/>
+						<mx:DataGridColumn headerText="长度" dataField="LENGTH"  width="50"/>
+						<mx:DataGridColumn headerText="运行班组" dataField="RUN_UNIT" visible="false" width="135"/>
+						<mx:DataGridColumn headerText="敷设方式" dataField="LAYMODE"  width="135"/>
+						<mx:DataGridColumn headerText="产权单位" dataField="PROPERTY"  width="135"/>
+						<mx:DataGridColumn headerText="维护单位" dataField="FUNCTION_UNIT"  width="135"/>
+						<mx:DataGridColumn headerText="一次线路名称" dataField="ONE_NAME"  width="135"/>
+						<mx:DataGridColumn headerText="电压等级(kV)" dataField="VOLTLEVEL"  width="100"/>
+						<mx:DataGridColumn headerText="更新时间" dataField="UPDATEDATE" width="135" />
+						<mx:DataGridColumn headerText="备注" dataField="REMARK"  width="135"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+			<mx:VBox id="circuitVbox" label="电路" width="100%" height="100%" horizontalGap="0" verticalGap="0">
+				<mx:DataGrid id="circuitGrid" width="100%" height="100%" headerColors="[0xFFFFFF,0xE6EEEE]">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" width="50" dataField="NO"/> 
+						<mx:DataGridColumn headerText="方式单编号" dataField="FORMNUM" width="90" />
+						<mx:DataGridColumn headerText="方式单名称" dataField="FORMNAME" width="150"/>
+						<mx:DataGridColumn headerText="带宽" dataField="RATE" width="50" />
+						<mx:DataGridColumn headerText="起始局站" dataField="STATION1" width="60" />
+						<mx:DataGridColumn headerText="起始端口" dataField="PORT1" width="120" />
+						<mx:DataGridColumn headerText="终止局站" dataField="STATION2" width="80" />
+						<mx:DataGridColumn headerText="终止端口" dataField="PORT2" width="150" />
+						<mx:DataGridColumn headerText="路由" dataField="CHANNEL" width="300"/>
+						<mx:DataGridColumn headerText="原始方式单号" dataField="OLDFORMNUM" width="90" />
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+		</mx:Accordion>
+	</mx:VBox>
+</panel:PanelWindow>

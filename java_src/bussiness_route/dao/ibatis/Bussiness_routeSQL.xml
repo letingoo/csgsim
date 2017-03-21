@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="bussiness_Route">
+	<select id="getEquip_Han" resultClass="bussiness_route.model.equip_model">
+	<![CDATA[
+	select E1 as equipcode,e.name_std as equipname,f.X1 as X,f.Y1 as Y 
+       from equipment  e,(select t.equipcode as E1,t.x as X1,t.y as Y1 from re_sys_equip t) as f
+  where e.equipcode=E1 and e.equiplabel like'%华为%'
+	]]>
+	</select>
+	
+	
+	<select id="getTopolink_Han" resultClass="bussiness_route.model.topolink_model">
+	<![CDATA[
+	select t.Label as topocode,concat(t.equipname_a,'-',t.equipname_z) as toponame,t.equipcode_a as Equip_a,t.equipcode_z as Equip_z 
+	from view_topolink t
+	]]>
+	</select>
+	<!-- 
+	<select id="getTopolink_Han" resultClass="bussiness_route.model.topolink_model">
+	<![CDATA[
+	select t.Label as topocode,t.equipname_a||'-'||t.equipname_z as toponame,t.equipcode_a as Equip_a,t.equipcode_z as Equip_z 
+	from view_topolink t
+	]]>
+	</select>
+	 -->
+	<select id="getBussinessRoute_Han" resultClass="bussiness_route.model.bussiness_route_model">
+	<![CDATA[
+	select t.BUSSINESS_ID as busid,t.BUSSINESS_NAME as busname,t.BUSSINESS_TYPE as bustype,t.MAIN_ROUTE as mainroute,t.BACKUP_ROUTE1  as backuproute1,t.BACKUP_ROUTE2  as backuproute2 
+    from view_bussiness_route t  order by backuproute1 desc limit 300
+	]]>       
+	</select>
+	<!--
+	<select id="getBussinessRoute_Han" resultClass="bussiness_route.model.bussiness_route_model">
+	<![CDATA[
+	select * from(select t.BUSSINESS_ID as busid,t.BUSSINESS_NAME as busname,t.BUSSINESS_TYPE as bustype,t.MAIN_ROUTE as mainroute,t.BACKUP_ROUTE1  as backuproute1,t.BACKUP_ROUTE2  as backuproute2 
+    from view_bussiness_route t  order by backuproute1 desc) where rownum<=300;
+	]]>       
+	</select>
+	 -->
+	
+
+</sqlMap>
+
+

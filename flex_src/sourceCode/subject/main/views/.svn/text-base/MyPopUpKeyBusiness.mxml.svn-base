@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--中断电路告警信息-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+				creationComplete="init();"
+				width="900" 
+				height="500" 
+				styleName="popwindow" 
+				xmlns:views="sourceCode.common.views.*" xmlns:views1="sourceCode.common.views.*" xmlns:actionscript="sourceCode.subject.main.actionscript.*">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.utils.StringUtil;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.alarmmgr.actionscript.SequenceItemRenderer;
+			
+			[Bindable]
+			public var circuitname :String="";
+			[Bindable]
+			public var isacked :String= null;
+			[Bindable]
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			public var alarmnumber:String="";
+			public var station1:String="";
+			public var station2:String="";
+			public var type:String="";
+			public var powerline:String="";
+			
+			private var param:ArrayCollection =new ArrayCollection();
+			private var unAckedBizWin:TitleWindow;
+			public var Icon:Class; 
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			private var indexRenderer:Class = SequenceItemRenderer;  
+			[Bindable]
+			public var unAckedBiz:TitleWindow;
+			
+			private function init():void{
+				pagingFunction(0,50);
+			}
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void {
+				start = (pageIndex * pageSize+1).toString();
+				end = ((pageIndex * pageSize) + pageSize).toString();
+				var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getKeyBusiness_hz(circuitname,station1,station2,type,powerline,start,end);        //表格加载数据
+				rtobj.addEventListener(ResultEvent.RESULT,loadData);
+			}
+			
+			private function loadData(event:ResultEvent):void{
+
+				param.removeAll();
+				var alarmInfos:ArrayCollection=event.result.getKeyBusinessList as ArrayCollection;
+				if(event.result.getKeyBusinessList==null || event.result.getKeyBusinessList==""){
+					Alert.show("没有结果！","提示信息",4,this,null,iconClass);
+				}
+				for each(var a:Object in alarmInfos){
+					param.addItem({alarmlevelname:a.ALARMLEVELNAME,circuitcode:a.CIRCUITCODE,username:a.USERNAME,usetime:df.format(a.USETIME),
+						circuittype:a.CIRCUITTYPE,rate:a.RATE,portserialno1:a.PORTSERIALNO1,portserialno2:a.PORTSERIALNO2,
+						portcode1:a.PORTCODE1,portcode2:a.PORTCODE2,alarmdetail:a.ALARMDETAIL,portcode:a.PORTCODE});
+				}
+				
+				dg.dataProvider=param;
+				pagingToolBarforAlarmExp.orgData =param;
+				var count:int =int(event.result.getKeyBusinessCount);
+				pagingToolBarforAlarmExp.totalRecord = count;
+				pagingToolBarforAlarmExp.dataBind(true);	
+			}
+			
+			
+			public function linkRelationUI(obj:Object,selectedItem:String):void{
+				var rootSele:String = obj.circuitcode;
+				var port1:String = obj.portcode1;
+				var port2:String = obj.portcode2;
+				var portcode:String = obj.portcode;
+				if(selectedItem == "circuitcode"){  
+					//Alert.show(rootSele);
+					if(obj!=null){
+						Registry.register("para_circuitcode", obj.circuitcode);
+						Registry.register("para_circuitype",obj.circuittype);
+						Application.application.openModel("方式信息", false);
+					}
+					
+				}else if (selectedItem == "alarmdetail"){
+					unAckedBizWin =new TitleWindow();
+					unAckedBizWin.layout="absolute";
+					unAckedBizWin.x=0;
+					unAckedBizWin.y=0;
+					unAckedBizWin.horizontalScrollPolicy="off";
+					unAckedBizWin.verticalScrollPolicy="off" ;
+					unAckedBizWin.styleName="popwindow";
+					unAckedBizWin.showCloseButton="true";
+					unAckedBizWin.title="中断电路告警信息";
+					unAckedBizWin.titleIcon=Icon;
+					var pkb:AlarmDetail = new AlarmDetail();
+					pkb.circuitcode = obj.circuitcode;
+					unAckedBizWin.addEventListener(CloseEvent.CLOSE,titlewinclose1);
+					unAckedBizWin.addChild(pkb);
+					PopUpManager.addPopUp(unAckedBizWin,main(Application.application),true);
+					PopUpManager.centerPopUp(unAckedBizWin);
+					
+				}else if(selectedItem == "portserialno1"){
+					if(port1!=null && port1!=""){
+						var strarray:Array=port1.split("=");
+						port1="";
+						for(var i:int=0;i<strarray.length;i++)
+						{  
+							if(i!=strarray.length-1)
+								port1+=strarray[i]+",";
+							else
+								port1+=strarray[i];
+						}
+					}
+					Registry.register("packcode", port1);
+					Registry.register("portcode", portcode);
+					Application.application.openModel("机盘管理视图", false);
+				}else if(selectedItem == "portserialno2"){
+					if(port2!=null && port2!=""){
+						var strarray:Array=port2.split("=");
+						port2="";
+						for(var i:int=0;i<strarray.length;i++)
+						{  
+							if(i!=strarray.length-1)
+								port2+=strarray[i]+",";
+							else
+								port2+=strarray[i];
+						}
+					}
+					Registry.register("packcode", port2);
+					Registry.register("portcode", portcode);
+					Application.application.openModel("机盘管理视图", false);
+				}
+			}
+			
+			private function titlewinclose1(evt:CloseEvent):void{
+				PopUpManager.removePopUp(unAckedBizWin);
+			}
+			
+			protected function controlExportExcelHandler(event:Event):void
+			{
+				//Export
+				var titles:Array=new Array("电路编号", "电路用途", "电路类型","开通时间", "速率","A端端口","Z端端口","告警信息");
+				var remoteobj2:RemoteObject = new RemoteObject("AlarmManagerComboboxDwr"); 
+				remoteobj2.endpoint = ModelLocator.END_POINT;
+				remoteobj2.showBusyCursor = true;
+				remoteobj2.addEventListener(ResultEvent.RESULT,ExportExcelHandler);
+				remoteobj2.ExportExcel("中断电路信息",titles,circuitname,station1,station2,type,powerline); 
+			}
+						
+			public function ExportExcelHandler(event:ResultEvent):void{
+//				var url:String=ModelLocator.getURL();
+				var path:String = event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(path))); 
+				navigateToURL(request,"_blank");
+				
+			}
+			private function quitMonitor():void{
+				PopUpManager.removePopUp(unAckedBiz);
+			}			
+		]]>
+	</mx:Script>
+	<mx:DateFormatter id="df" formatString="YYYY-MM-DD"/>
+	<mx:HBox width="100%" height="6%" backgroundImage="@Embed(source='assets/images/mntsubject/header_bg.png')"  backgroundSize="100%" >
+		<mx:Label text="中断电路信息" fontSize="14" fontWeight="bold" color="#ffffff" textAlign="left"/>
+		<mx:Spacer width="100%" />
+		<mx:Image id="quit" source="assets/images/mntsubject/quit.png" useHandCursor="true" toolTip="关闭"
+				  buttonMode="true" mouseChildren="false" width="52" height="22" doubleClickEnabled="true" click="quitMonitor()" />
+	</mx:HBox>
+	<mx:VBox x="0" y="0" width="100%" height="94%" verticalGap="0">
+		<mx:HBox width="100%" backgroundImage="assets/images/iconbar_bg.png" backgroundSize="100%" verticalAlign="middle" height="35">
+			<mx:LinkButton label="导出" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_export.png')" click="controlExportExcelHandler(event)"/>
+<!--<mx:LinkButton label="打印" styleName="iconbar" icon="@Embed(source='assets/images/icon/icon_print.png')"/>-->
+		</mx:HBox>
+		<mx:VBox width="100%" height="100%">
+			<mx:DataGrid id="dg"  width="100%" height="95%" headerHeight="25"  styleName="alarm" verticalAlign="middle" >
+				<mx:columns>
+					<mx:DataGridColumn headerText="告警级别" dataField="alarmlevelname" visible="false" itemRenderer="sourceCode.alarmmgr.actionscript.AlarmlevelcolorItemRender"/>
+					<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="50"/>
+					
+					<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" showDataTips="true" dataTipField="alarmobjdesc" textAlign="left" width="135">
+						<mx:itemRenderer>
+							<mx:Component>
+								<actionscript:RollOverItemRenderer  click="outerDocument.linkRelationUI(data,'circuitcode')"/>
+							</mx:Component>
+						</mx:itemRenderer>	
+					</mx:DataGridColumn>
+					
+					<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" visible="false"/>
+					<mx:DataGridColumn headerText="电路用途" dataField="username" width="65"/>		
+					<mx:DataGridColumn headerText="电路类型" dataField="circuittype" width="80"/>
+					<mx:DataGridColumn headerText="开通时间" dataField="usetime"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="A端端口" dataField="portserialno1">
+					<mx:itemRenderer>
+						<mx:Component>
+							<actionscript:RollOverItemRenderer  click="outerDocument.linkRelationUI(data,'portserialno1')"/>
+						</mx:Component>
+					</mx:itemRenderer>	
+					</mx:DataGridColumn>
+					<mx:DataGridColumn headerText="Z端端口" dataField="portserialno2">
+						<mx:itemRenderer>
+							<mx:Component>
+								<actionscript:RollOverItemRenderer  click="outerDocument.linkRelationUI(data,'portserialno2')"/>
+							</mx:Component>
+						</mx:itemRenderer>	
+					</mx:DataGridColumn>
+					<mx:DataGridColumn headerText="A端端口" dataField="portcode1" visible="false"/>
+					<mx:DataGridColumn headerText="A端端口" dataField="portcode2" visible="false"/>
+					<mx:DataGridColumn headerText="端口" dataField="portcode" visible="false"/>
+					<mx:DataGridColumn headerText="告警信息" dataField="alarmdetail" width="100">
+						<mx:itemRenderer>
+							<mx:Component>
+								<actionscript:RollOverItemRenderer  click="outerDocument.linkRelationUI(data,'alarmdetail')"/>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+				</mx:columns>
+			</mx:DataGrid>
+			<views1:pagetoolbar width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{dg}" pagingFunction="pagingFunction">
+			</views1:pagetoolbar>
+		</mx:VBox>
+	</mx:VBox>
+</mx:VBox>

@@ -1,0 +1,28 @@
+<mx:VBox  xmlns:mx="http://www.adobe.com/2006/mxml"  
+		  fontSize="12" xmlns:controls="ht.*"  
+		  width="100%" height="100%"
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+		  xmlns:cmp = "sourceCode.ocableResource.actionscript.*"
+		  xmlns:common="twaver.common.*" creationComplete="initApp()">   
+	<mx:Script source="../actionscript/RelationWireConfig.as" />
+	<mx:Script source="../actionscript/wireConfiguration.as"/>
+	<mx:HDividedBox id="hd" width="100%" height="100%" backgroundColor="0xCCCCCC" >
+		<mx:VBox id="leftpanel" width="25%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<cmp:AutoSizeTree id="reTreeWire" dataProvider="{folderCollection}" itemRenderer="twaver.PermissionsTreeItemRendererV2"				
+					 labelField="@name"
+					 width="100%" 
+					 height="100%" 
+					 defaultLeafIcon="{null}" 
+					 borderStyle="none"
+					 showRoot="true"
+					 click="treeCheck(event)" horizontalScrollPolicy="auto" />			
+		</mx:VBox>
+		<mx:VBox id="rightpanel" width="75%" height="100%" backgroundColor="white">
+			<mx:HBox id="toolbar" width="100%"/>
+			<servasoftware:Network id="network" width="100%" 
+								   height="100%" backgroundColor="0xFFFFFF"
+								   click="networkClickHandler()"/>	
+		</mx:VBox>
+	</mx:HDividedBox>   	
+</mx:VBox>  

@@ -1,0 +1,1774 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="ocableResources">
+	<select id="getOcablesectionByVolt" parameterClass="String" resultClass="ocableResources.model.OcablesectionModel" >
+		<![CDATA[
+			  
+			   select * from v_twaver_ocable_section_global where getxtxx(secvolt) in ($volt$) 
+		]]>
+	</select>
+	
+	<select id="getOcablesectionVolt" parameterClass="String" resultClass="java.util.HashMap" >
+		<![CDATA[
+			 select point_volt as  point_volt,point_type_name
+			  from (select a_point_volt  as point_volt,a_point_type_name as point_type_name
+			          from v_twaver_ocable_section_global
+			         where a_point_volt is not null
+			        union
+			        select z_point_volt  as point_volt ,z_point_type_name as point_type_name
+			          from v_twaver_ocable_section_global
+			         where z_point_volt is not null) s
+			 order by point_type_name asc,point_volt desc
+		]]>
+	</select>
+	
+	<select id="getOcablesectionByProvince" parameterClass="java.util.HashMap" resultClass="ocableResources.model.OcablesectionModel" >
+		<![CDATA[
+			  
+			  select * from v_twaver_ocable_section_global where getxtxx(secvolt) in ($volt$) 
+			   and (getprovincename(z_point_property) = '$province$'  or getprovincename(a_point_property) = '$province$' )
+			   
+			   select v.*, coor.province showProvince
+  from v_twaver_ocable_section_global v, coordinates coor
+ where getxtxx(secvolt) in ($volt$)
+   and (coor.stationcode = v.a_point_code or
+        coor.stationcode = v.z_point_code) and getprovincename(coor.province) = '$province$'
+
+		]]>
+	</select>
+	
+	<select id="getOcablesectionProperty" parameterClass="String" resultClass="java.util.HashMap" >
+		<![CDATA[
+			  select point_property as point_propertycode,provincename as point_property_name
+			   from (select v.a_point_property as point_property,ep.provincename
+			           from v_twaver_ocable_section_global v,en_province ep
+			          where v.a_point_property=ep.province and  v.a_point_property is not null
+			         union
+			         select v.z_point_property as point_property,ep.provincename
+			           from v_twaver_ocable_section_global v,en_province ep
+			          where v.z_point_property=ep.province and v.z_point_property is not null) s
+			  order by point_propertycode
+		]]>
+	</select>
+	
+	<select id="getOcablesectionByProperty" parameterClass="java.util.HashMap" resultClass="ocableResources.model.OcablesectionModel" >
+		<![CDATA[
+			  select *
+			   from v_twaver_ocable_section_global
+			  where (a_point_property = '$property$' or z_point_property = '$property$')
+
+		]]>
+	</select>
+	
+	<select id="getSearchStationTnode" resultClass="java.util.HashMap" parameterClass="String">
+			select stationcode code,
+			       stationname name,
+			       globalx     x,
+			       globaly     y,
+			       volt        volt,
+			       1           type
+			  from station s
+			 where s.stationname like '%$searchtext$%'
+<!--			   and s.globalx is not null-->
+<!--			   and s.globaly is not null-->
+			union
+			select tnodecode code,
+			       name_std name,
+			       globalx x,
+			       globaly y,
+			       to_char(0) volt,
+			       2 type
+			  from tnode t
+			 where t.name_std like '%$searchtext$%'
+<!--			   and t.globalx is not null-->
+<!--			   and t.globaly is not null-->
+	</select>
+	
+		<select id="getPowerMapSearch" resultClass="java.util.HashMap" parameterClass="String">
+    <!--  	select stationcode code,
+			       stationname name,
+			       globalx     x,
+			       globaly     y,
+			       volt        volt,
+			       1           type
+			  from station s
+			 where s.stationname like '%$searchtext$%'
+			 and stationcode in (select distinct (stationcode) from po_equipment)
+			 -->
+			 select distinct station name,
+		       node_x x,
+		       node_y y,
+		       1     type
+		       from env_powerinfo
+		       where station like '%$searchtext$%'
+	</select>
+	<select id="getTnodeProperty" parameterClass="String" resultClass="ocableResources.model.TnodeModel">
+			select tnodecode,
+					ocablelinkx,
+					ocablelinky,
+					name_std,
+					ocablenum,
+					telpolename,
+					telpolecode,
+					acircuname,
+					updatedate,
+					updateperson
+					from tnode where tnodecode=#tnodecode#
+	</select>
+	
+	<select id="getSearchOcable" resultClass="java.util.HashMap" parameterClass="String">
+			select sectioncode code,
+			       ocablesectionname name
+			  from en_ocablesection e
+			 where ocablesectionname like '%$searchtext$%'
+	</select>
+	
+	<select id="getSearchOneName" resultClass="java.util.HashMap" parameterClass="String">
+			select sectioncode code,
+			       one_name name
+			  from en_ocablesection e
+			 where one_name like '%$searchtext$%'
+	</select>
+	
+	<select id="getOcablesectiongeo" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+			select sectioncode,X,y,serial 
+			from en_ocablesection_geo
+			where sectioncode in (select sectioncode from v_twaver_ocable_section_global 
+			where secvolt in ($secvolt$)) and status = '$province$'
+			order by sectioncode, serial
+	</select>
+	
+<!--	<select id="getOcablesectiongeoByCity" resultClass="java.util.HashMap" parameterClass="String">-->
+<!--			select sectioncode,cityx X,cityy y,cityserial serial -->
+<!--			from en_ocablesection_geo-->
+<!--			where sectioncode in (select sectioncode from v_twaver_ocable_section_global where secvolt in ($secvolt$)) and status = '2'-->
+<!--			order by sectioncode, serial-->
+<!--	</select>-->
+	
+<!--添加站-->
+	<insert id="addOcableSectionStation" parameterClass="ocableResources.model.StationModel">
+	<selectKey resultClass="String" keyProperty="stationcode">
+			select
+			lpad(station_seq.nextval,20,0) as stationcode from dual
+        </selectKey>
+			insert into station
+		  (stationcode, 
+		  x_stationtype, 
+		  GLOBALX,
+		  GLOBALY)
+			values 
+		  (#stationcode#,
+		   '$x_stationtype$',
+		   '$globalx$',
+		   '$globaly$')
+	</insert>
+	
+	<select id="getOcableSectionStationCode"  resultClass="String">
+			 select lpad(max(stationcode), 20, 0) as stationcode from STATION
+	</select>
+<!--删除站点-->
+	<delete id="deleteOcableStationInfo" parameterClass="String">
+		<![CDATA[
+			delete from station where stationcode='$code$'
+		]]>
+	</delete>
+	
+<!--添加光缆-->
+	<insert id="addOcableSectionInfo" parameterClass="ocableResources.model.OcablesectionInfoModel">
+		<![CDATA[	
+			insert into en_ocable
+		  (ocablecode, 
+		  station_a, 
+		  station_z, 
+		  ocablemodel,
+		  province)
+		values
+		  (lpad(EN_OCABLE_SEQ.NEXTVAL, 20, 0),
+		   '$A_POINT$',
+		   '$Z_POINT$',
+		   '$OCABLEMODEL$',
+		   '$province$')
+		]]>
+	</insert>
+	
+<!--获取新添加的光缆CODE-->
+	<select id="getOcableSectionCode" resultClass="java.lang.String">
+		<![CDATA[
+			select lpad(max(to_number(ocablecode)),20,0) as ocablecode from en_ocable
+		]]>
+	</select>
+	
+<!--添加拐点-->
+	<insert id="addOcableSectionGeo" parameterClass="java.util.HashMap">
+		<![CDATA[	
+			insert into en_ocablesection_geo
+		  (SECTIONCODE, 
+		  SERIAL, 
+		  X, 
+		  Y,STATUS)
+			values
+		  ('$SECTIONCODE$',
+		  '$SERIAL$',
+		  '$X$',
+		  '$Y$','$STATUS$')
+		]]>
+	</insert>
+<!--删除光缆-->
+	<delete id="deleteOcableSectionInfo" parameterClass="String">
+		<![CDATA[
+			delete from en_ocable where ocablecode='$ocableSectionCode$'
+		]]>
+	</delete>
+
+<!--修改坐标-->
+<!--	检查表中是否有该点坐标-->
+	<select id="getOcableCoordinates"  parameterClass="ocableResources.model.MapCoordinate"  resultClass="java.util.HashMap">
+	 	<![CDATA[
+		  select * from coordinates where modelname='光缆路由图' and province = '$province$' and stationcode = '$stationcode$'
+		]]>
+	</select>
+
+	<update id="updateStationLocation" parameterClass="ocableResources.model.MapCoordinate">
+		<![CDATA[
+			update coordinates
+			set NODE_X='$node_x$',NODE_Y='$node_y$'
+			where STATIONCODE='$stationcode$' and 
+			province = '$province$'
+		]]>
+	</update>
+	
+	<update id="updateStationLabelLocation" parameterClass="ocableResources.model.MapCoordinate">
+		<![CDATA[
+			update coordinates
+			set Label_x='$label_x$',label_y='$label_y$'
+			where STATIONCODE='$stationcode$' and 
+			province = '$province$'
+		]]>
+	</update>
+	
+	<insert id="addOcableCoorDinates" parameterClass="ocableResources.model.MapCoordinate">
+		<![CDATA[	
+			insert into coordinates
+		  (COORDINATEID, 
+		  MODELNAME, 
+		  province, 
+		  NODE_X, 
+		  NODE_Y,
+		  LABEL_X,
+		  LABEL_Y,
+		  STATIONCODE,
+		  ISTNODE)
+		values
+		  (lpad(coordinates_seq.NEXTVAL, 20, 0),
+		   '光缆路由图',
+		   '$province$',
+		   '$node_x$',
+		   '$node_y$',
+		   '$label_x$',
+		   '$label_y$',
+		   '$stationcode$',
+		   '$istnode$')
+		]]>
+	</insert>
+	
+	
+	
+<!--	<update id="updateStationLabelLocation" parameterClass="ocableResources.model.StationModel">-->
+<!--		<![CDATA[-->
+<!--			update station-->
+<!--			set labelx='$labelx$',labely='$labely$'-->
+<!--			where STATIONCODE='$stationcode$'-->
+<!--		]]>-->
+<!--	</update>-->
+	
+	<update id="updateStationCityLabelLocation" parameterClass="ocableResources.model.StationModel">
+		<![CDATA[
+			update station
+			set CITYLABELX='$labelx$',CITYLABELY='$labely$'
+			where STATIONCODE='$stationcode$'
+		]]>
+	</update>
+	
+	
+	<update id="updateStationLocationByProvince" parameterClass="ocableResources.model.StationModel">
+		<![CDATA[
+			update station
+			set cityx='$cityx$',cityy='$cityy$'
+			where STATIONCODE='$stationcode$'
+		]]>
+	</update>
+	
+	
+	<update id="updateTnodeLocation" parameterClass="ocableResources.model.TnodeModel">
+		<![CDATA[
+			update tnode
+			set globalx='$globalx$',globaly='$globaly$'
+			where tnodecode='$tnodecode$'
+		]]>
+	</update>
+<!--	-->
+	<delete id="deleteOcableSectionGeo" parameterClass="String">
+		<![CDATA[
+			delete from  en_ocablesection_geo where  sectioncode='$ocablecode$'    
+		]]>
+	</delete>
+		<!-- 混合敷设获取表格数据 -->
+	<select id="getOcablesection_Sub" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[
+			select v.subsectioncode,v.serial,v.separator_a,getSpNodeName(v.separator_a) as separator_a_name,
+		       v.a_type,decode(v.a_type, 1, '局站', '2', 'T接点', '3', '分界点') as a_type_name,
+		       v.separator_z,getSpNodeName(v.separator_z) as separator_z_name,
+		       v.z_type,decode(v.z_type, 1, '局站', '2', 'T接点', '3', '分界点') as z_type_name,
+		       v.laymode,v.ocablemodel,
+		       v.length,getxtxx(run_unit) as run_unit_name,run_unit
+  			from en_ocablesection_sub v where sectioncode=#sectioncode# order by v.serial
+		]]>
+	</select>
+	<select id="getOcablesection_Sub_Statis" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[
+			select rownum as serial,laymode,sum_length from 
+			(select laymode,sum(length) as sum_length from en_ocablesection_sub 
+			where sectioncode=#sectioncode# group by laymode  order by sum(length) desc)
+		]]>
+	</select>
+	<select id="getRunUnits" resultClass="java.util.HashMap">
+		<![CDATA[
+			select xtbm as id,xtxx as label from xtbm where xtbm like '%XZ0701%'
+		]]>
+	</select>
+	<!-- 删除混合敷设数据 -->
+	<delete id="delMixOcableBuildModel" parameterClass="String">
+		<![CDATA[
+			delete from en_ocablesection_sub where sectioncode=#sectioncode#
+		]]>
+	</delete>
+	<insert id="insertMixOcableBuildModel" parameterClass="ocableResources.model.OcableSectionSub">
+		<![CDATA[
+			insert into en_ocablesection_sub(subsectioncode,sectioncode,separator_a,a_type,separator_z,z_type,length,laymode,ocablemodel,serial,run_unit)
+			values(seq_ocablesection_sub.nextval,#sectioncode#,#separator_a#,#a_type#,#separator_z#,#z_type#,#length#,#laymode#,#ocablemodel#,#serial#,#run_unit#)
+		]]>
+	</insert>
+	<!-- 杆塔接头盒 连线-->
+	<select id="getEstabList" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[
+			select rownum,f.* from(
+      		select e.estabcode,estabname,getxtxx(estabtype) estabtype,getxtxx(property) property,lng,lat,towerspace
+			from re_ocable_ressite r,en_establishment e
+			where r.rescode=e.estabcode and r.restype=3 and r.ocablesectioncode=#sectioncode#
+			union
+			select e.estabcode,estabname,getxtxx(estabtype) estabtype,getxtxx(property) property,lng,lat,towerspace
+			from re_ocable_ressite r,tnode t,en_establishment e
+			where r.rescode=t.tnodecode and t.telpolecode=e.estabcode and r.restype=2 and r.ocablesectioncode=#sectioncode#) f
+		]]>
+	</select>
+	<select id="getConnectorbox" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[
+			select rownum, T.TNODECODE,T.NAME_STD,T.OCABLENUM,T.UPDATEDATE,T.UPDATEPERSON
+			from re_ocable_ressite r,tnode t
+			where r.rescode=t.tnodecode and r.isendpoint=0 and r.restype=2 and r.ocablesectioncode=#sectioncode#
+		]]>
+	</select>
+	<!--  -->
+	<select id="getRessiteCountBySectioncode" resultClass="java.lang.Integer" parameterClass="String">
+		<![CDATA[
+			select count(*) from re_ocable_ressite where ocablesectioncode=#sectioncode#
+		]]>
+	</select>
+	<select id="getEstabsBySectioncode" resultClass="ocableResources.model.Re_Ocable_Ressite" parameterClass="String">
+		<![CDATA[
+			select r.ocablesectioncode,r.rescode,e.estabname as resname,r.restype,r.res_x,r.res_y,r.isendpoint 
+			from re_ocable_ressite r,en_establishment e
+			where r.rescode=e.estabcode and r.restype=3 and r.ocablesectioncode=#sectioncode#
+			union
+			select r.ocablesectioncode,e.estabcode as rescode,e.estabname as resname,3 as restype,r.res_x, to_number(decode(r.res_y, null, null, res_y -20)) as res_y,0 as isendpoint
+			from re_ocable_ressite r,tnode t,en_establishment e
+			where r.rescode=t.tnodecode and t.telpolecode=e.estabcode and r.restype=2 and r.ocablesectioncode=#sectioncode# and e.estabcode not in(select rescode from re_ocable_ressite where restype=3)
+		]]>
+	</select>
+	<select id="getEndPointBySectioncode" resultClass="ocableResources.model.Re_Ocable_Ressite" parameterClass="String">
+		<![CDATA[
+			select r.ocablesectioncode,r.rescode,t.name as resname,r.restype,r.res_x,r.res_y,r.isendpoint,t.telpolecode
+			from re_ocable_ressite r,
+			(select stationcode as code,stationname as name,1 as type,'' as telpolecode from station
+			 union
+			 select tnodecode as code,name_std as name,2 as type,telpolecode from tnode) t
+			where r.rescode=t.code and r.restype=t.type and isendpoint=1 and r.ocablesectioncode=#sectioncode#
+		]]>
+	</select>
+	<select id="getConnectorsBySectioncode" resultClass="ocableResources.model.Re_Ocable_Ressite" parameterClass="String">
+		<![CDATA[
+			select r.ocablesectioncode,r.rescode,t.name_std as resname,r.restype,r.res_x,r.res_y,r.isendpoint,t.telpolecode
+			from re_ocable_ressite r,tnode t
+			where r.rescode=t.tnodecode and r.isendpoint=0 and r.restype=2 and r.ocablesectioncode=#sectioncode#
+		]]>
+	</select>
+	<select id="getLinksBySectioncode" resultClass="ocableResources.model.En_Ocable_Res_Link">
+		<![CDATA[
+			select * from en_ocable_res_link where ocablesectioncode=#sectioncode#
+		]]>
+	</select>
+	<delete id="delEstabView1" parameterClass="String">
+		<![CDATA[
+			delete from re_ocable_ressite where OCABLESECTIONCODE=#sectioncode#
+		]]>
+	</delete>
+	<delete id="delEstabView2" parameterClass="String">
+		<![CDATA[
+			delete from en_ocable_res_link where ocablesectioncode=#sectioncode#
+		]]>
+	</delete>
+	<insert id="saveEstabView1" parameterClass="ocableResources.model.Re_Ocable_Ressite">
+		<![CDATA[
+			insert into re_ocable_ressite (OCABLESECTIONCODE,RESCODE,RESTYPE,RES_X,RES_Y,ISENDPOINT)
+			values(#ocablesectioncode#,#rescode#,#restype#,#res_x#,#res_y#,#isendpoint#)
+		]]>
+	</insert>
+	<insert id="saveEstabView2" parameterClass="ocableResources.model.En_Ocable_Res_Link">
+		<![CDATA[
+			insert into en_ocable_res_link (ocablesectioncode,a_point,a_type,z_point,z_type)
+			values(#ocablesectioncode#,#a_point#,#a_type#,#z_point#,#z_type#)
+		]]>
+	</insert>
+	<!-- 查询光缆长度-wwq-->
+	<select id="getLengthBySectioncode" parameterClass="String" resultClass="String">
+		<![CDATA[
+			select o.LENGTH from en_ocablesection o where o.sectioncode=#sectioncode#
+		]]>
+	</select>
+	<delete id="deleteFibers" parameterClass="String">
+		delete from en_fiber where ocablecode = '$ocableSectionCode$'
+	</delete>
+
+		<select id="ocableSectionCanDelete" parameterClass="java.lang.String" resultClass="java.lang.Integer">
+	    select count(1) from en_fiber where ocablecode = '$ocableSectionCode$' and ( aendodfport is not null or zendodfport is not null)
+	</select>
+	
+	
+<!--	最新代码-->
+	<select id="getStationInfo" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		<![CDATA[
+			select * from v_coordinates  where provincecode like '$province$%'
+		]]>
+	</select>
+	
+<!--	最新代码-->
+	<select id="getTnodeInfo" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		<![CDATA[
+			select * from v_tcoordinates  where provincecode like '$province$%'
+		]]>
+	</select>
+<!--	select * from v_coordinates  where getxtxx(volt) in ($volts$) and province = '$province$'-->
+	<select id="getOcableSectionbystation" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		select SECTIONCODE,A_POINT,Z_POINT,A_POINTTYPE,Z_POINTTYPE,OCABLEMODEL,decode(LENGTH, null, ' ', LENGTH) as LENGTH,PROPERTY,BUILDMODE
+	,LAYMODE,UPDATEPERSON,UPDATEDATE,decode(FIBERCOUNT, null, ' ', FIBERCOUNT) as FIBERCOUNT,RUNDATE,AGENTVENDOR,LEV_CONFIG,
+	RETIRETIME,VOLTLEVEL,decode(OCABLESECTIONNAME, null, ' ', OCABLESECTIONNAME) as OCABLESECTIONNAME,
+	REMARK,SECVOLT,PROVINCE,decode(secvoltname, null, ' ', secvoltname) as secvoltname,secColor,OCCUPYFIBERCOUNT,ONE_NAME
+  	from v_ocablesection v 
+  	where 
+<!--  	(a_point in-->
+<!--       (select stationcode from v_coordinates where province = '$province$') or-->
+<!--       z_point in-->
+<!--       (select stationcode from v_coordinates where province = '$province$'))-->
+<!--  	 and -->
+  	 secvolt in ($volts$)
+	</select>
+
+    		 
+<!--	select * from v_ocablesection-->
+<!-- 			where a_point in (select stationcode from v_coordinates  where getxtxx(volt) in ($volts$) and province = '$province$')-->
+<!--    		or z_point in (select stationcode from v_coordinates  where getxtxx(volt) in ($volts$) and province = '$province$')-->
+	<!-- wuwenqi 20110920 -->
+	<select id="getPorttype" parameterClass="String" resultClass="java.util.HashMap">
+		select distinct t.y_porttype typecode, getxtxx(t.y_porttype) typename
+		from equiplogicport t
+		where t.equipcode = '$equipcode$'
+	</select>
+	<select id="getPortrate" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		select distinct t.x_capability ratecode, getxtxx(t.x_capability) ratename
+		from equiplogicport t
+		where t.equipcode = '$equipcode$'
+		and t.y_porttype = '$typecode$'
+	</select>
+	<select id="getPortinfo" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		select t.logicport portcode,
+		getportlabelwithoutequipname(logicport) portname,
+		getxtxx(t.y_porttype) porttype,
+		getxtxx(t.x_capability) portrate,
+		getxtxx(t.status) status
+		from equiplogicport t
+		where t.equipcode = '$equipcode$'
+		and t.y_porttype = '$typecode$'
+		and t.x_capability = '$ratecode$'
+	</select>
+	<!-- wuwenqi 20110921 -->
+	<select id="getEquiptype" parameterClass="String" resultClass="java.util.HashMap">
+		select distinct e.equiptype typecode, getxtxx(e.equiptype) typename
+		from equipment e
+		where e.stationcode = '$stationcode$'
+	</select>
+	<select id="getEquipvendor" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		select distinct e.x_vendor vendorcode, getxtxx(e.x_vendor) vendorname
+		from equipment e
+		where e.stationcode = '$stationcode$'
+		and e.equiptype = '$typecode$'
+	</select>
+	<select id="getEquipmodel" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		select e.equipcode, e.equipname, e.x_model equipmodel
+		from equipment e
+		where e.stationcode = '$stationcode$'
+		and equiptype = '$typecode$'
+		and e.x_vendor = '$vendorcode$'
+	</select>
+	<select id="getMaxRequestID" resultClass="String">
+		select max(c.requisitionid) from circuit c
+	</select>
+	
+	<select id="getProvinceList" resultClass="java.util.HashMap">
+		select * from en_province where province like '%XZ01__%'
+	</select>
+	
+	<select id="getStationByProvince" parameterClass="String" resultClass="java.util.HashMap">
+		select * from en_province where province ='$province$'
+	</select>
+	
+	<insert id="addCoordinatesByOcableSection" parameterClass="java.util.HashMap">
+		<![CDATA[	
+		
+			insert into coordinates
+		  (COORDINATEID, 
+		  MODELNAME, 
+		  province, 
+		  NODE_X, 
+		  NODE_Y,
+		  LABEL_X,
+		  LABEL_Y,
+		  STATIONCODE,
+		  ISTNODE)
+		values
+		  (lpad(coordinates_seq.NEXTVAL, 20, 0),
+		  '$modelname$',
+		   '$province$',
+		   '$nodex$',
+		   '$nodey$',
+		   '$labelx$',
+		   '$labely$',
+		   '$stationcode$',
+		   '1')
+		]]>
+	</insert>
+	
+	<delete id="deleteCoordinatesByOcableSection" parameterClass="java.util.HashMap">
+		delete from v_coordinates where MODELNAME = '$modelname$' and STATIONCODE = '$stationcode$' 
+		<!--  and province = '$province$'  -->
+	</delete>
+	
+	
+	<insert id="addTnodebyocablesection"  parameterClass="ocableResources.model.TnodeModel" >
+		<selectKey resultClass="String" keyProperty="tnodecode">
+			select
+			lpad(tnode_seq.nextval,20,0) as tnodecode from dual
+        </selectKey>
+		  insert into tnode (tnodecode,GLOBALX,GLOBALY,istnode,name_std)
+        values(#tnodecode#,#globalx#,#globaly#,'0','$name_std$')
+	</insert>
+	
+	<insert id="addTnodeCoordinatesByOcableSection" parameterClass="java.util.HashMap">
+		<![CDATA[	
+			insert into coordinates
+		  (COORDINATEID, 
+		  MODELNAME, 
+		  province, 
+		  NODE_X, 
+		  NODE_Y,
+		  LABEL_X,
+		  LABEL_Y,
+		  STATIONCODE,
+		  ISTNODE)
+		values
+		  (lpad(coordinates_seq.NEXTVAL, 20, 0),
+		  '$modelname$',
+		   '$province$',
+		   '$nodex$',
+		   '$nodey$',
+		   '$labelx$',
+		   '$labely$',
+		   '$stationcode$',
+		   '$istnode$')
+		]]>
+	</insert>
+	
+	<!-- 删除Tnode -->
+	<delete id="deleteTnode" parameterClass="String">
+		<![CDATA[
+			delete from tnode where tnodecode=#code#
+		]]>
+	</delete>
+	
+	<delete id="deletecoordinates" parameterClass="String">
+		<![CDATA[
+			delete from coordinates where stationcode=#code#
+		]]>
+	</delete>
+		<select id="getLegendsFromOcable" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		select  ltype,lname,lcoltype, lpath,lcolor ,isdouble  
+  		from legendconfig
+ 		where  ltype=#type#  and lvendor=#vendor# order by lindex
+	</select>
+	
+	<select id="selectDomainFlexFromOcable" resultClass="java.util.HashMap">
+		select distinct(domainname) from en_province order by length(domainname)
+		desc
+    </select>
+
+	<select id="selectProvinceFlexFromOcable" resultClass="java.util.HashMap"
+		parameterClass="String">
+		select e.province, e.provincename from en_province e where
+		e.domainname='$domain$' 
+<!--		and length(e.province)=6 -->
+		order by province    
+    </select>
+    
+    <select id="selectCityFlexFromOcable" resultClass="java.util.HashMap"
+		parameterClass="String">
+		select e.province, e.provincename from en_province e where
+		e.parent_id='$province$' and length(province)=8 order by province    
+    </select>
+
+	<select id="selectStationFlexFromOcable" resultClass="java.util.HashMap"
+		parameterClass="String">
+		select s.stationcode, s.stationname from station s where
+		s.province=#city# order by s.stationname
+    </select>
+   
+    
+    <select id="selectStationFlexByOcalbeFromOcable" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select s.*,getxtxx(s.x_stationtype) stationtype,getxtxx(s.volt) stationvolt from station s where
+		s.province='$city$'
+		<!--   and s.stationcode not in (select stationcode from v_coordinates where province = '$provinceParam$') --> 
+		order by s.stationname
+    </select>
+
+	<select id="selectRoomFlexFromOcable" resultClass="java.util.HashMap"
+		parameterClass="String">
+		select e.roomcode, e.name_std from en_room e where
+		e.stationcode=#stationcode# order by e.name_std
+    </select>
+    
+     
+    <select id="getOcableSectionCountByOcableResourcesFromOcable" resultClass="Integer"
+		parameterClass="ocableResources.model.OcableSection">
+		select count(*) from view_en_ocable
+
+		<dynamic prepend="">
+			<isNotEmpty prepend="WHERE" property="sectioncode">
+				(ocablecode like
+				'%$sectioncode$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ocablesectionname">
+				(ocablename like
+				'%$ocablesectionname$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="a_pointname">
+				(a_pointname like
+				'%$a_pointname$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ocablemodel">
+				(ocablemodel like
+				'%$ocablemodel$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="z_pointname">
+				(z_pointname like
+				'%$z_pointname$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="z_pointtype">
+				(z_pointtype like
+				'%$z_pointtype$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="a_pointtype">
+				(a_pointtype like
+				'%$a_pointtype$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				(updateperson like
+				'%$updateperson$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="length">
+				(length like
+				'%$length$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="fibercount">
+				(fibercount like
+				'%$fibercount$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="occupyfibercount">
+				(occupyfibercount like
+				'%$occupyfibercount$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="one_name">
+				(one_name like
+				'%$one_name$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="function_unit">
+				(function_unit like
+				'$function_unit$')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="voltlevel">
+				(voltlevel like
+				'%$voltlevel$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="secvolt">
+				(secvolt like
+				'%$secvolt$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				("remark" like
+				'%$"remark"$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="property">
+				(property like
+				'$property$')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="laymode">
+				(laymode like
+				'%$laymode$%')
+				</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<select id="getOcableSectionByOcableResourcesFromOcable" resultClass="ocableResources.model.OcableSection"
+		parameterClass="ocableResources.model.OcableSection">
+		select * from
+		(
+		select e.ocablecode sectioncode,
+               e.ocablename ocablesectionname,
+               '局站' a_pointtype,
+               e.a_point,
+               e.station_a a_pointname,
+               '局站' z_pointtype,
+               e.z_point,
+               e.station_z z_pointname,
+               e.ocablemodel,
+               e.length,
+               e.property,
+               e.laymode,
+               e.fibercount,
+               e.occupyfibercount,
+               e.one_name,
+               e.province function_unit,
+               getxtxx(e.voltlevel) voltlevel,
+               e.province,
+               e.updateperson,
+               decode(e.updatedate,
+                      null,
+                      '',
+                      to_char(e.updatedate, 'yyyy-mm-dd')) updatedate,
+               e.remark,
+               e.rule,
+               e.voltlevel secvolt,
+               row_number() over(order by ocablecode asc) no
+          from view_en_ocable e
+
+		<dynamic prepend="">
+			<isNotEmpty prepend="WHERE" property="sectioncode">
+				(ocablecode like
+				'%$sectioncode$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ocablesectionname">
+				(ocablename like
+				'%$ocablesectionname$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="a_pointname">
+				(station_a like
+				'%$a_pointname$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ocablemodel">
+				(ocablemodel like
+				'%$ocablemodel$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="z_pointname">
+				(z_pointname like
+				'%$z_pointname$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="z_pointtype">
+				(station_z like
+				'%$z_pointtype$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				(updateperson like
+				'%$updateperson$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_start">
+				( updatedate >=
+				to_date('$updatedate_start$','YYYY-mm-dd'))
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="updatedate_end">
+				( updatedate
+				&lt;=to_date('$updatedate_end$','YYYY-mm-dd'))
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="length">
+				(length like
+				'%$length$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="fibercount">
+				(fibercount like
+				'%$fibercount$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="occupyfibercount">
+				(occupyfibercount like
+				'%$occupyfibercount$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="one_name">
+				(one_name like
+				'%$one_name$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="function_unit">
+				(province like
+				'$function_unit$')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="voltlevel">
+				(voltlevel like
+				'%$voltlevel$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="secvolt">
+				(voltlevel like
+				'%$secvolt$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="province">
+				(province like
+				'%$province$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				("remark" like
+				'%$"remark"$%')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="property">
+				(property like
+				'$property$')
+				</isNotEmpty>
+			<isNotEmpty prepend="AND" property="laymode">
+				(laymode like
+				'%$laymode$%')
+				</isNotEmpty>
+		</dynamic>
+		) where no > #start# and no &lt;=#end#
+	</select>
+    	<select id="getUsernameFromOcable" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select distinct username  as label from circuit
+		]]>
+	</select>
+	<select id="getBusinessRateFromOcable" resultClass="netres.model.ComboxDataModel">
+		<![CDATA[
+			select distinct getxtxx(c.rate) as label  from circuit c
+		]]>
+	</select>
+	
+	<select id="getFiberBySectioncodeFromOcable" parameterClass="String" resultClass="ocableResources.model.Fiber">
+		select * from en_fiber where ocablecode ='$ocablecode$'
+	</select>
+	
+	<select id="getCarryBusinessCountFromOcable" parameterClass="java.util.HashMap" resultClass="Integer">
+		select count(*)
+  		from (select rownum no,
+               circuitcode,
+               rate,
+               username,
+               transrate,
+               station_a,
+               station_z,
+               port_a,
+               port_z,
+               x_purpose,
+               state,
+               remark
+          from (select distinct c.circuitcode,
+                                getxtxx(cir.rate) as rate,
+                                getxtxx(cir.state) state,
+                                getxtxx(cir.x_purpose) x_purpose,
+                                getstationname(cir.station1) station_a,
+                                getstationname(cir.station2) station_z,
+                                getportlabel(c.tp_id_a) port_a,
+                                getportlabel(c.tp_id_z) port_z,
+                                cir.username username,
+                                getxtxx(cir.rate) transrate,
+                                cir.remark remark
+                  from circuit_cc c, circuit cir
+                 where(c.tp_id_a in($logicport$) or
+                       c.tp_id_z in($logicport$))
+                   and c.circuitcode = cir.circuitcode
+            <dynamic>
+			<isNotEmpty prepend="AND" property="circuitcode">
+				(cir.circuitcode like upper('%$circuitcode$%'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="username">
+				(cir.username like '%$username$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(cir.username like upper('%$remark$%'))
+						</isNotEmpty>						
+			<isNotEmpty prepend="AND" property="rate">
+				(getxtxx(cir.rate) like '%$rate$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="port_a">
+				(upper(getportlabel(c.tp_id_a)) like upper('%$port_a$%'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="port_z">
+				(upper(getportlabel(c.tp_id_z)) like upper('%$port_z$%'))
+			</isNotEmpty>
+		</dynamic>
+            ))where (no > #start#) and (no &lt;=#end#)
+	</select>
+	
+	<select id="getCarryBusinessFromOcable" parameterClass="java.util.HashMap" resultClass="ocableResources.model.CarryingBusinessModel">
+		select *
+  		from (select rownum no,
+               circuitcode,
+               rate,
+               username,
+               transrate,
+               station_a,
+               station_z,
+               port_a,
+               port_z,
+               x_purpose,
+               state,
+               remark
+          from (select distinct c.circuitcode,
+                                getxtxx(cir.rate) as rate,
+                                getxtxx(cir.state) state,
+                                getxtxx(cir.x_purpose) x_purpose,
+                                getstationname(cir.station1) station_a,
+                                getstationname(cir.station2) station_z,
+                                getportlabel(c.tp_id_a) port_a,
+                                getportlabel(c.tp_id_z) port_z,
+                                cir.username username,
+                                 getxtxx(cir.rate) transrate,
+                                cir.username remark
+                  from circuit_cc c, circuit cir            
+                 where (c.tp_id_a in($logicport$) or
+                       c.tp_id_z in($logicport$))
+                   and c.circuitcode = cir.circuitcode
+             <dynamic>
+			<isNotEmpty prepend="AND" property="circuitcode">
+				(cir.circuitcode like upper('%$circuitcode$%'))
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="username">
+				(cir.username like '%$username$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="remark">
+				(cir.username like upper('%$remark$%'))
+						</isNotEmpty>						
+			<isNotEmpty prepend="AND" property="rate">
+				(getxtxx(cir.rate) like '%$rate$%')
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="port_a">
+				(upper(getportlabel(c.tp_id_a)) like upper('%$port_a$%'))
+						</isNotEmpty>
+			<isNotEmpty prepend="AND" property="port_z">
+				(upper(getportlabel(c.tp_id_z)) like upper('%$port_z$%'))
+						</isNotEmpty>
+		</dynamic>
+            ))where (no > #start#) and (no &lt;=#end#)
+	</select>
+		<select id="getOpticalPortByFibercodeFromOcable" parameterClass="String" resultClass="String">
+		select trim(getopticalportbyfiber('$fibercode$')) as port from dual
+	</select>
+	<select id="getCarryBusinessByLogicportFromOcable" parameterClass="java.util.HashMap" resultClass="ocableResources.model.CarryingBusinessModel">
+		select *
+  		from (select rownum no,
+               circuitcode,
+               circuitname,
+               rate,
+               operationtype,
+               transrate,
+               station_a,
+               station_z,
+               port_a,
+               port_z,
+               x_purpose,
+               state,
+               remark,
+               requisitionid,
+               aequiptype,
+               zequiptype
+          from (select distinct c.circuitcode,
+          						cir.username circuitname,
+                                getxtxx(cir.rate) as rate,
+                                getxtxx(cir.state) state,
+                                getxtxx(cir.x_purpose) x_purpose,
+                                getstationname(cir.station1) station_a,
+                                getstationname(cir.station2) station_z,
+                                getportlabel(c.tp_id_a) port_a,
+                                getportlabel(c.tp_id_z) port_z,
+                                cir.operationtype operationtype,
+                                getxtxx(cir.rate) transrate,
+                                cir.remark remark,
+                                cir.requisitionid requisitionid,
+                                getequiptypebylogicport(c.tp_id_a) aequiptype,
+                                getequiptypebylogicport(c.tp_id_z) zequiptype
+                  from circuit_cc c, circuit cir
+                 where (c.tp_id_a in($logicport$) or
+                       c.tp_id_z in($logicport$))
+                   and c.circuitcode = cir.circuitcode
+            )order by requisitionid,circuitname
+            )where (no > #start#) and (no &lt;=#end#)
+	</select>
+	<select id="getCountCarryBusinessByLogicportFromOcable" parameterClass="string" resultClass="Integer">
+			<!--  select count(*)
+  		from (select rownum no,
+               circuitcode,
+               circuitname,
+               rate,
+               username,
+               transrate,
+               station_a,
+               station_z,
+               port_a,
+               port_z,
+               x_purpose,
+               state,
+               remark
+          from (select distinct c.circuitcode,
+          						cir.username circuitname,
+                                getxtxx(cir.rate) as rate,
+                                getxtxx(cir.state) state,
+                                getxtxx(cir.x_purpose) x_purpose,
+                                getstationname(cir.station1) station_a,
+                                getstationname(cir.station2) station_z,
+                                getportlabel(c.tp_id_a) port_a,
+                                getportlabel(c.tp_id_z) port_z,
+                                cir.username username,
+                                getxtxx(cir.rate) transrate,
+                                cir.remark remark
+                  from circuit_cc c, circuit cir
+                 where (c.tp_id_a in($logicport$) or
+                       c.tp_id_z in($logicport$))
+                   and c.circuitcode = cir.circuitcode
+                   ))-->
+                   select count(*)
+  from (select rownum no,
+               CIRCUITCODE,
+               PORTSERIALNO1,
+               PORTSERIALNO2,
+               name_std circuitname,
+               USERNAME,
+               x_purpose
+          from (select b.opticalcode CIRCUITCODE, 
+                       b.ocablecode,
+                       b.name_std, 
+                       getequipsbmc(b.b_equipcode) PORTSERIALNO1,
+                       getequipsbmc(b.e_equipcode) PORTSERIALNO2,
+                       a.business_name USERNAME,
+                       a.business_type x_purpose
+                  from business a, optical b
+                 where a.business_id = b.buss_id
+                   and instr(b.ocablecode, #ocablecode#) > 0
+               
+                 union 
+                 select s.opticalcode circuitcode,s.ocablecode,s.name_std,getequipsbmc(s.b_equipcode) PORTSERIALNO1, 
+                       getequipsbmc(s.e_equipcode) PORTSERIALNO2,e.lorduse USERNAME ,'' x_purpose
+                       
+                        from optical_topolink o,en_topolink e,optical s where 
+                 o.opticalcode in(select t.resid from optical t where instr(t.ocablecode,#ocablecode#)>0
+                   )
+                   and s.resid=o.opticalcode
+                 and o.topolinkid=e.resid
+                   )
+                   order by CIRCUITCODE asc
+                 )
+
+	</select>
+	<select id="getAllCarryBusinessByLogicportFromOcable" parameterClass="String" resultClass="ocableResources.model.CarryingBusinessModel">
+		select *
+  		from (select rownum no,
+               circuitcode,
+               decode(circuitname,null,' ',circuitname)circuitname,
+               rate,
+               operationtype,
+               transrate,
+               station_a,
+               station_z,
+               port_a,
+               port_z,
+               x_purpose,
+               state,
+               decode(remark,null,' ',remark)remark,
+               decode(requisitionid,null,' ',requisitionid)requisitionid,
+               aequiptype,
+               zequiptype
+          from (select distinct c.circuitcode,
+          						cir.username circuitname,
+                                getxtxx(cir.rate) as rate,
+                                getxtxx(cir.state) state,
+                                getxtxx(cir.x_purpose) x_purpose,
+                                getstationname(cir.station1) station_a,
+                                getstationname(cir.station2) station_z,
+                                getportlabel(c.tp_id_a) port_a,
+                                getportlabel(c.tp_id_z) port_z,
+                                cir.operationtype operationtype,
+                                getxtxx(cir.rate) transrate,
+                                cir.remark remark,
+                                cir.requisitionid requisitionid,
+                                getequiptypebylogicport(c.tp_id_a) aequiptype,
+                                getequiptypebylogicport(c.tp_id_z) zequiptype
+                  from circuit_cc c, circuit cir
+                 where (c.tp_id_a in($logicport$) or
+                       c.tp_id_z in($logicport$))
+                   and c.circuitcode = cir.circuitcode))
+                   order by requisitionid,circuitname
+	</select>
+	<select id="getCountAllCarryBusinessByLogicportFromOcable" parameterClass="String" resultClass="Integer">
+		select count(*)
+  		from (select rownum no,
+               circuitcode,
+               circuitname,
+               rate,
+               operationtype,
+               transrate,
+               station_a,
+               station_z,
+               port_a,
+               port_z,
+               x_purpose,
+               state,
+               remark,
+               requisitionid,
+               aequiptype,
+               zequiptype
+          from (select distinct c.circuitcode,
+          						cir.username circuitname,
+                                getxtxx(cir.rate) as rate,
+                                getxtxx(cir.state) state,
+                                getxtxx(cir.x_purpose) x_purpose,
+                                getstationname(cir.station1) station_a,
+                                getstationname(cir.station2) station_z,
+                                getportlabel(c.tp_id_a) port_a,
+                                getportlabel(c.tp_id_z) port_z,
+                                cir.operationtype operationtype,
+                                getxtxx(cir.rate)  transrate,
+                                cir.remark remark,
+                                cir.requisitionid requisitionid,
+                                getequiptypebylogicport(c.tp_id_a) aequiptype,
+                                getequiptypebylogicport(c.tp_id_z) zequiptype
+                  from circuit_cc c, circuit cir
+                 where (c.tp_id_a in($logicport$) or
+                       c.tp_id_z in($logicport$))
+                   and c.circuitcode = cir.circuitcode
+            )order by requisitionid,circuitname
+            )
+	</select>
+	<select id="getFiberDetailsFromOcable" parameterClass="ocableResources.model.FiberDetailsModel"
+		resultClass="ocableResources.model.FiberDetailsModel">
+		<![CDATA[
+	        select *
+  from (select s.*, rownum no
+          from (select f.systemcode,
+                       f.ocablecode,
+                       decode(f.fibercode, null, ' ', f.fibercode) fibercode,
+                       decode(os.ocablename,
+                              null,
+                              ' ',
+                              os.ocablename) Ocablesectionname,
+                       decode(f.fiberserial, null, ' ', f.fiberserial) fiberserial,
+                       decode(f.name_std, null, ' ', f.name_std) name_std,
+                       decode(f.length, null, ' ', f.length) length,
+                       decode(f.property, null, ' ', getxtxx(f.property)) property,
+                       decode(f.status, null, ' ', getxtxx(f.status)) status,
+                       decode(f.fibermodel, null, ' ', getxtxx(f.fibermodel)) fibermodel,
+                       decode(f.remark, null, ' ', f.remark) remark,
+                       decode(getoneopticalportbyfiber(f.fibercode, 'a'),
+                              null,
+                              ' ',
+                              getportlabel(getoneopticalportbyfiber(f.fibercode,
+                                                                    'a'))) aendeqport,
+                       decode(getoneopticalportbyfiber(f.fibercode, 'z'),
+                              null,
+                              ' ',
+                              getportlabel(getoneopticalportbyfiber(f.fibercode,
+                                                                    'z'))) zendeqport,
+                       decode(f.aendodfport,
+                              null,
+                              ' ',
+                              f.aendodfport) aendodfport,
+                       decode(f.zendodfport,
+                              null,
+                              ' ',
+                              f.zendodfport) zendodfport,
+                       decode(getoneopticalportbyfiber(f.fibercode, 'a'),
+                              null,
+                              ' ',
+                              getequipnamebyportid(getoneopticalportbyfiber(f.fibercode,
+                                                                            'a'))) aequip,
+                       decode(getoneopticalportbyfiber(f.fibercode, 'z'),
+                              null,
+                              ' ',
+                              getequipnamebyportid(getoneopticalportbyfiber(f.fibercode,
+                                                                            'z'))) zequip,
+                       
+                       decode(getoneopticalportbyfiber(f.fibercode, 'a'),
+                              null,
+                              ' ',
+                              getequiptypebylogicport(getoneopticalportbyfiber(f.fibercode,
+                                                                               'a'))) aequiptype,
+                       
+                       decode(getoneopticalportbyfiber(f.fibercode, 'z'),
+                              null,
+                              ' ',
+                              getequiptypebylogicport(getoneopticalportbyfiber(f.fibercode,
+                                                                               'z'))) zequiptype,
+                       decode(f.updateperson, null, ' ', f.updateperson) updateperson,
+                       decode(f.updatedate,
+                              null,
+                              ' ',
+                              to_char(f.updatedate, 'yyyy-mm-dd')) updatedate
+                  from en_fiber f, en_ocable os
+                 where f.ocablecode = os.ocablecode
+
+                  and f.ocablecode = '$sectioncode$'
+                 order by fiberserial * 1) s)
+		]]>
+	</select>
+	<select id="getFiberDetailsInfoFromOcable" parameterClass="ocableResources.model.FiberDetailsModel" resultClass="ocableResources.model.FiberDetailsModel">
+ <![CDATA[ 	        select *from(
+                 select s.*,rownum no from (
+                 select f.systemcode,
+                 f.ocablecode,
+                 decode(f.fibercode, null, ' ', f.fibercode) fibercode,
+                 decode(os.ocablename ,
+                        null,
+                        ' ',
+                        os.ocablename) Ocablesectionname,
+                 decode(f.fiberserial, null, ' ', f.fiberserial) fiberserial,
+                 decode(f.name_std, null, ' ', f.name_std) name_std,
+                 decode(f.length, null, ' ', f.length) length,
+                 decode(f.property, null, ' ', getxtxx(f.property)) property,
+                 decode(x1.xtxx, null, ' ', x1.xtxx) status,
+                 decode(x2.xtxx, null, ' ', x2.xtxx) fibermodel,
+                 decode(f.remark, null, ' ', f.remark) remark,
+                 decode(f.aendeqport, null, ' ', getportlabel(f.aendeqport)) aendeqport,
+                 decode(f.zendeqport, null, ' ', getportlabel(f.zendeqport)) zendeqport,
+                 decode(getoneopticalportbyfiber(f.fibercode, 'a'),
+                              null,
+                              ' ',
+                              getEquipnameWithoutSysByPort(getoneopticalportbyfiber(f.fibercode,
+                                                                            'a'))) aequip,
+                 decode(getoneopticalportbyfiber(f.fibercode, 'z'),
+                        null,
+                        ' ',
+                        getEquipnameWithoutSysByPort(getoneopticalportbyfiber(f.fibercode,
+                                                                      'z'))) zequip,
+                 
+                 decode(getoneopticalportbyfiber(f.fibercode, 'a'),
+                        null,
+                        ' ',
+                        getequiptypebylogicport(getoneopticalportbyfiber(f.fibercode,
+                                                                         'a'))) aequiptype,
+                 
+                 decode(getoneopticalportbyfiber(f.fibercode, 'z'),
+                        null,
+                        ' ',
+                        getequiptypebylogicport(getoneopticalportbyfiber(f.fibercode,
+                                                                         'z'))) zequiptype,
+                 decode(f.aendodfport,
+                        null,
+                        ' ',
+                        f.aendodfport) aendodfport,
+                 decode(f.zendodfport,
+                        null,
+                        ' ',
+                       f.zendodfport) zendodfport,
+                 decode(f.updateperson, null, ' ', f.updateperson) updateperson,
+                 decode(f.updatedate,
+                        null,
+                        ' ',
+                        to_char(f.updatedate, 'yyyy-mm-dd')) updatedate,
+                 decode(f.aendodfport,
+                        null,
+                        f.aendeqport,
+                        f.aendodfport) aendodfportstart
+            from en_fiber f, en_ocable os, xtbm x1, xtbm x2
+           where f.ocablecode = os.ocablecode
+             and x1.xtbm(+) = f.status
+             and x2.xtbm(+) = f.fibermodel
+             and f.ocablecode = '$sectioncode$'
+           order by  fiberserial*1
+            ) s) 
+            where no > #start# and no <=#end#
+		
+  ]]> 
+  </select>
+  	<select id="getFiberDetailsConntFromOcable" parameterClass="ocableResources.model.FiberDetailsModel"
+		resultClass="Integer">
+		<![CDATA[
+		  select count(*) From 
+ 		      (select rownum no,
+		       decode(os.ocablename, null, ' ', os.ocablename) Ocablesectionname,
+		       decode(f.fiberserial, null, ' ', f.fiberserial) fiberserial,
+		       decode(f.name_std, null, ' ', f.name_std) name_std,
+		       decode(f.length, null, ' ', f.length) length,
+		       decode(f.property, null, ' ', getxtxx(f.property)) property,
+		       decode(f.status, null, ' ', getxtxx(f.status)) status,
+		       decode(f.fibermodel, null, ' ',getxtxx(f.fibermodel)) fibermodel,
+		       decode(f.remark, null, ' ', f.remark) remark,
+	           decode(getoneopticalportbyfiber(f.fibercode,'a'),null,' ',getportlabel(getoneopticalportbyfiber(f.fibercode,'a')))  aendeqport,
+               decode(getoneopticalportbyfiber(f.fibercode,'z'),null,' ',getportlabel(getoneopticalportbyfiber(f.fibercode,'z'))) zendeqport,
+		       decode(f.aendodfport, null, ' ', getportlabel(f.aendodfport)) aendodfport,
+		       decode(f.zendodfport, null, ' ', getportlabel(f.zendodfport)) zendodfport,
+		       decode(f.updateperson, null, ' ', f.updateperson) updateperson,
+		       decode(f.updatedate, null, ' ', to_char(f.updatedate, 'yyyy-mm-dd')) updatedate
+		  from en_fiber f, en_ocable os
+		 where f.ocablecode = os.ocablecode
+		   and f.ocablecode = '$sectioncode$'
+		 order by fiberserial*1) 
+		]]>
+	</select>
+	<select id="getFiberdetailsCarryBusinessFromOcable" parameterClass="java.util.HashMap" resultClass="ocableResources.model.FiberDetailsBusiness">
+		select *
+  		from (select rownum no,
+               circuitcode,
+               decode(circuitname,null,' ',circuitname)circuitname,
+               rate,
+               operationtype,
+               astation,
+               zstation,
+               zport,
+               aport,
+               aequip,
+               zequip,
+               aequiptype,
+               zequiptype,
+               x_purpose,
+               state,
+               decode(remark,null,' ',remark)remark,
+               requisitionid
+          from (select distinct c.circuitcode,
+          						cir.username circuitname,
+				                getxtxx(cir.rate) as rate,
+				                getxtxx(cir.state) state,
+				                getxtxx(cir.x_purpose) x_purpose,
+				                getstationname(cir.station1) astation,
+				                getstationname(cir.station2) zstation,
+				                getequipname(cir.city1) aequip1,
+				                getequipnamebyportid(c.tp_id_a) aequip,
+				                getequiptypebylogicport(c.tp_id_a) aequiptype,
+				                getequiptypebylogicport(c.tp_id_z) zequiptype,
+				                getequipname(cir.city2) zequip1,
+				                getequipnamebyportid(c.tp_id_z) zequip,
+				                getportlabel(c.tp_id_a) aport,
+				                getportlabel(c.tp_id_z) zport,
+				                cir.operationtype operationtype,
+				                cir.remark remark,
+				                cir.requisitionid requisitionid
+                  from circuit_cc c, circuit cir
+                 where (c.tp_id_a in($logicport$) or
+                       c.tp_id_z in($logicport$))
+                   and c.circuitcode = cir.circuitcode
+                   order by getequiptypebylogicport(c.tp_id_a))
+                   order by requisitionid,circuitname)                 
+        where (no > #start#) and (no &lt;=#end#)
+	</select>
+		<select id="getOcableRoutInfoByFiberFromOcable" resultClass="ocableResources.model.ChannelRoutResultModel"
+		parameterClass="ocableResources.model.ChannelRoutModel">
+		<![CDATA[
+			 select f.fiberchannelcode, e.systemcode
+			 from fiberchannel f, en_topolink e
+			 where f.fiberchannelcode =
+			       (select fiberchannelcode
+			          from fiberchannelroute t
+			         where (t.ocable1 = '$OCABLE1$' and t.fiberserial1 = '$FIBERSERIAL1$')
+			            or (t.ocable2 = '$OCABLE1$' and t.fiberserial2 = '$FIBERSERIAL1$'))
+			   and f.topolink = e.label
+		 ]]>
+	</select>
+	<select id="getStationNamesByByCRNameFromOcable" resultClass="String"
+		parameterClass="String">
+		<![CDATA[
+		  select name
+		  from (select a.stationname name, to_number(b.serial) serial
+		          from station a, fiberchannelroute b
+		         where a.stationcode = b.station
+		           and b.nodetype1 = '1'
+		           and b.fiberchannelcode = '$channelroutname$'
+		           and b.serial <> '1'
+		        union
+		        select a.stationname name, to_number(b.serial) serial
+		          from station a, fiberchannelroute b
+		         where a.stationcode = b.station
+		           and b.nodetype1 = '2'
+		           and b.ocable1 is not null
+		           and b.fiberchannelcode = '$channelroutname$'
+		        union
+		        select a.name_std name, to_number(b.serial) serial
+		          from tnode a, fiberchannelroute b
+		         where a.tnodecode = b.station
+		           and b.nodetype1 = '3'
+		           and b.fiberchannelcode = '$channelroutname$')
+		  order by serial
+		 ]]>
+	</select>
+	
+	<select id="getChannelRoutDataByCRNameFromOcable" resultClass="ocableResources.model.ChannelRoutModel"
+		parameterClass="String">
+		<![CDATA[
+			   select decode(t.nodetype1,
+		              '1',
+		              getequipnamebyportid(t.nodecode1),
+		              '2',
+		              getodfnamebyport(t.nodecode1),
+		              '3',
+		              gettnodelabel(t.nodecode1),
+		              null) as equipname,
+		       t.fiberchannelcode,
+		       to_number(t.serial) serial,
+		       t.nodetype1,
+		       t.nodecode1,
+		       t.nodetype2,
+		       t.nodecode2,
+		       t.ocable1,
+		       t.fiberserial1,
+		       t.ocable2,
+		       t.fiberserial2,
+		       getPortLabelForFiber(t.nodecode1) name_node1,
+		       getPortLabelForFiber(t.nodecode2) name_node2,
+		       b.ocablesectionname,
+		       b.fibercount,
+		       s.stationname
+			   from fiberchannelroute t, en_ocablesection b, station s
+			   where t.nodetype1 = '1'
+			   and t.ocable1 = b.sectioncode(+)
+			   and t.fiberchannelcode = '$channelroutname$'
+			   and t.station = s.stationcode
+		       union
+		       select decode(t.nodetype1,
+		              '1',
+		              getequipnamebyportid(t.nodecode1),
+		              '2',
+		              getodfnamebyport(t.nodecode1),
+		              '3',
+		              gettnodelabel(t.nodecode1),
+		              null),
+		       t.fiberchannelcode,
+		       to_number(t.serial) serial,
+		       t.nodetype1,
+		       t.nodecode1,
+		       t.nodetype2,
+		       t.nodecode2,
+		       t.ocable1,
+		       t.fiberserial1,
+		       t.ocable2,
+		       t.fiberserial2,
+		       getodfname(t.nodecode1) name_node1,
+		       getodfname(t.nodecode2) name_node2,
+		       b.ocablesectionname,
+		       b.fibercount,
+		       s.stationname
+		   from fiberchannelroute t, en_ocablesection b, station s
+		   where t.nodetype1 = '2'
+		   and t.ocable1 = b.sectioncode(+)
+		   and t.fiberchannelcode = '$channelroutname$'
+		   and t.station = s.stationcode
+		   union
+		   select decode(t.nodetype1,
+		              '1',
+		              getequipnamebyportid(t.nodecode1),
+		              '2',
+		              getodfnamebyport(t.nodecode1),
+		              '3',
+		              gettnodelabel(t.nodecode1),
+		              null),
+	       t.fiberchannelcode,
+	       to_number(t.serial) serial,
+	       t.nodetype1,
+	       t.nodecode1,
+	       t.nodetype2,
+	       t.nodecode2,
+	       t.ocable1,
+	       t.fiberserial1,
+	       t.ocable2,
+	       t.fiberserial2,
+	       c.name_std name_node1,
+	       c.name_std name_node2,
+	       b.ocablesectionname,
+	       b.fibercount,
+	       c.name_std stationname
+		   from fiberchannelroute t, en_ocablesection b, tnode c
+		   where t.nodetype1 = '3'
+		   and t.nodecode1 = c.tnodecode
+		   and t.ocable1 = b.sectioncode(+)
+		   and t.fiberchannelcode = '$channelroutname$'
+		   order by serial
+		 ]]>
+	</select>
+	
+	  	<select id="getOcableListFromOcable" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		<![CDATA[
+		SELECT *
+ 	 FROM v_twaver_ocable_section
+ 	where a_point is not null
+  	 and z_point is not null
+   	and a_point = '$apointcode$'
+   	and z_point = '$zpointcode$'
+	union
+	SELECT *
+  	FROM v_twaver_ocable_section
+ 	where a_point is not null
+   	and z_point is not null
+   	and a_point = '$zpointcode$'
+   	and z_point = '$apointcode$'
+   		]]> 
+	</select>
+	
+		<insert id="addSingleFiberFromOcable"  parameterClass="ocableResources.model.FiberDetailsModel">
+    	<selectKey resultClass="String" keyProperty="fibercode">
+    		select lpad(EN_FIBER_SEQ.nextval, 20, 0) as fibercode from dual
+    	</selectKey>
+    	insert into en_fiber (fibercode, ocablecode, fiberserial, property, length, updateperson, updatedate)
+    	values (#fibercode#, #sectioncode#, #fiberserial#, #property#, #length#, #updateperson#, to_date(#updatedate#, 'yyyy-mm-dd'))
+    </insert>
+    
+        <update id="updateOcableSectionFibercountFromOcable">
+    	update en_ocable set FIBERCOUNT = #FIBERCOUNT#, OCABLENAME = #OCABLESECTIONNAME#
+    	where OCABLECODE = #SECTIONCODE#
+    </update>
+    
+        <update id="updateFiberNamestdBySectioncodeFromOcable" parameterClass="String">
+<!--    <![CDATA[-->
+<!--    	update en_fiber t-->
+<!--   set t.name_std = (select '纤芯' || '/' || e.fibercount || '芯' || '##' ||-->
+<!--                            e.rule || '-' || getstationname(e.a_point) || '~' ||-->
+<!--                            getstationname(e.z_point) || '/' || t.fiberserial-->
+<!--                       from en_ocable e-->
+<!--                      where e.ocablecode = t.ocablecode)-->
+<!--		 where t.ocablecode = #sectioncode#-->
+<!--		 ]]>	-->
+    </update>
+    
+        <update id="deleteSingleFiberFromOcable" parameterClass="java.util.HashMap">
+    <![CDATA[
+    	delete from en_fiber where fibercode=#fibercode# and fiberserial=#fiberserial#
+		 ]]>	
+    </update>
+    
+    	<select id="getFiberRelateOpticaPortFromOcable" resultClass="String" parameterClass="java.util.HashMap">	
+		select getopticalportbyfiber(#fibercode#) from dual
+	</select>
+	
+		<select id="getTopoIdByPortFromOcable" resultClass="String" parameterClass="java.util.HashMap">
+	    select  label||'^'||linerate||'^'||getsystembyeq(getequipcodebyportid(#aendptp#))  from en_topolink where aendptp = #aendptp# and zendptp = #zendptp# 
+	    union
+	    select  label||'^'||linerate||'^'||getsystembyeq(getequipcodebyportid(#aendptp#))  from en_topolink where aendptp = #zendptp# and zendptp = #aendptp# 
+	</select>
+	
+		<select id="getOcableTopoOcableInfoFromOcable" resultClass="java.util.HashMap" parameterClass="String">
+		select decode(o.Ocablename, null, ' ', o.Ocablename) Ocablesectionname,
+		       decode(s1.stationname, null, ' ', s1.stationname) STATION_A,
+		       decode(s2.stationname, null, ' ', s2.stationname) STATION_Z,
+		       decode(o.OCABLEMODEL, null, ' ', o.OCABLEMODEL) OCABLEMODEL,
+		       decode(o.LENGTH, null, ' ', o.LENGTH) LENGTH,
+		       decode(o.LAYMODE, null, ' ', o.LAYMODE) LAYMODE,
+		       decode(o.UPDATEPERSON, null, ' ', o.UPDATEPERSON) UPDATEPERSON,
+		       decode(o.UPDATEDATE, null, ' ', to_char(o.UPDATEDATE, 'yyyy-mm-dd')) UPDATEDATE,
+		       decode(o.FIBERCOUNT, null, ' ', o.FIBERCOUNT) FIBERCOUNT,
+		       decode(o.OCCUPYFIBERCOUNT, null, ' ', o.OCCUPYFIBERCOUNT) OCCUPYFIBERCOUNT,
+		       decode(o.VENDOR, null, ' ', o.VENDOR) X_VENDOR
+		  from en_ocable o, station s1, station s2
+		 where o.station_a = s1.stationcode
+		   and o.station_z = s2.stationcode
+		   and o.ocablecode = '$sectioncode$'
+	</select>
+	
+	<select id="getOcableTopoFiberInfoFromOcable" resultClass="java.util.HashMap" parameterClass="String">	
+		  
+			select decode(os.Ocablename, null, ' ', os.Ocablename) Ocablesectionname,
+	           getstationname(os.station_a) station_a,
+       		   getstationname(os.station_z) station_z,
+	           decode(f.fibercode, null, ' ', f.fibercode) fibercode,
+	           decode(f.fiberserial, null, ' ', f.fiberserial) fiberserial,
+	           decode(f.name_std, null, ' ', f.name_std) name_std,
+	           decode(f.length, null, ' ', f.length) length,
+	           decode(f.property, null, ' ', getxtxx(f.property)) property,
+	           decode(getxtxx(f.status), null, ' ', getxtxx(f.status)) status,
+	           decode(getxtxx(f.status), null, ' ', getxtxx(f.status)) zbystatus,
+	           decode(getxtxx(f.fibermodel), null, ' ', getxtxx(f.fibermodel)) fibermodel,
+	           decode(f.remark, null, ' ', f.remark) remark,
+	           decode((getequipnamebyportid(getoneopticalportbyfiber(f.fibercode,'a'))),null, ' ',(getequipnamebyportid(getoneopticalportbyfiber(f.fibercode,'a'))) )aendeqport,
+	           decode((getequipnamebyportid(getoneopticalportbyfiber(f.fibercode,'z'))),null, ' ',(getequipnamebyportid(getoneopticalportbyfiber(f.fibercode,'z'))) )zendeqport,
+	           decode(f.aendodfport, null, ' ', f.aendodfport) aendodfport,
+	           decode(f.zendodfport, null, ' ', f.zendodfport) zendodfport,
+	           decode(f.updateperson, null, ' ', f.updateperson) updateperson,
+	           decode(f.updatedate, null, ' ', to_char(f.updatedate, 'yyyy-mm-dd')) updatedate
+	      from en_fiber f, en_ocable os
+	     where f.ocablecode = os.ocablecode
+	       and f.ocablecode = '$sectioncode$'
+	     order by f.fiberserial
+
+
+	</select>
+	
+		<select id="getStationModelList" resultClass="java.util.HashMap">
+		select xtbm scode,xtxx smodel,remark sindex from xtbm where xtbm like 'ZY0103__' order by xtbm
+   		 </select>
+   		 
+   		 <select id="getAllCarryBusinessByOcableCode" parameterClass="map" resultClass="carryOpera.model.CarryOperaModel">
+<!--   		 	select * from (select rownum no,CIRCUITCODE,PORTSERIALNO1,PORTSERIALNO2,-->
+<!--   		 	 USERNAME,x_purpose from(-->
+<!--   		 	select b.fibercode CIRCUITCODE,-->
+<!--       		getequipnamebyportid(b.aendeqport) ||-->
+<!--      		getportlabelwithoutequipname(b.aendeqport) PORTSERIALNO1,-->
+<!--       		getequipnamebyportid(b.zendeqport) ||-->
+<!--       		getportlabelwithoutequipname(b.zendeqport) PORTSERIALNO2,-->
+<!--       		a.business_name USERNAME,-->
+<!--       		a.business_type x_purpose-->
+<!--  			from business a,-->
+<!--      	 (select *-->
+<!--         	 from en_fiber t-->
+<!--         		where t.buss_id in (select distinct t.buss_id-->
+<!--                               from en_fiber t-->
+<!--                              where t.ocablecode = #ocablecode#-->
+<!--                                and t.buss_id is not null)-->
+<!--           	and t.ocablecode = #ocablecode#) b-->
+<!-- 		where b.buss_id = a.business_id-->
+<!-- 		order by b.fiberserial)-->
+<!-- 		)where (no > #start#) and (no &lt;=#end#)-->
+select *
+  from (select rownum no,
+               CIRCUITCODE,
+               PORTSERIALNO1,
+               PORTSERIALNO2,
+               name_std circuitname,
+               USERNAME,
+               x_purpose
+          from (
+          		select b.opticalcode CIRCUITCODE, 
+                       b.ocablecode,
+                       b.name_std, 
+                       getequipsbmc(b.b_equipcode) PORTSERIALNO1,
+                       getequipsbmc(b.e_equipcode) PORTSERIALNO2,
+                       a.business_name USERNAME,
+                       a.business_type x_purpose
+                  from business a, optical b
+                 where a.business_id = b.buss_id
+                   and instr(b.ocablecode, #ocablecode#) > 0
+               
+                 union 
+                 select s.opticalcode circuitcode,s.ocablecode,s.name_std,getequipsbmc(s.b_equipcode) PORTSERIALNO1, 
+                       getequipsbmc(s.e_equipcode) PORTSERIALNO2,e.lorduse USERNAME ,'复用段业务' x_purpose
+                       
+                        from optical_topolink o,en_topolink e,optical s where 
+                 o.opticalcode in(select t.resid from optical t where instr(t.ocablecode,#ocablecode#)>0
+                   )
+                   and s.resid=o.opticalcode
+                 and o.topolinkid=e.resid
+                   )
+                   order by CIRCUITCODE asc
+                 )
+ where no > #start#
+   and no &lt;=#end#
+   		 </select>
+   		 
+   		 <select id="getAllCarryBusinessByFibercode" parameterClass="map" resultClass="carryOpera.model.CarryOperaModel">
+   		 	select *
+  from (select rownum no,
+               circuitcode,
+               circuitname,
+               PORTSERIALNO1,
+               PORTSERIALNO2,
+               USERNAME,
+               x_purpose
+          from (SELECT s.opticalcode circuitcode,
+                       s.name_std circuitname,
+                       getequipsbmc(s.b_equipcode) PORTSERIALNO1, 
+                       getequipsbmc(s.e_equipcode) PORTSERIALNO2,
+                       b.business_name USERNAME,
+                       b.business_type x_purpose
+                  from optical s, business b
+                 where s.buss_id = b.business_id
+                   and s.resid = (select t.opticalid from en_fiber t
+                 where t.fibercode = #fibercode# )
+                union
+                select p.opticalcode circuitcode,
+                       p.name_std circuitname,
+                       getequipsbmc(p.b_equipcode) PORTSERIALNO1, 
+                       getequipsbmc(p.e_equipcode) PORTSERIALNO2,
+                       e.lorduse username,
+                       '复用段业务' x_purpose
+                  from optical_topolink o, optical p, en_topolink e
+                 where o.opticalcode = p.resid
+                   and e.resid = o.topolinkid
+                   and p.resid =
+                       (select t.opticalid
+                          from en_fiber t
+                         where t.fibercode = #fibercode#)))
+ where no > #start#
+   and no &lt;=#end#
+   		 	
+   		 </select>
+   		 
+   		 <select id="getCountCarryBusinessByFibercode" parameterClass="string" resultClass="int">
+   		 	select count(*)
+  from (SELECT s.opticalcode circuitcode,
+               s.name_std circuitname,
+               getequipsbmc(s.b_equipcode) PORTSERIALNO1,
+               getequipsbmc(s.e_equipcode) PORTSERIALNO2,
+               b.business_name USERNAME,
+               b.business_type x_purpose
+          from optical s, business b
+         where s.buss_id = b.business_id
+           and s.resid = (select t.opticalid from en_fiber t
+         where t.fibercode = #fibercode# )
+        union
+        select p.opticalcode circuitcode,
+               p.name_std circuitname,
+               getequipsbmc(p.b_equipcode) PORTSERIALNO1,
+               getequipsbmc(p.e_equipcode) PORTSERIALNO2,
+               e.lorduse username,
+               '复用段业务' x_purpose
+          from optical_topolink o, optical p, en_topolink e
+         where o.opticalcode = p.resid
+           and e.resid = o.topolinkid
+           and p.resid =
+               (select t.opticalid
+                  from en_fiber t
+                 where t.fibercode = #fibercode#))
+   		 	
+   		 </select>
+   		 
+   		 <select id="getStationCountByStationcode" parameterClass="map" resultClass="int">
+   		 	select count(*)  from coordinates t where t.province like 'XZ01%' and t.stationcode=#stationcode#
+   		 </select>
+   		 
+   		 <insert id="insertStationLocation" parameterClass="map">
+   		 	insert into coordinates(modelname,province,node_x,node_y,label_x,label_y,stationcode,istnode) 
+   		 	values('光缆路由图','XZ01',#x#,#y#,#x#,#y#,#stationcode#,'1')
+   		 </insert>
+   		 
+   		 <update id="updateStationLocationnew" parameterClass="map">
+   		 	update coordinates t set t.node_x=#x#,
+   		 	t.node_y=#y#,
+   		 	t.label_x=#x#,
+   		 	t.label_y=#y# 
+   		 	where t.stationcode=#stationcode#
+   		 </update>
+   		 
+   		 <select id="getOpticalIDByFibercode"  parameterClass="map" resultClass="string">
+   		 	select t.opticalid from en_fiber t    where t.fibercode=#fibercode# and t.fiberserial=#fiberserial#
+   		 </select>
+   		 <select id="getTopolinkidByOpticalid" parameterClass="string" resultClass="string">
+   		 	select  e.label||';'||e.linerate||';'||getsystemcodebyportcode(e.aendptp) label
+			  from en_topolink e
+			 where e.resid = (select t.topolinkid
+			                    from optical_topolink t
+			                   where t.opticalcode = #opticalid#)
+   		 </select>
+   		 
+</sqlMap>
+ 

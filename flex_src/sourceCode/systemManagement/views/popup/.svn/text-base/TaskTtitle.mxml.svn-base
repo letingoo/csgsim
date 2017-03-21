@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" 
+	fontFamily="宋体" 
+	fontSize="12" 
+	showCloseButton="true" 
+	width="650" 
+	height="296"
+	close="{MyPopupManager.removePopUp(this)}" >
+	<mx:Script source="../../actionscript/popup/TaskTitle.as"/>
+	<mx:Binding destination="taskname.text" source="taskData.task_name"/>
+	<!--<mx:Binding destination="starttime.text" source="taskData.starttime"/>-->
+	<mx:Binding destination="con_sources.text" source="taskData.sourcename"/>
+	<!--<mx:Binding destination="taskperiod.text" source="taskData.task_period"/>-->
+	<!--<mx:Binding destination="isactivated.text" source="taskData.isactivated"/>-->
+	<!--<mx:Binding destination="performer.text" source="taskData.performer"/>-->
+	<!--<mx:ArrayCollection id="array_isactivated">		
+		<mx:source>   
+			<mx:Array> 
+				<mx:Object id="1" label="有效"/>  		
+				<mx:Object id="0" label="无效"/>  				
+			</mx:Array>   
+		</mx:source>   
+	</mx:ArrayCollection> -->
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center">
+		
+		<mx:HBox width="100%"
+				 height="116">
+			<mx:Form width="100%"
+					 height="112">
+				<mx:FormItem label="任务名称" required="true">
+					<mx:TextInput id="taskname" width="190" maxChars="100"/>
+				</mx:FormItem>
+				<mx:FormItem label="启动适配器" required="true">
+					<mx:ComboBox id="performer" labelField="@label" width="190"/>
+				</mx:FormItem>
+				<mx:FormItem label="任务关联资源" height="23">
+					<mx:TextInput id="con_sources" width="190" click="con_sources_clickHandler(event)"/>
+					<mx:Label id="con_sourcesid" visible="false" />
+				</mx:FormItem>
+			</mx:Form>
+			<mx:Form width="100%"
+					 height="111">
+				<mx:FormItem label="任务类型" required="true">
+					<mx:ComboBox id="tasktype" labelField="@label"   width="190"/>
+				</mx:FormItem>
+				<mx:FormItem label="任务周期" required="true">
+					<mx:HBox width="190">
+						<mx:NumericStepper id="taskperiod" minimum="0" maximum="86400" stepSize="1" width="130" />
+						<mx:Label text="(分钟)" />
+					</mx:HBox>
+				</mx:FormItem>
+				<mx:FormItem label="任务是否有效" required="true">
+					<mx:ComboBox id="isactivated"  labelField="@label"  width="190"/>
+				</mx:FormItem>
+			
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox width="100%"
+				 height="8%">
+			<mx:Form width="100%" height="83">
+				<mx:FormItem label="任务开始时间">
+					<mx:HBox width="280">
+						<mx:NumericStepper id="hour" width="60" minimum="0" maximum="23" />
+						<mx:Label text="时" />
+						<mx:NumericStepper id="minter" width="60" minimum="0" maximum="59" />
+						<mx:Label text="分" />
+						<mx:NumericStepper id="second" width="63" minimum="0" maximum="59" />
+						<mx:Label text="秒" />
+					</mx:HBox>
+				</mx:FormItem>
+			</mx:Form>
+			</mx:HBox>
+		<mx:HBox width="100%"
+				 height="46"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			
+			<mx:Button id="btn" label="{this.title}"  styleName="loginprimary" width="80" click="btn_clickHandler(event)"/>
+			<mx:Spacer width="50"/>
+			<mx:Button id="btnReset" label="关闭" width="80" styleName="loginsecondary" />
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+</mx:TitleWindow>

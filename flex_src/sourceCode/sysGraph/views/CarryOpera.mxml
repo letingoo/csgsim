@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="utf-8"?>
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				   xmlns:MecGrid="com.mechan.MecGrid.*"
+				   xmlns:ns1="com.fusioncharts.components.*"
+				   width="1200"
+				   height="600"
+				   creationComplete="init()"
+				   fontFamily="宋体"
+				   fontSize="12"
+				   enableResize="true"
+				   showControls="true"
+				   layout="absolute"
+				   windowContainer="{Application.application.windowContainer}"
+				   xmlns:views="common.component.*"
+				   xmlns:jian="sourceCode.sysGraph.actionscript.*"
+				   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+	
+	<mx:Style>
+		.ChineseFont{ 
+			fontFamily:"Verdana","宋体"; 
+			fontSize:12; 
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import mx.charts.ChartItem;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.graphics.IFill;
+			import mx.graphics.SolidColor;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.channelRoute.views.ViewChannelroute;
+			import sourceCode.channelRoute.views.channelroute;
+			import sourceCode.sysGraph.model.ResultModel;
+			
+			import twaver.SequenceItemRenderer;
+			[Bindable]
+			private var cm:ContextMenu;
+			private var pageIndex:int=0;
+			private var pageSize:int=50;
+			private var datanumbers:int;
+			private var indexRenderer:Class=SequenceItemRenderer;
+			private var code:String;
+			private var type:String;
+			[Embed(source="assets/images/sysManager/up.png")] //这是图片的相对地址 
+			[Bindable]
+			public var PointIcon:Class;
+			[Embed(source="assets/images/sysManager/down.png")]
+			[Bindable]
+			public var PointRight:Class;
+			[Embed(source="assets/images/sysManager/up.png")]
+			[Bindable]
+			public var PointLeft:Class;
+			private var groundOpera:int=0;
+			private function init():void
+			{
+				serverPagingBar1.exportLinkBtn.visible=true;
+				var cmi_view:ContextMenuItem=new ContextMenuItem("方式信息", true); //电路路由图sjt		
+				cmi_view.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, viewChanelRoute);
+				cm=new ContextMenu();
+				cm.hideBuiltInItems();
+				cm.customItems.push(cmi_view);
+				cm.addEventListener(ContextMenuEvent.MENU_SELECT, contextMenu_menuSelect);
+				//				serverPagingBar1.addEventListener("returnALL", showAllDataHandler);
+				serverPagingBar1.addEventListener("exportExcel", exportExcellHandler);
+			}
+			
+			
+			private function showAllDataHandler(event:Event):void
+			{
+				getOpera(code, type, 0, serverPagingBar1.totalRecord);
+			}
+			
+			private function exportExcellHandler(event:Event):void
+			{
+				
+				var titles:Array=new Array("电路编号", "速率", "业务类型", "业务名称", "起始端口", "终止端口");
+				var remote:RemoteObject=new RemoteObject("carryOpera");
+				remote.endpoint=ModelLocator.END_POINT;
+				remote.showBusyCursor=true;
+				remote.OperaExportEXCEL(code, type, this.title, titles,groundOpera);
+				remote.addEventListener(ResultEvent.RESULT, ExportResultHandler);
+				
+				
+			}
+			
+			private function ExportResultHandler(event:ResultEvent):void
+			{
+				
+				var url:String=ModelLocator.getURL();
+				var path:String=url + event.result.toString();	
+				
+				var request:URLRequest=new URLRequest(encodeURI(path));
+				navigateToURL(request, "_blank");
+				
+				
+			}
+			
+			private function contextMenu_menuSelect(evt:ContextMenuEvent):void
+			{
+				
+				carryOperaList.selectedIndex=lastRollOverIndex;
+				
+			}
+			
+			private function viewChanelRoute(evt:ContextMenuEvent):void
+			{
+				if(carryOperaList.selectedItem){
+					Registry.register("para_circuitcode", carryOperaList.selectedItem.circuitcode);
+					Registry.register("para_circuitype", carryOperaList.selectedItem.x_purpose);
+					Application.application.openModel("方式信息", false);
+				}
+			}
+			
+			public function getOperaByCodeAndType(code:String, type:String):void
+			{
+				this.code=code;
+				this.type=type;
+				getOpera(code, type, 0, this.pageSize);
+				
+				
+			}
+			
+			private function getOpera(code:String, type:String, start:int, end:int):void
+			{
+				var rtobj:RemoteObject=new RemoteObject("carryOpera");
+				rtobj.endpoint=ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.addEventListener(ResultEvent.RESULT, generateCarryOperaInfo);
+				rtobj.addEventListener(FaultEvent.FAULT, faultGetOpera);
+				rtobj.getCarryOperaByCodeAndType(code, type, start, end,groundOpera);
+				var rtobj1:RemoteObject=new RemoteObject("carryOpera");
+				rtobj1.endpoint=ModelLocator.END_POINT;
+				rtobj1.showBusyCursor=true;
+				rtobj1.addEventListener(ResultEvent.RESULT, generateCarryOperaSummaryInfo);
+				rtobj1.getSummaryByCodeAndType(code, type,groundOpera);
+				
+				
+			}
+			
+			private function generateCarryOperaSummaryInfo(e:ResultEvent):void
+			{
+				if (e.result != null && e.result.toString() != '')
+				{
+					
+					var xml:String=e.result.toString();
+					var array:Array=xml.split("#");
+					var obj:Array;
+					var obj1:Array;
+					if (array[0].toString().length > 0)
+					{
+						obj=JSON.decode(array[0].toString()) as Array;
+						var i:int=obj.length;
+						this.pieChart.dataProvider=obj;
+						this.pieChart.visible=true;
+						pie_nodata.visible=false;
+					}
+					else
+					{
+						this.pieChart.visible=false;
+						this.pieChart.dataProvider=null;
+						pie_nodata.visible=true;
+					}
+					if (array[1].toString().length > 0)
+					{
+						obj1=JSON.decode(xml.split("#")[1].toString()) as Array;
+						this.columnChart.dataProvider=obj1;
+						this.columnChart.visible=true;
+						column_nodata.visible=false;
+					}
+					else
+					{
+						this.columnChart.dataProvider=null;
+						this.columnChart.visible=false;
+						column_nodata.visible=true;
+						
+					}
+					
+				}
+				
+			}
+			
+			//查看设备业务  给设备业务页面相应字段赋值
+			private function generateCarryOperaInfo(event:ResultEvent):void
+			{
+				
+				var result:ResultModel=event.result as ResultModel;
+				
+				if(result!=null)
+				{
+					onResult(result);
+				}
+				//		this.datanumbers=result.totalCount;
+				
+				//				carryOperaList.invalidateList();
+			}
+			
+			public function onResult(result:ResultModel):void
+			{
+				
+				serverPagingBar1.orgData=result.orderList;
+				serverPagingBar1.totalRecord=result.totalCount;
+				serverPagingBar1.dataBind(true);
+				var summary:String="";
+				if(null==result.rateList || 0==result.rateList.length)
+				{
+					//summary="无相关数据";
+				}
+				else
+				{
+					for (var i:int=0;i<result.rateList.length;i++)
+					{
+						summary+=result.rateList[i].RATE+":"+result.rateList[i].NUM+"条\n"
+						
+					}	
+				}
+				
+				txt_summary.text=summary;
+			}
+			
+			private function faultGetOpera(event:FaultEvent):void
+			{
+				Alert.show("获取业务信息失败！", "提示");
+				
+			}
+			
+			private function close():void
+			{
+				
+				this.carryOperaList.dataProvider=null;
+				carryOperaList.invalidateList();
+				this.pieChart.dataProvider=null;
+				this.pieChart.initialize();
+				this.columnChart.dataProvider=null;
+				this.columnChart.initialize();
+				this.closeButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+				
+			}
+			
+			private function pagingFunction(pageIndex:int, pageSize:int):void
+			{
+				
+				getOpera(this.code, this.type, (pageIndex * pageSize), (pageIndex * pageSize + pageSize));
+			}
+			
+			private function pieSeries_fillFunc(item:ChartItem, index:Number):IFill
+			{
+				var color:int=0x0000FF;
+				switch (index)
+				{
+					case 0:
+						color=0xF8B62D;
+						break;
+					case 1:
+						color=0xE83828;
+						break;
+					case 2:
+						color=0x00A0E9;
+						break;
+					case 3:
+						color=0xC9CACA;
+						break;
+					case 4:
+						color=0xD6063D;
+						break;
+					case 5:
+						color=0x00579B;
+						break;
+					case 6:
+						color=0xC26B00;
+						break;
+					case 7:
+						color=0xD8E022;
+						break;
+					case 8:
+						color=0xCAAA60;
+						break;
+					case 9:
+						color=0x0071BE;
+						break;
+					case 10:
+						color=0xCBC82E;
+						break;
+					case 11:
+						color=0x009944;
+						break;
+					case 12:
+						color=0x12B8D6;
+						break;
+					case 13:
+						color=0x754296;
+						break;
+					case 14:
+						color=0xDCDDDD;
+						break;
+					case 15:
+						color=0x22AC38;
+						break;
+					case 16:
+						color=0xFFF68A;
+						break;
+					case 17:
+						color=0xF8BF77;
+						break;
+					case 18:
+						color=0xE6328C;
+						break;
+					case 19:
+						color=0xA1CC48;
+						break;
+				}
+				return new SolidColor(color, 1.0);
+				
+			}
+			
+			public function changeState(event:MouseEvent):void
+			{
+				if (chart_hbox.visible)
+				{
+					chart_hbox.visible=!chart_hbox.visible;
+					chartCanvas.height=30;
+					PointIcon=PointRight;
+				}
+				else
+				{
+					chart_hbox.visible=!chart_hbox.visible;
+					chartCanvas.height=200;
+					PointIcon=PointLeft;
+				}
+			}
+			
+			private function explode():void
+			{
+				var array:Array=new Array();
+				array[pieSeries.selectedIndex]=0.2;
+				pieSeries.perWedgeExplodeRadius=array;
+			}
+			
+			
+			//			protected function groundOpera_clickHandler(event:MouseEvent):void
+			//			{
+			//				if(btn_groundOpera.label=="仅显示落地业务")
+			//				{
+			//					groundOpera=1;
+			//					btn_groundOpera.label="显示所有业务";
+			//				}	
+			//				else
+			//				{
+			//					groundOpera=0;
+			//					btn_groundOpera.label="仅显示落地业务";
+			//				}
+			//				getOperaByCodeAndType(this.code,this.type);
+			//			}
+			
+		]]>
+	</mx:Script>
+	<mx:Number id="lastRollOverIndex"/>
+	<!--	<mx:Button id="btn_groundOpera" label="仅显示落地业务" click="groundOpera_clickHandler(event)" visible="false"/>-->
+	<mx:Canvas width="100%" height="0" id="chartCanvas" >
+		<mx:HBox id="chart_hbox" width="100%" height="100%" borderColor="0x6666FF" borderThickness="3" visible="true" paddingRight="3" paddingLeft="3" paddingTop="3">
+			<mx:VBox width="35%" height="100%"  >
+				<mx:HBox height="35" width="100%" verticalAlign="top">
+					<jian:LabelImage text="按业务类型进行汇总" height="30" fontSize="15" paddingLeft="0" paddingTop="0" imgPath="assets/images/sysGraph/background_label.png"/>
+				</mx:HBox>
+				
+				<mx:HBox width="100%" height="100%" visible="true" borderThickness="0">
+					<mx:Legend dataProvider="{pieChart}"
+							   width="100"
+							   height="100%"
+							   direction="horizontal" 
+							   horizontalGap="4"
+							   legendItemClass="sourceCode.sysGraph.actionscript.FontLegendItem"/>
+					<mx:PieChart id="pieChart"
+								 width="100%"
+								 height="100%"
+								 fontSize="15"
+								 showDataTips="true"
+								 selectionMode="single" 
+								 change="explode()"
+								 innerRadius="0">
+						<mx:series>
+							<mx:PieSeries id="pieSeries"
+										  field="value" 
+										  nameField="name"
+										  fontSize="12"
+										  labelPosition="callout"								 							  
+										  
+										  innerRadius="0"										
+										  showDataEffect="interpolate"/>
+						</mx:series>
+					</mx:PieChart>
+					
+				</mx:HBox>
+				<mx:Label id="pie_nodata" text="无相关数据！" fontSize="15" visible="false" horizontalCenter="true"/>
+			</mx:VBox>				
+			<mx:VRule height="100%" />				
+			<mx:VBox width="35%" height="100%" borderThickness="0" >
+				<mx:HBox height="35" width="100%" verticalAlign="top">
+					<jian:LabelImage text="按速率进行汇总"  fontSize="15" paddingLeft="0" paddingTop="0" imgPath="assets/images/sysGraph/background_label.png" />
+				</mx:HBox>
+				<mx:ColumnChart id="columnChart"
+								width="80%"
+								height="80%"
+								showDataTips="true" 
+								fontSize="12">
+					<mx:horizontalAxis>
+						<mx:CategoryAxis categoryField="name"/>
+					</mx:horizontalAxis>
+					<mx:series>
+						<mx:ColumnSeries xField="name"
+										 yField="value"
+										 fontSize="15" color="0x00A0E9"
+										 showDataEffect="interpolate"/>
+					</mx:series>
+				</mx:ColumnChart>
+				<mx:Label id="column_nodata" text="无相关数据！" fontSize="15" visible="false"/>
+				
+			</mx:VBox>
+			<mx:VRule height="100%" />
+			<mx:VBox width="30%" height="100%" borderColor="0x4AA5F8" borderThickness="1" borderStyle="solid">
+				<mx:HBox height="35" width="100%" verticalAlign="top">
+					<jian:LabelImage text="业务统计汇总"  fontSize="15" paddingLeft="0" paddingTop="0" imgPath="assets/images/sysGraph/background_label.png" />
+				</mx:HBox>
+				<mx:TextArea  width="100%" height="98%" fontSize="14"  id="txt_summary" borderColor="0xFFFFFF" />
+			</mx:VBox>
+		</mx:HBox>
+		
+	</mx:Canvas>
+	<mx:VBox width="100%" height="100%" horizontalGap="0" borderStyle="solid">
+		
+		<mx:DataGrid id = "carryOperaList"  width="100%" height="100%" itemRollOver="lastRollOverIndex = event.rowIndex" contextMenu="{cm}" horizontalScrollPolicy="auto">
+			<mx:columns>
+				<mx:DataGridColumn headerText="序号" width="40" itemRenderer="{new ClassFactory(indexRenderer)}" /> 
+				<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" width="100" showDataTips="true" dataTipField="circuitcode"/>	
+				<mx:DataGridColumn headerText="业务名称" width="350" dataField="username" showDataTips="true" dataTipField="username"/>
+				<!--edit by zqliu remark字段改为  x_purpose 修复无法定位到方式单bug-->
+				<mx:DataGridColumn headerText="业务类型" width="80" dataField="x_purpose" showDataTips="true" dataTipField="x_purpose"/>	
+				<mx:DataGridColumn headerText="速率" width="60" dataField="rate" showDataTips="true" dataTipField="rate"/>		
+				
+				<mx:DataGridColumn headerText="起始端口" dataField="portserialno1" width="300" showDataTips="true" dataTipField="portserialno1"/>				
+				<mx:DataGridColumn headerText="终止端口" dataField="portserialno2" width="300" textAlign="center" showDataTips="true" dataTipField="portserialno2"/>		
+				<!--<mx:headerRenderer>
+				<mx:Component>		
+				<mx:HBox width="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off" paddingRight="8">
+				<mx:HBox width="100%" horizontalAlign="center"  horizontalScrollPolicy="off" verticalScrollPolicy="off">
+				<mx:Label text="是否主用" width="{120-collapsebutton.width}"/>
+				</mx:HBox>
+				<mx:Button icon="{parentDocument.PointIcon}" 
+				click="{parentDocument.changeState(event)}" 
+				id="collapsebutton"  width="16" height="16" buttonMode="true"/>
+				</mx:HBox>
+				</mx:Component>
+				</mx:headerRenderer>-->
+				
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:HBox width="100%" height="30" verticalAlign="middle" horizontalAlign="right" backgroundColor="#CCDDEE">
+			<views:pagetoolbar id="serverPagingBar1" width="100%" height="100%" dataGrid="{carryOperaList}" pagingFunction="{pagingFunction}" pageSize="50"   />
+		</mx:HBox>
+	</mx:VBox>	
+</panel:PanelWindow>

@@ -1,0 +1,354 @@
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				creationComplete="init()"    
+				 paddingLeft="0" 
+				 width="100%" 
+				 height="100%"  
+				 paddingRight="0" 
+				 paddingTop="0" 
+				 paddingBottom="0" 
+				 xmlns:demo="demo.*" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+				 xmlns:common="demo.common.*" xmlns:local="*" 
+				 xmlns:code="http://code.google.com/p/flexlib/">   
+	<mx:Style>
+		.darkbg{
+			backgroundImage: Embed(source='assets/images/page_bg.png');
+			backgroundSize: '100%';
+			backgroundAttachment: fixed;
+		}
+		HBox.sat
+		{
+			borderStyle: solid;
+			borderThickness: 1;
+			borderSides: top,bottom;
+			backgroundColor: #FDF8DB;
+			verticalAlign: middle;
+			horizontalAlign: left;
+			paddingLeft: 10;
+			paddingRight: 10;
+			borderColor: #F4E173;
+		}
+		Text.pagepart {
+			color: #990000;
+			fontFamily: Arial;
+			fontSize: 14;
+			fontWeight: bold;
+		}
+		HBox.pagetitle
+		{
+			fontFamily: Arial;
+			fontSize: 16;
+			fontWeight: bold;
+			borderStyle: solid;
+			borderThickness: 1;
+			borderSides: bottom;
+		}
+		HBox.pagebg
+		{
+			verticalAlign: middle;
+			horizontalAlign: center;
+			paddingTop: 10;
+			paddingLeft: 10;
+			paddingRight: 10;
+			paddingBottom: 20;
+			backgroundAttachment: fixed;
+		}
+		VBox.page
+		{
+			backgroundColor: #FFFFFF;
+			paddingBottom: 40;
+			paddingTop: 30;
+			paddingLeft: 20;
+			paddingRight: 20;
+			shadowDistance: 3;
+			shadowDirection: right;
+			dropShadowEnabled: true;
+			dropShadowColor: #000000;
+			borderStyle: solid;
+			borderThickness: 1;
+			borderSkin: Embed(source='assets/images/pagebg.png',scaleGridLeft='3',scaleGridTop='3',scaleGridRight='203',scaleGridBottom='203');
+		}
+		Text.blacknormal {
+			color: #000000;
+			fontFamily: Arial;
+			fontSize: 12;
+			fontWeight: normal;
+		}
+		Grid.gridout
+		{
+			borderStyle: solid;
+			borderThickness: 1;
+			borderSides: top,left;
+			horizontalGap: 0;
+			verticalGap: 0;
+			borderColor: #d5e1fd;
+		}
+		GridItem.griditem
+		{
+			borderThickness: 1;
+			borderStyle: solid;
+			borderSides: bottom,right;
+			horizontalAlign: left;
+			verticalAlign: middle;
+			borderColor: #D5E1FD;
+			fontFamily: Arial;
+			fontSize: 12;
+			paddingLeft: 3;
+		}
+		GridItem.griditemlabel
+		{
+			borderThickness: 1;
+			borderStyle: solid;
+			borderSides: bottom,right;
+			horizontalAlign: right;
+			verticalAlign: middle;
+			borderColor: #D5E1FD;
+			backgroundColor: #ecf2fe;
+			fontFamily: Arial;
+			fontWeight: bold;
+			fontSize: 12;
+			paddingRight: 3;
+			backgroundImage: Embed(source='assets/images/gridlabelbg.png');
+			backgroundSize: "100%";
+		}
+		.singleButton{
+			cornerRadius : 10;
+		}
+		.gradientCanvas{
+			backgroundGradientColors : #CFCFCF, #A8A8A8;
+			backgroundGradientAlphas : 1, 1;
+			backgroundGradientRotation : 90;
+		}
+		TextInput.intable
+		{
+			fontFamily: Arial;
+			fontSize: 12;
+			paddingTop: 2;
+			paddingBottom: 2;
+			paddingRight: 2;
+			paddingLeft: 2;
+			borderStyle: none;
+		}
+	</mx:Style>
+	    <mx:Script source="../actionscript/ViewChannelroute.as"/>
+		<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:HDividedBox width="100%" height="100%" backgroundColor="0xCCCCCC">
+			
+			
+			
+			<mx:TabNavigator    width="70%" change="changeItems(event)" id="channeltab" height="100%" >
+				<mx:VBox width="70%" id='channelbox' height="100%" label="路由图">
+					
+					<mx:HBox id="toolbar" width="100%" horizontalGap="0"/>
+					<servasoftware:Network  id="channelPic" keyboardRemoveEnabled="false" keyDown="channelPic_keyDownHandler(event)" label="路由图" width="100%"  height="100%" backgroundColor="0xFFFFFF" >
+					</servasoftware:Network>
+				</mx:VBox>
+				
+				<mx:Canvas  label="方式单"  id="channelbox1"  width="100%" height="100%" styleName="darkbg" horizontalScrollPolicy="off">
+					<mx:VBox  width="100%" height="100%" verticalGap="0" paddingLeft="0" paddingRight="0" paddingBottom="0">
+						<mx:HBox width="100%" height="100%" styleName="pagebg">
+							<mx:VBox width="95%" height="100%" styleName="page" maxWidth="960">
+								<mx:HBox width="100%" height="45" styleName="pagetitle" horizontalAlign="center" verticalAlign="middle">
+									<mx:Label text="{circuitcode.text}"/>
+								</mx:HBox>
+								<mx:Text text="方式单名称" styleName="pagepart"/>
+								<mx:HBox width="100%" height="35" styleName="sat" verticalAlign="middle">
+									<mx:Text id="remark" styleName="blacknormal"/>
+								</mx:HBox>
+								<mx:Text text="详细信息&#xa;" styleName="pagepart"/>
+								<mx:Grid styleName="gridout" width="100%" horizontalGap="0">
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label     text="电路编号:"  />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="circuitcode"  styleName="intable" />
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label  text="使用单位:"/>
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="userCom"  styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label     text="方式单编号:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="TxtFSDcode" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="申请单位:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="requestCom" styleName="intable"/>		
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label  text="执行单位:" />
+										</mx:GridItem>
+										<mx:GridItem width="80%"  height="30" styleName="griditem" colSpan="3">
+											<mx:TextInput id="TxtImplementation_units" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="业务类型:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="operationType" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="业务分类:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="userName" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="速率:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="rate" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="业务等级:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="circuitLevel" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="接口类型:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="interfaceType" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="电路状态:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="state" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="A局站:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="station1" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="Z局站:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="station2" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="A端设备:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="equipCode1" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="Z端设备:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="equipCode2" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="A端设备端口:" />
+										</mx:GridItem>
+										<mx:GridItem width="80%" height="30" styleName="griditem" colSpan="3">
+											<mx:TextInput id="portserialno1"  styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="Z端设备端口:" />
+										</mx:GridItem>
+										<mx:GridItem width="80%"  height="30" styleName="griditem" colSpan="3">
+											<mx:TextInput id="portserialno2" styleName="intable"/>
+										</mx:GridItem>
+										
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="制作人:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="leaser" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="制作日期:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="createTime" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="要求完成日期:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="requestFinish_time" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="实际完成时间:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="useTime" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="审核人:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="check_personOfRequestFinish" styleName="intable"/>
+										</mx:GridItem>
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="校核人:" />
+										</mx:GridItem>
+										<mx:GridItem width="100%" height="30" styleName="griditem">
+											<mx:TextInput id="k" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="批准人:" />
+										</mx:GridItem>
+										<mx:GridItem  width="80%" height="30" styleName="griditem" colSpan="3">
+											<mx:TextInput id="response_person" styleName="intable"/>
+										</mx:GridItem>
+										
+									</mx:GridRow>
+									<mx:GridRow width="100%" height="100%">
+										<mx:GridItem width="160" height="30" styleName="griditemlabel">
+											<mx:Label text="备注:"  />
+										</mx:GridItem>
+										<mx:GridItem width="80%" height="30" styleName="griditem" colSpan="3">
+											<mx:TextInput id="requiSitionId" styleName="intable"/>
+										</mx:GridItem>
+									</mx:GridRow>
+								</mx:Grid>
+							</mx:VBox>
+						</mx:HBox>
+					</mx:VBox>
+				</mx:Canvas>
+			
+			</mx:TabNavigator> 
+			
+		</mx:HDividedBox> 
+	</mx:VBox>
+</mx:VBox>  

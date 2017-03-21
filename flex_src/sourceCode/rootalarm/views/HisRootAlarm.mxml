@@ -1,0 +1,697 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--历史根告警-->
+<mx:VBox
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	creationComplete="init();"
+	height="100%"  width="100%"
+	styleName="popwindow"
+	xmlns:comp="common.actionscript.*"
+	xmlns:component="common.component.*" 
+	xmlns:views="sourceCode.common.views.*"
+	backgroundColor="#F7FBFD" xmlns:base="base.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.PopupMenu_AlarmDeal;
+			import common.actionscript.Registry;
+			import common.other.SuperPanelControl.WindowContainer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.alarmmgr.actionscript.AlarmManagerCombobox;
+			import sourceCode.alarmmgr.actionscript.SequenceItemRenderer;
+			import sourceCode.alarmmgr.model.AlarmMangerModel;
+			import sourceCode.alarmmgr.model.HisRootAlarmModel;
+			import sourceCode.alarmmgr.views.PopUpKeyBusiness;
+			import sourceCode.flashalarm.ShowFlashAlarmDetail;
+			import sourceCode.rootalarm.actionscript.RootAlarmMgrCombox;
+			import sourceCode.tableResurces.views.FileExportFirstStep;
+			[Bindable]
+			public var param:ArrayCollection = new ArrayCollection();
+			
+			[Bindable]
+			private var cbconfigSys:RootAlarmMgrCombox = null;
+			[Bindable]
+			private var cbconfigVendor:RootAlarmMgrCombox = null;
+			[Bindable]
+			private var cbconfigAlarmlevel:RootAlarmMgrCombox = null;
+			[Bindable]
+			private var cbconfigCircuitype:RootAlarmMgrCombox = null;
+			[Bindable]
+			private var cbconfigalarmdealmethod:RootAlarmMgrCombox = null;
+			private var rootAlarmWin:TitleWindow;
+			
+			public var obj:Object = new Object();
+			[Bindable]			
+			public var iscleared:String = "0"; 
+			[Bindable]
+			private var filterContent:Array = new Array();
+			private var currentGridSelectitem:Object=null;
+			[Bindable]
+			public var  currentGrid:String="currentrootalarm";
+			private var transsysCB:AlarmManagerCombobox=new AlarmManagerCombobox();
+			private var transdevCB:AlarmManagerCombobox=new AlarmManagerCombobox();
+			private var talarmlevelCB:AlarmManagerCombobox=new AlarmManagerCombobox();
+			public var  isacked:String="";
+			[Bindable]
+			public var start:String = "1";
+			[Bindable]
+			public var end:String = "50";
+			public var belongpackobject:String ="";
+			public var belongportobject:String ="";
+			public var belongportcode:String="";
+			private var dealresultzh:String="";
+			public var sysaname:String="";
+			public var circuitype:String="";
+			public var alarmdealmethod:String="";
+			private var belongtransys:String="";
+			private var vendor:String="";
+			private var level:String="";
+			private var isack:String="";
+			private var username:String="";
+			public var alarmobj:String="";
+			public var alarmdesc:String ="";
+			public var belongequip:String="";
+			private var alarmobjdesc:String="";
+			private var contextMeau:ContextMenu=new ContextMenu();
+			private var flag:Boolean=false;
+			public var alarm_level:String;
+			public var myflag:int=1;
+			private var alarmHelpEXP:TitleWindow;
+			public var alarmnum:String="";
+			private var alarmmangermodel:AlarmMangerModel =new AlarmMangerModel();
+			private var popupmenu_alarmdeal:PopupMenu_AlarmDeal;
+			[Embed(source="assets/images/rootalarm/search1.png")]
+			public static const btnIcon:Class;
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			private var flagPic:Boolean=false;
+			
+			private var ac:ArrayCollection = new ArrayCollection([
+				{label:'根告警查询'}]);	
+			
+			private var indexRenderer:Class = SequenceItemRenderer;  
+			
+			
+			
+			private var hisrootalarmmodel:HisRootAlarmModel = new HisRootAlarmModel();
+			public function init():void{
+				if(myflag==1){
+					//					vb.btnvisible.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+					alarmmangermodel.end= '50';
+					alarmmangermodel.start="0";
+					alarmmangermodel.isRootAlarm='1';
+					alarmmangermodel.tablename = "v_alarminfonew";
+					var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+					rtobj.endpoint= ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					alarmmangermodel.flag='1';
+					rtobj.getAlarmInfos(alarmmangermodel);        //表格加载数据
+					rtobj.addEventListener(ResultEvent.RESULT,loadData);
+				}else if(myflag==2){
+					Rootalarmrefresh();
+				}else if(myflag==3){
+					HisRootalarmrefresh();
+				}
+				popupmenu_alarmdeal=new PopupMenu_AlarmDeal();
+//				talarmobjdesc.text=alarmobj;
+				cleared.dataProvider=isCleared;
+				isAck.dataProvider=ack;
+				transdevCB.setCombox(transdev,'vendor','');   //所属厂家 
+				talarmlevelCB.setCombox(talarmlevel,'alarmlevel',alarm_level);	//告警级别
+				transsysCB.setCombox(transys,'sys',"");	//所属系统
+//				pagingFunction(0,20);
+				
+				
+				var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getQueryVisiable("V_ALARMINFONEW");        //告警右侧查询条件显示权限，方便维护人员，以后想增删查询条件只在数据库改就可以了
+				rtobj.addEventListener(ResultEvent.RESULT,queryHandler);
+				
+				pagingToolBarforAlarmExp.addEventListener("viewAllEvent",Queryall);
+			}
+			private var queryType:Boolean = true;
+			private function Queryall(event:Event):void{
+				queryType = false;
+			}
+			
+			
+			public function queryHandler(event:ResultEvent):void{
+				var arr:ArrayCollection = event.result as ArrayCollection;
+				if(!arr.contains(tt1.text.split(":")[0])){
+					t1.visible = false;
+					t1.includeInLayout = false;
+				}
+				if(!arr.contains(tt2.text.split(":")[0])){
+					t2.visible = false;
+					t2.includeInLayout = false;
+				}
+				if(!arr.contains(tt3.text.split(":")[0])){
+					t3.visible = false;
+					t3.includeInLayout = false;
+				}
+				if(!arr.contains("所属系统")){
+					t4.visible = false;
+					t4.includeInLayout = false;
+				}
+				if(!arr.contains(tt5.text.split(":")[0])){
+					t5.visible = false;
+					t5.includeInLayout = false;
+				}
+				if(!arr.contains(tt6.text.split(":")[0])){
+					t6.visible = false;
+					t6.includeInLayout = false;
+				}
+				if(!arr.contains(tt7.text.split(":")[0])){
+					t7.visible = false;
+					t7.includeInLayout = false;
+				}
+				if(!arr.contains(tt8.text.split(":")[0])){
+					t8.visible = false;
+					t8.includeInLayout = false;
+				}
+				if(!arr.contains("发生时间")){
+					t9.visible = false;
+					t9.includeInLayout = false;
+					t10.visible = false;
+					t10.includeInLayout = false;
+				}
+				if(!arr.contains(tt12.text.split(":")[0])){
+					t12.visible = false;
+					t12.includeInLayout = false;
+				}
+				if(!arr.contains(tt13.text.split(":")[0])){
+					t13.visible = false;
+					t13.includeInLayout = false;
+				}
+				if(!arr.contains(tt14.text.split(":")[0])){
+					t14.visible = false;
+					t14.includeInLayout = false;
+				}
+				if(!arr.contains(tt16.text.split(":")[0])){
+					t16.visible = false;
+					t16.includeInLayout = false;
+				}
+				if(!arr.contains(tt15.text.split(":")[0])){
+					t15.visible = false;
+					t15.includeInLayout = false;
+				}
+				if(!arr.contains(tt17.text.split(":")[0])){
+					t17.visible = false;
+					t17.includeInLayout = false;
+				}
+				if(!arr.contains(tt18.text.split(":")[0])){
+					t18.visible = false;
+					t18.includeInLayout = false;
+				}
+				if(!arr.contains(tt19.text.split(":")[0])){
+					t19.visible = false;
+					t19.includeInLayout = false;
+				}
+				if(!arr.contains(tt20.text.split(":")[0])){
+					t20.visible = false;
+					t20.includeInLayout = false;
+				}
+				if(!arr.contains(tt21.text.split(":")[0])){
+					t21.visible = false;
+					t21.includeInLayout = false;
+				}
+				if(!arr.contains(tt22.text.split(":")[0])){
+					t22.visible = false;
+					t22.includeInLayout = false;
+				}
+				if(!arr.contains(tt23.text.split(":")[0])){
+					t23.visible = false;
+					t23.includeInLayout = false;
+				}
+				if(!arr.contains(tt24.text.split(":")[0])){
+					t24.visible = false;
+					t24.includeInLayout = false;
+				}
+			}
+			//历史根告警
+			private function HisRootalarmrefresh():void{
+				alarmmangermodel.end= '50';
+				alarmmangermodel.start="0";
+				alarmmangermodel.isRootAlarm='1';
+				alarmmangermodel.flag='1';
+				alarmmangermodel.belongequip=belongequip;
+				alarmmangermodel.belongportobject = belongportobject;
+				alarmmangermodel.belongpackobject = belongpackobject;
+				alarmmangermodel.tablename = "v_alarminfonew";
+				var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getAlarmInfos(alarmmangermodel);        //表格加载数据
+				rtobj.addEventListener(ResultEvent.RESULT,loadData);			
+				
+			}
+			//当前根告警
+			private function Rootalarmrefresh():void{
+				alarmmangermodel.end= '50';
+				alarmmangermodel.start="0";
+				alarmmangermodel.isRootAlarm='1';
+				alarmmangermodel.iscleared = '0';
+				alarmmangermodel.flag='1';
+				alarmmangermodel.belongequip=belongequip;
+				alarmmangermodel.belongportobject = belongportobject;
+				alarmmangermodel.belongpackobject = belongpackobject;
+				alarmmangermodel.tablename = "v_alarminfonew";
+				var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getAlarmInfos(alarmmangermodel);        //表格加载数据
+				rtobj.addEventListener(ResultEvent.RESULT,loadData);					
+				
+			}			
+			private function pagingFunction(pageIndex:int,pageSize:int):void {
+
+				start = (pageIndex * pageSize+1).toString();
+				end = ((pageIndex * pageSize) + pageSize).toString();
+				
+				 if(flag){
+					 belongtransys="";
+					 level="";
+					 vendor="";
+					 isack="";
+					 iscleared="";
+				 }else{
+					 belongtransys  = transys.selectedItem.code+"";
+					 level=talarmlevel.selectedItem.code+"";
+					 vendor =  transdev.selectedItem.code+"";
+					 isack=isAck.selectedItem.ack+'';
+					 iscleared=cleared.selectedItem.clear+'';
+				 }
+					 
+					 var alarmobj:String=alarmObj.text+'';
+					 var alarmdesc:String=alarmDesc.text+'';
+					 var beginTime:String=starttime.text+'';
+					 var endTime:String=endtime.text+'';
+					 if(belongtransys=="0"){belongtransys='';}
+					 if(vendor=="0"){vendor='';}
+					 if(level=="0"){level='';}
+					 if(isack=="2"){isack='';}
+					 if(iscleared=="2"){iscleared='';}
+					 alarmmangermodel.alarmlevel=level;
+					 alarmmangermodel.alarmdesc = alarmdesc;
+					 alarmmangermodel.alarmObj=alarmobj;
+					 alarmmangermodel.isAck=isack;
+					 alarmmangermodel.isRootAlarm='1';
+					 alarmmangermodel.beginTime = beginTime;
+					 alarmmangermodel.belongtransys=belongtransys;
+					 alarmmangermodel.end= end+"";
+					 alarmmangermodel.endTime=endTime;
+					 alarmmangermodel.start=start+"";
+					 alarmmangermodel.vendor=vendor;
+					 alarmmangermodel.belongequip=belongequip;
+					 //新加的
+//					 alarmmangermodel.belongshelfcode=belongshelfcode;
+					 alarmmangermodel.iscleared=iscleared;
+					 alarmmangermodel.belongpackobject=belongpackobject;
+					 alarmmangermodel.belongportobject=belongportobject;
+					 alarmmangermodel.belongportcode=belongportcode;
+//					 alarmmangermodel.ackperson=ackperson;
+//					 alarmmangermodel.dealperson=dealperson;
+					 alarmmangermodel.tablename = "v_alarminfonew";
+					 //新加更多搜索
+					 alarmmangermodel.belongstation=belongstation.text+"";
+					 alarmmangermodel.area=area.text+"";
+					 alarmmangermodel.confirmTime=confirmTime.text+"";
+					 alarmmangermodel.ackperson=ackperson.text+"";
+					 alarmmangermodel.isworkcase=isworkcase.text+"";
+					 alarmmangermodel.dealresult=dealresult.text+"";
+					 alarmmangermodel.dealperson=dealperson.text+"";
+					 alarmmangermodel.flag='1';
+					 
+					 
+					 alarmmangermodel.alarmdesc=alarmdescSearch.text+"";
+					 alarmmangermodel.carrycircuit = carrycircuit.text + "";
+					 alarmmangermodel.flashcount = flashcount.text + "";
+					 alarmmangermodel.unit = unit.text + "";
+					 alarmmangermodel.isbugno = isbugno.text + "";
+					 alarmmangermodel.ackcontent = ackcontent.text + "";
+					 alarmmangermodel.isfilter = isfilter.text + "";
+					 
+					 
+					 var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+					 rtobj.endpoint= ModelLocator.END_POINT;
+					 rtobj.showBusyCursor=true;
+					 rtobj.getAlarmInfos(alarmmangermodel);        //表格加载数据
+					 rtobj.addEventListener(ResultEvent.RESULT,loadData);
+			}
+			
+			private function loadData(event:ResultEvent){
+				param.removeAll();
+				var alarmInfos:ArrayCollection=event.result.list as ArrayCollection;
+				if(event.result.list==null || event.result.list==""){
+					//					Alert.show("没有符合条件的查询结果，请重新输入查询条件","提示信息",4,this,null,iconClass);
+					Alert.show("没有结果","提示信息",4,this,null,iconClass);
+					
+				}
+				for each(var a:Object in alarmInfos){
+					param.addItem({alarmlevelname:a.ALARMLEVELNAME,alarmobjdesc:a.ALARMOBJDESC,alarmobject:a.ALARMOBJECT,firststarttime:df.format(a.FIRSTSTARTTIME),
+						isackedzh:a.ISACKEDZH,laststarttime:df.format(a.LASTSTARTTIME),isrootalarmzh:a.ISROOTALARMZH,vendorzh:a.VENDORZH,vendor:a.VENDOR,
+						alarmnumber:a.ALARMNUMBER,belongtransys:a.BELONGTRANSYS,belongequip:a.BELONGEQUIP,belongshelfcode:a.BELONGSHELFCODE,belongpackobject:a.BELONGPACKOBJECT,
+						belongportobject:a.BELONGPORTOBJECT,alarmdesc:a.ALARMDESC,belongslot:a.BELONGSLOT,flashcount:a.FLASHCOUNT,
+						belongportcode:a.BELONGPORTCODE,objclasszh:a.OBJCLASSZH,ackperson:a.ACKPERSON,acktime:df.format(a.ACKTIME),isworkcase:a.ISWORKCASE,
+						unit:a.UNIT, isfilter:a.ISFILTER, belongstation:a.BELONGSTATION, isbugno:a.ISBUGNO,area:a.AREA,belongpack:a.BELONGPACK,dealresultzh:a.DEALRESULTZH,carrycircuit:a.CARRYCIRCUIT,dealperson:a.DEALPERSON,bugno:a.BUGNO,dealresult:a.DEALRESULT,ackcontent:a.ACKCONTENT,endtime:df.format(a.ENDTIME)});
+				}
+				dg.dataProvider=param;
+				pagingToolBarforAlarmExp.orgData =param;
+				var count:int =int(event.result.alarmcount);
+				pagingToolBarforAlarmExp.totalRecord = count;
+				if(queryType){
+					pagingToolBarforAlarmExp.pageSize = 50; 
+					pagingToolBarforAlarmExp.isInit = true;
+				}
+				pagingToolBarforAlarmExp.dataBind(true);
+			//	pagingToolBarforAlarmExp.currentPageIndex=0;
+				
+			}
+		
+			/*查询*/
+			
+			
+			public function getRootAlarmMgrInfo():void{
+				queryType = true;
+				param.removeAll();
+				if(myflag==2){
+					Rootalarmrefresh();
+				}else if(myflag==3){
+					HisRootalarmrefresh();
+				}else{
+					belongpackobject="";
+					belongportobject="";
+					belongportcode="";
+					belongequip="";
+					pagingFunction(0,50);
+				}				
+
+			}
+			
+			private function setColorFunction(item:Object, color:uint):uint 
+			{ 
+				if( item['isackedzh'] == "未确认" )
+				{ 
+					return 0xFCFCFC; 
+				}
+				else if (item['isackedzh'] == "已确认")
+				{
+					return 0xDFDFDF;
+				}
+				return color; 
+			} 
+			
+
+			protected function dg_clickHandler(event:MouseEvent):void
+			{
+				//告警处理by hjl
+				if(dg.selectedItem!=null && dg.selectedItem != ""){
+					contextMeau.hideBuiltInItems();
+					popupmenu_alarmdeal.parent=this;
+					popupmenu_alarmdeal.alarm=dg.selectedItem;
+					if(dg.selectedItems.length>1){
+						popupmenu_alarmdeal.alarmList=dg.selectedItems;
+					}else{
+						popupmenu_alarmdeal.alarmList.splice(0);
+					}
+					popupmenu_alarmdeal.setItemStatus();
+					contextMeau.customItems =popupmenu_alarmdeal.customItems;
+					dg.contextMenu = contextMeau;
+					
+				}
+			}
+			
+			private function reset(){
+				alarmDesc.text="";
+				alarmObj.text="";
+				transdev.selectedIndex=0;
+				transys.selectedIndex=0;
+				talarmlevel.selectedIndex=0;
+				cleared.selectedIndex=0;
+				isAck.selectedIndex=0;
+				starttime.text="";
+				endtime.text="";
+				level="";
+				vendor="";
+				isack="";
+				belongstation.text="";
+//				alarmdescSearch.text="";
+				area.text="";
+				confirmTime.text="";
+				ackperson.text="";
+				isworkcase.text="";
+				dealresult.text="";
+				dealperson.text="";
+				
+			}
+			
+			protected function export_excel():void
+			{
+				var fefs:FileExportFirstStep=new FileExportFirstStep();
+				fefs.exportTypes = "历史根告警";
+				fefs.titles = new Array("告警级别","发生时间","恢复时间", "所属局站","告警名称","告警对象","承载业务","所属厂家","所属系统","所属区域","频闪次数","确认时间","确认人","告警原因","故障单号","确认信息","处理方式","是否过滤","运维单位","当值值班员");
+				fefs.labels = "历史根告警信息列表";
+				if(dg.selectedItems.length > 1){
+					var ac:ArrayCollection = new ArrayCollection();
+					for(var i:int = 0;i<dg.selectedItems.length;i++){
+						ac.addItem(dg.selectedItems[i]);
+					} 
+					fefs.dataNumber = dg.selectedItems.length;
+					fefs.selectItem = ac;
+					
+				}else{
+					fefs.model = alarmmangermodel;
+//					fefs.dataNumber = parseInt(end) - parseInt(start)+1; 
+					fefs.dataNumber = (dg.dataProvider as ArrayCollection).length;
+				}
+				if(fefs.dataNumber > 20000){
+					fefs.dataNumber = 19999;
+					fefs.model = alarmmangermodel;
+					Alert.show("导出数量超过20000条，如果继续只能导出前20000条。。",
+						"提示",
+						Alert.YES|Alert.NO,
+						null,
+						function():void{
+							MyPopupManager.addPopUp(fefs, true);
+						}
+					);
+				}else{
+					fefs.model = alarmmangermodel;
+					MyPopupManager.addPopUp(fefs, true);
+				}
+			}
+			
+			
+			
+			
+
+			protected function controlBar_controlRefreshHandler(event:Event):void
+			{   queryType = true;
+				
+				if(myflag==2){
+					Rootalarmrefresh();
+				}else if(myflag==3){
+					HisRootalarmrefresh();
+				}else{
+					getRootAlarmMgrInfo();
+				}
+				
+			}
+
+
+//			protected function filterP_clickHandler(event:MouseEvent):void
+//			{
+//				if(!flagPic){
+//					filterP.label="收缩";
+//					acc.height=550;
+//					flagPic=!flagPic;
+//					searchFilter.visible=true;
+//					searchFilter.includeInLayout=true;
+//				}else{
+//					filterP.label="更多搜索..";
+//					flagPic=!flagPic;
+//					searchFilter.visible=false;
+//					searchFilter.includeInLayout=false;
+//					acc.height=400;
+//				}
+//				
+//			}
+
+		]]>
+	</mx:Script>
+	<mx:ArrayCollection id="ack">
+		<mx:Object ackzh="请选择" ack="2"/>
+		<mx:Object ackzh="已确认" ack="1"/>
+		<mx:Object ackzh="未确认" ack="0"/>
+	</mx:ArrayCollection>
+	<mx:ArrayCollection id="isCleared">
+		<mx:Object clearzh="请选择" clear="2"/>
+		<mx:Object clearzh="已清除" clear="1"/>
+		<mx:Object clearzh="未清除" clear="0"/>
+	</mx:ArrayCollection>
+	<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		<mx:HBox width="100%" height="100%" horizontalGap="0">
+			<mx:Canvas width="100%" height="100%" >
+			<mx:VBox width="100%" height="100%" right="20" left="0">
+				<component:ControlBar id="controlBar" height="38" width="100%" modelName="历史根告警" imgName="rootalarm_sc"  
+									  showExportExcelButton="true" controlExportExcel="export_excel()" showRefreshButton="true"  controlRefresh="controlBar_controlRefreshHandler(event)"/>
+				<comp:ColorDataGrid id="dg" width="100%" height="100%" headerHeight="25" styleName="alarm" verticalAlign="middle" 
+						horizontalScrollPolicy="auto"	rowColorFunction="setColorFunction" click="dg_clickHandler(event)"  horizontalGridLineColor="#99CCFF" verticalGridLineColor="#99CCFF" horizontalGridLines="true" 
+						allowMultipleSelection="true">
+					<comp:columns>
+						<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="50" textAlign="center"/>
+						<mx:DataGridColumn headerText="告警级别" dataField="alarmlevelname" width="80" textAlign="left" itemRenderer="sourceCode.alarmmgr.actionscript.AlarmlevelcolorItemRender"/>
+						<mx:DataGridColumn headerText="发生时间" dataField="firststarttime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="恢复时间" dataField="endtime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属局站" dataField="belongstation" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警名称" dataField="alarmdesc" width="140" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警对象" dataField="alarmobjdesc" width="200" textAlign="left"/>	
+						<mx:DataGridColumn headerText="承载业务" dataField="carrycircuit" width="200" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属厂家" dataField="vendorzh" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属系统" dataField="belongtransys" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属区域" dataField="area" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="频闪次数" dataField="flashcount" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认时间" dataField="acktime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认人" dataField="ackperson" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警原因" dataField="isworkcase" width="200" textAlign="left"/>	
+						<mx:DataGridColumn headerText="故障单号" dataField="isbugno" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认信息" dataField="ackcontent" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="处理方式" dataField="dealresult" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="是否过滤" dataField="isfilter" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="运维单位" dataField="unit" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="当值值班员" dataField="dealperson" width="100" textAlign="left"/>
+					</comp:columns>
+				</comp:ColorDataGrid>
+				<component:pagetoolbar paddingLeft="5" width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{dg}" pagingFunction="pagingFunction" />
+			</mx:VBox>
+			<mx:Accordion id="acc"  height="400" styleName="myAccordion" width="300" paddingBottom="0" paddingTop="0" right="40" top="0">
+				<mx:VBox label="根告警查询" id="queryCvs" width="100%" height="100%" borderStyle="solid" borderColor="#CCDDEE" paddingTop="5">
+					
+					<mx:HBox horizontalAlign="center" width="100%">
+						<mx:Button label="查询" height="24" click="getRootAlarmMgrInfo()">
+							<mx:icon>@Embed(source='/assets/images/rootalarm/search.png')</mx:icon>
+						</mx:Button>
+						<mx:Button label="重置" height="24" width="70" click="reset()"/>
+					</mx:HBox>
+					<mx:HRule strokeColor="0x2f4f4f" width="100%" />	
+					<mx:HBox id="t1">
+						<mx:Label id="tt1" text="告警描述:" paddingLeft="10"  width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="alarmDesc"/>
+					</mx:HBox>	
+					<mx:HBox id="t2">
+						<mx:Label id="tt2" text="告警对象:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="alarmObj"  x="95" y="41"/>
+					</mx:HBox>	
+					<mx:HBox id="t3">
+						<mx:Label id="tt3" text="所属厂家:" paddingLeft="10" x="0" y="70" width="100" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="transdev" x="95" y="68"/>
+					</mx:HBox>	
+					<mx:HBox id="t4">
+						<mx:Label id="tt4" text="传输系统:" paddingLeft="10" x="0" y="97" width="100" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="transys" x="95" y="95"/>
+					</mx:HBox>	
+					<mx:HBox id="t5">
+						<mx:Label id="tt5" text="告警级别:" width="100" paddingLeft="10" x="0" y="124" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="talarmlevel" selectedIndex="0"  x="95" y="122"/>
+					</mx:HBox>	
+					<mx:HBox id="t6">
+						<mx:Label  id="tt6" text="是否清除:" width="100" paddingLeft="10" x="0" y="153" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="cleared" labelField="clearzh" selectedIndex="2" x="95" y="149"/>
+					</mx:HBox>	
+					<mx:HBox id="t7">
+						<mx:Label id="tt7" text="是否确认:" width="100" paddingLeft="10" x="0" y="178" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="isAck" labelField="ackzh" selectedIndex="2" x="95" y="176"/>
+					</mx:HBox>	
+					<mx:HBox id="t9">
+						<mx:Label id="tt9" text="告警时间大于:" paddingLeft="0" x="-13" y="205" width="100" textAlign="right"/>
+						<mx:DateField styleName="combox" id="starttime" width="150" dayNames="[日,一,二,三,四,五,六]" monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]"  formatString="YYYY-MM-DD" x="95" y="203"/>
+					</mx:HBox>
+					<mx:HBox id="t10">
+						<mx:Label id="tt10" text="告警时间小于:" paddingLeft="0" x="-13" y="232" width="100" textAlign="right"/>
+						<mx:DateField styleName="combox" id="endtime" width="150" dayNames="[日,一,二,三,四,五,六]" monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]"  formatString="YYYY-MM-DD" x="95" y="230"/>
+					</mx:HBox>	
+<!--					<mx:HBox horizontalAlign="right" width="100%">
+						<mx:Spacer width="150"/>
+						<mx:LinkButton id="filterP" label="更多搜索.."  click="filterP_clickHandler(event)" width="100"/>
+					</mx:HBox>-->
+				<!--	<mx:VBox id="searchFilter" width="100%" visible="false" includeInLayout="false">-->
+						<mx:HBox id="t12">
+							<mx:Label id="tt12" text="所属局站:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="belongstation"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t8">
+							<mx:Label id="tt8" text="告警名称:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="alarmdescSearch"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t13">
+							<mx:Label id="tt13" text="承载业务:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="carrycircuit"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t14">
+							<mx:Label id="tt14" text="所属区域:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="area"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t15">
+							<mx:Label id="tt15" text="频闪次数:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="flashcount"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t16">
+							<mx:Label id="tt16" text="确认时间:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:DateField styleName="combox" id="confirmTime" width="150" dayNames="[日,一,二,三,四,五,六]" monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]"  formatString="YYYY-MM-DD" x="95" y="203"/>
+						</mx:HBox>
+						<mx:HBox id="t17">
+							<mx:Label id="tt17" text="确认人:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="ackperson"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t18">
+							<mx:Label id="tt18" text="告警原因:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="isworkcase"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t19">
+							<mx:Label id="tt19" text="故障单号:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="isbugno"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t20">
+							<mx:Label id="tt20" text="确认信息:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="ackcontent"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t21">
+							<mx:Label id="tt21" text="处理方式:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="dealresult"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t22">
+							<mx:Label id="tt22" text="运维单位:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="unit"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t23">
+							<mx:Label id="tt23" text="是否过滤:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="isfilter"  x="95" y="41"/>
+						</mx:HBox>
+						<mx:HBox id="t24">
+							<mx:Label id="tt24" text="当值值班员:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+							<mx:TextInput styleName="combox" width="150" id="dealperson"  x="95" y="41"/>
+						</mx:HBox>
+<!--					</mx:VBox>-->
+
+				</mx:VBox>
+			</mx:Accordion>
+			<base:VButtonBar id="vb" visible="true" Vdata="{ac}" accordion="{acc}" width="20"  paddingBottom="0" paddingTop="0" right="0" top="0"/>
+			</mx:Canvas>
+		</mx:HBox>
+	</mx:VBox>
+</mx:VBox>

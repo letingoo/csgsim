@@ -1,0 +1,1053 @@
+package login.dwr;
+
+import java.io.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import jxl.write.WriteException;
+
+import login.dao.LoginDAO;
+import login.model.OnlineSession;
+import login.model.ShortCut;
+import login.model.StartMenu;
+import login.model.VersionModel;
+import netres.component.ExcelOperation.CustomizedExcel;
+import netres.component.ExcelOperation.ZipExcel;
+import netres.model.ResultModel;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import resManager.resBusiness.model.Circuit;
+import sysManager.SessionListener;
+import sysManager.log.dao.LogDao;
+import sysManager.user.dao.UserDao;
+import sysManager.user.model.UserModel;
+import sysManager.user.model.UserStateModel;
+import cn.swjtu.multisource.tools.ConstArgs;
+
+import com.Message;
+
+import db.ForTimeBaseDAO;
+import flex.messaging.FlexContext;
+
+
+public class LoginDwr {
+	
+	private final static Log log = LogFactory.getLog(LoginDwr.class);
+	
+	public LoginDAO loginDao;
+
+	public LoginDAO getLoginDao()
+	{
+		return this.loginDao;
+	}
+	public void setLoginDao(LoginDAO loginDao)
+	{
+		this.loginDao=loginDao;
+	}
+	
+	public LoginDwr() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	public ArrayList<ShortCut> getShortCutByName(String userName)
+	{
+		ArrayList<ShortCut> list=this.getLoginDao().GetShortCutByUserName(userName);
+		return list;
+	}
+	
+	public String getStartMenu(String userName)
+	{
+		String startmenu="";
+		List<StartMenu> list=this.getLoginDao().getRootStartMenu();
+		List<Integer> opers=this.getLoginDao().getOperByUser(userName);
+		startmenu=getAllStartMenu(list,opers);
+	
+		return startmenu;
+	}
+	
+	private String getAllStartMenu(List<StartMenu> list,List<Integer> opers)
+	{
+		String xml="";
+		for(int i=0;i<list.size();i++)
+		{
+			StartMenu rootmenu=list.get(i);
+					
+			if(rootmenu.getIschilden()==null||rootmenu.getIschilden().equalsIgnoreCase(""))
+			{
+			     if(hasOper(rootmenu.getOper_id(),opers))
+			     {
+			    	 xml+="<folder state='0' oper_id='"+rootmenu.getOper_id()+"' oper_name='"+rootmenu.getOper_name()+"' menuicon='"+rootmenu.getMenuicon()+"' leaf='true' ></folder>";
+			     }
+			}
+			else
+			{
+				List<StartMenu> children=this.getLoginDao().getChildMenuByParentID(rootmenu.getOper_id());
+				String subxml=getAllStartMenu(children,opers);
+				if(!subxml.equalsIgnoreCase(""))
+				{
+					xml+="<folder state='0' oper_id='"+rootmenu.getOper_id()+"' oper_name='"+rootmenu.getOper_name()+"' menuicon='"+rootmenu.getMenuicon()+"' leaf='false' >";
+					xml+=subxml;
+					xml+="</folder>";
+				}
+			}
+		}
+		return  xml;
+	}
+	
+	private Boolean hasOper(int operid,List<Integer> opers)
+	{
+		for(int i=0;i<opers.size();i++)
+		{
+			if(operid==opers.get(i))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public UserModel login(UserModel user)
+	{
+		//密码加密
+//		MD5 md5 = new MD5();
+//		user.setUser_pwd(md5.getMD5ofStr(user.getUser_pwd()));				
+		
+		UserModel resultuser = this.getLoginDao().login(user);
+//		UserModel resultuser =new UserModel();
+//		resultuser.setUser_id("root");
+//		resultuser.setUser_name("root");
+//		resultuser.setUser_pwd("1");
+		if(resultuser != null)
+		{
+			try
+			{
+			HttpServletRequest request = FlexContext.getHttpRequest();
+			HttpSession session = request.getSession();
+			session.setAttribute(resultuser.getUser_id(), resultuser);
+			session.setAttribute("userid", resultuser.getUser_id());
+			session.setAttribute("userip", request.getRemoteAddr());
+			session.setAttribute(login.model.SessionListener.LISTENER_NAME,new OnlineSession(request.getRemoteAddr(),resultuser.getUser_id(),new Date().toString()));  
+			session.setMaxInactiveInterval(60*30);//30分钟
+			WebApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(FlexContext.getServletContext());
+			LogDao logDao = (LogDao)ctx.getBean("logDao");
+			logDao.createLogEvent("登陆", "登陆模块", "用户登陆", "", request);
+			session.setAttribute(ConstArgs.KEY_DATABASE,user.getRemark());//设置登录版本 实为数据库连接用户
+			//更新当前用户使用的版本
+			user.setVersion(user.getRemark());
+			this.loginDao.updateLoginVersionByUser(user);
+			session.setAttribute("currversion", user.getRemark());
+			System.out.println(user.getUser_name()+"||"+this.getCurrVersionByUser());
+			UserDao userDao = (UserDao)ctx.getBean("userDao");			
+			String user_ip=request.getRemoteAddr();//获取当前的用户ip地址	
+			String[] array_ip;
+			array_ip=user_ip.split("\\."); 
+			if(array_ip.length>1){//ip6 
+				user_ip=array_ip[0]+"."+array_ip[1];
+			}
+			user_ip=userDao.getServerIPByUser_IP(user_ip);//获取用户访问服务器的ip
+			resultuser.setIp(user_ip);
+			HashMap map =new HashMap();
+			map.put("user_id", resultuser.getUser_id());
+			map.put("user_state", 1);
+			map.put("user_ip", request.getRemoteAddr());
+			UserStateModel userStateModel = (UserStateModel)userDao.getOnlineUserByUserId(map);
+			if(userStateModel == null){
+				userDao.insertUserState(map);
+			}			
+
+			Message.pushMessage("log_on:"+resultuser.getUser_id()+":"+request.getRemoteAddr());
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+				log.error("LoginDwr login:", e);
+			}
+			
+			return resultuser;
+		}
+		else
+		{
+			return null;
+		}
+	}
+	
+	public String getServerIP(){
+		String user_ip = "";
+		try{
+			HttpServletRequest request = FlexContext.getHttpRequest();
+			WebApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(FlexContext.getServletContext());
+			UserDao userDao = (UserDao)ctx.getBean("userDao");			
+			user_ip=request.getRemoteAddr();//获取当前的用户ip地址	
+			String[] array_ip;
+			array_ip=user_ip.split("\\."); 
+			user_ip=array_ip[0]+"."+array_ip[1];
+			user_ip=userDao.getServerIPByUser_IP(user_ip);//获取用户访问服务器的ip
+		}catch(Exception e){
+				e.printStackTrace();
+				log.error("LoginDwr getServerIP:", e);
+		}
+		return user_ip;
+	}
+	
+	/**
+	 * 判断用户是否为系统管理员
+	 * @param userName
+	 * @return true or false
+	 * @author 谢志奎
+	 */
+	public boolean isSystemManager(String userName){
+		UserModel resultUser = this.getLoginDao().isSystemManager(userName);
+		if(resultUser != null)
+			return true;
+		return false;
+	}
+	
+	/**
+	 * 插入一个快捷方式
+	 * @param userName
+	 * @param shortcutID
+	 * @param shortcutName
+	 * @author 谢志奎
+	 */
+	public void insertShortcut(String userName,String shortcutID,String shortcutName){
+		HashMap map = new HashMap(); 
+		map.put("userName", userName);
+		map.put("shortcutID", shortcutID);
+		map.put("shortcutName", shortcutName);
+		this.getLoginDao().insertUserShortcut(map);
+	}
+	
+	/**
+	 * 删除一个快捷方式
+	 * @param user_id
+	 * @param shortcut_name
+	 * @author 谢志奎
+	 */
+	public void delShortcut(String user_id,String shortcut_name){
+		HashMap map = new HashMap();
+		map.put("user_id", user_id);
+		map.put("shortcut_name", shortcut_name);
+		this.getLoginDao().delUserShortcut(map);
+	}
+	
+	public void delShortcutByRole(String shortcutNames){
+		String[] names = shortcutNames.split(",");
+		for(int i=0; i < names.length; i++){
+			if(!names[i].equals("")){
+				if(names[i].equals("站点"))
+					names[i] = "局站";
+				else if(names[i] == "电源图纸资源")
+					names[i] = "电源图纸资料";
+				this.getLoginDao().delShortcut(names[i]);
+				//System.out.println(names[i]);
+			}
+		}
+	}
+	//以下为登录资源版本处理 =======================================================================================================================================
+	/**
+	 * 
+	* @Title: getVersionXml 
+	* @Description: TODO(获取版本信息) 
+	* @param @return    设定文件 
+	* @return String    返回类型 
+	* @throws
+	 */
+	public String getVersionXml(){
+		HttpServletRequest request = FlexContext.getHttpRequest();
+		HttpSession session = request.getSession();
+		session.setAttribute(ConstArgs.KEY_DATABASE,ConstArgs.DEFAULT_DATABASE);//设置登录版本 实为数据库连接用户 超时登出  设置连接为默认
+		StringBuilder versionXml = new StringBuilder();
+		versionXml.append("<names>");
+		List<VersionModel> Versions = this.getLoginDao().getVersionByIdName(null,null,ConstArgs.DEFAULT_DATABASE+".");//获取列表
+		for(VersionModel model: Versions){
+			versionXml.append("<name code=\"")
+			             .append(model.getVid())
+			             .append("\" label=\"")
+			             .append(model.getVname())
+			             .append("\"/>");
+		}
+		versionXml.append("</names>");
+		return versionXml.toString();
+	}
+	/**
+	 * 
+	* @Title: getVersion 
+	* @Description: TODO(查询资源版本) 
+	* @param @param vmodel
+	* @param @return    设定文件 
+	* @return ResultModel    返回类型 
+	* @author mawj 
+	* @throws
+	 */
+	public ResultModel getVersion(VersionModel vmodel){
+		ResultModel result = new ResultModel();
+		try{
+			//查找当前登录用户，如果是超级用户则把基础版本加上，否则屏蔽
+			HttpServletRequest request = FlexContext.getHttpRequest();
+			HttpSession session = request.getSession();
+			UserModel user = (UserModel)session.getAttribute((String)session.getAttribute("userid"));
+			if(user!=null){
+				if("root".equals(user.getUser_id())){
+					result.setTotalCount( this.getLoginDao().getVersionCount(vmodel));
+					result.setOrderList( this.getLoginDao().getVersion(vmodel));
+				}else{
+					result.setTotalCount( this.getLoginDao().getVersionCountRestrict(vmodel));
+					result.setOrderList( this.getLoginDao().getVersionRestrict(vmodel));
+				}
+			}
+			
+			WebApplicationContext ctx = WebApplicationContextUtils
+					.getWebApplicationContext(FlexContext.getServletContext());
+			LogDao logDao = (LogDao) ctx.getBean("logDao");
+			logDao.createLogEvent("查询", "系统模块", "查询版本", "", request);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return result;
+	}
+	/**
+	 * 
+	* @Title: delVersion 
+	* @Description: TODO(删除版本) 
+	* @param @param version
+	* @param @return    设定文件 
+	* @return String    返回类型 
+	* @author mawj 
+	* @throws
+	 */
+	public String delVersion(VersionModel version) {
+		String str = null;
+		try {
+			if(!ConstArgs.DEFAULT_DATABASE.toUpperCase().equals(version.getVid().toUpperCase())){//基础版本不可删除
+			if (this.loginDao.delVersion(version.getVid()) > 0) {
+				str = "success";
+				HttpServletRequest request = FlexContext.getHttpRequest();
+				WebApplicationContext ctx = WebApplicationContextUtils
+						.getWebApplicationContext(FlexContext
+								.getServletContext());
+				LogDao logDao = (LogDao) ctx.getBean("logDao");
+				logDao.createLogEvent("删除", "系统模块", "删除版本", "", request);
+				deltodoVersion(version);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.error("LoginDwr delVersion:", e);
+			str = "failed";
+		}
+		return str;
+	}
+	/**
+	 * 
+	* @Title: deltodoVersion 
+	* @Description: 处理删除版本中 表信息
+	* @param @param version
+	* @param @return    设定文件 
+	* @return String    返回类型 
+	* @author mawj 
+	* @throws
+	 */
+	public String deltodoVersion(VersionModel version){
+		String str = null;
+		String vid=version.getVid();
+		//查询当前处理的版本信息 包括源版本
+		List<VersionModel> lst=this.loginDao.getVersionByIdName(vid, null,ConstArgs.DEFAULT_DATABASE+".");
+		String from_vid=ConstArgs.DEFAULT_DATABASE;
+		if(lst!=null&&lst.size()!=0&&lst.get(0)!=null&&lst.get(0).getFrom_vid()!=null){
+			from_vid=lst.get(0).getFrom_vid();
+		}
+		if(vid.equals(from_vid)){
+			return "success";//源版本和目标版本一致 不执行
+		}
+		//从配置表中获取需要执行的表名
+		ForTimeBaseDAO dao = new ForTimeBaseDAO();
+		Connection c = null;
+	    Statement s = null;
+	    ResultSet r = null;
+	    c = dao.getConnection();
+		//执行复制表的操作（删除和创建）
+	    System.out.println("版本管理-删除数据处理开始......");
+	        try{
+				c.setAutoCommit(false);
+		        s = c.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		                ResultSet.CONCUR_READ_ONLY);
+		      //查询需要更新表名
+		        String table_sql="select x.xtbm from "+ConstArgs.DEFAULT_DATABASE+".version_xtbm x where x.vtype='数据库表'";
+		        System.out.println(table_sql);
+		        r=s.executeQuery(table_sql);
+		        List<String> tableLst=new ArrayList<String>();
+		        while (r.next()) {
+		        	tableLst.add(r.getString("xtbm"));
+		        }
+		      //查询当前用户表名
+		        String nowTabSql="select table_name from all_tables where owner='"+vid.toUpperCase()+"'";
+		        System.out.println(nowTabSql);
+		        r=s.executeQuery(nowTabSql);
+		        StringBuffer nowTabLst=new StringBuffer();
+		        while (r.next()) {
+		        	nowTabLst.append(r.getString("table_name").toUpperCase()+";");
+		        }
+		        
+				for(int i=0;i<tableLst.size();i++){
+					String sql="";
+					//判断表在当前用户下  是否存在 存在则执行drop语句   delete语句
+					if(nowTabLst.indexOf(tableLst.get(i).toUpperCase()+";")>=0&&!ConstArgs.DEFAULT_DATABASE.toUpperCase().equals(vid)){
+						sql="delete from "+vid+"."+tableLst.get(i)+"";//为表名
+						System.out.println(sql);
+						s.execute(sql);
+					}
+				}
+                c.commit(); 
+                str= "success";
+			}catch(Exception e){
+				e.printStackTrace();
+				str= "failed";
+				try {
+					c.rollback();//回滚
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					log.error("LoginDwr deltodoVersion:", e);
+				}
+			}finally{
+				dao.closeConnection(c, s, r);
+			}
+	        System.out.println("版本管理-删除数据处理结束......");
+	        HttpServletRequest request = FlexContext.getHttpRequest();
+			WebApplicationContext ctx = WebApplicationContextUtils
+					.getWebApplicationContext(FlexContext
+							.getServletContext());
+			LogDao logDao = (LogDao) ctx.getBean("logDao");
+			logDao.createLogEvent("删除", "系统模块", "删除版本用户数据", "", request);
+			return str;
+	}
+	/**
+	 * 
+	* @Title: todoVersion 
+	* @Description: TODO(处理资源数据版本) 
+	* @param @param vid
+	* @param @return    设定文件 
+	* @return String    返回类型 
+	* @author mawj 
+	* @throws
+	 */
+	public String todoVersion(String vid){
+		String result="";
+		if(vid!=null&&!"".equals(vid)&&!ConstArgs.DEFAULT_DATABASE.toUpperCase().equals(vid.toUpperCase())){//不为基础版本 基础版本不可修改
+			//记录执行状态
+			HttpServletRequest request = FlexContext.getHttpRequest();
+			WebApplicationContext ctx = WebApplicationContextUtils
+			.getWebApplicationContext(FlexContext.getServletContext());
+			LogDao logDao = (LogDao) ctx.getBean("logDao");
+			logDao.createLogEvent("查询", "系统模块", "资源版本", "", request);
+			//查询当前处理的版本信息 包括源版本
+			List<VersionModel> lst=this.loginDao.getVersionByIdName(vid, null,ConstArgs.DEFAULT_DATABASE+".");
+			String from_vid=ConstArgs.DEFAULT_DATABASE;
+			if(lst!=null&&lst.size()!=0&&lst.get(0)!=null&&lst.get(0).getFrom_vid()!=null){
+				from_vid=lst.get(0).getFrom_vid();
+			}
+			if(vid.equals(from_vid)){
+				return "success";//源版本和目标版本一致 不执行
+			}
+			//从配置表中获取需要执行的表名
+		//	Map map=new HashMap();
+		//	map.put("vtype", "数据库表");
+		//	map.put("ora_user", ConstArgs.DEFAULT_DATABASE+".");
+		//	List<VersionModel> vlst=this.loginDao.getVersionXtbm(map);
+			ForTimeBaseDAO dao = new ForTimeBaseDAO();
+			Connection c = null;
+		    Statement s = null;
+		    ResultSet r = null;
+		    c = dao.getConnection();
+			//执行复制表,序列的操作（删除和创建）
+			System.out.println("版本管理-数据处理开始......");
+		        try{
+					c.setAutoCommit(false);
+			        s = c.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+			                ResultSet.CONCUR_READ_ONLY);
+			      //查询需要更新表名
+			        String table_sql="select x.xtbm from "+ConstArgs.DEFAULT_DATABASE+".version_xtbm x where x.vtype='数据库表'";
+			        System.out.println(table_sql);
+			        r=s.executeQuery(table_sql);
+			        List<String> tableLst=new ArrayList<String>();
+			        while (r.next()) {
+			        	tableLst.add(r.getString("xtbm"));
+			        }
+			      //查询当前用户表名
+			        String nowTabSql="select table_name from all_tables where owner='"+vid.toUpperCase()+"'";
+			        System.out.println(nowTabSql);
+			        r=s.executeQuery(nowTabSql);
+			        StringBuffer nowTabLst=new StringBuffer();
+			        while (r.next()) {
+			        	nowTabLst.append(r.getString("table_name").toUpperCase()+";");
+			        }
+			        //查询源用户序列
+			        String seqSql="select d.sequence_name,d.last_number from  dba_sequences d where d.sequence_owner='"+from_vid.toUpperCase()+"'";
+			        System.out.println(seqSql);
+			        r=s.executeQuery(seqSql);
+			        List<String> seqLst=new ArrayList<String>();
+			        while (r.next()) {
+			        	seqLst.add(r.getString("sequence_name")+";"+r.getString("last_number"));
+			        }
+			        //select object_name from user_procedures where object_type='PROCEDURE'
+			        //查询用户所有存储过程和触发器
+			        String proceSql="select object_name,object_type from user_procedures where object_type in ('PROCEDURE','TRIGGER')";
+			        System.out.println(proceSql);
+			        r=s.executeQuery(proceSql);
+			        List<String> proceLst=new ArrayList<String>();
+			        while (r.next()) {
+			        	proceLst.add(r.getString("object_name").toUpperCase()+";"+r.getString("object_type").toUpperCase());
+			        }
+			    	//处理序列 先处理序列；后续表新增时触发器用到
+					for(int i=0;i<seqLst.size();i++){
+						String sql="";
+						if(seqLst.get(i)!=null&&seqLst.get(i).split(";")!=null&&seqLst.get(i).split(";").length==2){
+							try{
+								sql="drop sequence "+vid+"."+seqLst.get(i).split(";")[0];
+								System.out.println(sql);
+								s.execute(sql);
+							}catch(Exception e){
+								e.printStackTrace();
+							}
+							try{
+								sql="create sequence "+vid+"."+seqLst.get(i).split(";")[0]+" minvalue 1 maxvalue 99999999999999999999 start with "+seqLst.get(i).split(";")[1]+" increment by 1 cache 20 order";
+								System.out.println(sql);
+								s.execute(sql);
+							}catch(Exception e){
+								e.printStackTrace();
+								log.error("LoginDwr todoVersion:", e);
+							}
+							
+						}
+					}
+			        //处理表
+					for(int i=0;i<tableLst.size();i++){
+						String sql="";
+						if(nowTabLst.indexOf(tableLst.get(i).toUpperCase()+";")>=0){//判断表在当前用户下  是否存在 存在则执行drop语句
+							try{
+								sql="delete from "+vid+"."+tableLst.get(i)+"";//为表名  //	sql="drop table "+vid+"."+tableLst.get(i)+"";//为表名
+								System.out.println(sql);
+								s.execute(sql);
+							}catch(Exception e){
+								e.printStackTrace();
+								log.error("LoginDwr todoVersion:", e);
+							}
+						}
+						try{
+							sql = "insert into  "+vid+"."+tableLst.get(i)+" select * from "+from_vid+"."+tableLst.get(i);	//	sql = "create table "+vid+"."+tableLst.get(i)+" as select * from "+from_vid+"."+tableLst.get(i);
+							System.out.println(sql);
+							s.execute(sql);
+						}catch(Exception e){
+							e.printStackTrace();
+							log.error("LoginDwr todoVersion:", e);
+						}
+					}
+				
+					//重新编译存储过程和触发器
+					for(int i=0;i<proceLst.size();i++){
+						String sql="";
+						if(proceLst.get(i)!=null&&proceLst.get(i).split(";")!=null&&proceLst.get(i).split(";").length==2){
+							try{
+								sql="alter "+proceLst.get(i).split(";")[1].toUpperCase()+" "+vid+"."+proceLst.get(i).split(";")[0].toUpperCase()+" compile";
+								System.out.println(sql);
+								s.execute(sql);
+							}catch(Exception e){
+								e.printStackTrace();
+								log.error("LoginDwr todoVersion:", e);
+							}
+						}
+					}
+					//提交
+	                c.commit(); 
+					result= "success";
+				}catch(Exception e){
+					e.printStackTrace();
+					log.error("LoginDwr todoVersion:", e);
+					result= "failed";
+					try {
+						c.rollback();//回滚
+						this.loginDao.delVersion(vid);//失败则 删除当前版本
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						result= "failed";
+						e1.printStackTrace();
+					}
+				}finally{
+					dao.closeConnection(c, s, r);
+				}
+			//以后若还需新增用户的话 可进行处理，进行创建用户，导入最基础表dmp数据，然后再处理表的复制；此需求为后话
+				System.out.println("版本管理-数据处理结束......");
+			
+		}
+		return result;
+	}
+	/**
+	 * 
+	* @Title: getCurrVersionByUser 
+	* @Description: 获取当前用户登录的版本库
+	* @param @return    设定文件 
+	* @return String    返回类型 
+	* @author mawj 
+	* @throws
+	 */
+	public static String getCurrVersionByUser(){
+		String version=ConstArgs.DEFAULT_DATABASE;
+		HttpServletRequest request = FlexContext.getHttpRequest();
+		HttpSession session = request.getSession();
+		version=session.getAttribute(ConstArgs.KEY_DATABASE).toString();
+		String userid=session.getAttribute("userid").toString();
+//		String currVersion=this.getLoginDao().getCurrVersionByUser(userid);
+		String currVersion=session.getAttribute("currversion").toString();
+		if(currVersion!=null&&!"".equals(currVersion)){
+//			version=currVersion;
+		}
+		return version;
+	}
+	/**
+	 * 
+	* @Title: getAllVersionXtbm 
+	* @Description: 获取版本字典
+	* @return String    返回类型 
+	* @author mawj 
+	* @throws
+	 */
+	public String getAllVersionXtbm(){
+		List<VersionModel> opers = null;
+		opers = (ArrayList)this.loginDao.getVXtbms("0");
+		StringBuffer sb = new StringBuffer("<node id='0' xtbm='版本字典' icon=''>");
+		forEachOper(sb,opers);
+		sb.append("</node>");
+		return sb.toString();
+	}
+	private void forEachOper(StringBuffer str,List<VersionModel> opers){
+		for(VersionModel oper:opers){
+			str.append("<node id='"+oper.getOper_id()+"' xtbm='"+oper.getXtbm()+"' parentid='"+oper.getParent_id()+"' xtxx='"+oper.getXtxx()+"' vtype='"+oper.getVtype()+"' remark='"+oper.getRemark()+"' checked='0' icon='assets/images/sysManager/plugin.gif'>");
+			List<VersionModel> childOpers = (ArrayList)loginDao.getVXtbms(oper.getOper_id());
+			if(childOpers.size() > 0){
+				forEachOper(str,childOpers);
+			}
+			str.append("</node>");
+		}
+	}
+	
+	public void updateVXtbmByOperId(VersionModel oform){
+		try{
+		this.loginDao.updateVXtbmByOperId(oform);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	public void insertVXtbm(VersionModel oform){
+		this.loginDao.insertVXtbm(oform);
+	}
+	public void delVersionXtbm(String oper_id){
+		this.loginDao.delVersionXtbm(oper_id);
+	}
+	/**
+	 * 切换用户
+	 * @param user
+	 * @return
+	 */
+	public String switchUser(String user){
+		String result="切换成功;当前版本ID为:"+user;
+		try{
+			HttpServletRequest request = FlexContext.getHttpRequest();
+			HttpSession session = request.getSession();
+			user=(user==null||"".equals(user)?ConstArgs.DEFAULT_DATABASE:user);
+			session.setAttribute(ConstArgs.KEY_DATABASE,user);//设置登录版本 实为数据库连接用户 超时登出  设置连接为默认
+		}catch(Exception e){
+			e.printStackTrace();
+			result="切换失败";
+		}
+		 HttpServletRequest request = FlexContext.getHttpRequest();
+			WebApplicationContext ctx = WebApplicationContextUtils
+					.getWebApplicationContext(FlexContext
+							.getServletContext());
+			LogDao logDao = (LogDao) ctx.getBean("logDao");
+			logDao.createLogEvent("删除", "系统模块", "切换数据库版本", "", request);
+		return result;
+	}
+	/**
+	 * 新增版本用户，插入用户，导入基础数据库
+	 * @param user
+	 */
+	public void addVersionUser(String user){
+		
+		if(user!=null&&!"".equals(user)){
+			//创建用户
+			//判断当前用户是否已存在
+			String userid = this.loginDao.getVersionUserByID(user);
+			if(userid==null||"".equals(userid)){
+				createVersionUser(user);
+			}
+			//之后执行导入数据库 impVersionDmp(user);
+		}
+		
+	}
+	//创建用户
+	public void createVersionUser(String user){
+		boolean result=true;
+		Connection c = null;
+	    Statement s = null;
+	    try{
+	    	System.out.println("创建用户-createVersionUser-starting.......");
+		    c = getConnection();
+		    s = c.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+	                ResultSet.CONCUR_READ_ONLY);
+		    String[] strs=new String[8];
+		    strs[0]="create user "+user+" identified by "+user +" default tablespace power temporary tablespace temp";
+//		    strs[1] = "grant connect,resource to " + user;
+//		    strs[2]="grant select any table to " + user;
+		    
+		    strs[1]="grant create session to "+ user;
+		    strs[2]="grant connect,resource to "+ user;
+		    strs[3]="GRANT CREATE USER,ALTER USER,DROP USER to "+ user;
+		    strs[4]="GRANT CREATE USER,DROP USER,ALTER USER ,CREATE ANY VIEW , DROP ANY VIEW,EXP_FULL_DATABASE,IMP_FULL_DATABASE, DBA,CONNECT,RESOURCE,CREATE SESSION  TO "+ user;
+		    strs[5]="GRANT EXP_FULL_DATABASE TO "+ user;
+		    strs[6]="GRANT IMP_FULL_DATABASE TO "+ user;
+		    strs[7]="grant connect,resource,dba to "+ user;
+		    
+		    for(String str:strs){
+		    	System.out.println(str);
+		    	if(str!=null){
+			    	s.executeUpdate(str);
+		    	}
+		    }
+		    System.out.println("创建用户-createVersionUser-ending.......");
+	    }catch(Exception e){
+			e.printStackTrace();
+			result=false;
+		}finally{
+			try{
+				s.close();
+				c.close();
+			}catch(Exception e){
+				e.printStackTrace();
+				log.error("LoginDwr createVersionUser:", e);
+			}
+		}
+	    HttpServletRequest request = FlexContext.getHttpRequest();
+		WebApplicationContext ctx = WebApplicationContextUtils
+				.getWebApplicationContext(FlexContext
+						.getServletContext());
+		LogDao logDao = (LogDao) ctx.getBean("logDao");
+		logDao.createLogEvent("版本字典", "系统模块", "创建数据库用户", "", request);
+		//导入数据库
+		impVersionDmp(result,user);
+	}
+	//导入数据库
+	public void impVersionDmp(boolean result,String user){
+		//获取用户名和sid
+		if(result){//创建用户成功
+			System.out.println("导入-impVersionDmp-starting.......");
+			log.info("导入-impVersionDmp-starting.......");
+			String defaultUser=ConstArgs.DEFAULT_DATABASE;
+			String fromUser=ConstArgs.ORACLEDMPFROMUSER;
+			String oracleDmp=ConstArgs.ORACLEDMPFILE;
+			String url_sid=ConstArgs.ORACLEDMPSID;
+			HttpServletRequest request = FlexContext.getHttpRequest();
+			String webroot_path = request.getRealPath("")+"\\";
+			String[] cmds = new String[3]; 
+			String commandBuf = " imp "+defaultUser+"/"+defaultUser+"@"+url_sid+" file="+webroot_path+oracleDmp+" fromuser="+fromUser+" touser="+user;
+			System.out.println(commandBuf);
+			log.info("cmd start /c "+commandBuf);
+			cmds[0] = "cmd"; 	cmds[1] = "/c ";  cmds[2] = commandBuf.toString();
+			Process process=null;
+			try{
+//				process=Runtime.getRuntime().exec("cmd /c "+commandBuf.toString());
+				process=Runtime.getRuntime().exec("cmd start /c "+commandBuf.toString());
+				boolean shouldClose=false;
+				InputStreamReader isr = new InputStreamReader(process.getErrorStream(),"gb2312");
+				final BufferedReader br = new BufferedReader(isr);
+				String line = null;
+				line = br.readLine();
+				while (line != null) {
+					//如果读取超时，则抛出异常
+					final ExecutorService exec = Executors.newFixedThreadPool(1);
+			        Callable<Boolean> call = new Callable<Boolean>() {
+			            public Boolean call() throws Exception {
+			            	br.readLine();
+			            	if (Thread.interrupted()){
+			                    return false;
+			                }
+			                return true;
+			            }
+			        };
+			        Future<Boolean> future = exec.submit(call);
+			        exec.shutdown();
+		            future.get(1000 * 3, TimeUnit.MILLISECONDS);
+		            //遇到错误信息，跳出循环，返回false
+					if (line==null||line.indexOf("未成功终止导入")!=-1||
+							line.indexOf("错误")!=-1||line.indexOf("成功终止导入, 但出现警告")!=-1) {
+						shouldClose = true;
+						result = false;
+						System.out.println(line);
+						break;
+					}
+					line = br.readLine();
+				}
+				if (shouldClose) process.destroy();
+				process.waitFor();
+				
+			}catch(Exception e){ 	e.printStackTrace(); 	log.error("LoginDwr impVersionDmp:", e);}
+			System.out.println("导入-impVersionDmp-ending.......");
+			log.info("导入-impVersionDmp-ending.......");
+			this.todoOtherThing(user,"emptyTable");//处理空表问题
+		}
+		 HttpServletRequest request = FlexContext.getHttpRequest();
+			WebApplicationContext ctx = WebApplicationContextUtils
+					.getWebApplicationContext(FlexContext
+							.getServletContext());
+			LogDao logDao = (LogDao) ctx.getBean("logDao");
+			logDao.createLogEvent("删除", "系统模块", "导入数据库数据", "", request);
+	}
+	/**
+	 * 删除版本用户
+	 * @param user
+	 */
+	public void delVersionUser(String user){
+		if(user!=null&&!user.equals(ConstArgs.DEFAULT_DATABASE)){
+			Connection c = null;
+		    Statement s = null;
+		    ResultSet r = null;
+		    try{
+		    	System.out.println("删除版本用户-delVersionUser-start......");
+		    	c=this.getConnection();
+		    	s = c.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		                ResultSet.CONCUR_READ_ONLY);
+		    	 //查询连接信息
+		        String seqSql="select username, sid, serial#  serial from v$session where username='"+user.toUpperCase()+"'";
+		        System.out.println(seqSql);log.info("delVersionUser......."+seqSql);
+		        r=s.executeQuery(seqSql);
+		        List<String> seqLst=new ArrayList<String>();
+		        String sessionInfo="";
+		        while (r.next()) {
+		        	seqLst.add(r.getString("sid")+","+r.getString("serial"));
+		        	sessionInfo=(r.getString("sid")+","+r.getString("serial"));
+		        }
+		        for(String str:seqLst){
+		        	if(!"".equals(str)){
+			        	String alterSql="alter system kill session '"+str+"'";
+			        	s.executeUpdate(alterSql);
+			        	//释放连接
+			        }
+		        }
+		        
+		    	String sql="drop user "+user+" cascade";
+		    	System.out.println("删除版本用户"+sql);log.info("delVersionUser......."+sql);
+		    	s.executeUpdate(sql);
+		    	System.out.println("删除版本用户-delVersionUser-end......");
+		    }catch(Exception e){
+		    	e.printStackTrace();
+		    	log.error("LoginDwr delVersionUser:", e);
+		    }finally{
+		    	try{
+		    		s.close();c.close();r.close();
+		    	}catch(Exception e){
+		    		e.printStackTrace();
+		    	}
+		    	
+		    }
+		}
+		HttpServletRequest request = FlexContext.getHttpRequest();
+		WebApplicationContext ctx = WebApplicationContextUtils
+				.getWebApplicationContext(FlexContext
+						.getServletContext());
+		LogDao logDao = (LogDao) ctx.getBean("logDao");
+		logDao.createLogEvent("删除", "系统模块", "删除数据库用户", "", request);
+	}
+	/**
+	 * 
+	 */
+	public Connection getConnection(){
+		try{
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		Connection conn=null;
+		try{
+			 conn=DriverManager.getConnection(ConstArgs.SERVER_URL, ConstArgs.DEFAULT_DATABASE, ConstArgs.DEFAULT_DATABASE);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return conn;
+	}
+	/**
+	 * 
+	* @Title: todoOtherThing 
+	* @Description: TODO(执行其他内容) 
+	* @param @param user
+	* @param @param type    设定文件 
+	* @return void    返回类型 
+	* @author mawj 
+	* @throws
+	 */
+	public void todoOtherThing(String user,String type){
+		
+		if(user!=null&&!"".equals(user)&&"emptyTable".equals(type)){
+			Connection c = null;
+		    Statement s = null;
+		    try{
+		    	System.out.println("处理空表无法导入问题-start......");log.info("处理空表无法导入问题-start......");
+		    	c=this.getConnection();
+		    	s = c.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		                ResultSet.CONCUR_READ_ONLY);
+		    	//创建自定义类型
+		    	String sql = "CREATE OR REPLACE TYPE "+user.toUpperCase()+".ty_str_split IS TABLE OF VARCHAR2 (4000)";
+		    	s.executeUpdate(sql);
+		    	//创建空表TOPOLINK_RING 并重新编译方法
+		    	String e_sql="create table "+user.toUpperCase()+".TOPOLINK_RING(LABEL  VARCHAR2(100),RINGID  VARCHAR2(25) not null, RINGNAME VARCHAR2(100),RINGNUM  VARCHAR2(25),PRIMARYUSED NUMBER,SPARETOPOLINK VARCHAR2(200) )";
+		    	System.out.println(e_sql);
+		    	s.executeUpdate(e_sql);
+		    	String f_sql="alter　function　"+user.toUpperCase()+".GETLORDUSECOUNT　compile";
+		    	System.out.println(f_sql);
+		    	s.executeUpdate(f_sql);
+		    	System.out.println("处理空表无法导入问题-end......");log.info("处理空表无法导入问题-end......");
+		    }catch(Exception e){
+		    	e.printStackTrace();
+		    }finally{
+		    	try{
+		    		s.close();c.close();
+		    	}catch(Exception e){
+		    		e.printStackTrace();
+		    	}
+		    }
+		}
+		
+	}
+	
+	/**
+	 * @name:exportVersionExcel
+	 * 导出资源版本
+	 * 
+	 */
+	public String exportVersionExcel(String labels, String[] titles,
+			String types, VersionModel model) {
+		HttpServletRequest request = FlexContext.getHttpRequest();
+		WebApplicationContext ctx = WebApplicationContextUtils
+				.getWebApplicationContext(FlexContext.getServletContext());
+		String path = null;// 返回到前台的路径
+		List content = null;
+		ServletConfig servletConfig = FlexContext.getServletConfig();
+		String RealPath = null;// 绝对路径
+		String date = getName();
+		String filename = date + ".xls";
+		String zipfilePath = null; // 压缩文件夹路径
+		List<VersionModel> circuitList = loginDao.getVersionModelList(model);
+		int circuitCount = circuitList.size();
+		content = new ArrayList();
+		for (int i = 0; i < circuitCount; i++) {
+			List newcolmn = new ArrayList();
+			newcolmn.add(i + 1);// 序号
+			newcolmn.add(circuitList.get(i).getVid() == null ? ""
+					: circuitList.get(i).getVid());
+			newcolmn.add(circuitList.get(i).getVname() == null ? ""
+					: circuitList.get(i).getVname());
+			newcolmn.add(circuitList.get(i).getVdesc() == null ? ""
+					: circuitList.get(i).getVdesc());
+			newcolmn.add(circuitList.get(i).getFrom_vname() == null ? ""
+					: circuitList.get(i).getFrom_vname());
+			newcolmn.add(circuitList.get(i).getFill_man() == null ? ""
+					: circuitList.get(i).getFill_man());
+			newcolmn.add(circuitList.get(i).getFill_time() == null ? ""
+					: circuitList.get(i).getFill_time());
+			content.add(newcolmn);
+		}
+//		if (circuitCount > 20000)// 每20000条数据写一个EXCEL
+//		{
+//			try {
+//				RealPath = this.getRealPath();
+//				zipfilePath = RealPath+ date;
+//				RealPath += date + "/";
+//				File f = new File(RealPath);
+//				if (!f.exists()) {
+//					f.mkdir();
+//				}
+//				List list[] = new List[circuitCount % 20000 == 0 ? circuitCount / 20000 + 1
+//						: circuitCount / 20000 + 2];
+//				for (int i = 0; i < list.length - 1; i++) {
+//					CustomizedExcel ce = new CustomizedExcel(servletConfig);
+//					list[i] = content.subList(i * 20000 + 1,
+//							(i + 1) * 20000 > content.size() ? content.size()
+//									: (i + 1) * 20000);
+//					ce.WriteExcel(RealPath + date + "-part" + i + ".xls",
+//							labels, titles, list[i]);
+//				}
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//			ZipExcel zip = new ZipExcel();
+//			try {
+//				zip.zip(zipfilePath, zipfilePath + ".zip", "");
+//			} catch (Exception e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			path = "exportExcel/"+ date + ".zip";
+//		} else {
+			CustomizedExcel ce = new CustomizedExcel(servletConfig);
+			RealPath = this.getRealPath();
+			File f = new File(RealPath);
+			if (!f.exists()) {
+				f.mkdir();
+			}
+			try {
+				ce.WriteExcel(RealPath + filename, labels, titles, content);
+			} catch (WriteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			path = "exportExcel/" + filename;
+//		}
+
+		LogDao logDao = (LogDao) ctx.getBean("logDao");
+		logDao.createLogEvent("导出", "资源模块", "资源版本导出", "", request);
+		return path;
+	}
+	
+	/**
+	 * 获取时间的函数
+	 * */
+	public static String getName() {
+		SimpleDateFormat sDateFormat = new SimpleDateFormat(
+				"yyyy-MM-dd HH.mm.ss");
+		return sDateFormat.format(new java.util.Date().getTime());
+	}
+
+	/**
+	 * 获取文件路径
+	 * */
+	public String getRealPath() {
+		String RealPath = null;// 绝对路径
+		String fullPath = this.getClass().getResource("").getPath().toString();// 文件所在的路径
+		RealPath = fullPath.substring(0, fullPath.indexOf("WEB-INF"));// linux下的情况
+		RealPath += "exportExcel/";
+		return RealPath;
+	}
+}

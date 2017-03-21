@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="530" height="276"  
+				title="海量数据导出向导 :第一步"
+				showCloseButton="true"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12" x="323" y="204" creationComplete="titlewindow1_creationCompleteHandler(event)"> 
+	<mx:Script source="../../actionscript/comp/logExportFirstStep.as"/>  
+	<mx:Button id="btn_confirm" x="329" y="164" width="75" click="NEXT_clickHandler(event)"/>
+	<mx:Button x="412" y="163" label="退出" width="75" click="button1_clickHandler(event)"/>
+	<mx:Label x="10" y="28" text="数据导出向导为您提供大数据量的EXCEL数据导出服务，请您按照提示操作。" width="475" height="33"/>
+	<mx:Label x="10" y="78" text="数据量：" width="75" height="28"/>
+	<mx:RemoteObject id="upRM" destination="netresDao" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"/>
+	<mx:Label x="10" y="165" text="注：当数据量过大时，系统将自动分多个EXCEL文件导出" width="298"/>
+	<mx:Label x="67" y="78" text="{dataNumber.toString()}" width="93"/>
+	<mx:Label x="168" y="78" text="条"/>
+</mx:TitleWindow>  

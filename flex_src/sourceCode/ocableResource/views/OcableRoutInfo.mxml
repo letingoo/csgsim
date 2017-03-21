@@ -1,0 +1,412 @@
+<panel:PanelWindow  xmlns:mx="http://www.adobe.com/2006/mxml"
+					   xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+					   xmlns:common="twaver.common.*"
+					   width="1010" height="610" 
+					   creationComplete="FiberRoutInfo_creationCompleteHandler(event)"	
+					   fontFamily="宋体"  
+					   fontSize="12" 
+					   enableResize="true"
+					   showControls="true" 
+					   layout="absolute"		
+					   windowContainer="{Application.application.windowContainer}"
+					   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+	<mx:Script>  
+		<![CDATA[  
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Box;
+			import mx.containers.Grid;
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.controls.PopUpMenuButton;
+			import mx.core.Application;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.autoGrid.view.ShowProperty;
+			import sourceCode.ocableResource.model.FiberDetailsModel;
+			import sourceCode.ocableResource.model.FiberRouteDataModel;
+			import sourceCode.ocableResource.other.OcableLink;
+			import sourceCode.ocableResource.views.businessInfluenced;
+			import sourceCode.sysGraph.model.OcableRoutInfoData;
+			import sourceCode.sysGraph.views.OcableRoutInfo;
+			import sourceCode.sysGraph.views.SysOrgMap;
+			
+			import twaver.*;
+			import twaver.DataBox;
+			import twaver.Follower;
+			import twaver.Link;
+			import twaver.Node;
+			import twaver.Styles;
+			import twaver.XMLSerializer;
+			import twaver.network.Network;
+			import twaver.network.layout.AutoLayouter;
+			
+			public var fibercode:String;
+			private var autoLayouter:AutoLayouter = null;
+			private var elementBox:ElementBox;
+			/**
+			 * purpose:注册flag、equipisbranch等一序列属性以及右键处理
+			 * author:ycguan
+			 * date:2012-7-9
+			 * */
+			protected function FiberRoutInfo_creationCompleteHandler(event:FlexEvent):void
+			{
+				
+				SerializationSettings.registerGlobalClient("flag", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipisbranch", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("position", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("topoid", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portlabel", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equiptype", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("porttype", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("systemcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portisbranch", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portshow", Consts.TYPE_STRING);
+				initNetworkToolbar(toolbar, network);
+				elementBox=network.elementBox;
+				this.autoLayouter = new AutoLayouter(network);
+				
+				network.contextMenu = new ContextMenu();
+				network.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, contextMenu_menuSelect);
+				
+			}
+			public function get dataBox():DataBox{
+				return elementBox;
+			}
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);
+			}
+			/**
+			 * purpose:增加DrawFiberRouteInfo函数获取后台绘制好的TWAVER拓扑图
+			 * author:ycguan
+			 * date：2012-7-9
+			 * */
+			public function DrawFiberRouteInfo(portcode:String=null,dmcode:String=null,porttype:String=null,
+																	Resource1:Node=null,Resource2:Node=null,Resource3:Node=null){
+				//				Alert.show("---DrawFiberRouteInfo---");
+				var rtobj:RemoteObject = new RemoteObject("wireConfiguration");
+				rtobj.endpoint = ModelLocator.END_POINT;		
+				rtobj.addEventListener(ResultEvent.RESULT,DrawDataGraphicsHandler);
+				rtobj.DrawFiberRoute(portcode,dmcode,porttype);
+			}
+			
+			private function DrawDataGraphicsHandler(event:ResultEvent):void{
+				network.elementBox.clear();
+				var serializer:XMLSerializer = new XMLSerializer(network.elementBox);
+				serializer.deserialize(event.result.toString());
+				//				Alert.show("---从后台取画图数据---");
+				//				Alert.show("e.result.toString()"+event.result.toString());
+			}
+			
+			/**
+			 * purpose:增加contextMenu_menuSelect函数右键处理
+			 * author:ycguan
+			 * date：2012-7-9
+			 * */
+			private function contextMenu_menuSelect(event:ContextMenuEvent):void{
+				var p:Point = new Point(event.mouseTarget.mouseX / network.zoom, event.mouseTarget.mouseY / network.zoom);
+				var datas:ICollection = network.getElementsByLocalPoint(p);
+				if (datas.count > 0)
+					network.selectionModel.setSelection(datas.getItemAt(0));
+				else
+					network.selectionModel.clearSelection();
+				if(network.selectionModel.count > 0){
+					var element:Element = network.selectionModel.selection.getItemAt(0);
+					//					Alert.show("element.getClient('flag')"+element.getClient("flag"));
+					if (element is Node&&(element.getClient("flag")=='equipment')) 
+					{  //选中节  
+						var item:ContextMenuItem ;
+						//						Alert.show("element.getClient('equiptype')"+element.getClient("equiptype"));
+						if(element.getClient("equiptype")=='equipport'){
+							item = new ContextMenuItem("显示设备属性");
+						}else if(element.getClient("equiptype")=='odf'){
+							item = new ContextMenuItem("显示ODF模块属性");
+						}else{
+							item = new ContextMenuItem("显示T节点属性");
+						}
+						item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function (e:ContextMenuEvent){itemSelectHandler(e,network)});
+						network.contextMenu.hideBuiltInItems();
+						network.contextMenu.customItems = [item];
+					}
+					else if ((element is Link)&& element.getClient("flag")=="topolink") { //选中线 
+						var item4:ContextMenuItem = new ContextMenuItem("显示光纤详细信息");
+						item4.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function (e:ContextMenuEvent){itemSelectHandler_Ocable(e,network)});
+						network.contextMenu.hideBuiltInItems();
+						network.contextMenu.customItems = [item4];
+						
+					}
+					else if((element is Follower)&&(element.getClient("flag")=='port')){
+						var item:ContextMenuItem = new ContextMenuItem("显示端口属性");
+						item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function (e:ContextMenuEvent){itemSelectHandler_port(e,network)});
+						network.contextMenu.hideBuiltInItems();
+						network.contextMenu.customItems = [item]; 
+					}else{
+						network.contextMenu.customItems = [];
+					}
+					
+				}else{
+					network.contextMenu.customItems = [];
+				}
+				
+			}
+			/**
+			 * purpose:增加itemSelectHandler函数获取设备属性
+			 * author:ycguan
+			 * date：2012-7-9
+			 * */
+			private function itemSelectHandler(e:ContextMenuEvent,network:Network):void{
+				var node:Node = network.selectionModel.selection.getItemAt(0);
+				channelShowProperty(node);		
+			}
+			/**
+			 * purpose:增加itemSelectHandler_Ocable函数获取光纤详细信息
+			 * author:ycguan
+			 * date：2012-7-9
+			 * */
+			private function itemSelectHandler_Ocable(e:ContextMenuEvent,network:Network):void{
+				var link:Link = network.selectionModel.selection.getItemAt(0);
+				channelShowProperty(link);
+			}
+			/**
+			 * purpose:增加itemSelectHandler_port函数获取端口属性
+			 * author:ycguan
+			 * date：2012-7-9
+			 * */
+			private function itemSelectHandler_port(evt:ContextMenuEvent,network:Network):void{
+				var follow:Follower = network.selectionModel.selection.getItemAt(0) as Follower;
+				channelShowProperty(follow);	
+			}
+			/**
+			 * purpose:增加channelShowProperty函数统一处理所有的右键处理
+			 * author:ycguan
+			 * date：2012-7-9
+			 * */
+			private function channelShowProperty(ielement:IElement):void{
+				if((ielement is Node)&&ielement.getClient("flag")=='equipment'){
+					if(ielement.getClient("equipisbranch")=='true'){
+//						
+						var node:Node = ielement as Node;
+						var equipcode:String = node.getClient("equipcode");
+						var equipname:String = node.children.getItemAt(0).name;
+						var property:ShowProperty = new ShowProperty();
+						property.paraValue = equipcode;
+						property.tablename = "EQUIPMENT_VIEW";
+						property.key = "EQUIPCODE";
+						property.title = equipname+"—设备属性";
+						PopUpManager.addPopUp(property, this, true);
+						PopUpManager.centerPopUp(property);
+						property.addEventListener("savePropertyComplete",function (event:Event):void{
+							PopUpManager.removePopUp(property);
+							
+						});
+						property.addEventListener("initFinished",function (event:Event):void{
+							
+							(property.getElementById("STATIONNAME",property.propertyList) as mx.controls.TextInput).enabled = false;
+							(property.getElementById("SYSTEM_NAME",property.propertyList) as mx.controls.ComboBox).enabled = false;
+							(property.getElementById("X_VENDOR",property.propertyList) as mx.controls.ComboBox).enabled = false;
+							(property.getElementById("X_MODEL",property.propertyList) as mx.controls.ComboBox).enabled = false;
+							(property.getElementById("S_SBMC",property.propertyList) as mx.controls.TextInput).enabled = false;
+							(property.getElementById("ROOMCODE",property.propertyList) as mx.controls.TextInput).enabled = false;
+							
+						});
+					}else{
+						if(ielement.getClient("equiptype")=='odf'){
+//							
+							var node:Node = ielement as Node;
+							var equipcode:String = node.getClient("equipcode");
+							var equipname:String = node.children.getItemAt(0).name;
+							var property:ShowProperty = new ShowProperty();
+							property.paraValue = equipcode;
+							property.tablename = "EQUIPMENT_VIEW";
+							property.key = "EQUIPCODE";
+							property.title = equipname+"—ODF模块属性";
+							PopUpManager.addPopUp(property, this, true);
+							PopUpManager.centerPopUp(property);
+							property.addEventListener("savePropertyComplete",function (event:Event):void{
+								PopUpManager.removePopUp(property);
+								
+							});
+							property.addEventListener("initFinished",function (event:Event):void{
+								
+								(property.getElementById("STATIONNAME",property.propertyList) as mx.controls.TextInput).enabled = false;
+								(property.getElementById("SYSTEM_NAME",property.propertyList) as mx.controls.ComboBox).enabled = false;
+								(property.getElementById("X_VENDOR",property.propertyList) as mx.controls.ComboBox).enabled = false;
+								(property.getElementById("X_MODEL",property.propertyList) as mx.controls.ComboBox).enabled = false;
+								(property.getElementById("S_SBMC",property.propertyList) as mx.controls.TextInput).enabled = false;
+								(property.getElementById("ROOMCODE",property.propertyList) as mx.controls.TextInput).enabled = false;
+								
+							});
+						}
+					}
+				}else if((ielement is Follower)&&ielement.getClient("flag")=='port'){
+					if(ielement.getClient("portisbranch")=='true'){
+						var follower:Follower = ielement as Follower;
+						var portcode:String=follower.getClient("portcode");
+						var portname:String = follower.host.children.getItemAt(0).name+"-"+follower.toolTip;
+						var property:ShowProperty = new ShowProperty();
+						property.paraValue = portcode;
+						property.tablename = "VIEW_EQUIPLOGICPORT_PROPERTY";
+						property.key = "LOGICPORT";
+						property.title = portname+"—端口属性";
+						PopUpManager.addPopUp(property, this, true);
+						PopUpManager.centerPopUp(property);
+						property.addEventListener("savePropertyComplete",function (event:Event):void{
+							PopUpManager.removePopUp(property);
+						});
+					}else{
+						if(ielement.getClient("porttype")=='odf'){
+//							
+							var follower:Follower = ielement as Follower;
+							var portcode:String=follower.getClient("portcode");
+							var portname:String = follower.host.children.getItemAt(0).name+"-"+follower.toolTip;
+							var property:ShowProperty = new ShowProperty();
+							property.paraValue = portcode;
+							property.tablename = "VIEW_EQUIPLOGICPORT_PROPERTY";
+							property.key = "LOGICPORT";
+							property.title = portname+"—ODF端口属性";
+							PopUpManager.addPopUp(property, this, true);
+							PopUpManager.centerPopUp(property);
+							property.addEventListener("savePropertyComplete",function (event:Event):void{
+								PopUpManager.removePopUp(property);
+							});
+						}
+					}
+				}else if(ielement is Link){
+					var link:Link = ielement as Link;
+					//flag为topolink表示为光纤，为cc表示为同一站点内的设备与odf的连线
+					var fibercode:String=link.getClient('topoid');
+					var flag:String = link.getClient('flag');
+					if(fibercode=="" ||fibercode==null){
+						Alert.show("光纤编码获取失败！所以获取不到光纤详细信息");
+						return;
+					}
+					
+					var property:ShowProperty = new ShowProperty();
+					property.title = "光纤属性";
+					property.paraValue = fibercode;
+					property.tablename = "VIEW_EN_FIBER_PROPERTY";
+					property.key = "FIBERCODE";
+					property.isShowButton=false;
+					PopUpManager.addPopUp(property, this, true);
+					PopUpManager.centerPopUp(property);		
+					property.addEventListener("savePropertyComplete",function (event:Event):void{
+						PopUpManager.removePopUp(property);
+						});
+					property.addEventListener("initFinished",function (event:Event):void{
+						var aequip:String=(property.getElementById("AENDEQUIP",property.propertyList) as mx.controls.TextInput).text;
+						var zequip:String=(property.getElementById("ZENDEQUIP",property.propertyList) as mx.controls.TextInput).text;
+						//初始化值 端口值
+						var rt:RemoteObject=new RemoteObject("resNodeDwr");
+						rt.endpoint=ModelLocator.END_POINT;
+						rt.showBusyCursor=true;
+						rt.addEventListener(ResultEvent.RESULT,function(event:ResultEvent){
+							var str:String = event.result.toString();
+							var arr:Array;
+							if(str.indexOf(";")!=-1){
+								arr=str.split(";");
+							}else{
+								arr = new Array(str);
+							}
+							(property.getElementById("AENDEQPORT",property.propertyList) as mx.controls.ComboBox).dropdown.dataProvider=new XMLList(arr[0]);
+							(property.getElementById("AENDEQPORT",property.propertyList) as mx.controls.ComboBox).dataProvider=new XMLList(arr[0]);
+							(property.getElementById("AENDEQPORT",property.propertyList) as mx.controls.ComboBox).labelField="@label";
+							(property.getElementById("AENDEQPORT",property.propertyList) as mx.controls.ComboBox).text="";
+							(property.getElementById("AENDEQPORT",property.propertyList) as mx.controls.ComboBox).selectedIndex=arr[1];
+							
+							(property.getElementById("ZENDEQPORT",property.propertyList) as mx.controls.ComboBox).dropdown.dataProvider=new XMLList(arr[2]);
+							(property.getElementById("ZENDEQPORT",property.propertyList) as mx.controls.ComboBox).dataProvider=new XMLList(arr[2]);
+							(property.getElementById("ZENDEQPORT",property.propertyList) as mx.controls.ComboBox).labelField="@label";
+							(property.getElementById("ZENDEQPORT",property.propertyList) as mx.controls.ComboBox).text="";
+							(property.getElementById("ZENDEQPORT",property.propertyList) as mx.controls.ComboBox).selectedIndex=arr[3];
+						});
+						rt.getLogicportserialSelectedByEquipPort(fibercode,aequip,zequip);
+						
+						(property.getElementById("UPDATEPERSON",property.propertyList) as mx.controls.TextInput).enabled = false;
+						(property.getElementById("AENDEQPORT",property.propertyList) as mx.controls.ComboBox).enabled = false;
+						(property.getElementById("ZENDEQPORT",property.propertyList) as mx.controls.ComboBox).enabled = false;
+						(property.getElementById("AENDEQUIPNAME",property.propertyList) as mx.controls.TextInput).enabled = false;
+						(property.getElementById("ZENDEQUIPNAME",property.propertyList) as mx.controls.TextInput).enabled = false;
+						(property.getElementById("LENGTH",property.propertyList) as mx.controls.TextInput).enabled = false;
+						(property.getElementById("STATUS",property.propertyList) as mx.controls.ComboBox).enabled = false;
+						(property.getElementById("PROPERTY",property.propertyList) as mx.controls.ComboBox).enabled = false;
+						(property.getElementById("REMARK",property.propertyList) as mx.controls.TextInput).enabled = false;
+					});
+//					var remoteobj:RemoteObject = new RemoteObject("mapResourcesInfo"); 
+//					remoteobj.endpoint = ModelLocator.END_POINT;
+//					remoteobj.showBusyCursor = true;
+//					remoteobj.addEventListener(ResultEvent.RESULT,getFiberDetailsByFibercodeHandler);
+//					remoteobj.getFiberDetailsByFibercode(fibercode);
+				}
+			}
+			
+			private function getFiberDetailsByFibercodeHandler(event:ResultEvent):void{
+				/**var data:FiberDetailsModel = event.result as FiberDetailsModel;
+				 var property:viewFiberProperty = new viewFiberProperty();
+				 PopUpManager.addPopUp(property, this, true);
+				 PopUpManager.centerPopUp(property);
+				 property.fdmdata = data;
+				 property.title =data.name_std+"-"+data.fiberserial+"芯属性信息"**/
+				
+				
+			}
+			
+			
+			public function initNetworkToolbar(toolbar:Box, network:Network, interaction:String = null, showLabel:Boolean = false, perWidth:int = -1, height:int = -1):void{
+				toolbar.setStyle("horizontalGap", 4);
+				if(perWidth<0){
+					perWidth = DemoUtils.DEFAULT_BUTTON_WIDTH;
+				}
+				if(height<0){
+					height = DemoUtils.DEFAULT_BUTTON_HEIGHT;
+				}
+				
+				DemoUtils.createButtonBar(toolbar, [
+					DemoUtils.createButtonInfo("默认模式", DemoImages.select, function():void{network.setDefaultInteractionHandlers();}),
+					DemoUtils.createButtonInfo("放大", DemoImages.zoomIn, function():void{network.zoomIn(false);}),
+					DemoUtils.createButtonInfo("缩小", DemoImages.zoomOut, function():void{network.zoomOut(false);}),
+					DemoUtils.createButtonInfo("重置", DemoImages.zoomReset, function():void{network.zoomReset(true);}),
+					DemoUtils.createButtonInfo("全局预览", DemoImages.zoomOverview, function():void{network.zoomOverview(true);})
+				], false, showLabel, perWidth, height);
+				//				var comboBox:ComboBox = addInteractionComboBox(toolbar, network, interaction, height);
+			}
+			//---------新加方法
+			//----------新加方法
+			/**
+			 * purpose:增加DrawFiberRouteInfo函数获取后台绘制好的TWAVER拓扑图
+			 * author:ycguan
+			 * date：2012-7-9
+			 * */
+			public function getFiberRouteInfo(portCode:String=null){
+				var remoteObject:RemoteObject=new RemoteObject("fiberWire");
+				remoteObject.endpoint=ModelLocator.END_POINT;
+				remoteObject.addEventListener(ResultEvent.RESULT, DrawDataGraphicHandler);//原来
+				remoteObject.getOcableRoutInfo(portCode);
+			}
+			
+			private function DrawDataGraphicHandler(event:ResultEvent):void{
+				network.elementBox.clear();
+				var serializer:XMLSerializer = new XMLSerializer(network.elementBox);
+				serializer.deserialize(event.result.toString());
+			}
+			//-----新加
+			
+			
+			
+		]]>  
+	</mx:Script>
+	<mx:VBox label="光纤路由图" width="100%" height="100%">
+		<mx:HBox id="toolbar" width="100%" horizontalGap="0"/>
+		<servasoftware:Network id="network" width="100%" height="100%" backgroundColor="0xFFFFFF"/>	
+	</mx:VBox>
+</panel:PanelWindow>

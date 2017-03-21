@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" title="添加虚拟端口" fontSize="13" 
+				showCloseButton="true" close="closeHandler(event)"
+				width="400" height="300" creationComplete="creationCompleteHandler(event)">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import twaver.Consts;
+			import twaver.ElementBox;
+			import twaver.Follower;
+			import twaver.Node;
+			import twaver.Styles;
+
+			public var box:ElementBox;
+			public var node:Node;
+			
+			protected function closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+
+			protected function ok_clickHandler(event:MouseEvent):void
+			{
+				//端口
+				var fo:Follower = new Follower();
+				fo.host = node;
+				fo.image = null;
+				fo.name = pframe.text + "-" + pslot.text + "-" + ppack.text + "-" + pserial.text;
+				fo.setStyle(Styles.LABEL_SIZE,9);
+				fo.setClient("portinfo", pframe.text + "-" + pslot.text + "-" + ppack.text + "-" + pserial.text);//框-槽-盘-端口
+				fo.setClient("porttype", ptype.selectedItem.@xtbm);
+				fo.setClient("portrate", prate.selectedItem.@xtbm);
+				fo.setClient("flag", "vport");
+				if(node.getClient("isStart") != null || node.getClient("isStart") == "true"){
+					fo.setCenterLocation(node.centerLocation.x + 5, node.centerLocation.y);
+				}else if(node.getClient("isEnd") != null || node.getClient("isEnd") == "true"){
+					fo.setCenterLocation(node.centerLocation.x - 5, node.centerLocation.y);
+				}else{
+					fo.setCenterLocation(node.centerLocation.x, node.centerLocation.y);
+				}
+				fo.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+				box.add(fo);
+				//速率
+				var ratefo:Follower = new Follower();
+				ratefo.host = node;
+				ratefo.image = null;
+				ratefo.name = prate.selectedItem.@xtxx;
+				ratefo.setStyle(Styles.LABEL_SIZE,9);
+				ratefo.setClient("flag", "ratelabel");
+				ratefo.setCenterLocation(node.centerLocation.x, node.centerLocation.y + 33);
+				ratefo.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+				box.add(ratefo);
+				PopUpManager.removePopUp(this);
+			}
+
+
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				//初始化端口类型下拉框
+				var ro:RemoteObject = new RemoteObject("businessDispatch");
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.showBusyCursor = true;
+				ro.addEventListener(ResultEvent.RESULT, getPorttypeHandler);
+				ro.addEventListener(FaultEvent.FAULT, faultHandler);
+				ro.getXTBM("ZY030704__");
+				//初始化速率下拉框
+				var ro1:RemoteObject = new RemoteObject("businessDispatch");
+				ro1.endpoint = ModelLocator.END_POINT;
+				ro1.showBusyCursor = true;
+				ro1.addEventListener(ResultEvent.RESULT, getPortrateHandler);
+				ro1.addEventListener(FaultEvent.FAULT, faultHandler);
+				ro1.getXTBM("ZY0701__");
+			}
+
+			private function getPorttypeHandler(e:ResultEvent):void{
+				var xmldata:XMLList = new XMLList(e.result.toString());
+				ptype.dataProvider = xmldata.children();
+				ptype.labelField = "@xtxx";
+			}
+			
+			private function getPortrateHandler(e:ResultEvent):void{
+				var xmldata:XMLList = new XMLList(e.result.toString());
+				prate.dataProvider = xmldata.children();
+				prate.labelField = "@xtxx";
+			}
+			
+			private function faultHandler(e:FaultEvent):void{
+				Alert.show(e.fault.toString(), "错误提示");
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:HBox width="100%" height="80%">
+			<mx:Form width="100%">
+				<mx:FormItem label="机框" width="100%">
+					<mx:TextInput id="pframe" width="100%" text="1"/>
+				</mx:FormItem>
+				<mx:FormItem label="机槽" width="100%">
+					<mx:TextInput id="pslot" width="100%" text="1"/>
+				</mx:FormItem>
+				<mx:FormItem label="机盘" width="100%">
+					<mx:TextInput id="ppack" width="100%" text="1"/>
+				</mx:FormItem>
+				<mx:FormItem label="端口号" width="100%">
+					<mx:TextInput id="pserial" width="100%" text="1"/>
+				</mx:FormItem>
+				<mx:FormItem label="类型" width="100%">
+					<mx:ComboBox id="ptype" width="100%"/>
+				</mx:FormItem>
+				<mx:FormItem label="速率" width="100%">
+					<mx:ComboBox id="prate" width="100%"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox width="100%" height="20%" styleName="btnbg">
+			<mx:Button id="ok" label="完成" click="ok_clickHandler(event)" styleName="primary"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--中断电路告警详情-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 creationComplete="init();"
+		 width="900" 
+		 height="500" 
+		 styleName="popwindow" 
+		 xmlns:views="sourceCode.common.views.*" xmlns:views1="sourceCode.common.views.*">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.utils.StringUtil;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.alarmmgr.actionscript.SequenceItemRenderer;
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			
+			[Bindable]
+			public var circuitcode :String= null;
+			[Bindable]
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			
+			private var param:ArrayCollection =new ArrayCollection();
+			
+			private var indexRenderer:Class = SequenceItemRenderer;  
+			
+			private function init():void{
+				pagingFunction(0,50);
+			}
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void {
+				start = (pageIndex * pageSize+1).toString();
+				end = ((pageIndex * pageSize) + pageSize).toString();
+				var rtobj:RemoteObject=new RemoteObject("AlarmDetailDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				rtobj.getAlarmDetail(circuitcode,start,end);        //表格加载数据
+				rtobj.addEventListener(ResultEvent.RESULT,loadData);
+			}
+			
+			private function loadData(event:ResultEvent):void{
+				
+				param.removeAll();
+				var alarmInfos:ArrayCollection=event.result.alarmDetailList as ArrayCollection;
+				if(event.result.alarmDetailList==null || event.result.alarmDetailList==""){
+					Alert.show("没有结果！","提示信息",4,this,null,iconClass);
+				}
+				for each(var a:Object in alarmInfos){
+					param.addItem({alarmnumber:a.ALARMNUMBER,alarmdesc:a.ALARMDESC,alarmobjdesc:a.ALARMOBJDESC,
+						laststarttime:df.format(a.LASTSTARTTIME),carryid:a.CARRYID,alarmlevelname:a.ALARMLEVELNAME,
+						vendorzh:a.VENDORZH,belongtransys:a.BELONGTRANSYS});
+				}
+				
+				dg.dataProvider=param;
+				pagingToolBarforAlarmExp.orgData =param;
+				var count:int =int(event.result.alarmDetailCount);
+				pagingToolBarforAlarmExp.totalRecord = count;
+				pagingToolBarforAlarmExp.dataBind(true);	
+			}
+			
+			protected function controlExportExcelHandler(event:Event):void
+			{
+				//Export
+				var titles:Array=new Array("告警描述", "告警对象", "告警发生时间","中断业务", "告警级别","所属系统");
+				var remoteobj2:RemoteObject = new RemoteObject("AlarmDetailDwr"); 
+				remoteobj2.endpoint = ModelLocator.END_POINT;
+				remoteobj2.showBusyCursor = true;
+				remoteobj2.addEventListener(ResultEvent.RESULT,ExportExcelHandler);
+				remoteobj2.ExportExcel("中断电路告警信息",titles,circuitcode); 
+			}
+			
+			public function ExportExcelHandler(event:ResultEvent):void{
+				var path:String = event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(path))); 
+				navigateToURL(request,"_blank");
+				
+			}
+		]]>
+	</mx:Script>
+	<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+	
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		<mx:HBox width="100%" backgroundImage="assets/images/iconbar_bg.png" backgroundSize="100%" verticalAlign="middle" height="35">
+			<mx:LinkButton label="导出" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_export.png')" 
+						   click="controlExportExcelHandler(event)"/>
+<!--		<mx:LinkButton label="打印" styleName="iconbar" icon="@Embed(source='assets/images/icon/icon_print.png')"/>  -->
+		</mx:HBox>
+		<mx:VBox width="100%" height="100%">
+			<mx:DataGrid id="dg"  width="100%" height="95%" headerHeight="25"  styleName="alarm"  verticalAlign="middle" >
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="50"/>
+					<mx:DataGridColumn headerText="告警描述" dataField="alarmdesc" width="200"/>		
+					<mx:DataGridColumn headerText="告警对象" dataField="alarmobjdesc" width="200" />
+					<mx:DataGridColumn headerText="告警发生时间" dataField="laststarttime" width="140"/>
+					<mx:DataGridColumn headerText="中断业务" dataField="carryid" />
+					<mx:DataGridColumn headerText="告警级别" dataField="alarmlevelname" width="80"/>
+					<mx:DataGridColumn headerText="所属系统" dataField="belongtransys" width="80" />
+				</mx:columns>
+			</mx:DataGrid>
+			<views1:pagetoolbar width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{dg}" pagingFunction="pagingFunction">
+			</views1:pagetoolbar>
+		</mx:VBox>
+	</mx:VBox>
+</mx:VBox>

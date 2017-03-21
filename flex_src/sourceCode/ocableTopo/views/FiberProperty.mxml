@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="620"
+				height="420"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				preinitialize="preinitialize()"	
+				creationComplete="init()"
+				close="close(event)">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import flash.events.Event;
+			
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			
+			import org.flexunit.runner.Result;
+			
+			import common.model.ResultModel;
+			import sourceCode.ocableResource.model.FiberDetailsModel;
+			
+			public var days:Array=new Array("日", "一", "二", "三", "四", "五", "六");
+			public var monthNames:Array=new Array("一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月");						
+			[Bindable]public var fiberDetailsModel:FiberDetailsModel;			
+			[Bindable]public var xmlOcableProperty:XMLList;
+			[Bindable]public var xmlOcableModel:XMLList;
+			[Bindable]public var state:String;
+			
+			//----------------------------------------------
+
+						
+			//-----------------------------------------
+			private function preinitialize():void{
+				if(null == fiberDetailsModel){
+					fiberDetailsModel = new FiberDetailsModel();
+				}
+			}
+			
+			private function init():void{
+//				var FiberDetailsModel:String = FiberDetailsModel.ocablesectionname;
+			}
+					
+			protected function btn_clickHandler(event:MouseEvent):void{
+				var fiberDetailsModel:FiberDetailsModel = new FiberDetailsModel();
+				var remoteObject:RemoteObject=new RemoteObject("ocableTopology");
+				remoteObject.endpoint=ModelLocator.END_POINT;
+				remoteObject.showBusyCursor=true;
+				fiberDetailsModel.ocablesectionname=ocablesectionname.text;
+				fiberDetailsModel.fiberserial=fiberserial.text;
+				fiberDetailsModel.name_std=name_std.text;
+				fiberDetailsModel.property = property.text;
+				if(StringUtil.trim(updatedate.text) == ""){
+					fiberDetailsModel.updatedate="sysdate";
+				}else{
+					fiberDetailsModel.updatedate=updatedate.text;
+				}
+				fiberDetailsModel.remark=remark.text;				
+				remoteObject.modifyFiberProperty(fiberDetailsModel);
+				remoteObject.addEventListener(ResultEvent.RESULT,modifyOcableSection);
+				Application.application.faultEventHandler(remoteObject);
+				
+			}
+						
+			private function modifyOcableSection(event:ResultEvent):void{
+				if (event.result.toString() == "success")
+				{
+					Alert.show("保存成功！", "提示");
+					PopUpManager.removePopUp(this);
+					this.dispatchEvent(new Event("RefreshDataGrid"))
+				}
+				else if (event.result.toString() == "blank")
+				{
+					Alert.show("请按要求修改内容！", "提示");
+				}
+				else if (event.result.toString() == "timeblank")
+				{
+					Alert.show("时间不能为空！", "提示");
+				}
+				else
+				{
+					Alert.show("修改失败！", "提示");
+				}
+			}
+				
+			private function close(event:CloseEvent):void{
+				this.dispatchEvent(new Event('closeOcableSectionTitle'));
+				MyPopupManager.removePopUp(this);
+			}
+			
+			private function clickHandler(event:MouseEvent):void{
+				this.dispatchEvent(new Event('closeOcableSectionTitle'));
+				MyPopupManager.removePopUp(this);
+			}
+			
+
+		]]>
+	</mx:Script>
+	<mx:Binding destination="ocablesectionname.text" source="fiberDetailsModel.ocablesectionname" />
+	<mx:Binding destination="fiberserial.text" source="fiberDetailsModel.fiberserial" />
+	<mx:Binding destination="remark.text" source="fiberDetailsModel.remark" />
+	<mx:Binding destination="name_std.text" source="fiberDetailsModel.name_std" />
+	<mx:Binding destination="length.text" source="fiberDetailsModel.length" />
+	<mx:Binding destination="property.text" source="fiberDetailsModel.property" />
+	<mx:Binding destination="condition.text" source="fiberDetailsModel.status" />
+	<mx:Binding destination="updatedate.text" source="{fiberDetailsModel.updatedate==null?'':fiberDetailsModel.updatedate}" />
+	<mx:Binding destination="updateperson.text" source="fiberDetailsModel.updateperson"/>	
+	<mx:Binding destination="aendeqport.text" source="fiberDetailsModel.aendeqport" />
+	<mx:Binding destination="zendeqport.text" source="fiberDetailsModel.zendeqport" />
+	<mx:Binding destination="aendodfport.text" source="fiberDetailsModel.aendodfport" />
+	<mx:Binding destination="zendodfport.text" source="fiberDetailsModel.zendodfport" />
+	<mx:Binding destination="fibermodel.text" source="fiberDetailsModel.fibermodel" />
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center"
+			 verticalGap="0">
+		<mx:HBox width="100%"
+				 height="60%"
+				 id="hbox1">
+			<mx:Form width="100%"
+					 height="100%">
+				<mx:FormItem label="所属光缆接续段" required="true">
+					<mx:TextInput id="ocablesectionname" width="180" />
+				</mx:FormItem>
+				<mx:FormItem label="线芯号" required="true">
+					<mx:TextInput id="fiberserial" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="标准命名" required="true">
+					<mx:TextInput id="name_std" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="长度" required="true">
+					<mx:TextInput id="length" width="180" />
+				</mx:FormItem>
+				<mx:FormItem label="产权" required="true">
+					<mx:TextInput id="property" maxChars="20" restrict="0-9." width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="状态">
+					<mx:TextInput id="condition" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="类型">
+					<mx:TextInput id="fibermodel" width="180"/>
+				</mx:FormItem>
+			</mx:Form>
+			<mx:Form width="100%"
+					 height="100%">
+				<mx:FormItem label="起始设备" >
+					<mx:TextInput id="aendeqport" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="终止设备" >
+					<mx:TextInput id="zendeqport" width="180"  editable= "false"   />
+				</mx:FormItem>
+				<mx:FormItem label="起始端口" >
+					<mx:TextInput id="aendodfport" width="180"  editable="false" />
+				</mx:FormItem>
+				<mx:FormItem label="终止端口" >
+					<mx:TextInput id="zendodfport"  width="180" editable="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="更新人" >
+					<mx:TextInput id="updateperson"  width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="更新时间">
+					<mx:DateField id="updatedate" width="180"  
+								  dayNames="{days}"
+								  monthNames="{monthNames}"
+								  formatString="YYYY-MM-DD"
+								  yearNavigationEnabled="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="备注">
+					<mx:TextInput id="remark"  width="180"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox id="buttomhbox"
+				 width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			<mx:Button id="btn"
+					   label="{this.state}"
+					   width="80"
+					   styleName="loginprimary"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="80"/>
+			<mx:Button label="关闭"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="clickHandler(event)"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>
+

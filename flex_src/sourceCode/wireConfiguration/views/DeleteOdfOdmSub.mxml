@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="460" height="158" layout="absolute" showCloseButton="true" close="close()"
+				title="删除ODF子模块" 
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%" >
+	<mx:Script source="../actionscript/DeleteOdfOdmSub.as" />
+	<mx:Label text="终止子模块：" x="229" y="42" width="80" enabled="true" textAlign="right"/>
+	<mx:Label text="起始子模块：" x="21" y="42" width="81" textAlign="right"/>
+	<mx:ComboBox id="cmbStart" x="101" y="40" width="111" labelField="label" enabled="false"/>
+	<mx:ComboBox id="cmbEnd" x="308" y="40" width="111" labelField="label"/>
+	<mx:HBox id="buttomhbox"
+			 width="100%"
+			 height="100%"
+			 verticalAlign="middle"
+			 horizontalAlign="center"
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+			 backgroundSize="100%" x="0" y="85">
+		<mx:Button label="确定" styleName="primary" click="save()" width="70" />
+		<mx:HRule width="16" visible="false"/>
+		<mx:Button label="取消" styleName="secondary" click="close()" width="70"/>
+	</mx:HBox>
+	
+</mx:TitleWindow>
+

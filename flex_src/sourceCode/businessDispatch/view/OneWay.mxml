@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				showCloseButton="true"
+				title="方式单信息"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="initApp()"
+				layout="absolute" minWidth="955" minHeight="600" width="440" height="404" fontSize="13" fontFamily="中易黑体" fontWeight="normal">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import twaver.IElement;
+			import twaver.Node;
+			public var str:Object;
+			
+			
+			protected function initApp():void
+			{	
+				modeName.text = str.modeName;//业务名称
+				station_a.text = str.station_a;//起始局站
+				station_z.text = str.station_z;//终止局站
+				property.text = str.useOfUnits;
+				leaser.text = str.applicantCom;
+				operationType.text = str.operationType;
+				rateName.text = str.rateName;
+				interfaceType.text = str.interfaceType;
+				stateName.text = str.stateName;
+				reqendtime.text = str.reqendtime;
+				depa.text = str.depar;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="43" y="12" text="业务名称:"/>
+	<mx:Label x="43" y="157" text="业务类型:"/>
+	<mx:Label x="43" y="41" text="起始局站:"/>
+	<mx:Label x="43" y="70" text="终止局站:"/>
+	<mx:Label x="43" y="99" text="使用单位:"/>
+	<!--<mx:Label x="10" y="114" text="申请名称:"/>-->
+	<mx:Label x="43" y="128" text="申请单位:"/>
+	<mx:Label x="43" y="302" text="执行单位:"/>
+	<mx:Label x="43" y="186" text="速     率:"/>
+	<mx:Label x="43" y="215" text="接口类型:"/>
+	<mx:Label x="43" y="244" text="电路状态:"/>
+	<mx:Label x="43" y="273" text="完成时间:"/>
+	<mx:TextInput x="115" y="10" id="modeName" editable="false" width="241" height="26"  borderSides="left,top,right" borderStyle="solid" borderThickness="1"/>
+	<mx:TextInput x="115" y="300" id="depa" editable="false" width="241" borderSides="left,top,right,bottom" borderStyle="solid" borderThickness="1" height="26"/>
+	<mx:TextInput x="115" y="271" id="reqendtime" editable="false" borderSides="left,top,right" borderStyle="solid" borderThickness="1" width="241" height="26"/>
+	<mx:TextInput x="115" y="39" id="station_a" editable="false" width="241" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>
+	<mx:TextInput x="115" y="68" id="station_z" editable="false" width="241" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>
+	<mx:TextInput x="115" y="97" id="property" editable="false" width="241" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>
+	<!--<mx:TextInput x="82" y="112" id="requestionID" editable="false" width="160" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>-->
+	<mx:TextInput x="115" y="126" id="leaser" editable="false" width="241" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>
+	<mx:TextInput x="115" y="155" id="operationType" editable="false" width="241" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>
+	<mx:TextInput x="115" y="184" id="rateName" editable="false" width="241" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>
+	<mx:TextInput x="115" y="213" id="interfaceType" editable="false" width="241" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>
+	<mx:TextInput x="115" y="242" id="stateName" editable="false" width="241" borderSides="left,top,right" borderStyle="solid" borderThickness="1" height="26"/>
+	<mx:Canvas backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%" width="100%" height="32" y="335" x="0">
+		<mx:Button x="183" y="4" label="关闭" styleName="loginprimary" click="PopUpManager.removePopUp(this)" width="80"    />
+	</mx:Canvas>
+</mx:TitleWindow>

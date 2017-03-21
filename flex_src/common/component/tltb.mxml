@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 xmlns:ns2="common.other.fusioncharts.*"
+		 minWidth="955" minHeight="600" creationComplete="init()">
+	<mx:Script>
+		<![CDATA[     
+			import common.actionscript.ModelLocator;
+			
+			import mx.charts.events.ChartItemEvent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.indexEvaluation.model.IndexEvaluation;   
+			
+			public var monthNames:Array = new Array("一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月");
+			private var tmp_obj:Object; 
+			[Bindable] public var deptLst:XMLList;
+			[Bindable] public var unit:String;
+			[Bindable] public var value:String;
+			[Bindable] public var calculatetime:String;
+			[Bindable]     
+			public var dataSet:ArrayCollection = new ArrayCollection();     
+			
+
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				//查找指标类型和自愈值，按时间查询，如果时间为空，默认查离现在最近的
+				var unit:String = dept.text;
+				var time:String = start.text;
+				var rtReport1:RemoteObject = new RemoteObject("indexEvaluation");
+				rtReport1.showBusyCursor = true;
+				rtReport1.endpoint = ModelLocator.END_POINT;
+				rtReport1.addEventListener(ResultEvent.RESULT,getDataResult);
+				rtReport1.getIndexEvalNamelst(unit,time);
+			}
+
+			private function getDataResult(event:ResultEvent):void{
+				dataSet = new ArrayCollection();
+				var arr:ArrayCollection = event.result as ArrayCollection;
+				for(var i:int=0;i<arr.length;i++){
+					tmp_obj = new Object();
+					tmp_obj.seriesName= "指标值";
+					tmp_obj.label=(arr[i] as IndexEvaluation).name;
+					tmp_obj.value = (arr[i] as IndexEvaluation).self_healing_value; 
+					dataSet.addItem(tmp_obj);
+				}
+				fc.FCChartType=fc.FCChartType;
+				fc.FCData(dataSet);
+				fc.FCParams(initial_param());
+				fc.FCRender();
+				
+				//获取评估值
+				var unit:String = dept.text;
+				var time:String = start.text;
+				calculatetime = start.text;
+				var re:RemoteObject = new RemoteObject("indexEvaluation");
+				re.showBusyCursor = true;
+				re.endpoint = ModelLocator.END_POINT;
+				re.addEventListener(ResultEvent.RESULT,getIndexValueResult);
+				re.getIndexValueByTime(unit,time);
+			}
+			
+			private function initial_param():XML
+			{	var temp:String=""
+				temp="<param><data showvalues='0' yAxisName='指标值' baseFontSize='12' animation='1' slantLabels='1' caption='月度指标评估柱状图' showBorder='1' canvasBorderColor='3366FF,3366FF' canvasBorderThickness='2' canvasBgColor='FFFFFF,FFFFFF' bgColor='3366FF,FFFFFF' formatNumberScale='1' hoverCapSepChar=' '/></param>";
+				return XML(temp);
+			}
+			
+			private function getIndexValueResult(event:ResultEvent):void{
+				var str:Array = event.result.toString().split("=");
+				unit = str[0];
+				dept.text = str[0];
+				start.text=str[1];
+				if(str[2]==null||str[2]=="null"){
+					str[2]="未评估";
+				}
+				value = str[2];
+				var re:RemoteObject = new RemoteObject("indexEvaluation");
+				re.showBusyCursor = true;
+				re.endpoint = ModelLocator.END_POINT;
+				re.addEventListener(ResultEvent.RESULT,getDeptLstResult);
+				re.getDeptLst();
+			}
+			
+			private function getDeptLstResult(event:ResultEvent):void{
+				deptLst = new XMLList(event.result);
+				dept.dataProvider = deptLst;
+				dept.dropdown.dataProvider = deptLst;
+				dept.labelField="@label";
+				dept.text=unit;
+				dept.selectedIndex=-1;
+				
+			}
+			
+			private function reSet():void{
+				dept.selectedIndex=-1;
+				dept.text="";
+				start.text="";
+			}
+			
+			private function queryData():void{
+				var unit:String = dept.text;
+				var time:String = start.text;
+				var rtReport1:RemoteObject = new RemoteObject("indexEvaluation");
+				rtReport1.showBusyCursor = true;
+				rtReport1.endpoint = ModelLocator.END_POINT;
+				rtReport1.addEventListener(ResultEvent.RESULT,getDataResult);
+				rtReport1.getIndexEvalNamelst(unit,time);
+			}
+			
+			[Bindable]
+			private var chartData:Array = [
+				{name:"传输网A/B双面指标",value:1},
+				{name:"传输网配备ASON设备比率",value:2},
+				{name:"传输网是否每个厂家都配置了网管",value:3},
+				{name:"传输网是否配备MSTP板卡",value:4},
+				{name:"传输网(110kv及以上电压等级)站点成环率",value:5},
+				{name:"传输网220kV及以上站点独立通信双电源率",value:6},
+				{name:"传输网220kV及以上站点站内光缆独立双路由比例",value:7},
+				{name:"传输网N-1缺陷率",value:8},
+				{name:"传输网N-1缺陷设备数量",value:9},
+				{name:"传输网传输超大环比率",value:10},
+				{name:"传输网电源盘保护比率",value:11},
+				{name:"传输网交叉盘保护比例",value:12},
+				{name:"传输网是否有相切环",value:13},
+				{name:"传输网双通信方式站点数量",value:14},
+				{name:"传输网通信直流电源双重化率",value:15},
+				{name:"传输网通信直流电源双重化站点数量",value:16},
+				{name:"传输网站点双通信方式率",value:17},
+				{name:"调度交换网调度台是否支持延伸互备",value:18},
+				{name:"调度交换网是否采用VOIP",value:19},
+				{name:"调度交换网不满足N-1中继的数量比例",value:20},
+				{name:"调度交换网未配置主备板卡倒换的设备比例",value:21},
+				{name:"调度交换网是否具备A/B双平面",value:22},
+				{name:"调度交换网配备保护的汇聚层设备数量比",value:23},
+				{name:"调度交换网是否具备流量监测和安全认证",value:24},
+				{name:"调度交换网是否每个厂家都配置了网管",value:25},
+				{name:"调度交换网是否配置3个MPLS业务VPN",value:26},
+				{name:"光缆网110kv及以上电压等级成环率",value:27},
+				{name:"光缆网220kv及以上站点光缆N-2满足率",value:28},
+				{name:"光缆网调度机构光缆N-2满足率",value:29},
+				{name:"视频会议系统是否支持IP通道主备用",value:30},
+				{name:"视频会议系统未配置主备板卡倒换的设备比例",value:31},
+				{name:"视频会议系统是否配置冗余MCU",value:32},
+				{name:"视频会议系统是否配置冗余交换机",value:33},
+				{name:"视频会议系统重要会议室未配置双终端的设备比例",value:34},
+				{name:"行政交换网是否采用软交换",value:35},
+				{name:"行政交换网统一通信高级功能用户比例",value:36},
+				{name:"行政交换网不满足N-1中继的数量比例",value:37},
+				{name:"行政交换网是否配置IP双通道",value:38},
+				{name:"行政交换网未配置主备板卡倒换的设备比例",value:39},
+				{name:"综合数据网设备厂家数量",value:40},
+				{name:"综合数据网是否具备流量监测和安全认证",value:41},
+				{name:"综合数据网是否每个厂家都配置了网管",value:42},
+				{name:"综合数据网是否与网、省公司VPN划分一致",value:43},
+				{name:"检修计划准确率",value:44},
+				{name:"通信网检修计划完成率",value:45},
+				{name:"安全自动装置双通道率",value:46},
+				{name:"安稳业务通道双重化率",value:47},
+				{name:"双通道化安全自动装置数量",value:48},
+				{name:"调度电话业务双通道率",value:49},
+				{name:"自动化双通道化厂站数量",value:50},
+				{name:"自动化双通道率",value:51},
+				{name:"视频会议业务双通道率",value:52},
+				{name:"光纤化线路保护装置数量",value:53},
+				{name:"双通道化线路保护装置数量",value:54},
+				{name:"线路保护光纤化率",value:55},
+				{name:"线路保护双通道率",value:56},
+				{name:"线路保护通道应急通道保障率",value:57},
+				{name:"行政电话业务双通道率",value:58}];
+		]]>
+	</mx:Script>  
+	<mx:HBox width="100%" height="10%"  verticalAlign="middle">
+		<mx:HBox width="20%" height="100%" verticalAlign="middle">
+			<mx:Label text="单位" width="60" />
+			<mx:ComboBox id="dept" width="120" />
+		</mx:HBox>
+		<mx:HBox width="20%" height="100%" verticalAlign="middle">
+			<mx:Label text="时间从" width="60" />
+			<mx:DateField id="start" 
+						  width="120" 
+						  monthNames="{monthNames}" 
+						  yearNavigationEnabled="true" 
+						  formatString="YYYY-MM"/>
+		</mx:HBox>
+		
+		<mx:Spacer height="10"/>
+		
+		<mx:Button id="query" label="查询" width="80" click="queryData();" styleName="loginprimary"/>
+		<mx:Button id="closeBtn"
+				   label="清空"
+				   styleName="loginsecondary"
+				   width="80"
+				   click="reSet();"/>
+		<mx:Label text="{unit}{calculatetime}月月度指标评估值为：{value}"/>
+	</mx:HBox>
+	<mx:Panel title="传输网评估指标柱状图" width="1400" height="600">
+		<!--<mx:VBox width="1300" height="100%">
+		<mx:ColumnChart id="myChart" showDataTips="true" width="100%" height="55%">  
+			<mx:horizontalAxis>  
+				<mx:CategoryAxis displayName="指标序号" id="datetime_axis" 
+								   title="指标序号" dataProvider="{dataSet}"  
+								 categoryField="name"/>  
+			</mx:horizontalAxis>  
+			
+			<mx:horizontalAxisRenderers>  
+				<mx:AxisRenderer  
+					axis="{datetime_axis}"  
+					labelRotation="90"  
+					canDropLabels="false"  
+					canStagger="true">  
+				</mx:AxisRenderer>  
+			</mx:horizontalAxisRenderers>
+			
+			<mx:verticalAxis>  
+				<mx:LinearAxis title="指标值"  displayName="指标值" autoAdjust="true" />  
+			</mx:verticalAxis>  
+			<mx:series>  
+				<mx:ColumnSeries id="cs1" dataProvider="{dataSet}"  
+								 xField="name" yField="value"  
+								 displayName="指标值">
+					<mx:fill>
+						<mx:RadialGradient>
+							<mx:entries>
+								<mx:GradientEntry  color="#A1AECF"  />
+								<mx:GradientEntry color="#87CEEB" ratio="0"/>
+							</mx:entries>
+						</mx:RadialGradient>
+					</mx:fill>
+				</mx:ColumnSeries>
+			</mx:series>   			
+		</mx:ColumnChart> 
+		<mx:Label text="指标名称列表" height="5%"/>
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" dataProvider="{chartData}"
+			height="40%" verticalScrollPolicy="auto"
+			editable="false" name="指标名称列表" >
+			<mx:columns>
+				
+				<mx:DataGridColumn headerText="指标序号" sortable="false" dataField="value" width="50"/>
+				<mx:DataGridColumn headerText="指标名称" sortable="false" dataField="name"  width="250"/>
+			</mx:columns>
+		</mx:DataGrid>
+		</mx:VBox>-->
+		<ns2:FusionCharts id="fc" width="100%" height="100%" FCFolder="FusionCharts"  FCChartType="Column3D" creationComplete="init()" >
+		</ns2:FusionCharts>
+</mx:Panel>
+</mx:VBox>

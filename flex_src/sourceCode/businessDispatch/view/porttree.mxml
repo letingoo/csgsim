@@ -1,0 +1,284 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="端口" label="端口选择树" creationComplete="init();initEvent();" width="400" height="400"  layout="horizontal" xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.TextInput;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.channelRoute.model.Circuit;
+			import sourceCode.packGraph.views.checkedEquipPack;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			
+			public var equipcode:String;
+			public var rate:String;
+			[Bindable]private var XMLData:XMLList;
+			private var selectedNode:XML; 
+			private var curIndex:int;
+			private var catalogsid:String;
+			private var type:String;
+			private var labeltext:String;
+			private var tree_node:String;
+			public var equipment:selectEquipment;
+			public var e_node:Node;
+			
+			private var startFo:Follower;
+			private var endFo:Follower;
+			
+			private function init():void{
+				porttreeRemote.getPort(equipcode,'','YW010201','','','root');
+			}
+			
+			private function close():void  {  
+				PopUpManager.removePopUp(this);  
+			}
+			
+			private function resultHandler(event:ResultEvent):void {
+				XMLData = new XMLList(event.result.toString());
+				ptree.dataProvider = XMLData;
+			}
+			
+			// 错误处理
+			public function DealFault(event:FaultEvent):void {
+				Alert.show(event.fault.toString());
+			}
+			
+			private function tree_itemClick(evt:ListEvent):void {
+				var item:Object = Tree(evt.currentTarget).selectedItem;
+				if (ptree.dataDescriptor.isBranch(item)) {
+					ptree.expandItem(item, !ptree.isItemOpen(item), true);
+				}
+			}
+			
+			private function treeChange():void{ 		
+				ptree.selectedIndex = curIndex;
+				selectedNode = ptree.selectedItem as XML;
+				if(selectedNode.@leaf==false&&(selectedNode.children()==null||selectedNode.children().length()==0))
+				{
+					catalogsid = selectedNode.attribute("id"); 
+					type=selectedNode.attribute("tree");
+					labeltext=selectedNode.attribute("label");
+					dispatchEvent(new Event(EventNames.CATALOGROW));
+				}
+			}
+			
+			private function initEvent():void{  
+				addEventListener(EventNames.CATALOGROW,gettree);
+			}	
+			
+			private function gettree(e:Event):void{ 
+				removeEventListener(EventNames.CATALOGROW,gettree);
+				var ptTreeRO:RemoteObject = new RemoteObject("channelTree");
+				ptTreeRO.endpoint = ModelLocator.END_POINT;
+				ptTreeRO.showBusyCursor =true;
+				ptTreeRO.getPort(equipcode,label,'YW010201','',catalogsid,type);
+				ptTreeRO.addEventListener(ResultEvent.RESULT,getNextTreeNode);
+				ptTreeRO.addEventListener(FaultEvent.FAULT,DealFault);
+			} 
+			
+			private function getNextTreeNode(e:ResultEvent){
+				var str:String = e.result as String;  
+				if(str!=null&&str!="")
+				{  
+					var child:XMLList= new XMLList(str);
+					if(selectedNode.children()==null||selectedNode.children().length()==0)
+					{ 									 
+						selectedNode.appendChild(child);
+						ptree.callLater(openTreeNode,[selectedNode]);
+					}
+				}
+				addEventListener(EventNames.CATALOGROW,gettree);
+			}
+			
+			private function openTreeNode(xml:XML):void{
+				if(ptree.isItemOpen(xml))
+					ptree.expandItem(xml,false);
+				ptree.expandItem(xml,true);
+			}
+			
+			private function selectPort(e:Event):void{
+				var node:XML = ptree.selectedItem as XML;
+				if(node!=null){
+					var aa:String = node.@label;
+					if(aa.indexOf('(预占用)')!=-1){
+						Alert.show("该端口已被预占用，请重新选择端口！","温馨提示");
+					}else if(aa.indexOf('(占用)')!=-1){
+						Alert.show("该端口已被占用，请重新选择端口！","温馨提示");
+					}else{
+						if(node!=null&&node.@leaf!=null&&node.@leaf=='true'){
+							if(e_node.followers!=null){
+								for(var i:int = 0; i < e_node.followers.count; i++){
+									var f:Follower = e_node.followers.getItemAt(i) as Follower;
+									if(StringUtil.trim(f.getClient("portcode")) != "" && StringUtil.trim(f.getClient("flag")) == "port"){
+										equipment.circuitPic.elementBox.remove(e_node.followers.getItemAt(i));
+										break;
+									}
+								}
+							}
+							var follow:Follower = new Follower();
+							follow.setCenterLocation(node.centerLocation.x-40,node.centerLocation.y+7);
+							if(e_node.getClient("isStart")!=null&&e_node.getClient("isStart")=='1'){
+								startFo = follow;
+								follow.setCenterLocation(e_node.centerLocation.x-39,e_node.centerLocation.y+7);
+								follow.image='Port';
+								follow.setStyle(Styles.LABEL_POSITION,Consts.POSITION_LEFT_LEFT);
+							}
+							if(e_node.getClient("isEnd")!=null&&e_node.getClient("isEnd")=='1'){
+								endFo = follow;
+								follow.setCenterLocation(e_node.centerLocation.x+55,e_node.centerLocation.y+7);
+								follow.setStyle(Styles.LABEL_POSITION,Consts.POSITION_RIGHT_RIGHT);
+								follow.image='Portright';
+							}
+							follow.setSize(12,12);
+							follow.parent = e_node;
+							follow.host = e_node;
+							var label:String = node.@label;
+							if(node.hasOwnProperty("@portcode")&&node.@portcode!=null&&node.@portcode!=""){
+								label =  node.@label; 
+								follow.name =label;
+								follow.setClient("portcode",node.@portcode);
+							}else{
+								var parent_node:XML  = node.parent();
+								label = parent_node.@label+"-"+label;
+								if(parent_node.hasOwnProperty("@portcode")&&parent_node.@portcode!=null&&parent_node.@portcode!=""){
+									follow.name =label;
+									follow.setClient("portcode",parent_node.@portcode);
+								}else{
+									var parent_parent_node:XML = parent_node.parent();
+									label = parent_parent_node.@label+"-"+label;
+									if(parent_parent_node.hasOwnProperty("@portcode")&&parent_parent_node.@portcode!=null&&parent_parent_node.@portcode!=""){
+										follow.name =label;
+										follow.setClient("portcode",parent_parent_node.@portcode);
+									}
+								}
+							}
+							follow.setClient("timeslot",node.@timeslot);
+							follow.setClient("tsrate",node.@tsrate);
+							follow.setClient("flag","port");
+							equipment.circuitPic.elementBox.add(follow);
+							
+							var ro:RemoteObject = new RemoteObject("wireConfiguration");
+							ro.endpoint = ModelLocator.END_POINT;
+							ro.showBusyCursor =true;
+							ro.addEventListener(ResultEvent.RESULT,getDDFPortHandler);
+							ro.addEventListener(FaultEvent.FAULT,DealFault);
+							ro.getPortInfo(String(node.@portcode));
+						}
+					}
+				}
+			}
+			
+			private function getDDFPortHandler(event:ResultEvent):void{
+				var ac:ArrayCollection = event.result as ArrayCollection;
+				if(ac.length > 0){
+					var node:Node = new Node();
+					node.image = "twaverImages/businessDispatch/DDF.png";
+					node.name = ac[0].DDMNAME;
+					node.setStyle(Styles.LABEL_POSITION,Consts.POSITION_TOP_TOP);
+					var fo:Follower = new Follower();
+					fo.name = ac[0].PORTSERIAL;
+					fo.host = node;
+					fo.setStyle(Styles.LABEL_POSITION,Consts.POSITION_LEFT_LEFT);
+					equipment.circuitPic.elementBox.add(node);
+					equipment.circuitPic.elementBox.add(fo);
+					if(e_node.getClient("isStart") != null && e_node.getClient("isStart") == '1'){
+						removeDDF("DDF_S");
+						fo.image = "Portright";
+						fo.setLocation(node.x+55,node.y+45);
+						fo.setSize(12,14);
+						fo.setClient("portCode",ac[0].DDFPORTCODE);
+						fo.setClient("porttype",ac[0].PORTTYPE);
+						fo.setClient("dmcode",ac[0].DDFDDMCODE);
+						node.setLocation(e_node.x - 200,e_node.y-20);
+						node.setClient("flag","DDF_S");
+						fo.setClient("flag","DDF_S");
+						if(startFo)
+							createLink(fo as Node,startFo as Node);
+					}else if(e_node.getClient("isEnd") != null && e_node.getClient("isEnd") == '1'){
+						removeDDF("DDF_E");
+						fo.image = "Port";
+						fo.setLocation(node.x,node.y+45);
+						fo.setSize(12,14);
+						fo.setClient("portCode",ac[0].DDFPORTCODE);
+						fo.setClient("porttype",ac[0].PORTTYPE);
+						fo.setClient("dmcode",ac[0].DDFDDMCODE);
+						node.setLocation(e_node.x + 200,e_node.y-20);
+						node.setClient("flag","DDF_E");
+						fo.setClient("flag","DDF_E");
+						if(endFo)
+							createLink(fo as Node,endFo as Node);
+					}
+				}else{
+					if(e_node.getClient("isStart") != null && e_node.getClient("isStart") == '1')
+						removeDDF("DDF_S");
+					else if(e_node.getClient("isEnd") != null && e_node.getClient("isEnd") == '1')
+						removeDDF("DDF_E");
+				}
+				this.close();
+			}
+			
+			private function createLink(startNode:Node,endNode:Node):void{
+				var link:Link = new Link(startNode,endNode);
+				link.setStyle(Styles.LINK_COLOR, 0x005e9b);
+				link.setStyle(Styles.ARROW_TO_COLOR, 0x005e9b);
+				link.setStyle(Styles.LINK_TYPE, Consts.LINK_TYPE_PARALLEL);
+				link.setStyle(Styles.LINK_BUNDLE_OFFSET, 0);
+				link.setStyle(Styles.LINK_BUNDLE_GAP, 0);
+				link.setClient("flag","DDFLINK");
+				equipment.circuitPic.elementBox.add(link);
+			}
+			
+			private function removeDDF(flag:String):void{
+				for(var i:int=0;i < equipment.circuitPic.elementBox.count;i++){
+					var element:IElement = equipment.circuitPic.elementBox.datas.getItemAt(i);
+					if(element is Node || element is Follower){
+						if(element.getClient("flag") == flag){
+							equipment.circuitPic.elementBox.remove(element);
+						}
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:RemoteObject id="porttreeRemote" destination="channelTree" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" result="resultHandler(event)">
+	</mx:RemoteObject>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:Tree id="ptree" width="100%" height="100%" labelField="@label" 
+				 dataProvider="{XMLData}" 
+				 dragEnabled="true" 
+				 doubleClickEnabled="true"
+				 doubleClick="selectPort(event)"
+				 change="treeChange()" 
+				 itemClick="tree_itemClick(event)" 
+				 itemOpen="treeChange()"
+				 itemRollOver="curIndex = event.rowIndex"
+				 >
+		</mx:Tree>
+	</mx:VBox>
+</mx:TitleWindow>  

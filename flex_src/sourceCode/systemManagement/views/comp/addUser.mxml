@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:comp="sourceCode.systemManagement.views.comp.*" width="100%" height="100%"				>
+	<mx:Style source="assets/css/userStyle.css"/>
+	<mx:Script source="../../actionscript/comp/addUser.as"/>  
+	<mx:Canvas id="editUser" width="100%" height="242" x="15" y="10">
+		<mx:Label styleName="label" text="用户名："  y="28" x="36"/> 
+		<mx:TextInput id="user_id" width="235" x="93" y="28" editable="{checkdo}" />  
+		<mx:Label styleName="label" text="真实姓名：" y="28" x="389" />  
+		<mx:TextInput id="user_name" x="453" y="28" width="235" />
+		<mx:Label styleName="label" x="24" y="58" text="登录密码："/>
+		<mx:TextInput id="user_pwd" x="93" y="56" width="235" displayAsPassword="true"  maxChars="6" restrict="a-zA-Z0-9"/>  
+		<mx:RadioButtonGroup id="user_sex"/>
+		<mx:Label styleName="label" x="413" y="58" text="性别：" height="21"/>
+		<mx:RadioButton x="454" y="58" label="男" value="M" groupName="user_sex" selected="true"/>
+		<mx:RadioButton x="497" y="58" label="女"  value="F"  groupName="user_sex"/>
+		<mx:Label styleName="label" x="48" y="88" text="生日：" height="21"/>
+		<mx:DateField yearNavigationEnabled="true" dayNames="['日','一','二','三','四','五','六']" 
+			monthNames="['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']"
+			fontSize="12" x="93" y="88" width="235" id="birthday" showToday="true" formatString="YYYY-MM-DD" />
+		<mx:Label styleName="label" text="所属单位："  y="88" x="389" height="21"/>  
+		<mx:TextInput id="user_dept" x="454" y="88" width="235" click="dbClickDept(event)" editable="false"/>
+		<mx:Label styleName="label" text="职位："  y="118" x="48"/>  
+		<mx:TextInput id="user_post" width="235" x="93" y="118"/>  
+		<mx:Label styleName="label" text="学历："  y="118" x="412" height="21"/>  
+		<mx:TextInput id="education" x="454" y="118" width="235" />
+		<mx:Label styleName="label" text="固定电话："  y="148" x="24"/>  
+		<mx:TextInput id="telephone" width="235" x="93" y="148"/>  
+		<mx:Label styleName="label" text="移动电话："  y="148" x="389" height="21" />  
+		<mx:TextInput id="mobile" x="454" y="148" width="235" />
+		<mx:Label styleName="label" text="Email："  y="178" x="39"/> 
+		<mx:TextInput id="email" width="235" x="93" y="178"/>  
+		<mx:Label styleName="label" text="通讯地址："  y="178" x="389" height="21"/>  
+		<mx:TextInput id="address" x="454" y="178" width="235"/>
+		<mx:Button label="保存" click="user_save(doType)" x="104" y="207" /> 
+		<mx:Button label="取消" click="close()" x="185" y="207" />
+		<mx:TextInput id="do_Type" x="253" y="214"  width="31" visible="false"/>
+		<mx:Label styleName="label" text="用户基本信息"  y="3" x="12" width="84" height="21" fontWeight="bold"/>
+		<mx:HRule x="91" y="10" width="600" height="5"/>
+	</mx:Canvas>
+	<mx:Canvas y="267" x="15" height="138" width="100%">
+		<mx:Canvas width="642" height="107.6" x="53" y="26" 
+				   backgroundSize="100%" borderStyle="solid" borderColor="#AAD9FA">
+			<mx:Label styleName="label" text="用户拥有的角色：" y="8" x="52"/>
+			<mx:Button label="配置" click="rights_save()" x="52" y="72.6" enabled="{!checkdo}" width="70"/>
+			<mx:Label id="limitInfos" text="{roleInformations}" y="28" x="52" width="580" height="40"/>
+		</mx:Canvas>
+		
+		<mx:Label styleName="label" text="权限配置"  y="1" x="34" width="58" height="21" fontWeight="bold"/>
+		<mx:HRule x="90" y="10" width="600" height="3"/>
+	</mx:Canvas>
+	<mx:Canvas y="381" x="15" height="181" width="100%">
+		<mx:Canvas width="642" height="141" x="53" y="30" borderStyle="solid" borderColor="#AAD9FA">
+			<mx:Label styleName="label" text="用户已配置单位" y="5" x="51" width="110" height="21"/>
+			<mx:TextArea id="departInfo" text="{departMentInfo}" y="28" x="53" width="579" height="70" 
+						 borderStyle="none" backgroundColor="white" editable="false"/>
+			<mx:Button label="配置" click="saveToConfigOperate()" x="53" y="104" enabled="{!checkdo}" width="70"/>
+		</mx:Canvas>
+		<mx:Label styleName="label" text="单位配置"  y="0" x="35" width="58" height="21" fontWeight="bold"/>
+		<mx:HRule x="91" y="9" width="600" height="3"/>
+	</mx:Canvas>
+</mx:VBox>  

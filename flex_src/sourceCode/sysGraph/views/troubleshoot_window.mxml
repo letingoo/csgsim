@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				xmlns:fx="http://ns.adobe.com/mxml/2009"   
+				xmlns:s="library://ns.adobe.com/flex/spark"   
+				layout="absolute" 
+				fontFamily="宋体" 
+				fontSize="12" 
+				showCloseButton="true" 
+				width="1500" 
+				height="800"
+				creationComplete="init()"
+				close="{MyPopupManager.removePopUp(this)}" 
+				
+				>
+	<mx:Script source="../actionscript/Troubleshoot_Window.as" />
+
+	
+	
+	
+	<mx:VBox 
+		xmlns:fx="http://ns.adobe.com/mxml/2009"   
+		width="100%" 
+		height="100%" 
+		paddingTop="0" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		horizontalAlign="center" verticalGap="0">	
+		
+		<mx:HBox id="header" width="100%" height="5%" paddingLeft="10"  paddingTop="10" paddingRight="10" visible="true" horizontalAlign="left">
+			<mx:FormItem label="设备检修后，以下业务路由发生了改变：" />
+		</mx:HBox>
+		
+		<mx:HBox id="estimate_comp" width="100%" height="5%" horizontalGap="0"    paddingTop="10"  visible="true" horizontalAlign="center">
+			<mx:DataGrid id="specold"
+						 textAlign="center"
+						 verticalAlign="center"
+						 width="50%"
+						 rowCount="20"
+						 dataProvider="{spec_old}"
+						 >
+				<mx:columns>
+					<mx:DataGridColumn headerText="业务路由id" dataField="name" width="100" sortable="false" />
+					<mx:DataGridColumn headerText="检修前主用路由" dataField="main" width="100"  sortable="false" />
+					<mx:DataGridColumn headerText="检修前备用路由" dataField="sub1" width="100"  sortable="false" />
+					<mx:DataGridColumn headerText="检修前迂回路由" dataField="sub2" width="100"  sortable="false" />
+					<mx:DataGridColumn headerText="检修前风险值" dataField="pri" width="100"  sortable="false" />
+				</mx:columns>
+			</mx:DataGrid>
+			
+			<mx:DataGrid id="specnew"
+						 textAlign="center"
+						 verticalAlign="center"
+						 width="50%"
+						 rowCount="20"
+						 dataProvider="{spec_new}"
+						 >
+				<mx:columns>
+					<mx:DataGridColumn headerText="业务路由id" dataField="name" width="100" sortable="false" />
+					<mx:DataGridColumn headerText="检修后主用路由" dataField="main" width="100"  sortable="false" />
+					<mx:DataGridColumn headerText="检修后备用路由" dataField="sub1" width="100"  sortable="false" />
+					<mx:DataGridColumn headerText="检修后迂回路由" dataField="sub2" width="100"  sortable="false" />
+					<mx:DataGridColumn headerText="检修后风险值" dataField="pri" width="100"  sortable="false" />
+				</mx:columns>
+			</mx:DataGrid>
+
+		</mx:HBox>
+		
+		
+		<mx:HBox id="check_comp" width="100%" height="5%" paddingTop="50" visible="true">
+			<mx:DataGrid id="risk_report"
+						 dataProvider="{risk_report_list}"
+						 verticalAlign="center" textAlign="center"
+						 width="100%"
+						 variableRowHeight="true" wordWrap="true"
+						 rowCount="6"
+						 >
+				<mx:columns>
+					<mx:DataGridColumn headerText="风险业务列表" dataField="name" width="100" />
+					<mx:DataGridColumn headerText="不可检修点" dataField="eq_list" width="300"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+
+
+		
+		
+		<mx:HBox id="estimate_comp2" width="100%" height="5%" visible="true" horizontalAlign="center">
+			<mx:DataGrid id="risk_modification"
+						 verticalAlign="center"
+						 textAlign="center"
+						 width="100%"
+						 rowCount="1"
+						 >
+				<mx:columns>
+					<mx:DataGridColumn headerText="检修前总风险值" dataField="col1" width="2000" />
+					<mx:DataGridColumn headerText="检修后总风险值" dataField="col2" width="2000"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+
+		<mx:HBox width="100%" height="5%" paddingLeft="10"  paddingTop="10" paddingRight="10" visible="true">
+			<mx:Button label="确定" click="{MyPopupManager.removePopUp(this)}" />
+		</mx:HBox>
+		
+		
+		
+	</mx:VBox>
+
+	
+</mx:TitleWindow>

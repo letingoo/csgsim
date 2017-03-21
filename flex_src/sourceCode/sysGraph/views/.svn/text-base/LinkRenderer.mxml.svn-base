@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml"
+		
+		 verticalScrollPolicy="off"
+		 horizontalScrollPolicy="off"
+		 paddingLeft="4"
+		 paddingRight="4"
+		 paddingTop="4"
+		 paddingBottom="4"
+		 borderStyle="solid" borderColor="#848484" cornerRadius="6"
+		 rollOver="rollOverHandler()" rollOut="rollOutHandler()" implements="mx.core.IFactory" >
+	<mx:Script>
+		<![CDATA[
+			import flash.geom.*;
+			
+			import twaver.*;
+			
+			private var shapeType:String;
+
+			private function rollOverHandler():void
+			{
+				var glow:GlowFilter=new GlowFilter();
+				glow.color = 0x009DFF;
+				this.filters = [glow]
+			}
+			private function rollOutHandler():void
+			{
+				this.filters = []
+			}
+			
+			override protected function commitProperties():void {
+				super.commitProperties();
+				var tileItem:ActionTile=this.data as ActionTile;
+				shapeType=tileItem.shapeType;
+				if(shapeType){
+					graphics.clear();
+					graphics.beginFill(Styles.getStyle(Styles.VECTOR_FILL_COLOR) as uint);
+					if(shapeType){
+						Utils.drawShape(graphics,shapeType,5,5,width-10,height-10);
+					}
+					graphics.endFill();
+				}
+				this.toolTip=tileItem.label;
+				if(tileItem.imageName){
+					image.source=new Bitmap(Utils.getImageAsset(tileItem.imageName).getBitmapData());
+				}
+			}
+			
+			public function newInstance():*{
+				return new EquipModelRenderer();
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Image id="image" width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" >
+	</mx:Image>
+</mx:Box>

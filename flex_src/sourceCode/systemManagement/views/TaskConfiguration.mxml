@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100%" 
+		 creationComplete="init()" 
+		 xmlns:component="common.component.*">
+	<mx:Script source="../actionscript/TaskConfiguration.as"/>
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off">
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="任务配置" imgName="task"
+							  showAddButton="true" showEditButton="true" showDelButton="true" 
+							  controlAdd="addTask(event)" controlEdit="editTask(event)" 
+							  controlDel="delTask(event)" controlSearch="searchTask(event)"/>
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true"
+			contextMenu="{cm}" 
+			itemRollOver="{lastRollOverIndex = event.rowIndex}">
+			
+			<mx:columns>
+				<mx:DataGridColumn headerText="序号" 
+								   dataField="serialNO" 
+								   width="50"
+								   itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+				<!--<mx:DataGridColumn headerText="序号" dataField="no" width="50"/>-->
+				<mx:DataGridColumn headerText="任务名称" dataField="task_name" width="135"/>
+				<mx:DataGridColumn headerText="任务类型" dataField="task_type"  width="135"/>
+				<mx:DataGridColumn headerText="任务开始时间" dataField="starttime" width="135"/>
+				<mx:DataGridColumn headerText="任务周期(分钟)" dataField="task_period"  width="135"/>
+				<mx:DataGridColumn headerText="任务是否有效" dataField="isactivated"  width="135"/>
+				<mx:DataGridColumn headerText="启动适配器" dataField="performer"  width="135"/>
+				<mx:DataGridColumn headerText="关联资源ID" dataField="sourceid" visible="false" />
+				<mx:DataGridColumn headerText="关联资源" dataField="sourcename" visible="false" />
+			</mx:columns>
+			
+		</mx:DataGrid>
+		
+		<component:pagetoolbar
+			id="serverPagingBar" 
+			width="100%"/>
+		
+	</mx:VBox>
+	
+	
+</mx:VBox>

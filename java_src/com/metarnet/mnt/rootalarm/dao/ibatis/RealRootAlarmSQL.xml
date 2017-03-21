@@ -1,0 +1,698 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="realRootAlarm">
+
+	<!--   判断是否确认过根告警  -->
+
+
+	<select id="ackTimeIs" resultClass="int" parameterClass="java.util.HashMap">
+
+
+
+		select
+		decode(a.acktime,null,0,1) ackstatus from alarminfo a where
+		alarmnumber='$alarmnumber$'
+ 		
+ 		
+	</select>
+
+
+	<!--   确认选中根告警【未确认过】  -->
+	<update id="ackingRealRootAlarm" parameterClass="java.util.Map">
+
+		update alarminfo
+		set acktime = sysdate,
+		ackperson = '$ackperson$',
+		ackcontent =
+		'$ackcontent$',
+		dealresult = '$dealresult$',
+		isworkcase = '$isworkcase$'
+		where alarmnumber in (select alarmnumber
+		from alarminfo a
+		where
+		alarmnumber in (#alarmnumber#)
+		and trim(a.acktime) is null
+		union
+		select
+		alarmnumber
+		from alarminfo b
+		where alarmnumber in
+		(select alm_company
+		from alarm_affection
+		where alm_number in (#alarmnumber#))
+		and
+		trim(b.acktime) is null)
+
+    	 
+	</update>
+
+	<!--   确认选中根告警【已确认过】  -->
+	<update id="ackedRealRootAlarm" parameterClass="java.util.Map">
+
+		update alarminfo
+		ackcontent = '$ackcontent$',
+		dealresult = '$dealresult$',
+		isworkcase =
+		'$isworkcase$'
+		where alarmnumber in (select alarmnumber
+		from alarminfo a
+		where alarmnumber in (#alarmnumber#)
+		and trim(a.acktime) is not null
+		union
+		select alarmnumber
+		from alarminfo b
+		where alarmnumber in
+		(select
+		alm_company
+		from alarm_affection
+		where alm_number in (#alarmnumber#))
+		and trim(b.acktime) is not null)
+    	 
+	</update>
+
+	<insert id="writeRealRootAlarmLog" parameterClass="java.util.HashMap">
+
+		insert into
+		dealalarmlog
+		select seqnamedealalarmlog.nextval,
+		alarmnumber,
+		'编辑确认告警信息'
+		dealtype,
+		#dealinfo#,
+		#ackperson#,
+		sysdate,
+		'' remark
+		from (select
+		alarmnumber
+		from alarminfo a
+		where alarmnumber in (#alarmnumber#)
+		union
+		select alarmnumber
+		from alarminfo b
+		where alarmnumber in
+		(select
+		alm_company
+		from alarm_affection
+		where alm_number in (#alarmnumber#))
+		)
+
+
+	</insert>
+
+
+
+
+	<!--更新当前根告警为普通告警  -->
+	<update id="changeCurrentRealRootAlarmToCommonAlarm"
+		parameterClass="java.lang.String">
+
+		update alarminfo a
+		set a.belongsubshelf = '0'
+		where
+		a.alarmnumber='$alarmid$' and belongsubshelf='1'
+    	 
+	</update>
+	<!--将根告警对应的伴随报警清除-->
+	<delete id="deleteCurrentRealRootAlarmToCommonAlarm"
+		parameterClass="java.lang.String">
+
+		delete from alarm_affection where alm_number=#alarmid#
+
+	</delete>
+
+
+	<!--将当前告警和选择的主要告警关联信息插入到alarm_affection  -->
+	<insert id="insertAlarm_affection" parameterClass="java.util.Map">
+
+		insert into
+		alarm_affection(alm_number,alm_company,log_time,op_account)
+		values(#alm_number#,#alm_company#,sysdate,#operPerson#)
+	     
+	</insert>
+	<select id="selectAlarm_affection" resultClass="int"
+		parameterClass="java.util.HashMap">
+
+		select count(*) from alarm_affection where
+		alm_number=#alm_number# and
+		alm_company=#alm_company#
+    	 
+	</select>
+
+	<!--更新当前根告警转为检修流程处理  -->
+	<update id="changeCurrentRealRootAlarmToRepairAlarm"
+		parameterClass="java.util.HashMap">
+
+		update alarminfo a
+		set a.dealresult =
+		#dealresult#,a.isworkcase=#isworkcase#,a.ackperson=#operPerson# where
+		a.alarmnumber=#alarmnumber#
+    	 
+	</update>
+
+	<select id="getRepairs" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+
+		select * from (select rownum rn,
+		v.id,v.repairid,v.repairobj,v.repairtime,v.repairstatus,v.repairperson
+		from v_mnt_repair_from_mis v)
+		vv where vv.rn between #start# and #end#
+
+	</select>
+
+
+	<select id="getRepairsCount" resultClass="int">
+		select count(*) from
+		v_mnt_repair_from_mis
+	    	 
+	</select>
+
+	<select id="getequipnameRealRootAlarm" resultClass="String"
+		parameterClass="String">
+
+		select t.equipname from equipment t where t.equipcode =
+		#equipcode#
+    	 
+	</select>
+
+
+	<select id="alarmEXPVendor" resultClass="java.util.HashMap">
+		select xtbm vendor,xtxx
+		vendorzh from xtbm a where a.xtbm like 'ZY08__'
+	</select>
+
+
+	<select id="getAlarmEXPCount" resultClass="int" parameterClass="java.util.HashMap">
+		select count(a.expid) cnt from v_expert_cs_alarmexperiece a
+		<dynamic prepend="where">
+			<isNotEmpty prepend="and" property="vendorcode">
+				vendor='$vendorcode$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="aldesc">
+				upper(alarmcause) like
+				upper('%$aldesc$%')
+			</isNotEmpty>
+		</dynamic>
+
+	</select>
+
+
+	<select id="getAlarmsEXP" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select * from (select rownum rid,expid,vendor,alarmcause,alarmdesc,
+		alarmlevelzh,vendorzh, localdesc,analyse, experience from
+		v_expert_cs_alarmexperiece
+		<dynamic prepend="where">
+			<isNotEmpty prepend="and" property="vendorcode">
+				vendor='$vendorcode$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="aldesc">
+				upper(alarmcause) like
+				upper('%$aldesc$%')
+			</isNotEmpty>
+
+		</dynamic>
+		)
+		where rid between #start# and #end#
+	</select>
+
+
+	<select id="getAlarmCause" resultClass="java.util.HashMap">
+		select x.xtbm,x.xtxx from
+		xtbm x where x.xtbm like 'ALD02__'
+	</select>
+
+	<select id="getDealResult" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select x.xtbm,x.xtxx from xtbm x where x.xtbm like
+		'$dealwith$'
+	</select>
+
+	<select id="getCompanyAlarm" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select * from (select rownum rid,
+		alm_number,VENDORZH,ALARMLEVELNAME,FIRSTSTARTTIME,ALARMDESC,ALARMOBJECT,CARRYCIRCUIT,OBJCLASSZH,BELONGTRANSYS,
+		ISROOTALARMZH,ISACKEDZH,ACKPERSON,ACKTIME,ACKCONTENT,
+		FLASHCOUNT,TRIGGEREDTHRESHOLD
+		from v_companyalarm v where
+		v.alm_number=#alarmNum#) where rid between
+		#start# and #end#
+	</select>
+
+	<select id="getCompanyAlarmCount" resultClass="int"
+		parameterClass="java.util.HashMap">
+		select count(*) from v_companyalarm v where
+		alm_number=#alarmNum#
+	</select>
+
+	<select id="getCurrentRootAlarm" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		<![CDATA[
+		select * from(
+		select rownum
+		rn,ALARMNUMBER,VENDORZH,ALARMLEVELNAME,FIRSTSTARTTIME,ALARMDESC,ALARMOBJECT,CARRYCIRCUIT,OBJCLASSZH,BELONGTRANSYS,
+		ISROOTALARMZH,ISACKEDZH,ACKPERSON,ACKTIME,ACKCONTENT,ALARMOBJDESC,
+		FLASHCOUNT,TRIGGEREDTHRESHOLD from v_alarminfonew v where
+		v.iscleared='0' and v.isrootalarm='1'
+		and v.firststarttime >= (select firststarttime - interval '1' hour from
+		v_alarminfonew where alarmnumber = #alarmno# )
+		and v.firststarttime <= (select firststarttime from v_alarminfonew where
+		alarmnumber = #alarmno# )
+		)vv where vv.rn between #start# and #end#	
+ 		
+ 		]]>
+	</select>
+
+	<select id="getCurrentRootAlarmCount" resultClass="int"
+		parameterClass="java.util.HashMap">
+		<![CDATA[
+		select count(*) from v_alarminfonew v where v.iscleared='0' and
+		v.isrootalarm='1'
+		and v.firststarttime >= (select firststarttime - interval '1' hour from
+		v_alarminfonew where alarmnumber = #alarmno# )
+		and v.firststarttime <= (select firststarttime from v_alarminfonew where
+		alarmnumber = #alarmno# )
+ 		]]>
+
+	</select>
+
+	<select id="getsHisAlarm" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+
+		select v.probablecause,v.objectcode from v_alarminfonew v
+
+		<dynamic prepend="where">
+
+			<isNotEmpty property="alarmnum" prepend="AND">
+				v.alarmnumber=#alarmnum#
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<select id="getsHisRootAlarm" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+
+		select * from (
+		select rownum
+		rn,v.objclasszh,v.alarmnumber,v.ackperson,v.carrycircuit,v.specialtyzh,v.flashcount,v.triggeredthreshold,v.isworkcase,v.isworkcasezh,v.belongpackobject,
+		v.bugno,v.isbugno,v.dutyid,v.dealperson,v.dealpart,v.run_unit,v.belongtransys,v.alarmlevel,v.vendor,v.iscleared,v.dealresult,v.companyalarmcnt,
+		v.alarmobjdesc,v.laststarttime,v.isacked,v.isackedzh,v.acktime,v.alarmlevelname,v.belongportobject,v.vendorzh,v.alarmdesc,v.ackcontent,v.belongequip,
+		v.belongframe,v.belongslot,v.belongport,v.belongportcode,v.username,v.dealresultzh
+		from v_rootalarm_all v where v.iscleared='1'
+		<dynamic prepend="AND">
+
+			<isNotEmpty property="probablecause" prepend="AND">
+				v.probablecause=#probablecause#
+			</isNotEmpty>
+
+			<isNotEmpty property="probablecause" prepend="AND">
+				v.objectcode=#objectcode#
+			</isNotEmpty>
+
+			<isNotEmpty property="belongtransys" prepend="AND">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmobjdesc">
+				v.alarmobjdesc like
+				'%$alarmobjdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty property="dealresult" prepend="AND">
+				v.dealresult=#dealresult#
+			</isNotEmpty>
+			<isNotEmpty property="belongequip" prepend="AND">
+				v.belongequip='$belongequip$'
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject='$belongpackobject$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject='$belongportobject$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode='$belongportcode$'
+			</isNotEmpty>
+
+		</dynamic>
+
+		order by v.acktime desc,v.laststarttime desc
+		) vv where vv.rn between
+		#start# and #end#
+
+
+	</select>
+
+
+	<select id="getsHisRootAlarmCount" resultClass="int"
+		parameterClass="java.util.HashMap">
+
+		select count(*) from v_rootalarm_all v where v.iscleared='1'
+
+		<dynamic prepend="AND">
+
+			<isNotEmpty property="probablecause" prepend="AND">
+				v.probablecause=#probablecause#
+			</isNotEmpty>
+
+			<isNotEmpty property="probablecause" prepend="AND">
+				v.objectcode=#objectcode#
+			</isNotEmpty>
+
+			<isNotEmpty property="belongtransys" prepend="AND">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmobjdesc">
+				v.alarmobjdesc like
+				'%$alarmobjdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty property="dealresult" prepend="AND">
+				v.dealresult=#dealresult#
+			</isNotEmpty>
+			<isNotEmpty property="belongequip" prepend="AND">
+				v.belongequip='$belongequip$'
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject='$belongpackobject$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject='$belongportobject$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode='$belongportcode$'
+			</isNotEmpty>
+		</dynamic>
+
+	</select>
+
+
+	<select id="getAffectCircuit" resultClass="java.util.HashMap"
+		parameterClass="com.metarnet.mnt.rootalarm.model.PoUpKeyBussinessModel">
+		select * from (select rownum rn, t.circuitcode CIRCUITCODE, 
+			 decode(a.alarmlevel,
+              'critical',
+              '紧急告警',
+              'major',
+              '主要告警',
+              '次要告警'
+              ) ALARMLEVELNAME,
+           getportlabelbycode(t.tp_id_a) PORTSERIALNO1,
+           getportlabelbycode(t.tp_id_z) PORTSERIALNO2,
+            t.real_rate RATE,
+            tt.username USERNAME,
+            tt.x_purpose CIRCUITTYPE,
+            tt.usetime USETIME
+			from 
+			circuit_cc t,circuit tt,alarminfo a where t.equipcode=a.belongequip and tt.circuitcode = t.circuitcode AND a.alarmnumber = #alarmnumber#) vv
+			where vv.rn between #start# and #end#
+
+<!--		select *-->
+<!--		from (select rownum rn,-->
+<!--		alarmlevelname,-->
+<!--		circuitcode,-->
+<!--		username,-->
+<!--		circuittype,-->
+<!--		usetime,-->
+<!--		rate,-->
+<!--		portserialno1,-->
+<!--		portserialno2,-->
+<!--		isacked-->
+<!--		from v_alarmrelatecircuit_affect v where-->
+<!--		v.alarmnumber in(select-->
+<!--		c.alm_company from alarm_affection c where-->
+<!--		c.alm_number=#alarmnumber#)-->
+<!--		) vv-->
+<!--		where vv.rn between #start# and #end#-->
+	</select>
+
+
+	<select id="getAffectCircuitCount" resultClass="int"
+		parameterClass="com.metarnet.mnt.rootalarm.model.PoUpKeyBussinessModel">
+		select count(*) from 
+		circuit_cc t,circuit tt,alarminfo a where t.equipcode=a.belongequip and tt.circuitcode = t.circuitcode AND a.alarmnumber = #alarmnumber#
+<!--		v_alarmrelatecircuit_affect v-->
+<!--		where -->
+<!--		v.alarmnumber in(-->
+<!--		select c.alm_company from alarm_affection c-->
+<!--		where-->
+<!--		c.alm_number=#alarmnumber#)-->
+	</select>
+
+
+
+	<select id="getAlarmEXPs" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+
+		select a.experience from alarmdealexp a where
+		a.alarmcause=
+		(select alarmtext from alarminfo a where
+		a.alarmnumber='$alarmnumber$')
+
+
+
+	</select>
+
+
+	<select id="getSoundStatus" resultClass="String">
+
+
+
+		select m.isstatus from
+		mnt_alarm_watch_config m where
+		m.endesc='alarmsoundset'
+
+		
+
+	</select>
+	<update id="setFaultProcess" parameterClass="java.util.Map">
+		call
+		csg_start_Faultflow(#alarmNo#,#userID#,#operPerson#)
+	</update>
+
+	<select id="selectFaultProcess" resultClass="int"
+		parameterClass="java.util.Map">
+		select count(*) from alarminfo a where
+		alarmnumber=#alarmNo# and a.dutyid is
+		not null and a.bugno is not null
+	</select>
+
+	<select id="getFaults_hz" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		<![CDATA[
+		select * from(
+		select rownum rn,
+		t.belongtsstm16,
+		t.observedvalue,
+		ad.n_alarmdesc,
+		t.starttime,
+		t.bugno,
+		t.dutyid
+		from alarminfo t, alarmdefine ad
+		where t.probablecause = ad.id
+		and t.bugno is not null
+		and t.alarmnumber not in (#alarmnm#)
+		and t.starttime >=
+		to_date(#alarmtime#, 'yyyy-mm-dd hh24:mi:ss') - #time#/24
+		and t.starttime <=
+		to_date(#alarmtime#, 'yyyy-mm-dd hh24:mi:ss') + #time#/24
+		order by t.starttime desc)vv where vv.rn between
+		#start# and #end#
+		
+		]]>
+
+
+	</select>
+
+	<select id="getFaultsCount_hz" resultClass="int" parameterClass="java.util.HashMap">
+	<![CDATA[
+		select count(*) from(
+		select rownum rn,
+		t.belongtsstm16,
+		t.observedvalue,
+		ad.n_alarmdesc,
+		t.starttime,
+		t.bugno,
+		t.dutyid
+		from alarminfo t, alarmdefine ad
+		where t.probablecause = ad.id
+		and t.bugno is not null
+		and t.alarmnumber not in (#alarmnm#)
+		and t.starttime >=
+		to_date(#alarmtime#, 'yyyy-mm-dd hh24:mi:ss') - #time#/24
+		and t.starttime <=
+		to_date(#alarmtime#, 'yyyy-mm-dd hh24:mi:ss') + #time#/24
+		order by t.starttime desc)
+		]]>
+	</select>
+
+
+	<update id="setOldFaultProcess" parameterClass="java.util.Map">
+
+		update alarminfo
+		set acktime = sysdate,
+		ackperson = '$operPerson$',
+		bugno = '$bugno$',
+		dutyid = '$dutyid$',
+		isworkcase = #isworkcase#,
+		dealresult =
+		#dealresult#
+		where alarmnumber =#alarmnm#
+
+    	 
+	</update>
+
+	<update id="ackRootAlarms" parameterClass="java.util.Map">
+		update alarminfo set
+		ackperson=#ackperson#,acktime=sysdate
+		where alarmnumber
+		=#alarmid#
+	</update>
+	
+
+	<update id="transAckRootAlarms" parameterClass="java.util.Map">
+		update
+		transferalarminfo set
+		ackperson=#ackperson#,acktime=sysdate
+		where
+		alarmnumber
+		=#alarmid#
+	</update>
+	<update id="ackRootAlarmNew" parameterClass="java.util.Map">
+		update alarminfo set
+		whichsys='BS',ackperson=#ackperson#,acktime=sysdate,isworkcase=#isworkcase#,dealresult=#dealresult#,ackcontent=#ackcontent#
+		where alarmnumber
+		=#alarmid#
+	</update>
+
+	<update id="transAckRootAlarmNew" parameterClass="java.util.Map">
+		update
+		transferalarminfo set
+		ackperson=#ackperson#,acktime=sysdate,isworkcasezh=#isworkcase#,dealresult=#dealresult#,ackcontent=#ackcontent#
+		where alarmnumber
+		=#alarmid#
+	</update>
+
+	<select id="selectRootAlarm" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select alarmnumber,
+		       isworkcasezh,
+		       carrycircuit, 
+		       alarmobjdesc, 
+		       vendorzh,
+		       firststarttime,
+		       laststarttime,
+		       isackedzh,
+		       ackperson,
+		       acktime,
+		       objclasszh, 
+		       dealresultzh, 
+		       belongtransys, 
+		       ackcontent, 
+		       bugno, 
+		       belongequip, 
+		       '0' alarmtype,
+		       isrootalarm,
+		       isacked,
+		       iscleared,
+		      belongportcode,
+		      belongportobject,
+		      dutyid,
+		      dealperson,
+		      dealpart,
+		      triggeredthreshold,
+		      belongstation,
+		      unit,
+		      endtime,
+		      isbugno,
+		      area,
+		      flashcount,
+		      alarmlevel,
+		      isfilter,
+		      alarmdesc           		
+		from realrootalarm
+		where
+		isrootalarm = 1 and iscleared=0 and isfilter='否'
+		<dynamic prepend="and">
+			<isNotEmpty property="isacked" prepend="AND">
+				acktime is not null
+			</isNotEmpty>
+			<isNotEmpty property="dealresult" prepend="AND">
+				dealresultzh=#dealresult#
+			</isNotEmpty>
+		</dynamic>
+		order by isacked,firststarttime desc
+	</select>
+
+	<select id="getRootAlarmCount" resultClass="int" parameterClass="java.util.HashMap">
+		select count(*) from v_alarminfonew where isrootalarm =
+		1 and
+		iscleared=0 and isacked=0
+	</select>
+
+<!--	<select id="ackPersonRootAlarm" resultClass="String"-->
+<!--		parameterClass="java.util.HashMap">-->
+<!--		select distinct a.curdutyman from en_adapter_domain a  where not a.curdutyman is null-->
+<!--	</select>-->
+<!---->
+<!--<select id="getCurrentUserCh" resultClass="String">-->
+<!--	select distinct t.curdutyman from en_adapter_domain t where not t.curdutyman is null-->
+<!--</select>-->
+
+<update id="ackRootAlarmNew_" parameterClass="com.metarnet.mnt.rootalarm.model.AlarmAffirmModel">
+		update alarminfo set
+		ackperson=#ackperson#,acktime=sysdate,isworkcase=#isworkcase#,dealresult=#dealresult#,ackcontent=#ackcontent#,
+		whichsys=#whichsys#,triggeredhour=#triggeredhour#,isfilter=#isfilter#
+		where alarmnumber
+		=#alarmnumber#
+	</update>
+	<update id="ackRootAlarmNew_acked" parameterClass="com.metarnet.mnt.rootalarm.model.AlarmAffirmModel">
+		update alarminfo set
+		isworkcase=#isworkcase#,dealresult=#dealresult#,ackcontent=#ackcontent#,
+		whichsys=#whichsys#,triggeredhour=#triggeredhour#,isfilter=#isfilter#
+		where alarmnumber
+		=#alarmnumber#
+	</update>
+	
+<update id="setRootAlarms" parameterClass="com.metarnet.mnt.rootalarm.model.AlarmAffirmModel">
+	update alarminfo set
+	ackperson=#ackperson#,acktime=sysdate,dealresult=#dealresult#,isworkcase=#isworkcase#,whichsys='BS',ackcontent=#ackcontent#
+	where alarmnumber
+	=#alarmnumber#
+</update>	
+<update id="setRootAlarms_acked" parameterClass="com.metarnet.mnt.rootalarm.model.AlarmAffirmModel">
+	update alarminfo set
+	dealresult=#dealresult#,isworkcase=#isworkcase#,whichsys='BS',ackcontent=#ackcontent#
+	where alarmnumber
+	=#alarmnumber#
+</update>
+		
+<insert id="insertAlarm_acklog" parameterClass="com.metarnet.mnt.rootalarm.model.AlarmAffirmModel">
+		insert into
+		alarm_acklog(ALARMNUMBER,ACKPERSON,ACKTIME,ACKCONTENT,DEALRESULT,ISWORKCASE,WHICHSYS)
+		values(#alarmnumber#,#ackperson#,sysdate,#ackcontent#,#dealresult#,#isworkcase#,#whichsys#)
+	</insert>
+	<select id="getAckLogbyAlarmNo" parameterClass="String" resultClass="com.metarnet.mnt.rootalarm.model.AlarmAffirmModel">
+		select t.ackperson,
+	       t.dealresult,
+	       t.isworkcase,
+	       t.ackcontent,
+	       decode(t.whichsys,'','CS',t.whichsys) whichsys,
+	       t.acktime
+	  from alarm_acklog t
+	 where t.alarmnumber = #alarmnumber#
+	</select>
+	<select id="selectZhongdiaoByAlarmnumber" parameterClass="String" resultClass = "int" >
+	select count(*) from v_alarm_cmd t where t.alarmnumber = #alarmnumber#
+	</select>
+</sqlMap>
+

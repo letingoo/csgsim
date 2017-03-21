@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="462" height="232" 
+				layout="absolute" title="{del==false?'添加交叉':'删除交叉'}" showCloseButton="true"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%" close="close()" creationComplete="initPage()">
+	<mx:Script source="../actionscript/batchConfigPortSlot.as" />
+	<mx:Label x="10" y="10" text="{aname}" width="187" height="20" textAlign="center"/>
+	<mx:Label x="3" y="40" text="起始时隙:" width="70" height="20" textAlign="right"/>
+	<mx:Label x="3" y="96" text="终止时隙:" width="70" height="20" textAlign="right"/>
+	<mx:ComboBox id="cmbStartA" x="75" y="38" width="122" labelField="label"/>
+	<mx:Label x="75" y="68" text="至" width="20" height="18"/>
+	<mx:ComboBox id="cmbEndA" x="75" y="94" width="122" labelField="label"/>
+	<mx:Label x="232" y="10" text="{zname}" width="191" height="20" textAlign="center"/>
+	<mx:Label x="228" y="40" text="起始时隙:" width="70" height="20" textAlign="right"/>
+	<mx:Label x="228" y="96" text="终止时隙:" width="70" height="20" textAlign="right"/>
+	<mx:ComboBox id="cmbStartZ" x="301" y="38" width="122"/>
+	<mx:Label x="301" y="68" text="至" width="20" height="18"/>
+	<mx:ComboBox id="cmbEndZ" x="301" y="94" width="122"/>
+	<mx:HBox id="buttomhbox"
+			 width="100%"
+			 height="20%"
+			 verticalAlign="middle"
+			 horizontalAlign="center"
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+			 backgroundSize="100%" x="0" y="155">
+		<mx:Button x="156" y="151" label="确定" styleName="primary" click="save()"/>
+		<mx:Button x="235" y="151" label="关闭" styleName="secondary" width="70" click="close()"/>
+	</mx:HBox>
+	<mx:VRule x="222" y="10" height="130"/>
+</mx:TitleWindow>

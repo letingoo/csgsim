@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex" 
+				layout="absolute" title="选择纤芯" fontSize="13" 
+				width="500" height="550" 
+				showCloseButton="true" close="this_closeHandler(event)" 
+				creationComplete="initApp(event)">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			import mx.utils.StringUtil;
+			
+			import sourceCode.ocableResource.model.FiberDetailsModel;
+			import sourceCode.ocableResource.model.FiberDetailsResultModel;
+			
+			import twaver.*;
+			
+			public var link:Link;
+			private var box:ElementBox;
+			private var station:String = "twaverImages/twaverimages_sx/station.png";
+			private var layer:Layer = new Layer("layer");
+			private var selectFiberserial:Array = new Array();
+
+			protected function this_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function initApp(event:FlexEvent):void
+			{
+				SerializationSettings.registerGlobalClient("stationcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("selected", Consts.TYPE_STRING);
+				
+				box = network.elementBox;
+				layer.movable = false;
+				layer.editable = false;
+				box.layerBox.add(layer);
+				network.addEventListener(MouseEvent.CLICK, selectFiberHandler);
+				//创建两端站点
+				createStations();
+				//创建纤芯列表
+				var fdm:FiberDetailsModel = new FiberDetailsModel();
+				fdm.sectioncode = link.getClient("ocablecode");
+				var ro:RemoteObject = new RemoteObject("mapResourcesInfo");
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.showBusyCursor = true;
+				ro.getFiberDetailsInfo(fdm);
+				ro.addEventListener(ResultEvent.RESULT, getFiberDetailsHandler);
+			}
+
+			private function getFiberDetailsHandler(event:ResultEvent):void{
+				var fdrm:FiberDetailsResultModel = event.result as FiberDetailsResultModel;
+				var ac:ArrayCollection = fdrm.acdatas;
+				createFibers(ac);
+			}
+			
+			private function createStations():void{
+				//起始站
+				var node1:Node = new Node();
+				node1.image = station;
+				node1.name = link.fromNode.name;
+				node1.setLocation(90, 20);
+				node1.setSize(60, 60);
+				node1.setStyle(Styles.LABEL_POSITION, Consts.POSITION_TOP_TOP);
+				box.add(node1);
+				//终止站
+				var node2:Node = new Node();
+				node2.image = station;
+				node2.name = link.toNode.name;
+				node2.setLocation(350, 20);
+				node2.setSize(60, 60);
+				node2.setStyle(Styles.LABEL_POSITION, Consts.POSITION_TOP_TOP);
+				box.add(node2);
+			}
+			
+			private function createFibers(ac:ArrayCollection):void{
+				var grid:Grid = new Grid();
+				grid.setLocation(150, 40);
+				grid.setSize(200, 30);
+				grid.layerID = layer.id;
+				grid.name = ac[0].ocablesectionname;
+				grid.setStyle(Styles.LABEL_YOFFSET, 13);
+				grid.setStyle(Styles.LABEL_BOLD, true);
+				grid.setStyle(Styles.LABEL_SIZE, 13);
+				grid.setStyle(Styles.LABEL_COLOR,0xFFFFFF);
+				grid.setStyle(Styles.LABEL_POSITION,Consts.POSITION_TOP_BOTTOM);
+				grid.setStyle(Styles.GRID_FILL_COLOR,0x000000);
+				grid.setStyle(Styles.GRID_BORDER_TOP,30);
+				grid.setStyle(Styles.GRID_CELL_DEEP,-1);
+				grid.setStyle(Styles.GRID_DEEP,1);
+				grid.setStyle(Styles.GRID_BORDER, 0);
+				grid.setStyle(Styles.GRID_ROW_COUNT, ac.length);
+				grid.setStyle(Styles.GRID_COLUMN_COUNT, 1);
+				grid.setStyle(Styles.GRID_PADDING,2);
+				box.add(grid);
+				for(var i:int = 0; i<ac.length; i++){
+					//0xFF0000 红色代表“选中状态”
+					var follower:Follower = new Follower();
+					follower.name = ac[i].fiberserial;
+					follower.layerID = layer.id;
+					follower.setStyle(Styles.CONTENT_TYPE, Consts.CONTENT_TYPE_VECTOR_DEFAULT);
+					follower.setSize(200, 25);
+					follower.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+					follower.setStyle(Styles.FOLLOWER_COLUMN_INDEX, 0);
+					follower.setStyle(Styles.FOLLOWER_ROW_INDEX, i);
+					follower.setStyle(Styles.IMAGE_STRETCH, Consts.STRETCH_FILL);
+					if(StringUtil.trim(ac[i].status) == "空闲" || StringUtil.trim(ac[i].status) == ""){
+						follower.setStyle(Styles.VECTOR_FILL_COLOR, 0xC0C0C0);//空闲状态设为灰色
+						follower.setClient("selected", "F");
+					}else if(StringUtil.trim(ac[i].status) == "占用"){
+						follower.setStyle(Styles.VECTOR_FILL_COLOR, 0x00FF00);//占用状态设为绿色
+						follower.setClient("selected", "T");
+					}else{
+						follower.setStyle(Styles.VECTOR_FILL_COLOR, 0xFF0000);//其他状态设为红色
+						follower.setClient("selected", "T");
+					}
+					follower.host = grid;
+					follower.parent = grid;
+					box.add(follower);
+					grid.height += 25;
+				}
+			}
+			//选择纤芯方法
+			private function selectFiberHandler(e:MouseEvent):void{
+				if(network.selectionModel.selection.getItemAt(0) is Follower){
+					var fo:Follower = network.selectionModel.selection.getItemAt(0);
+					if(fo.getClient("selected") == "F"){
+						fo.setStyle(Styles.VECTOR_FILL_COLOR, 0x00FF00);//改为占用状态
+						fo.setClient("selected", "T");
+						selectFiberserial.push(fo.name);
+					}else{
+						var i:int = selectFiberserial.indexOf(fo.name);
+						if(i != -1){
+							selectFiberserial.splice(i, 1);
+							fo.setStyle(Styles.VECTOR_FILL_COLOR, 0xC0C0C0);//改为空闲状态
+							fo.setClient("selected", "F");
+						}
+					}
+				}
+			}
+			//完成方法
+			private function submit_clickHandler(event:MouseEvent):void{
+				link.setClient("usedfiber", selectFiberserial.toString());
+				var str:String = link.getClient("ocabledata").OCABLESECTIONNAME;
+				link.name = str.split("-")[1] + " ";
+				link.name += selectFiberserial.toString() + "芯";
+				link.name += "(" + link.getClient("ocabledata").FIBERCOUNT + "芯/";
+				link.name += link.getClient("ocabledata").LENGTH + "km)";
+				link.setStyle(Styles.LABEL_POSITION, Consts.POSITION_TOP_TOP);
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" verticalGap="0">
+		<mx:HBox width="100%" height="90%">
+			<twaver:Network id="network" width="100%" height="100%"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="10%" styleName="btnbg">
+			<mx:Button id="submit" label="完成" click="submit_clickHandler(event)" styleName="primary"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

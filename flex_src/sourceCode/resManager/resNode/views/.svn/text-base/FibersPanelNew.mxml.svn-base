@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="100%" 
+	height="100%" 
+	creationComplete="init()" 
+	preinitialize="preinitialize()"  
+	xmlns:component="common.component.*" xmlns:views="sourceCode.tableResurces.views.*">
+	
+	<mx:Script source="../actionscript/FibersPanelNew.as" />
+
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off">
+		
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="光纤" imgName="businessRess"
+							  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="{isSearch}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}"
+							  controlAdd="toolbar_toolEventAddHandler(event)" controlEdit="toolbar_toolEventEditHandler(event)" 
+							  controlDel="toolbar_toolEventDeleteHandler(event)" controlSearch="toolbar_toolEventSearchHandler(event)"
+							  controlExportExcel="toolbar_toolEventEmpExcelHandler(event)" controlImport="toolbar_toolEventImpExcelHandler(event)"/>
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true"
+			headerRelease="dg_headerReleaseHandler(event)" >
+			
+			<mx:columns>
+
+				<mx:DataGridColumn headerText="序号" dataField="no" width="50"/>
+				<mx:DataGridColumn headerText="光缆名称" dataField="ocablename"  width="250"/>
+				<mx:DataGridColumn headerText="光纤序号" dataField="fiberserial"  width="65"/>
+				<mx:DataGridColumn headerText="长度(km)" dataField="length"  width="65"/>
+				<mx:DataGridColumn headerText="维护单位" dataField="property"  width="135"/>
+				<!--<mx:DataGridColumn headerText="状态" dataField="status"  width="85"/>-->
+				<mx:DataGridColumn headerText="A端端口" dataField="aendeqport"  width="315"/>
+				<mx:DataGridColumn headerText="Z端端口" dataField="zendeqport"  width="315"/>
+				<mx:DataGridColumn headerText="光路业务" dataField="opticalbusiness" sortable="false" width="300"/>
+				<mx:DataGridColumn headerText="复用段业务" dataField="toplinkbusiness" sortable="false" width="300"/>	
+				<mx:DataGridColumn headerText="更新时间" dataField="updatedate"  width="70"/>
+			</mx:columns>
+			
+		</mx:DataGrid>
+		
+		<component:pagetoolbar
+			id="serverPagingBar" 
+			width="100%"/>
+		
+	</mx:VBox>
+	
+	
+</mx:VBox>

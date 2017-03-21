@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*" 
+				title="选择设备"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="initApp(event);"
+				layout="absolute" minWidth="955" minHeight="600" width="400" height="400" fontSize="13">
+	
+	
+	<mx:Script source="../actionscript/SearchEquipOrderBySystem.as" />
+	
+	<mx:VBox width="100%" height="100%" label=" 系统 " verticalGap="0" horizontalGap="0">
+		<component:SearchTextInput id="searchText" height="35" width="100%" clickButton="searchText_clickHandler(event)" searchEnter="searchText_searchEnterHandler(event)"/>
+		<mx:Tree id="equipmentsTree" x="0" y="0" 
+				 width="100%" height="100%" 
+				 dataProvider="{folderCollection}"
+				 labelField="@label"
+				 defaultLeafIcon="{leafPic}" 
+				 borderStyle="none"
+				 doubleClickEnabled="true"
+				 doubleClick="equipmentsTree_doubleClickHandler(event)"
+				 change="equipmentsTree_changeHandler()"
+				 itemOpen="equipmentsTree_changeHandler()"
+				 itemClick="ModelLocator.tree_itemClick(event,equipmentsTree)"
+				 itemRollOver="curIndex = event.rowIndex"
+				 verticalScrollPolicy="auto"/>
+	</mx:VBox>
+	
+</mx:TitleWindow>

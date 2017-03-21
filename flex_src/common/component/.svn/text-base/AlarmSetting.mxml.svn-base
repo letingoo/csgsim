@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="540" height="520"
+				showCloseButton="true" close="{PopUpManager.removePopUp(this)}">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+		]]>
+	</mx:Script>
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		<mx:VBox width="100%" height="100%" paddingBottom="10" paddingLeft="20" paddingRight="20" paddingTop="10" verticalGap="5">
+			<mx:HBox width="100%" height="80" verticalAlign="top">
+				<mx:Image source="assets/images/icons/icon_setting.png"/>
+				<mx:VBox width="360" height="100%" verticalGap="3">
+					<mx:Label text="告警监控设置" styleName="blackbigboldleft"/>
+					<mx:Text text="关闭此功能后，系统检测到告警信息不进行任何提示" fontFamily="Arial" fontSize="12" color="#FF0000"/>
+					<mx:HBox width="100%" height="30">
+						<mx:RadioButtonGroup id="radiogroup1"/>
+						<mx:RadioButton label="开启" groupName="radiogroup1" styleName="radiobutton" selected="true"/>
+						<mx:RadioButton label="关闭" groupName="radiogroup1" styleName="radiobutton"/>
+					</mx:HBox>
+				</mx:VBox>
+				<mx:Image source="assets/images/icons/function_open.png"/>
+			</mx:HBox>
+			<mx:Image source="assets/images/setting_groupline.png" width="480"/>
+			<mx:HBox width="100%" height="110" verticalAlign="top">
+				<mx:Image source="assets/images/icons/icon_rootalarmtrip.png"/>
+				<mx:VBox width="360" height="100%" verticalGap="3">
+					<mx:Label text="根告警提示设置" styleName="blackbigboldleft"/>
+					<mx:Text text="发现根告警时系统自动弹出根告警主窗口，强烈建议您开启此功能" fontFamily="Arial" fontSize="12" color="#FF0000"/>
+					<mx:HBox width="100%" height="25">
+						<mx:RadioButtonGroup id="radiogroup5"/>
+						<mx:RadioButton label="开启" groupName="radiogroup2" styleName="radiobutton" selected="true"/>
+						<mx:RadioButton label="关闭" groupName="radiogroup2" styleName="radiobutton"/>
+					</mx:HBox>
+					<mx:HBox width="100%" height="30" verticalAlign="middle">
+						<mx:RadioButtonGroup id="radiogroup2"/>
+						<mx:Label text="不进行处理时，每隔" fontSize="12" color="#5B5B5B"/>
+						<mx:ComboBox styleName="combox" width="80"></mx:ComboBox>
+						<mx:Label text="分钟再次提示" fontSize="12" color="#5B5B5B"/>
+					</mx:HBox>
+				</mx:VBox>
+				<mx:Image source="assets/images/icons/function_open.png"/>
+			</mx:HBox>
+			<mx:Image source="assets/images/setting_groupline.png" width="480"/>
+			<mx:HBox width="100%" height="190" verticalAlign="top">
+				<mx:Image source="assets/images/icons/icon_alarmtrip.png"/>
+				<mx:VBox width="100%" height="100%" verticalGap="3">
+					<mx:Label text="告警提示设置" styleName="blackbigboldleft"/>
+					<mx:Label text="选择您习惯的告警提示方式" fontSize="12" color="#5B5B5B"/>
+					<mx:CheckBox label="发生告警时自动弹出告警主窗口" styleName="checkbox"/>
+					<mx:CheckBox label="发生告警时弹出泡泡提示" styleName="checkbox" selected="true"/>
+					<mx:HBox width="100%" height="30" verticalAlign="middle">
+						<mx:RadioButtonGroup id="radiogroup0"/>
+						<mx:Label text="不进行处理时，每隔" fontSize="12" color="#5B5B5B"/>
+						<mx:ComboBox styleName="combox" width="80"></mx:ComboBox>
+						<mx:Label text="分钟再次提示" fontSize="12" color="#5B5B5B"/>
+					</mx:HBox>
+					<mx:HBox width="100%" height="50">
+						<mx:RadioButtonGroup id="radiogroup3"/>
+						<mx:VBox width="230" height="50" verticalGap="0">
+							<mx:CheckBox label="显示实时监控悬浮窗" styleName="checkbox"/>
+							<mx:Label text="     方便查看系统当前告警信息" fontSize="12" color="#5B5B5B"/>
+						</mx:VBox>
+						<mx:Image source="assets/images/monitor_smallwindow.png"/>
+					</mx:HBox>
+				</mx:VBox>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:HBox width="100%" height="50" styleName="btnbg">
+			<mx:Button label="保存设置" styleName="primary"/>
+			<mx:Button label="取消" styleName="secondary" click="button1_clickHandler(event)"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

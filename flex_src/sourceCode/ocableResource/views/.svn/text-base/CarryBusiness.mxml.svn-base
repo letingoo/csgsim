@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100%" 
+		 creationComplete="init()" 
+		 xmlns:views="common.component.*">-->
+
+<!--为改问题，改的，被屏的地方是原来的东西.byxujiao2012-7-23-->
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				   backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				   backgroundSize="100%"
+				   windowContainer="{Application.application.windowContainer}"
+				   width="{parentApplication.workspace.width}"
+				   height="{parentApplication.workspace.height+70}"
+				   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*"
+				   creationComplete="init()" xmlns:component="common.component.*" >
+	
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.utils.StringUtil;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.ObjectProxy;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.ocableResource.actionscript.CarryBusinessSearchEvent;
+			import sourceCode.ocableResource.model.CarryingBusinessModel;
+			import sourceCode.ocableResource.model.ResultModel;
+			
+			import twaver.DemoUtils;
+			import twaver.SequenceItemRenderer;
+			
+			private var pageIndex:int=0;
+			private var pageSize:int=50;
+			private var datanumbers:int;
+			private var isSearch:Boolean = false;
+			private var carry:CarryingBusinessModel = new CarryingBusinessModel();
+			public var flag:Boolean=false;
+//			[Bindable]public var result:ResultModel = new ResultModel(); 
+			
+			private var indexRenderer:Class = SequenceItemRenderer;
+			private var osModel:CarryingBusinessModel = new CarryingBusinessModel();
+			[Bindable] public var sectioncode:String;
+			[Bindable]public var xmlUsername:XMLList=new XMLList();
+			[Bindable]public var xmlRate:XMLList=new XMLList();
+			
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				serverPagingBar.dataGrid=dg;
+				serverPagingBar.pagingFunction=pagingFunction;
+				serverPagingBar.addEventListener("returnALL",showAllDataHandler);
+				serverPagingBar.addEventListener("exportExcel",ExportExcel);
+				serverPagingBar.exportLinkBtn.visible = true;
+				serverPagingBar.exportLinkBtn.includeInLayout = false;
+				getBusiness("0",pageSize.toString());
+		//		getUsername();//获取电路名称 太多，故此不用查询，太慢，且下拉框不能完全呈现
+				getRate();
+				var contextMenu:ContextMenu=new ContextMenu();
+				dg.contextMenu = contextMenu;
+				dg.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function (event:ContextMenuEvent):void{
+					var item:ContextMenuItem = new ContextMenuItem("光路路由信息");
+					item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,showCircuitHandler);
+					var flexVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					var playerVersion:ContextMenuItem=new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					
+					if(dg.selectedItems.length==0){//选中元素个数
+						dg.contextMenu.hideBuiltInItems();
+						dg.contextMenu.customItems = [flexVersion,playerVersion];
+					}
+					else{
+						dg.contextMenu.hideBuiltInItems();
+						dg.contextMenu.customItems = [item];
+					}
+					
+				});
+				
+			}
+			
+			public function getUsername():void{
+				var rt:RemoteObject =new RemoteObject("ocableResources");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getUsername();
+				rt.addEventListener(ResultEvent.RESULT,resultUsername);
+				Application.application.faultEventHandler(rt);
+			}
+			
+			private function resultUsername(event:ResultEvent):void{
+				xmlUsername=new XMLList(event.result);
+				var rt:RemoteObject= new RemoteObject("ocableResources");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getRate();
+				rt.addEventListener(ResultEvent.RESULT,resultRate);
+				Application.application.faultEventHandler(rt);
+			}
+			public function getRate():void{
+				var rt:RemoteObject= new RemoteObject("ocableResources");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				rt.getRate();
+				rt.addEventListener(ResultEvent.RESULT,resultRate);
+				Application.application.faultEventHandler(rt);
+			}
+			private function resultRate(event:ResultEvent):void{
+				xmlRate = new XMLList(event.result);
+			}
+			/**
+			 * 查询
+			 * */
+			protected function toolbar_toolEventSearchHandler(event:Event):void{
+				var carryBusinessSearch:CarryBusinessSearch = new CarryBusinessSearch();
+				PopUpManager.addPopUp(carryBusinessSearch,Application.application as DisplayObject,true);
+				PopUpManager.centerPopUp(carryBusinessSearch);				
+//				carryBusinessSearch.username.dataProvider=xmlUsername;//不做下拉框选择 ，一则数据太多，查询慢，二则下拉框显示不全，以后可改为弹出树
+				carryBusinessSearch.rate.dataProvider=xmlRate;		
+				carryBusinessSearch.addEventListener("carryBusinessSearchEvent",carryBusinessSearchHandler);
+			}
+			private function carryBusinessSearchHandler(event:CarryBusinessSearchEvent):void{
+					var carryrt:RemoteObject=new RemoteObject("ocableResources");					
+					event.model.start = "0";
+					event.model.end = pageSize.toString();
+					carryrt.addEventListener(ResultEvent.RESULT,resultCarryBusinessHandler);
+					Application.application.faultEventHandler(carryrt);
+					carryrt.endpoint = ModelLocator.END_POINT;
+					carryrt.showBusyCursor = true;
+					carryrt.getCarryBusiness(event.model,sectioncode); 
+			}
+			public function resultCarryBusinessHandler(event:ResultEvent):void{
+				var result:ResultModel=event.result as ResultModel;
+				this.datanumbers = result.totalCount;
+				onResult(result);
+			}
+						
+			//查看光路路由信息
+			private function showCircuitHandler(event:ContextMenuEvent):void{
+				//如果是无业务，则提示无相关数据，否则根据光路查询路由，如果是复用段业务，
+				//根据复用段与光路关系查询光路起始端口，否则取光路对应路由中的起始端口（收和发）
+				var circuitcode:String=dg.selectedItem.circuitcode;//光路id
+				var para_circuitype:String=dg.selectedItem.x_purpose;
+				if(circuitcode != ""){
+					var remoteObject:RemoteObject=new RemoteObject("fiberWire");
+					remoteObject.endpoint=ModelLocator.END_POINT;
+					remoteObject.addEventListener(ResultEvent.RESULT, getPortCodeByToplinkidHandler);//原来
+					remoteObject.getPortCodeByOpticalid(circuitcode,para_circuitype);
+				}else{
+					Alert.show("请先选择业务！","提示");
+				}
+			}
+			
+			private function getPortCodeByToplinkidHandler(event:ResultEvent):void{
+				if(event.result.toString()!=null&&event.result.toString()!=""){
+					var portcode:String=event.result.toString();
+					var fri:sourceCode.ocableResource.views.OcableRoutInfo = new sourceCode.ocableResource.views.OcableRoutInfo();
+					fri.title = "光路路由图";
+					fri.getFiberRouteInfo(portcode);
+					fri.width=Application.application.workspace.width;
+					fri.height=Application.application.workspace.height+70;
+					MyPopupManager.addPopUp(fri);
+					fri.y =0;
+				}else{
+					Alert.show("无相关数据!", "提示");
+				}
+			}
+			
+			private function getBusiness(start:String,end:String):void{
+				var rtCarry:RemoteObject = new RemoteObject("ocableResources");
+				var carry:CarryingBusinessModel = new CarryingBusinessModel();
+				rtCarry.addEventListener(ResultEvent.RESULT,resultCarryHandler);
+				rtCarry.addEventListener(FaultEvent.FAULT,faultCallBack);
+				rtCarry.endpoint = ModelLocator.END_POINT;
+				rtCarry.showBusyCursor = true;
+				if(flag){
+					rtCarry.getCarryBusinessByOcable(sectioncode,start,end); 
+				}
+					else{
+						rtCarry.getAllCarryBusinessByFibercodeOnly(sectioncode,start,end);//add by sjt
+					}
+								
+			}
+						
+			
+			private function faultCallBack(event:FaultEvent):void{
+				Alert.show(event.message.toString(),"错误");
+			}
+			
+			public function resultCarryHandler(event:ResultEvent):void{
+				var result=event.result as ResultModel;
+				this.datanumbers = result.totalCount;
+				if(this.datanumbers == 0)
+					Alert.show("该光缆没有承载业务！","提示");
+				onResult(result);
+			}
+			
+			
+			private function showAllDataHandler(event:Event):void{
+				getBusiness("0",serverPagingBar.totalRecord.toString());
+			}
+			
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void{
+				this.pageSize=pageSize;
+				getBusiness((pageIndex*pageSize).toString(),(pageIndex*pageSize+pageSize).toString());
+			}
+			
+			public function onResult(result:ResultModel):void 
+			{	
+				serverPagingBar.orgData=result.orderList;
+				serverPagingBar.totalRecord=result.totalCount;
+				serverPagingBar.dataBind(true);					
+			}
+			
+			private function RefreshStation(event:Event):void{
+				getBusiness("0",pageSize.toString());
+			}
+			
+			public var titles:Array = new Array("序号","光路名称","起始设备","终止设备","业务名称","业务类型");
+			public function ExportExcel(event:Event = null):void{
+				//Export
+				if(serverPagingBar.totalRecord <= 0){
+					Alert.show("没有数据要导出","提示");
+				}else{
+					var remoteobj2:RemoteObject = new RemoteObject("ocableResources"); 
+					remoteobj2.endpoint = ModelLocator.END_POINT;
+					remoteobj2.showBusyCursor = true;
+					remoteobj2.addEventListener(ResultEvent.RESULT,ExportExcelHandler);
+					remoteobj2.ExportCircuitExcel("光缆承载业务",titles,sectioncode,this.serverPagingBar.totalRecord); 
+				}
+			}
+			
+			public function ExportExcelHandler(event:ResultEvent):void{
+				var path:String = event.result.toString();
+				var request:URLRequest = new URLRequest(encodeURI(StringUtil.trim(path))); 
+				navigateToURL(request,"_blank");
+				
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off">
+	<component:ControlBar id="controlBar1" width="100%" height="38" 
+						  showSearchButton="{isSearch}" controlSearch="toolbar_toolEventSearchHandler(event)" showAddShurtCutButton="false"/>
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%"  
+			wordWrap="true" 
+		    variableRowHeight="true"
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="false">
+			<mx:columns>
+			<!--<mx:DataGridColumn headerText="序号" dataField="no" width="50" />  -->
+				<mx:DataGridColumn headerText="序号" width="40" itemRenderer="{new ClassFactory(indexRenderer)}" />
+				<mx:DataGridColumn headerText="光路编号" dataField="circuitcode" width="220" visible="false"/>
+				<mx:DataGridColumn headerText="光路名称" dataField="circuitname" width="180"/>
+				<mx:DataGridColumn headerText="起始设备" dataField="portserialno1"  width="250"/>
+				<mx:DataGridColumn headerText="终止设备" dataField="portserialno2"  width="250"/>
+				<!--<mx:DataGridColumn headerText="方式票号" dataField="requisitionid" width="180" visible="false"/>
+				<mx:DataGridColumn headerText="电路类型" dataField="operationtype"  width="180" visible="false"/>-->
+				<mx:DataGridColumn headerText="业务名称" dataField="username"  width="250"/>
+				<mx:DataGridColumn headerText="业务类型" dataField="x_purpose"  width="120"/>
+				<!--<mx:DataGridColumn headerText="速率" dataField="rate"  width="80"/>
+				<mx:DataGridColumn headerText="起始设备类型" dataField="aequiptype" width="120"/>
+				<mx:DataGridColumn headerText="终止设备类型" dataField="zequiptype" width="120"/>
+				<mx:DataGridColumn headerText="起始端口" dataField="port_a"  width="220"/>
+				<mx:DataGridColumn headerText="终止端口" dataField="port_z"  width="220"/>-->
+				<!--<mx:DataGridColumn headerText="方式名称" dataField="remark"  width="180" visible="false"/>	-->			
+			</mx:columns>
+			
+		</mx:DataGrid>
+	
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>		
+	</mx:VBox>
+<!--</mx:VBox>-->
+</panel:PanelWindow>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*" 
+				title="选择电路"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="init()"
+				width="380" height="300" fontSize="13">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+		/* 	[Bindable]   
+			public var folderList:XMLList= new XMLList(); 
+			[Bindable]   
+			public var folderCollection:XMLList; */
+			[Bindable]
+			public var page_parent:Object;//和父页面传递的类
+			[Bindable]
+			public var circuitcode:String="";//
+			private var searchTexts:String="";//模糊查询的条件
+			public var myCallBack:Function;//定义的方法变量
+			public var mainApp:Object = null;
+			private var curIndex:int;
+			//初始化
+			private function init():void{			
+				var rt:RemoteObject=new RemoteObject("resBusinessDwr");
+				rt.endpoint=ModelLocator.END_POINT;
+				rt.showBusyCursor=true;
+				rt.addEventListener(ResultEvent.RESULT,eqsearchHandler);
+				Application.application.faultEventHandler(rt);
+				rt.getCircuitBySearchText(searchTexts);
+
+			}
+			//查询之后的处理函数
+			private function eqsearchHandler(event:ResultEvent):void{
+/* 				var eqsearch:XMLList= new XMLList(event.result);
+				eqsearchlist.dataProvider=eqsearch; */
+				var eqsearch:XMLList = new XMLList(event.result);
+				eqsearchlist.dataProvider = eqsearch;
+			}
+			//模糊查询
+			private function searchText_clickHandler(event:Event):void{
+				searchTexts=searchText.txt.text;
+				var rt:RemoteObject=new RemoteObject("resBusinessDwr");
+				rt.endpoint=ModelLocator.END_POINT;
+				rt.showBusyCursor=true;
+				rt.addEventListener(ResultEvent.RESULT,eqsearchHandler);
+				Application.application.faultEventHandler(rt);
+				rt.getCircuitBySearchText(searchTexts);
+				
+			}
+			
+/* 			private function deviceiconFun(item:Object):*
+			{
+				if(item.@isBranch==false)
+					return ModelLocator.equipIcon;
+				else
+					return ModelLocator.systemIcon;
+			}
+			//点击树触发事件：
+			private function treeChange():void{ 	
+				try{	
+					eqsearchlist.selectedIndex = curIndex;
+					if(this.eqsearchlist.selectedItem.@isBranch==true){
+					}
+				}catch(e:Error){
+					Alert.show(e.message);
+				}
+			}  */
+			//双击list列表的处理函数
+			private function doubleclickHandler(event:MouseEvent):void{
+				this.close();	
+				var obj:Object=new Object;
+				obj.name=eqsearchlist.selectedItem.@label;
+				obj.id=eqsearchlist.selectedItem.@id;
+				obj.label=eqsearchlist.selectedItem.@label;
+				obj.code=eqsearchlist.selectedItem.@id;
+				myCallBack.call(mainApp,obj);
+			}
+
+			//关闭窗体
+			private function close():void{
+				PopUpManager.removePopUp(this);
+				
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<component:SearchTextInput id="searchText" height="35" width="100%" clickButton="searchText_clickHandler(event)" />
+		<mx:List id="eqsearchlist" labelField="@label" width="100%" height="100%" doubleClickEnabled="true" doubleClick="doubleclickHandler(event)"/>
+	</mx:VBox>
+	
+</mx:TitleWindow>

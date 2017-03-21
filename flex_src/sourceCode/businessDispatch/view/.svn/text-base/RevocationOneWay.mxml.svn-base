@@ -1,0 +1,1031 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" showCloseButton="true" close="{PopUpManager.removePopUp(this)}"
+				creationComplete="initApp()"
+				layout="absolute" minWidth="955" minHeight="600" width="{parentApplication.workspace.width}" height="{parentApplication.workspace.height}" xmlns:flex="http://www.servasoftware.com/2009/twaver/flex" title="电路信息及路由" fontSize="13" xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+	<mx:Style>
+		.textinput{
+			paddingTop : 5;
+			border-style:none;
+		}
+		.banner{
+			color : #000000;
+		}
+		.singleButton{
+			cornerRadius : 10;
+		}
+		.gradientCanvas{
+			backgroundGradientColors : #CFCFCF, #A8A8A8;
+			backgroundGradientAlphas : 1, 1;
+			backgroundGradientRotation : 90;
+		}
+	</mx:Style>
+	<mx:Script>
+		
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import flash.events.ContextMenuEvent;
+			import flash.geom.Point;
+			import flash.ui.ContextMenu;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
+			import mx.collections.XMLListCollection;
+			import mx.controls.*;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.core.DragSource;
+			import mx.core.UIComponent;
+			import mx.effects.Parallel;
+			import mx.events.DragEvent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.events.MenuEvent;
+			import mx.events.ModuleEvent;
+			import mx.events.TreeEvent;
+			import mx.graphics.codec.PNGEncoder;
+			import mx.managers.DragManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.businessDispatch.model.SelectOthersCircuit;
+			import sourceCode.packGraph.views.viewEquipPackDuanKouPropertiesInfo;
+//			import sourceCode.sysGraph.views.carryOpera;
+			
+			import twaver.*;
+			import twaver.DemoUtils;
+			import twaver.controls.GifImage;
+			import twaver.network.Network;
+			import twaver.network.Overview;
+			import twaver.network.interaction.InteractionEvent;
+			import twaver.network.layout.AutoLayouter;
+			import twaver.network.layout.SpringLayouter;
+			public var circuitbh:String = ""
+			public var CCcode:String = "";
+//			private var itemEquInfo:viewEquInfo; //设备属性页面
+//			private var itemOcableInfo:topLinkInfo;//复用段属性页面
+//			private var itemCarryOperaInfo:carryOpera;//设备业务页面
+			private var duanKouProperties :viewEquipPackDuanKouPropertiesInfo;//端口属性
+			public var form_name:String;
+			public var page_parent:businessDispatch;
+			public var selectobj:SelectOthersCircuit=new SelectOthersCircuit();
+			
+			protected function initApp():void{
+				
+				//lowId.selectedIndex=0;
+				var box:ElementBox = circuit.elementBox;
+				box.clear();
+				var obj:RemoteObject = new RemoteObject("businessDispatch");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor=true;
+				circuit.name=CCcode;
+				obj.getcircuitLookOver(CCcode);
+				obj.addEventListener(ResultEvent.RESULT,drawCircuit);
+				
+				if(CCcode!=null&&CCcode!=""){
+					canvas1.label = canvas1.label+"-"+CCcode;
+					canvas2.label = canvas2.label+"-"+CCcode;
+					channelbox1.label = channelbox1.label+"-"+CCcode;
+				}
+				
+				/* 	lowId.selectedIndex=0;
+				isClick=true;
+				var node:XML = channeltree.selectedItem as XML;
+				if(node.@leaf=='true'){
+				var box:ElementBox = channelPic.elementBox;
+				box.clear();
+				var rtobj:RemoteObject = new RemoteObject("channelRoute");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = "true";
+				var circuitcode:String = node.@label;
+				NodeLabel=circuitcode;
+				rtobj.getChannelRoute(circuitcode);
+				channelPic.name=circuitcode;
+				channelbox.label = circuitcode;
+				channelbox1.label = '方式单-'+circuitcode;
+				rtobj.addEventListener(ResultEvent.RESULT,drawPic); */
+				Utils.registerImageByClass("equipIcon",ModelLocator.equipIcon );	
+//				Utils.registerImageByClass("ZY0801", ModelLocator.ZY0801);	
+//				Utils.registerImageByClass("ZY0801$FT0102", ModelLocator.ZY0801$FT0102);	
+//				Utils.registerImageByClass("ZY0801$OptiX2500+", ModelLocator.ZY0801$OptiX2500$);
+//				Utils.registerImageByClass("ZY0801$OptiX 2500+", ModelLocator.ZY0801$OptiX2500$);
+//				Utils.registerImageByClass("ZY0801$OptiXOSN3500", ModelLocator.ZY0801$OptiXOSN3500);
+//				Utils.registerImageByClass("ZY0801$OptiX OSN 3500", ModelLocator.ZY0801$OptiXOSN3500);
+//				Utils.registerImageByClass("ZY0801$OptiXOSN7500", ModelLocator.ZY0801$OptiXOSN7500);
+//				Utils.registerImageByClass("ZY0801$OptiX OSN 7500", ModelLocator.ZY0801$OptiXOSN7500);
+//				Utils.registerImageByClass("ZY0802$ZXMP S385", ModelLocator.ZY0802$ZXMPS385);
+//				Utils.registerImageByClass("ZY0804$FT010213", ModelLocator.ZY0804$FT010213);
+//				Utils.registerImageByClass("ZY0804$hiT7070DC", ModelLocator.ZY0804$hiT7070DC);
+//				Utils.registerImageByClass("ZY0804$hiT7070SC", ModelLocator.ZY0804$hiT7070SC);
+//				Utils.registerImageByClass("ZY0804$hiT7070SCDTC", ModelLocator.ZY0804$hiT7070SCDTC);
+//				Utils.registerImageByClass("ZY0804$SLD16B", ModelLocator.ZY0804$SLD16B);
+//				Utils.registerImageByClass("ZY0804$SLD16BE", ModelLocator.ZY0804$SLD16BE);
+//				Utils.registerImageByClass("ZY0804$SLR16", ModelLocator.ZY0804$SLR16);
+//				Utils.registerImageByClass("ZY0804$SMA1/4C", ModelLocator.ZY0804$SMA14C);
+//				Utils.registerImageByClass("ZY0804$SMA16", ModelLocator.ZY0804$SMA16);
+//				Utils.registerImageByClass("ZY0804$SMA16/4", ModelLocator.ZY0804$SMA164);
+//				Utils.registerImageByClass("ZY0805$ADM-U", ModelLocator.ZY0805$ADM$U);
+//				Utils.registerImageByClass("ZY0807$FT0102", ModelLocator.ZY0807$FT0102);
+//				Utils.registerImageByClass("ZY0807$XDM-100", ModelLocator.ZY0807$XDM$100);
+//				Utils.registerImageByClass("ZY0809$1660SM", ModelLocator.ZY0809$1660SM);
+//				Utils.registerImageByClass("ZY0809", ModelLocator.ZY0809);
+//				Utils.registerImageByClass("ZY0809$FT0102", ModelLocator.ZY0809$FT0102);
+//				Utils.registerImageByClass("ZY0899$FT0102", ModelLocator.ZY0899$FT0102);
+//				Utils.registerImageByClass("ZY0899$FT010213",ModelLocator.ZY0899$FT010213);
+//				Utils.registerImageByClass("ZY0809$GenericNE", ModelLocator.ZY0809$GenericNE);
+//				Utils.registerImageByClass("ZY0812", ModelLocator.ZY0812);
+//				Utils.registerImageByClass("ZY0812$FT0102", ModelLocator.ZY0812$FT0102);
+//				Utils.registerImageByClass("ZY0812$FT010213", ModelLocator.ZY0812$FT010213);
+//				Utils.registerImageByClass("ZY0812$SDM-1", ModelLocator.ZY0812$SDM$1);
+//				Utils.registerImageByClass("ZY0812$SDM-4L", ModelLocator.ZY0812$SDM$4L);
+//				Utils.registerImageByClass("ZY0812$SDM-4R", ModelLocator.ZY0812$SDM$4R);
+//				Utils.registerImageByClass("ZY0812$XDM-100", ModelLocator.ZY0812$XDM$100);
+//				Utils.registerImageByClass("ZY0812$XDM-500", ModelLocator.ZY0812$XDM$500);
+//				Utils.registerImageByClass("ZY0812$XDM-500X4", ModelLocator.ZY0812$XDM$500X4);
+//				Utils.registerImageByClass("ZY0812$XDM-1000", ModelLocator.ZY0812$XDM$1000);
+//				Utils.registerImageByClass("ZY0812$XDM-1000X2", ModelLocator.ZY0812$XDM$1000X2);
+//				Utils.registerImageByClass("ZY0814$FT0102", ModelLocator.ZY0814$FT0102);
+//				Utils.registerImageByClass("ZY0814$FT010213", ModelLocator.ZY0814$FT010213);
+//				Utils.registerImageByClass("ZY0814$SMS-150V", ModelLocator.ZY0814$SMS$150V);
+//				Utils.registerImageByClass("ZY0814$SMS-600V", ModelLocator.ZY0814$SMS$600V);
+//				Utils.registerImageByClass("ZY0815$OMS1664", ModelLocator.ZY0815$OMS1664);
+//				Utils.registerImageByClass("ZY0815$FT0102", ModelLocator.ZY0815$FT0102);
+//				Utils.registerImageByClass("ZY0815$FT010203", ModelLocator.ZY0815$FT010203);
+//				Utils.registerImageByClass("ZY0815$FT010213", ModelLocator.ZY0815$FT010213);
+//				Utils.registerImageByClass("ZY0815$OMS1240-4", ModelLocator.ZY0815$OMS1240$4);
+//				Utils.registerImageByClass("ZY0815$OMS1654", ModelLocator.ZY0815$OMS1654);								
+//				Utils.registerImageByClass("ZY0815$OMS860", ModelLocator.ZY0815$OMS860);
+//				Utils.registerImageByClass("ZY0815$Series4SMA1/4(4+4)",ModelLocator.ZY0815$Series4SMA144$4);
+//				Utils.registerImageByClass("ZY0815$Series3SMA1/4c",ModelLocator.ZY0815$Series3SMA1$4c);	
+//				Utils.registerImageByClass("ZY0815$OMS3255(160G)",ModelLocator.ZY0815$OMS3255$160G);
+//				Utils.registerImageByClass("ZY0815$OMS3240/MSH64C",ModelLocator.ZY0815$OMS3240MSH64C);
+//				Utils.registerImageByClass("ZY0815$Series3SMA16",ModelLocator.ZY0815$Series3SMA16);
+//				Utils.registerImageByClass("ZY0815$Series3SMA4",ModelLocator.ZY0815$Series3SMA4);
+//				Utils.registerImageByClass("ZY0815$Series3SMA4/16c",ModelLocator.ZY0815$Series3SMA416c);	
+//				Utils.registerImageByClass("ZY0823$Series3SMA1/4c",ModelLocator.ZY0823$Series3SMA14c);
+//				Utils.registerImageByClass("ZY0804", ModelLocator.ZY0804);
+//				Utils.registerImageByClass("ZY0807", ModelLocator.ZY0807);	
+//				Utils.registerImageByClass("ZY0801circuit", ModelLocator.ZY0801circuit);	
+//				Utils.registerImageByClass("ZY0801$FT0102circuit", ModelLocator.ZY0801$FT0102circuit);	
+//				Utils.registerImageByClass("ZY0801$OptiX2500+circuit", ModelLocator.ZY0801$OptiX2500$circuit);
+//				Utils.registerImageByClass("ZY0801$OptiX 2500+circuit", ModelLocator.ZY0801$OptiX2500$circuit);
+//				Utils.registerImageByClass("ZY0801$OptiXOSN3500circuit", ModelLocator.ZY0801$OptiXOSN3500circuit);
+//				Utils.registerImageByClass("ZY0801$OptiX OSN 3500circuit", ModelLocator.ZY0801$OptiXOSN3500circuit);
+//				Utils.registerImageByClass("ZY0801$OptiXOSN7500circuit", ModelLocator.ZY0801$OptiXOSN7500circuit);
+//				Utils.registerImageByClass("ZY0801$OptiX OSN 7500circuit", ModelLocator.ZY0801$OptiXOSN7500circuit);
+//				Utils.registerImageByClass("ZY0802$ZXMP S385circuit", ModelLocator.ZY0802$ZXMPS385circuit);
+//				Utils.registerImageByClass("ZY0804$FT010213circuit", ModelLocator.ZY0804$FT010213circuit);
+//				Utils.registerImageByClass("ZY0804$hiT7070DCcircuit", ModelLocator.ZY0804$hiT7070DCcircuit);
+//				Utils.registerImageByClass("ZY0804$hiT7070SCcircuit", ModelLocator.ZY0804$hiT7070SCcircuit);
+//				Utils.registerImageByClass("ZY0804$hiT7070SCDTCcircuit", ModelLocator.ZY0804$hiT7070SCDTCcircuit);
+//				Utils.registerImageByClass("ZY0804$SLD16Bcircuit", ModelLocator.ZY0804$SLD16Bcircuit);
+//				Utils.registerImageByClass("ZY0804$SLD16BEcircuit", ModelLocator.ZY0804$SLD16BEcircuit);
+//				Utils.registerImageByClass("ZY0804$SLR16circuit", ModelLocator.ZY0804$SLR16circuit);
+//				Utils.registerImageByClass("ZY0804$SMA1/4Ccircuit", ModelLocator.ZY0804$SMA14Ccircuit);
+//				Utils.registerImageByClass("ZY0804$SMA16circuit", ModelLocator.ZY0804$SMA16circuit);
+//				Utils.registerImageByClass("ZY0804$SMA16/4circuit", ModelLocator.ZY0804$SMA164circuit);
+//				Utils.registerImageByClass("ZY0805$ADM-Ucircuit", ModelLocator.ZY0805$ADM$Ucircuit);
+//				Utils.registerImageByClass("ZY0807$FT0102circuit", ModelLocator.ZY0807$FT0102circuit);
+//				Utils.registerImageByClass("ZY0807$XDM-100circuit", ModelLocator.ZY0807$XDM$100circuit);
+//				Utils.registerImageByClass("ZY0809$1660SMcircuit", ModelLocator.ZY0809$1660SMcircuit);
+//				Utils.registerImageByClass("ZY0809circuit", ModelLocator.ZY0809circuit);
+//				Utils.registerImageByClass("ZY0809$FT0102circuit", ModelLocator.ZY0809$FT0102circuit);
+//				Utils.registerImageByClass("ZY0899$FT0102circuit", ModelLocator.ZY0899$FT0102circuit);
+//				Utils.registerImageByClass("ZY0899$FT010213circuit",ModelLocator.ZY0899$FT010213circuit);
+//				Utils.registerImageByClass("ZY0809$GenericNEcircuit", ModelLocator.ZY0809$GenericNEcircuit);
+//				Utils.registerImageByClass("ZY0812circuit", ModelLocator.ZY0812circuit);
+//				Utils.registerImageByClass("ZY0812$FT0102circuit", ModelLocator.ZY0812$FT0102circuit);
+//				Utils.registerImageByClass("ZY0812$FT010213circuit", ModelLocator.ZY0812$FT010213circuit);
+//				Utils.registerImageByClass("ZY0812$SDM-1circuit", ModelLocator.ZY0812$SDM$1circuit);
+//				Utils.registerImageByClass("ZY0812$SDM-4Lcircuit", ModelLocator.ZY0812$SDM$4Lcircuit);
+//				Utils.registerImageByClass("ZY0812$SDM-4Rcircuit", ModelLocator.ZY0812$SDM$4Rcircuit);
+//				Utils.registerImageByClass("ZY0812$XDM-100circuit", ModelLocator.ZY0812$XDM$100circuit);
+//				Utils.registerImageByClass("ZY0812$XDM-500circuit", ModelLocator.ZY0812$XDM$500circuit);
+//				Utils.registerImageByClass("ZY0812$XDM-500X4circuit", ModelLocator.ZY0812$XDM$500X4circuit);
+//				Utils.registerImageByClass("ZY0812$XDM-1000circuit", ModelLocator.ZY0812$XDM$1000circuit);
+//				Utils.registerImageByClass("ZY0812$XDM-1000X2circuit", ModelLocator.ZY0812$XDM$1000X2circuit);
+//				Utils.registerImageByClass("ZY0814$FT0102circuit", ModelLocator.ZY0814$FT0102circuit);
+//				Utils.registerImageByClass("ZY0814$FT010213circuit", ModelLocator.ZY0814$FT010213circuit);
+//				Utils.registerImageByClass("ZY0814$SMS-150Vcircuit", ModelLocator.ZY0814$SMS$150Vcircuit);
+//				Utils.registerImageByClass("ZY0814$SMS-600Vcircuit", ModelLocator.ZY0814$SMS$600Vcircuit);
+//				Utils.registerImageByClass("ZY0815$OMS1664circuit", ModelLocator.ZY0815$OMS1664circuit);
+//				Utils.registerImageByClass("ZY0815$FT0102circuit", ModelLocator.ZY0815$FT0102circuit);
+//				Utils.registerImageByClass("ZY0815$FT010203circuit", ModelLocator.ZY0815$FT010203circuit);
+//				Utils.registerImageByClass("ZY0815$FT010213circuit", ModelLocator.ZY0815$FT010213circuit);
+//				Utils.registerImageByClass("ZY0815$OMS1240-4circuit", ModelLocator.ZY0815$OMS1240$4circuit);
+//				Utils.registerImageByClass("ZY0815$OMS1654circuit", ModelLocator.ZY0815$OMS1654circuit);								
+//				Utils.registerImageByClass("ZY0815$OMS860circuit", ModelLocator.ZY0815$OMS860circuit);
+//				Utils.registerImageByClass("ZY0815$Series4SMA1/4(4+4)circuit",ModelLocator.ZY0815$Series4SMA144$4circuit);
+//				Utils.registerImageByClass("ZY0815$Series3SMA1/4ccircuit",ModelLocator.ZY0815$Series3SMA1$4ccircuit);	
+//				Utils.registerImageByClass("ZY0815$OMS3255(160 G)circuit",ModelLocator.ZY0815$OMS3255$160G$circuit);
+//				Utils.registerImageByClass("ZY0815$OMS3240/MSH64Ccircuit",ModelLocator.ZY0815$OMS3240MSH64Ccircuit);
+//				Utils.registerImageByClass("ZY0815$Series3SMA16circuit",ModelLocator.ZY0815$Series3SMA16circuit);
+//				Utils.registerImageByClass("ZY0815$Series3SMA4circuit",ModelLocator.ZY0815$Series3SMA4circuit);
+//				Utils.registerImageByClass("ZY0815$Series3SMA4/16ccircuit",ModelLocator.ZY0815$Series3SMA416ccircuit);	
+//				Utils.registerImageByClass("ZY0823$Series3SMA1/4ccircuit",ModelLocator.ZY0823$Series3SMA14ccircuit);
+//				Utils.registerImageByClass("ZY0804circuit", ModelLocator.ZY0804circuit);
+//				Utils.registerImageByClass("ZY0807circuit", ModelLocator.ZY0807circuit);	
+//				Utils.registerImageByClass("Cloud",ModelLocator.Cloud);
+//				Utils.registerImageByClass("Port",ModelLocator.portcircuit);
+//				Utils.registerImageByClass("Portright",ModelLocator.portrightcircuit);
+				
+				SerializationSettings.registerGlobalClient("flag", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equipcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("x_vendor", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("x_model", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("topoid", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("tsrate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("timeslot", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("port_a", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("port_z", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("circuitProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("childModelProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("virtualTopoLinkProperty", Consts.TYPE_ARRAY_STRING);
+				SerializationSettings.registerGlobalClient("isdefault", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("hasVirtualTopolinkValue", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("formId", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("executeDeptName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("executeDeptCode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("applyPerson", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("applyDeptName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("applyDeptCode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("applyDate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("endDate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("aStationName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("zStationName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("aEquipName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("zEquipName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("rateName", Consts.TYPE_ARRAY_STRING);
+				SerializationSettings.registerGlobalClient("rateCode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("requisitionID", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("equip_a", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equip_a_code", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("port_a_code", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("systemcode", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("linerate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("linerateName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("slot_z", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("equip_z", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("frame_z", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("pack_z_name", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("pack_z_serial", Consts.TYPE_ARRAY_STRING);
+				
+				SerializationSettings.registerGlobalClient("slotSerial", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("packSerial", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("packName", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portSerial", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portRate", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("portRateName", Consts.TYPE_STRING);
+				
+				SerializationSettings.registerGlobalClient("topolinkProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("frame_a", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("slot_a", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("pack_a_serial", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("pack_a_name", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("hasTopoLinkValue", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("topolinkProperty", Consts.TYPE_STRING);
+				
+				
+				SerializationSettings.registerGlobalClient("systemjumpProperty", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("formName", Consts.TYPE_STRING);
+				
+				
+				
+				SerializationSettings.registerGlobalClient("isbranch", Consts.TYPE_STRING);
+				SerializationSettings.registerGlobalClient("position", Consts.TYPE_INT);
+				SerializationSettings.registerGlobalClient("cc", Consts.TYPE_STRING);
+				addContextMenu();//右键
+				
+			}
+			private function addContextMenu():void{
+				
+				circuit.contextMenu = new ContextMenu();
+				circuit.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, function(e:ContextMenuEvent):void{
+					//右键选中网元
+					var p:Point = new Point(e.mouseTarget.mouseX / circuit.zoom, e.mouseTarget.mouseY / circuit.zoom);
+					var datas:ICollection = circuit.getElementsByLocalPoint(p);
+					//定制右键菜单
+					var flexVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+					var playerVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+					if(circuit.selectionModel.count == 0){//选中元素个数
+						
+						circuit.contextMenu.customItems = [flexVersion, playerVersion];
+					}
+					else{
+						circuit.contextMenu.customItems = [flexVersion, playerVersion];
+						if (((Element)(circuit.selectionModel.selection.getItemAt(0)) is Node)&&(circuit.selectionModel.selection.getItemAt(0).getClient("flag")=='equipment')) 
+						{//选中节 
+							var item0:ContextMenuItem = new ContextMenuItem("显示设备属性");
+							item0.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler);
+							
+							
+							circuit.contextMenu.hideBuiltInItems();
+							circuit.contextMenu.customItems = [item0];
+							
+							
+						}
+						if (((Element)(circuit.selectionModel.selection.getItemAt(0)) is Link)&&(circuit.selectionModel.selection.getItemAt(0).getClient("flag")=='topolink')) 
+						{//选中节  
+							var item4:ContextMenuItem = new ContextMenuItem("显示复用段属性");
+							item4.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler_Ocable);
+							
+							circuit.contextMenu.hideBuiltInItems();
+							circuit.contextMenu.customItems = [item4];
+							
+							
+						}
+						
+						if(((Element)(circuit.selectionModel.selection.getItemAt(0)) is Follower)&&(circuit.selectionModel.selection.getItemAt(0).getClient("flag")=='port')){
+							
+							var item:ContextMenuItem = new ContextMenuItem("显示端口属性");
+							item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler_port);
+							circuit.contextMenu.hideBuiltInItems();
+							circuit.contextMenu.customItems = [item]; 
+							
+						}
+						
+						if(((Element)(circuit.selectionModel.selection.getItemAt(0)) is Node)&&(circuit.selectionModel.selection.getItemAt(0).getClient("flag")=='cloud')){
+							var item:ContextMenuItem = new ContextMenuItem("查看子方式单");
+							item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,addChildModel);
+							circuit.contextMenu.hideBuiltInItems();
+							circuit.contextMenu.customItems = [item];
+						} 
+						
+						
+					}
+				});	
+			}
+			
+			private function addChildModel(e:ContextMenuEvent):void{
+				
+				var node:Node = circuit.selectionModel.selection.getItemAt(0) as Node;
+				var child:childmodel = new childmodel();
+				child.node = node;
+				child.isUse= false;
+				PopUpManager.addPopUp(child, this, true);
+				child.formName.text = form_name; 
+				PopUpManager.centerPopUp(child);
+				
+			}
+			
+			private function itemSelectHandler(e:ContextMenuEvent):void{
+//				var node:Node = circuit.selectionModel.selection.getItemAt(0);
+//				var equipcode:String = node.getClient("equipcode");
+//				var rtobj:RemoteObject = new RemoteObject("equInfo");
+//				rtobj.endpoint = ModelLocator.END_POINT;
+//				rtobj.showBusyCursor = true;
+//				rtobj.getEquInfoByEquCode(equipcode);
+//				rtobj.addEventListener(ResultEvent.RESULT, generateEquInfo);	
+//				itemEquInfo = new viewEquInfo;
+//				PopUpManager.addPopUp(itemEquInfo, this, true);
+//				PopUpManager.centerPopUp(itemEquInfo);		
+			}
+			private function generateEquInfo(event:ResultEvent):void {   
+//				var xml:String = event.result.toString();
+//				var equips:Array = (JSON.decode(xml.toString()) as Array);
+//				for(var i:int = 0; i < equips.length; i++) {
+//					var equip:Object = equips[i] as Object;
+//					itemEquInfo.equipname.text = equip.equipname;//设备名称
+//					itemEquInfo.vendor_name.selectedItem = new XML("<name label =\""+equip.vendor_name+"\" code=\""+equip.x_vendor+"\" />");//厂家
+//					itemEquInfo.x_model.text = equip.x_model;//型号
+//					itemEquInfo.equiptype_name.selectedItem = new XML("<name label =\""+equip.equiptype_name+"\" code=\""+equip.equiptype+"\" />");//设备类型
+//					itemEquInfo.nename.text = equip.nename;//网元名称			
+//					itemEquInfo.systemcode.selectedItem = new XML("<name label =\""+equip.sysname+"\" code=\""+equip.systemcode+"\" />");//所属系统
+//					itemEquInfo.equiplabel.text = equip.equiplabel;//设备标签
+//					itemEquInfo.nsap.text = equip.nsap;//设备地址
+//					itemEquInfo.property_name.selectedItem = new XML("<name label =\""+equip.property_name+"\" code=\""+equip.property+"\" />");//管理单位
+//					itemEquInfo.updatedate.text = equip.updatedate;//更新时间
+//					itemEquInfo.updateperson.text = equip.updateperson;//更新人
+//				}	
+			}
+			private function generateOcablePropertysInfo(event:ResultEvent):void {
+//				var xml:String = event.result.toString();
+//				var ocables:Array = (JSON.decode(xml.toString()) as Array);
+//				
+//				for(var i:int = 0; i < ocables.length; i++) {
+//					var ocable:Object = ocables[i] as Object;
+//					itemOcableInfo.systemcode.selectedItem = new XML("<name label =\""+ocable.sysname+"\" code=\""+ocable.systemcode+"\" />");//传输系统				
+//					itemOcableInfo.equip_a.text = ocable.aendptpxx;//A端端口					
+//					itemOcableInfo.equip_z.text = ocable.zendptpxx;//Z端端口			
+//					itemOcableInfo.linerate.selectedItem = new XML("<name label =\""+ocable.lineratexx+"\" code=\""+ocable.linerate+"\" />");//速率
+//					itemOcableInfo.updatedate.text = ocable.updatedate;//更新时间
+//					itemOcableInfo.updateperson.text = ocable.updateperson;//更新人
+//				}
+			}
+			private function itemSelectHandler_Ocable(e:ContextMenuEvent):void{
+//				itemOcableInfo = new topLinkInfo;
+//				PopUpManager.addPopUp(itemOcableInfo, this, true);
+//				PopUpManager.centerPopUp(itemOcableInfo);
+//				
+//				var link:Link = circuit.selectionModel.selection.getItemAt(0);
+//				var topolinkid:Object = link.getClient('topoid');
+//				
+//				var rtobj3:RemoteObject = new RemoteObject("equInfo");
+//				rtobj3.endpoint = ModelLocator.END_POINT;
+//				rtobj3.showBusyCursor = true;
+//				rtobj3.getOcableProperty(topolinkid);//获取复用段属性
+//				rtobj3.addEventListener(ResultEvent.RESULT, generateOcablePropertysInfo);
+				
+				/*	itemOcableInfo.systemcode.dataProvider = XMLData_Systems.children();
+				itemOcableInfo.systemcode.labelField = "@label"; 
+				
+				itemOcableInfo.linerate.dataProvider = XMLData_Rates.children();
+				itemOcableInfo.linerate.labelField = "@label";	*/
+				
+			}
+			private function itemSelectHandler_port(evt:ContextMenuEvent):void{
+				var follow:Follower = circuit.selectionModel.selection.getItemAt(0) as Follower;
+				var portcode:String=follow.getClient("portcode");
+				if(portcode!=null){
+					portcode = portcode.split(",")[0];
+				}
+				
+				var portPropertiesRO:RemoteObject = new RemoteObject("equipPack");
+				portPropertiesRO.endpoint=ModelLocator.END_POINT;
+				portPropertiesRO.getPortProperty(portcode);//查询数据	
+				portPropertiesRO.showBusyCursor = true;
+				portPropertiesRO.addEventListener(ResultEvent.RESULT, generatePortProperties);		
+			}
+			private function generatePortProperties(event:ResultEvent):void{
+				duanKouProperties = new viewEquipPackDuanKouPropertiesInfo;
+				PopUpManager.addPopUp(duanKouProperties, this, true);
+				PopUpManager.centerPopUp(duanKouProperties);
+				
+				duanKouProperties.equipname.text=event.result.equipname;
+				duanKouProperties.portserial.text=event.result.portserial
+				duanKouProperties.frameserial.text=event.result.frameserial;
+				duanKouProperties.remark.text=event.result.remark;
+				duanKouProperties.slotserial.text=event.result.slotserial;
+				duanKouProperties.updatedate.text=event.result.updatedate;
+				duanKouProperties.updateperson.text=event.result.updateperson;
+				duanKouProperties.logicport.text=event.result.logicport;
+				
+				//				duanKouProperties.x_capability.text=event.result.x_capability;
+				duanKouProperties.connport.text=event.result.connport;
+				duanKouProperties.packserial.text=event.result.packserial;
+				
+				var ppobj1:RemoteObject = new RemoteObject("equipPack");
+				ppobj1.endpoint=ModelLocator.END_POINT;
+				ppobj1.showBusyCursor=true;
+				ppobj1.getFromXTBM("ZY030704_%");//查看端口类型
+				ppobj1.addEventListener(ResultEvent.RESULT, function (e: ResultEvent):void{generatePortTypeInfo(e,event.result.y_porttype)});
+				var ppobj2:RemoteObject = new RemoteObject("equipPack");
+				ppobj2.endpoint=ModelLocator.END_POINT;
+				ppobj2.showBusyCursor=true;
+				ppobj2.getFromXTBM("ZY0701_%")// 端口速率
+				ppobj2.addEventListener(ResultEvent.RESULT, function (e:ResultEvent):void{generatePortRateInfo(	e,event.result.x_capability)});
+				var ppobj3:RemoteObject = new RemoteObject("equipPack");
+				ppobj3.endpoint=ModelLocator.END_POINT;
+				ppobj3.showBusyCursor=true;
+				ppobj3.getFromXTBM("ZY131002_%")// 端口状态
+				ppobj3.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{generatePortStatusInfo(e,event.result.status)});	
+			}
+			private function generatePortRateInfo(event:ResultEvent,rate:String):void{
+				var XMLData:XMLList = new XMLList(event.result.toString());
+				duanKouProperties.x_capability.dataProvider = XMLData.children();
+				duanKouProperties.x_capability.labelField = "@label";	
+				
+				for each (var element:XML in duanKouProperties.x_capability.dataProvider) {
+					
+					if(element.@label==rate){
+						
+						duanKouProperties.x_capability.selectedItem = element as Object;
+					}
+				}
+			}
+			private function generatePortStatusInfo(event:ResultEvent,status:String):void{
+				var XMLData:XMLList = new XMLList(event.result.toString());
+				duanKouProperties.portstatus.dataProvider = XMLData.children();
+				duanKouProperties.portstatus.labelField = "@label";
+				for each (var element:XML in duanKouProperties.portstatus.dataProvider) {					
+					if(element.@label==status){						
+						duanKouProperties.portstatus.selectedItem = element as Object;
+					}
+				}
+			} 
+			private function generatePortTypeInfo(event:ResultEvent,type:String):void{
+				var XMLData:XMLList = new XMLList(event.result.toString());
+				duanKouProperties.y_porttype.dataProvider = XMLData.children();
+				duanKouProperties.y_porttype.labelField = "@label";
+				
+				for each (var element:XML in duanKouProperties.y_porttype.dataProvider) {
+					
+					if(element.@label==type){
+						
+						duanKouProperties.y_porttype.selectedItem = element as Object;
+					}
+				}
+			}
+			private function drawCircuit(e:ResultEvent):void{
+				circuit.elementBox.clear();  
+				var serializer:XMLSerializer = new XMLSerializer(circuit.elementBox);
+				serializer.deserialize(e.result.toString());	
+			}
+			
+			
+			protected function changeHandler(event:IndexChangedEvent):void
+			{
+				var flag : String = lowId.getTabAt(lowId.selectedIndex).label;
+				if(flag.indexOf("方式基本信息")!=-1){
+					if(CCcode!=null&&CCcode!=""){
+						//	var remoteobj:RemoteObject = new RemoteObject("channelRouteForm");
+						var remoteobj:RemoteObject = new RemoteObject("businessDispatch");
+						remoteobj.endpoint = ModelLocator.END_POINT;
+						remoteobj.showBusyCursor =true;
+						remoteobj.getOneWay(CCcode);		
+						remoteobj.addEventListener(ResultEvent.RESULT,getChannelRouteResult);	
+					}
+				}
+				if(flag.indexOf("电路路由图")!=-1){
+					if(toolbar1.getStyle("horizontalGap")!='4'){
+						DemoUtilsForChannel.initNetworkToolbar(toolbar1, channelPic,"默认模式");
+					}
+					if(CCcode!=null&&CCcode!=""){
+						var rtobj:RemoteObject = new RemoteObject("channelRoute");
+						rtobj.endpoint = ModelLocator.END_POINT;
+						rtobj.showBusyCursor = "true";
+						rtobj.getChannelRoute(CCcode);
+						rtobj.addEventListener(ResultEvent.RESULT,drawChannelPic)
+					}
+				}
+			}
+			
+			private function drawChannelPic(e:ResultEvent):void{
+				
+				if(e.result!=null&&e.result.toString()!=""){
+					channelPic.elementBox.clear();
+					var serializer:XMLSerializer = new XMLSerializer(channelPic.elementBox);
+					serializer.deserialize(e.result.toString());
+				}else{
+					Alert.show("电路路由图不存在，电路未开通！","温馨提示");
+					
+				}
+			}
+			
+			private function getChannelRouteResult(e:ResultEvent):void{
+				
+				circuitcode.text=CCcode;
+				remark.text=e.result.remark;
+				userCom.text=e.result.userCom;
+				requestCom.text=e.result.requestCom;
+				requisitionId.text=e.result.requisitionId;
+				userName.text=e.result.userName;
+				operationType.text=e.result.operationType;
+				rate.text=e.result.rate;
+				circuitLevel.text=e.result.circuitLevel;
+				interfaceType.text=e.result.interfaceType;
+				state.text=e.result.state;
+				station1.text=e.result.station1;
+				station2.text=e.result.station2;
+				equipCode1.text=e.result.equipCode1;
+				equipCode2.text=e.result.equipCode2;
+				//beiZhu.text=e.result.beiZhu;beiZhu
+				netManagerId.text=e.result.netManagerId;
+				portserialno1.text=e.result.portserialno1;
+				portserialno2.text=e.result.portserialno2;
+				leaser.text=e.result.leaser;
+				createTime.text=e.result.createTime;
+				useTime.text=e.result.useTime;
+				requiSitionId.text=e.result.requiSitionId;
+			}
+			
+			
+			protected function Excel_clickHandler(event:MouseEvent):void
+			{
+				var bitmapData:BitmapData = circuit.exportAsBitmapData(); 
+				var encoder:PNGEncoder = new PNGEncoder();
+				var data:ByteArray = encoder.encode(bitmapData);
+				if(circuit.name!='circuit1'){
+					var rtobj:RemoteObject = new RemoteObject("businessDispatch");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.getByteData(data);
+					rtobj.addEventListener(ResultEvent.RESULT,function(){
+						exportExcel(circuit);
+					})
+				}else{
+					Alert.show("请先关联方式后再执行导出EXCEL操作！","温馨提示");
+				}
+			}
+			public static function exportExcel(circuit:Network):void{
+				
+				var bitmapData:BitmapData = circuit.exportAsBitmapData(); 
+				var encoder:PNGEncoder = new PNGEncoder();
+				var data:ByteArray = encoder.encode(bitmapData);
+				var url:String = getURL();
+				var rtobj:RemoteObject = new RemoteObject("businessDispatch");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.exportExcel(circuit.name,url);
+				rtobj.addEventListener(ResultEvent.RESULT, function(event:ResultEvent){exportExcelResult(event,circuit,url)});
+			}
+			public static function exportExcelResult(event:ResultEvent,circuit:Network,url:String):void{
+				
+				var path = url+"assets/excels/expfiles/"+circuit.name+".xls";
+				
+				var request:URLRequest = new URLRequest(encodeURI(path));
+				
+				navigateToURL(request,"_blank");
+				
+			}
+			private static function getURL():String{
+				var currSwfUrl:String; 
+				var doMain:String = Application.application.stage.loaderInfo.url;  
+				var doMainArray:Array = doMain.split("/");  
+				
+				if (doMainArray[0] == "file:") {  
+					if(doMainArray.length<=3){  
+						currSwfUrl = doMainArray[2];  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf(currSwfUrl.charAt(2)));  
+					}else{  
+						currSwfUrl = doMain;  
+						currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+					}  
+				}else{  
+					currSwfUrl = doMain;  
+					currSwfUrl = currSwfUrl.substring(0,currSwfUrl.lastIndexOf("/"));  
+				}  
+				currSwfUrl += "/";
+				return currSwfUrl;
+			}
+			
+			
+			protected function help_clickHandler(event:MouseEvent):void
+			{
+				Alert.show("撤销电路主要是删除电路制作过程中配置的相关信息，改变端口、时隙的占用情况。","温馨提示");
+			}
+			
+			
+			protected function revocation_clickHandler(event:MouseEvent):void
+			{
+				
+				
+				var obj:RemoteObject = new RemoteObject("businessDispatch");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.repealCircuit(CCcode,form_name);
+				obj.addEventListener(ResultEvent.RESULT,function(e:ResultEvent):void{
+					if(e.result.toString()=="ok"){
+						Alert.show("撤销成功！","温馨提示");
+					//	Alert.show(this.toString());
+						//PopUpManager.removePopUp(this);
+						//						page_parent.ChangeEvent();
+					}else{
+						Alert.show("撤销失败！","温馨提示");
+					}
+					
+					
+				});
+//				page_parent.businessDispatchRemote.getRepealedCircuitInfo(selectobj);
+//				page_parent.businessDispatchRemote.addEventListener(ResultEvent.RESULT,page_parent.setDataProvide1);
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:TabNavigator id="lowId" x="0" y="0" width="100%" height="100%" change="changeHandler(event)">
+			<mx:Canvas width="100%" height="100%" label="方式制作图" id="canvas1" fontSize="13">
+				<flex:Network x="0" y="0" width="100%" height="100%" id="circuit">
+				</flex:Network>
+			</mx:Canvas>
+			<mx:Canvas width="70%"  id="channelbox1"   label="方式基本信息" height="100%" backgroundColor="#EFF3FF" borderStyle="solid" borderThickness="1" borderSides="bottom,right">
+				
+				<mx:Grid y="2" width="100%" height="100%"  verticalGap="0" horizontalGap="0"  borderStyle="solid" x="10" borderSides="left,top,middle,right,bottom"   borderThickness="1" backgroundAlpha="0.06" borderColor="#93B0B7" cornerRadius="0" alpha="0.78" themeColor="#B4BBBB" backgroundColor="#FFFFFF">
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%"  colSpan="4">
+							<mx:VBox id="typename" backgroundSize="100%" backgroundImage="@Embed(source='assets/images/modeDispatcher/main_top.png')"  label="国网信通公司通信调度方式单"   width="100%"  
+									 fontSize="15"  mouseEnabled="false" color="#95D58F" height="35" fontFamily="Arial" fontWeight="bold" horizontalAlign="center" verticalAlign="middle" >
+								<mx:Label text="国网信通公司通信调度方式单" fontWeight="bold" color="#15181C"/>
+							</mx:VBox>
+						</mx:GridItem>	
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%"  height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label     text="方式单编号:"     width="100%" height="24" textAlign="right"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%"  borderStyle="solid" borderSides="left,top"  borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="circuitcode"   styleName="textinput"  width="100%"   height="100%"   />
+						</mx:GridItem>
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label  text="使用单位:" width="100%" textAlign="right" height="24"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="userCom" width="316" styleName="textinput"    height="100%"  />
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="方式单名称:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="remark" width="100%" styleName="textinput"    height="100%" />
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="申请单位:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="requestCom" width="100%" styleName="textinput"  height="100%" />		
+						</mx:GridItem>
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="申请单号:" width="100%" height="24"  textAlign="right" y="86"  x="407" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="requisitionId" width="100%" styleName="textinput"  height="100%" />
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="业务类型:" width="100%" height="24" textAlign="right"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="operationType" width="100%" styleName="textinput"  height="100%" />
+						</mx:GridItem>
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="业务分类:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="userName" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="速率:" width="100%" textAlign="right" height="24"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="rate" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="业务等级:" width="100%" textAlign="right" height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="circuitLevel" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="接口类型:" width="100%" textAlign="right" height="24"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="interfaceType" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="电路状态:" width="100%" textAlign="right"  height="24"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="state" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="A局站:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="station1" width="100%" styleName="textinput"   height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="Z局站:" width="100%" height="24"  textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="station2" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="A端传输设备:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="equipCode1" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="Z端传输设备:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="equipCode2" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="A端终端设备:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="equip_ap" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="Z端终端设备:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="equip_zp" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="A局站负责单位:" width="100%" textAlign="right"  height="24"  fontWeight="bold" />
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="dept_poita" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="Z局站负责单位:" width="100%" textAlign="right"  height="24" fontWeight="bold" />
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="dept_poitz" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="执行人:" width="100%" textAlign="right" height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="mana" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="执行人:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="manz" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="相关网管系统:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="netManagerId" width="100%" styleName="textinput"  height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="网管负责单位:" width="100%" textAlign="right"  height="24"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="system_dept" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="执行人:" width="100%" textAlign="right"  height="24"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="manOfmanger" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="网管标识:" width="100%" textAlign="right"  height="24"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="mark_manager" width="100%" styleName="textinput"  height="100%" />
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="其它操作:" width="100%" textAlign="right" height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="other_op" width="100%"  styleName="textinput" height="100%" />
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="其它操作负责单位:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="dept_other_op" width="100%" styleName="textinput"  height="100%" />
+						</mx:GridItem>
+						
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="执行人:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="peopleOfdept_other_op" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="A端传输设备端口:" width="100%" textAlign="right" height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="portserialno1" width="100%" styleName="textinput"  height="100%" />
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="Z端传输设备端口:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>	
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="portserialno2" width="100%" styleName="textinput"  height="100%"/>
+						</mx:GridItem>
+						
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="A端终端设备端口:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="port_poita" width="100%" styleName="textinput"  height="100%" />
+						</mx:GridItem>
+						
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="Z端终端设备端口:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="port_poitz" width="100%" styleName="textinput"  height="100%"/>
+						</mx:GridItem>
+						
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="制作人:" width="100%" textAlign="right"  height="24" fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="leaser" width="100%" styleName="textinput"  height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="制作日期:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="createTime" width="100%" styleName="textinput"  height="100%" />
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="要求完成日期:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="requestFinish_time" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="实际完成时间:" width="100%" height="24" textAlign="right"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="useTime" width="100%" styleName="textinput"  height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="校核人:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="check_personOfRequestFinish" width="100%"  styleName="textinput" height="100%" />
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="校核人:" width="100%" height="24" textAlign="right"   fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="100%" height="100%" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="k" width="100%"  styleName="textinput" height="100%"/>
+						</mx:GridItem>
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="批准人:" width="100%" height="24" textAlign="right"  fontWeight="bold"/>
+						</mx:GridItem>
+						<mx:GridItem width="30%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="response_person" width="100%" styleName="textinput" height="100%"/>
+						</mx:GridItem>
+						
+					</mx:GridRow>
+					<mx:GridRow width="100%" height="35">
+						<mx:GridItem width="20%" height="100%" verticalAlign="middle" backgroundColor="#FFFFCC" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:Label text="备注:" width="100%"  height="24" textAlign="right"   fontWeight="bold" />
+						</mx:GridItem>
+						<mx:GridItem width="80%" height="100%" colSpan="3" borderStyle="solid" borderSides="left,top" borderThickness="1" borderColor="#B9CAD2">
+							<mx:TextInput id="requiSitionId"  verticalCenter="middle" width="100%"  styleName="textinput"  height="100%"/>
+						</mx:GridItem>
+						
+					</mx:GridRow>
+				</mx:Grid>
+			</mx:Canvas>
+			
+		</mx:TabNavigator>
+		<!-- 如果需要加电路路由图，只需要把下面的vbox给拷贝到上边的tab中去-->
+		<mx:VBox width="100%" height="100%" id="canvas2" label="电路路由图" fontSize="13" visible="false"  includeInLayout="false" >
+			<mx:HBox id="toolbar1" width="100%" horizontalGap="0"/>
+			<flex:Network x="0" y="0" width="100%" height="100%" id="channelPic">
+			</flex:Network>
+		</mx:VBox>
+		<mx:Canvas width="100%" height="27" styleName="myCanvas">
+			<mx:LinkButton label="导出Excel" left="10" bottom="0" width="104" icon="@Embed('assets/images/btn/fanshi_excel.png')" click="Excel_clickHandler(event)"/>
+			<mx:LinkButton id="help" label="操作说明" icon="@Embed('assets/images/btn/help_.png')"  bottom="0" right="10" click="help_clickHandler(event)"/>
+			<mx:VRule height="80%" width="4"  bottom="3" right="102"/>
+			<mx:LinkButton id="revocation" label="撤销" icon="@Embed('assets/images/btn/finished_.png')" bottom="0" right="105" click="revocation_clickHandler(event)"/>
+		</mx:Canvas>
+	</mx:VBox>
+</mx:TitleWindow>

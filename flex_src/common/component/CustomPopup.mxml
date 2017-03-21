@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="188" height="107" backgroundImage="assets/images/trip.png"
+		   useHandCursor="true" buttonMode="true">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.MyPopupManager;
+		]]>
+	</mx:Script>
+	<mx:Label text="资源变更提示:" x="12" y="23"/>
+	<mx:Text text="经系统检测,发现资源变更,请及时更新处理." x="20" y="42" width="147" height="37"/>
+	<mx:Image width="10" height="10" source="assets/images/trip_close.png" x="167" y="18" 
+			  useHandCursor="true" buttonMode="true" mouseChildren="false"
+			  click="{MyPopupManager.removePopUp(this)}"/>
+</mx:Canvas>

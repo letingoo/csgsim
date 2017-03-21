@@ -1,0 +1,818 @@
+package autoGrid.dwr;
+
+import java.math.BigDecimal;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import netres.component.ExcelOperation.ExportExcel;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import sysManager.log.dao.LogDao;
+
+import autoGrid.model.AutoGridModel;
+import autoGrid.model.ResultModel;
+
+import com.AppointStrToStr;
+
+import db.DbDAO;
+import db.ForTimeBaseDAO;
+import flex.messaging.FlexContext;
+
+public class AutoGridDwr {
+	ApplicationContext ctx = WebApplicationContextUtils
+			.getWebApplicationContext(FlexContext.getServletContext());
+	
+	private DbDAO basedao = (DbDAO) ctx.getBean("DbDAO");
+	private LogDao logDao = (LogDao) ctx.getBean("logDao");
+
+	public String getShowProperty(String tablename, String flag) {
+		StringBuffer json = new StringBuffer("");
+		try {
+			List list;
+			if (flag != null && flag.equalsIgnoreCase("search"))
+				list = basedao.queryForList(
+						"getShowPropertyByDictionaryAndTableNameForSearch",
+						tablename);
+			else
+				list = basedao.queryForList(
+						"getShowPropertyByDictionaryAndTableName", tablename);
+			if (list != null && list.size() > 0) {
+				json.append("[");
+				for (int i = 0; i < list.size(); i++) {
+					Map resultMap = (HashMap) list.get(i);
+					json.append("{");
+					json.append("\"id\":\"" + (String) resultMap.get("ENFIELD")
+							+ "\"");
+					json.append(",");
+					json.append("\"text\":\""
+							+ (String) resultMap.get("CHFIELD") + "\"");
+					json.append(",");
+					json.append("\"iskey\":\""
+							+ (String) resultMap.get("ISKEY") + "\"");
+					json.append(",");
+					json.append("\"datatype\":\""
+							+ (String) resultMap.get("DATATYPE") + "\"");
+					json.append(",");
+					json.append("\"isnull\":\""
+							+ (String) resultMap.get("ISNULL") + "\"");
+					json.append(",");
+					json.append("\"isvisible\":\""
+							+ (String) resultMap.get("ISVISIBLE") + "\"");
+					json.append(",");
+					json.append("\"iseditable\":\""
+							+ (String) resultMap.get("ISEDITABLE") + "\"");
+					json.append(",");
+					json.append("\"reality\":\""
+							+ (String) resultMap.get("REALITY") + "\"");
+					json.append(",");
+					json.append("\"relate\":\""
+							+ (String) resultMap.get("RELATE") + "\"");
+					json.append(",");
+					json.append("\"type\":\"" + (String) resultMap.get("TYPE")
+							+ "\"");
+					json.append(",");
+					json.append("\"restrict\":\""
+							+ (String) resultMap.get("RESTRICT") + "\"");
+					json.append(",");
+					json.append("\"isvalue\":\""
+							+ (String) resultMap.get("ISVALUE") + "\"");
+					json.append(",");
+					json.append("\"issearch\":\""
+							+ (String) resultMap.get("ISROGATORY") + "\"");
+					json.append(",");
+					json.append("\"getrule\":\""
+							+ (String) resultMap.get("GETRULE") + "\"");
+					if ((String) resultMap.get("GETRULE") != null
+							&& (String) resultMap.get("TYPE") != null
+							&& resultMap.get("TYPE").toString()
+									.equalsIgnoreCase("COMBOBOX")) {
+						List list1 = basedao.queryForList("getSqlByRule",
+								(String) resultMap.get("GETRULE"));
+						StringBuffer xmllist = null;
+						if (list1 != null && list1.size() > 0) {
+							xmllist = new StringBuffer();
+							int size = list1.size();
+							for (int j = 0; j < size; j++) {
+								Map rMap = (HashMap) list1.get(j);
+								xmllist.append("<name label='"
+										+ rMap.get("XTXX") + "' code='"
+										+ rMap.get("XTBM") + "' />");
+							}
+							json.append(",");
+							json.append("\"xmllist\":\"" + xmllist.toString()
+									+ "\"");
+						}
+					}
+					json.append("}");
+					if (i < (list.size() - 1)) {
+						json.append(",");
+					}
+				}
+				json.append("]");
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return json.toString();
+	}
+
+	public String setPropertyValue(String tablename, String content,
+			String pkey, String value) {
+		StringBuffer json = new StringBuffer("");
+		try {
+			if (value != null && !value.equalsIgnoreCase("")) {
+				String tmpString = content;
+				if (content.contains("@"))
+					tmpString = content.replaceAll("@", ",");
+				Map map = new HashMap();
+				map.put("content", tmpString);
+				map.put("tablename", tablename);
+				map.put("pkey", pkey);
+				map.put("value", value);
+				Map resultMap = (Map) basedao.queryForObject(
+						"setPropertyValueByTableName", map);
+				AppointStrToStr strtostr = new AppointStrToStr();
+				if (resultMap != null) {
+					String tmpArray[] = content.split("@");
+					if (tmpArray != null && tmpArray.length > 0) {
+						json.append("{");
+						for (int i = 0; i < tmpArray.length; i++) {
+							if (tmpArray[i] != null
+									&& tmpArray[i].contains("to_char(")) {
+								tmpArray[i] = tmpArray[i].split("as")[1].trim();
+							}
+							Object str = resultMap.get("" + tmpArray[i] + "");
+							if (resultMap.get("" + tmpArray[i] + "") == null) {
+								str = strtostr.judgeStrIsNull(
+										(String) resultMap.get("" + tmpArray[i]
+												+ ""), null, "");
+							}
+							json.append("\"" + tmpArray[i] + "\":\"" + str
+									+ "\"");
+							if (i < (tmpArray.length - 1)) {
+								json.append(",");
+							}
+						}
+						json.append("}");
+					}
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return json.toString();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public String savePropertyValue(String tablename, String pkey,
+			String value, String jsonString, String native_jsonString) {
+
+		try {
+			if (jsonString != null) {
+				JSONArray jsonarray = new JSONArray(jsonString);
+				String sql = "";
+				Map map = new HashMap();
+				map.put("tablename", tablename);
+				List list = basedao.queryForList(
+						"getIsNotAllowUpdateByTableName", map);
+				List list1 = null;
+				String group = "";
+//				String group2 = "";
+				if (list != null && list.size() > 0) {
+					list1 = new ArrayList();
+					for (int i = 0; i < list.size(); i++) {
+						Map reMap = (HashMap) list.get(i);
+						group += reMap.get("ENFIELD") + ",";
+						if (reMap.get("UPDATETABLE") != null
+								&& !reMap.get("UPDATETABLE").toString()
+										.equalsIgnoreCase("")
+								&& !reMap.get("UPDATETABLE").toString()
+										.equalsIgnoreCase("null")) {
+//							list1.add(list);
+							list1.add(reMap);  //这里仅加入需要修改的数据
+						}
+					}
+
+				}
+
+				if (jsonarray != null && jsonarray.length() > 0) {
+					sql += "update \n" + tablename + " set \n";
+					for (int i = 0; i < jsonarray.length(); i++) {
+						JSONObject json = jsonarray.getJSONObject(i);
+						if (!judgeStrInStr(group, json.getString("name"), ",")) {
+							sql += json.getString("name");
+							sql += "=";
+							boolean T = true;
+							if (json.getString("value") != null
+									&& json.getString("value").contains(
+											"to_date(")) {
+								T = false;
+							}
+							if (T) {
+								sql += "'";
+							}
+							sql += json.getString("value");
+							if (T) {
+								sql += "'";
+							}
+							if (i < (jsonarray.length() - 1)) {
+								sql += ",";
+							}
+						}
+					}
+				}
+				if (sql != null
+						&& sql.substring(sql.length() - 1)
+								.equalsIgnoreCase(",")) {
+					sql = sql.substring(0, sql.length() - 1);
+				}
+				sql += " where " + pkey + "='" + value + "'";
+				basedao.update("updateBySql", sql);
+				if (list1 != null && list1.size() > 0) {
+					JSONObject native_object = new JSONObject(native_jsonString);
+					for (int j = 0; j < list1.size(); j++) {
+//						Map tmpMap = (HashMap) list.get(j);
+						Map tmpMap = (HashMap) list1.get(j);
+						String updatetable = (String) tmpMap.get("UPDATETABLE");
+						String sql1 = "update \n" + updatetable + " set \n";
+						sql1 += (String) tmpMap.get("ENFIELD")
+								+ "='"
+								+ getValueByName(jsonarray, (String) tmpMap
+										.get("ENFIELD")) + "'\n";
+						sql1 += " where "
+								+ pkey
+								+ "='"
+								+ value
+								+ "' and "
+								+ (String) tmpMap.get("ENFIELD")
+								+ "='"
+								+ native_object.getString((String) tmpMap
+										.get("ENFIELD")) + "'";
+						basedao.update("updateBySql", sql1);
+					}
+				}
+				HttpServletRequest request = FlexContext.getHttpRequest();
+				logDao.createLogEvent("修改", "grid自定义模块", "\"" + tablename
+						+ "\"表的修改操作", pkey + ":" + value, request);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "true";
+	}
+
+	public String insertPropertyValue(String tablename, String pkey,
+			String value, String jsonString, String native_jsonString) {
+		System.out.println("tablename: " + tablename);
+		System.out.println("pkey: " + pkey);
+		System.out.println("value: " + value);
+		System.out.println("jsonString: " + jsonString);
+		System.out.println("native_jsonString: " + native_jsonString);
+		String returnString = "";
+		try {
+			if (jsonString != null) {
+				JSONArray jsonarray = new JSONArray(jsonString);
+				String sql = "";
+				Map map = new HashMap();
+				map.put("tablename", tablename);
+				map.put("key", pkey);
+
+				List list = basedao.queryForList(
+						"getIsNotAllowUpdateByTableName", map);
+				String pkeyValue = (String) basedao.queryForObject(
+						"getPkeySequences", map);
+				String group = "";
+				if (list != null && list.size() > 0) {
+					for (int i = 0; i < list.size(); i++) {
+						Map reMap = (HashMap) list.get(i);
+						group += reMap.get("ENFIELD") + ",";
+					}
+
+				}
+
+				if (pkey != null && jsonarray != null && jsonarray.length() > 0) {
+
+					sql += "insert into \n" + tablename + " ( \n";
+					sql += pkey + ",";
+					for (int i = 0; i < jsonarray.length(); i++) {
+						JSONObject json = jsonarray.getJSONObject(i);
+						if (!judgeStrInStr(group, json.getString("name"), ",")) {
+							if (!json.getString("name").equalsIgnoreCase(pkey)) {
+								sql += json.getString("name");
+								sql += ",";
+							}
+						}
+					}
+					if (sql != null
+							&& sql.substring(sql.length() - 1)
+									.equalsIgnoreCase(",")) {
+						sql = sql.substring(0, sql.length() - 1);
+					}
+					sql += " \n ) values (\n";
+					sql += pkeyValue;
+					sql += ",";
+					for (int j = 0; j < jsonarray.length(); j++) {
+						JSONObject json = jsonarray.getJSONObject(j);
+						if (!judgeStrInStr(group, json.getString("name"), ",")) {
+							boolean T = true;
+							if (!json.getString("name").equalsIgnoreCase(pkey)) {
+								if (json.getString("value") != null
+										&& json.getString("value").contains(
+												"to_date(")) {
+									T = false;
+								}
+								if (T) {
+									sql += "'";
+								}
+								sql += json.getString("value");
+								if (T) {
+									sql += "'";
+								}
+								sql += ",";
+							}
+						}
+					}
+					if (sql != null
+							&& sql.substring(sql.length() - 1)
+									.equalsIgnoreCase(",")) {
+						sql = sql.substring(0, sql.length() - 1);
+					}
+					sql += "\n )";
+				}
+				if (sql != null && !sql.equalsIgnoreCase("")) {
+					ForTimeBaseDAO dao = new ForTimeBaseDAO();
+					Connection c = null;
+					Statement s = null;
+					ResultSet r = null;
+					CallableStatement cs = null;
+					try {
+						c = dao.getConnection();
+						String callsql = "{call ";
+						sql += " returning " + pkey + " into ? }";
+						callsql = callsql + sql;
+						cs = c.prepareCall(callsql);
+						System.out.println(callsql.toString());
+						cs.registerOutParameter(1, Types.VARCHAR);
+						cs.executeUpdate();
+						returnString = cs.getString(1);
+					} catch (Exception e) {
+						e.printStackTrace();
+					} finally {
+						dao.closeConnection(c, s, r);
+					}
+
+				}
+				HttpServletRequest request = FlexContext.getHttpRequest();
+				logDao.createLogEvent("添加", "grid自定义模块", "\"" + tablename
+						+ "\"表的添加操作", pkey + ":" + returnString, request);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return returnString;
+	}
+
+	public String getValueByName(JSONArray jsonarray, String name) {
+		String value = "";
+		try {
+			if (jsonarray != null && jsonarray.length() > 0) {
+				for (int i = 0; i < jsonarray.length(); i++) {
+					JSONObject json = jsonarray.getJSONObject(i);
+					if (json.getString("name").equalsIgnoreCase(name)) {
+						value = json.getString("value");
+						break;
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return value;
+	}
+
+	public String getTree(String sqls, int type, String xtbm) {
+		StringBuffer xml = new StringBuffer("");
+		try {
+			String array[] = sqls.split(";");
+			boolean isLeaf = false;
+			if (type == (array.length - 1)) {
+				isLeaf = true;
+			}
+			String sql = array[type].replaceAll("@", ",");
+			Map paraMap = new HashMap();
+			if (sql.contains("#xtbm#")) {
+				sql = sql.replaceAll("#xtbm#", "'" + xtbm + "'");
+			}
+			paraMap.put("sql", sql);
+			List list = basedao.queryForList("getSqlByRuleTree", paraMap);
+			if (list != null && list.size() > 0) {
+				for (int i = 0; i < list.size(); i++) {
+					Map map = (HashMap) list.get(i);
+					if (map != null) {
+						xml.append("\n" + "<folder label='" + map.get("XTXX")
+								+ "' code='" + map.get("XTBM") + "' isBranch='"
+								+ !isLeaf + "' leaf='" + isLeaf + "' type='"
+								+ (type + 1) + "' ></folder>");
+					}
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return xml.toString();
+	}
+
+	public String channgeProvider(String xtbm, String tablename, String id,
+			String code) {
+		StringBuffer xml = new StringBuffer("");
+		try {
+			if (xtbm != null && !xtbm.equalsIgnoreCase("")) {
+				Map paraMap = new HashMap();
+				paraMap.put("tablename", tablename);
+				paraMap.put("enfield", id);
+				Map map = (HashMap) basedao.queryForObject(
+						"getShowPropertyByDictionaryAndTableNameAndEnField",
+						paraMap);
+				if (map != null) {
+					String sql = (String) map.get("GETRULE");
+					sql = sql + " where " + code + "='" + xtbm + "'";
+					List list1 = basedao.queryForList("getSqlByRule", sql);
+					if (list1 != null && list1.size() > 0) {
+						for (int j = 0; j < list1.size(); j++) {
+							Map rMap = (HashMap) list1.get(j);
+							xml.append("<name label='" + rMap.get("XTXX")
+									+ "' code='" + rMap.get("XTBM") + "' />");
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return xml.toString();
+	}
+
+	public String selectGridData(String tablename) {
+		int begin = 0;
+		int end = 50;
+		StringBuffer json = new StringBuffer("");
+		try {
+			String sql = "select * from gridtable grid,tabledictionarynew tab where grid.tablename = tab.tablename and grid.tablename='"
+					+ tablename
+					+ "' and (tab.isshowgrid = 'Y' or tab.iskey='Y') ORDER BY GRID_SERIAL";
+			List list = basedao.queryForList("getSqlByRule", sql);
+			if (list != null && list.size() > 0) {
+				json.append("[");
+				for (int i = 0; i < list.size(); i++) {
+					Map resultMap = (HashMap) list.get(i);
+					json.append("{");
+					json.append("\"id\":\"" + (String) resultMap.get("ENFIELD")
+							+ "\"");
+					json.append(",");
+					json.append("\"title\":\""
+							+ (String) resultMap.get("CHFIELD") + "\"");
+					json.append(",");
+					json.append("\"width\":\""
+							+ (String) resultMap.get("GRID_WIDTH") + "\"");
+					json.append(",");
+					json.append("\"show\":\""
+							+ (String) resultMap.get("ISSHOWGRID") + "\"");
+					json.append(",");
+					json.append("\"key\":\"" + (String) resultMap.get("ISKEY")
+							+ "\"");
+					json.append("}");
+					if (i < (list.size() - 1)) {
+						json.append(",");
+					}
+				}
+				json.append("]");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return json.toString();
+	}
+
+	public ResultModel setGridValue(AutoGridModel model) {
+		ResultModel resultmodel = null;
+		List list = null;
+		int begin = model.getStart();
+		int end = model.getEnd();
+		String tablename = model.getTablename();
+		String viewname = "";
+		try {
+			String countsql = "";
+			String sql = "select * from gridtable grid,tabledictionarynew tab where grid.tablename = tab.tablename and grid.tablename='"
+					+ tablename
+					+ "' and (tab.isshowgrid = 'Y' or tab.iskey='Y' or tab.isrogatory='Y') ";
+			list = basedao.queryForList("getSqlByRule", sql);
+			if (list != null && list.size() > 0) {
+				Map map = (HashMap) list.get(0);
+				viewname = (String) map.get("VIEWNAME");
+				String sql1 = "";
+				String searchSql = "";
+				String orderSql = "";
+				String jsonString = model.getJson();
+				JSONArray jsonarray = null;
+				if (jsonString != null && !jsonString.equalsIgnoreCase("")) {
+					jsonarray = new JSONArray(jsonString);
+				}
+				if (jsonarray != null && jsonarray.length() > 0) {
+					searchSql += " where ";
+				}
+				sql = " select * from ( select rownum no,";
+				countsql = " select count(*) as totalcount from ( select rownum no ,";
+				for (int i = 0; i < list.size(); i++) {
+					Map resultMap = (HashMap) list.get(i);
+					String column = (String) resultMap.get("ENFIELD");
+					String columnname = (String) resultMap.get("CHFIELD");
+					String type = (String) resultMap.get("TYPE");
+					if (jsonarray != null && jsonarray.length() > 0) {
+						int count = jsonarray.length();
+						for (int j = 0; j < count; j++) {
+							JSONObject json = jsonarray.getJSONObject(j);
+							if (json.getString("name").equalsIgnoreCase(column)) {
+								if (type == null
+										|| !type.equalsIgnoreCase("DATEFIELD")) {
+									searchSql += column;
+									searchSql += " like '%";
+									searchSql += json.getString("value");
+									searchSql += "%'";
+									searchSql += " and ";
+								} else {
+									String value[] = json.getString("value")
+											.split("&&");
+									if (value != null && value.length == 2) {
+										if (value[0] != null
+												&& !value[0]
+														.equalsIgnoreCase("")) {
+											searchSql += "to_date(" + column
+													+ ",'YYYY-MM-DD')";
+											searchSql += " >= ";
+											searchSql += value[0];
+											searchSql += " and ";
+										}
+										if (value[1] != null
+												&& !value[1]
+														.equalsIgnoreCase("")) {
+											searchSql += "to_date(" + column
+													+ ",'YYYY-MM-DD')";
+											searchSql += "<= ";
+											searchSql += value[1];
+											searchSql += " and ";
+										}
+									} else {
+										if (json.getString("value") != null
+												&& !json.getString("value")
+														.equalsIgnoreCase("")) {
+											searchSql += "to_date(" + column
+													+ ",'YYYY-MM-DD')";
+											searchSql += json
+													.getString("value");
+											searchSql += " and ";
+										}
+									}
+								}
+							}
+						}
+					}
+					if (i < (list.size() - 1)) {
+						countsql += column + ",";
+						sql += column + ",";
+						sql1 += column + ",";
+					} else {
+						countsql += column;
+						sql += column;
+						sql1 += column;
+					}
+				}
+				if (searchSql != null && !searchSql.equalsIgnoreCase("")) {
+					searchSql = searchSql.trim();
+					if (searchSql.substring(searchSql.length() - 3)
+							.equalsIgnoreCase("and")) {
+						searchSql = searchSql.substring(0,
+								searchSql.length() - 3);
+					}
+				}
+				countsql += " from " + viewname + " " + searchSql + ")";
+				if (model.getSortColumn() != null
+						&& !model.getSortColumn().equalsIgnoreCase("")) {
+					orderSql = " order by " + model.getSortColumn() + " "
+							+ model.getSortOrder();
+				}
+				sql += " from ( select " + sql1 + " from " + viewname + " "
+						+ searchSql + orderSql+" ) )where no > " + begin
+						+ " and no <= " + end;
+			}
+			list = basedao.queryForList("getSqlByRule", countsql);
+			int totalcount = 0;
+			if (list != null && list.size() > 0) {
+				Map map = (HashMap) list.get(0);
+				totalcount = Integer.valueOf(String.valueOf((BigDecimal) map
+						.get("TOTALCOUNT")));
+			}
+			list = basedao.queryForList("getSqlByRule", sql);
+			resultmodel = new ResultModel();
+			resultmodel.setTotalCount(totalcount);
+			resultmodel.setOrderList(list);
+			HttpServletRequest request = FlexContext.getHttpRequest();
+			logDao.createLogEvent("查询", "grid自定义模块", "\"" + viewname
+					+ "\"表的查询操作", "", request);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return resultmodel;
+	}
+
+	public String deleteData(String tablename, String key, String keyValue) {
+		String sucess = "false";
+		try {
+			if (tablename != null && keyValue != null && key != null) {
+				String sql = "delete " + tablename + " where " + key + " ='"
+						+ keyValue + "'";
+				basedao.delete("deleteData", sql);
+				sucess = "true";
+				HttpServletRequest request = FlexContext.getHttpRequest();
+				logDao.createLogEvent("删除", "grid自定义模块", "\"" + tablename
+						+ "\"表的查询操作", key + ":" + keyValue, request);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return sucess;
+		}
+		return sucess;
+	}
+
+	public String exportExcel(AutoGridModel model) {
+		try {
+			if (model != null) {
+				String titles[] = {};
+				String columns[] = {};
+				String labels = "";
+				String filelabels = "";
+				String tablename = model.getTablename();
+				String viewname = "";
+				String sql = "select * from gridtable grid,tabledictionarynew tab where grid.tablename = tab.tablename and grid.tablename='"
+						+ tablename
+						+ "' and (tab.isexport='Y' or tab.isrogatory='Y') order by grid_serial";
+				String exportsql = "select * from gridtable grid,tabledictionarynew tab where grid.tablename = tab.tablename and grid.tablename='"
+						+ tablename
+						+ "' and tab.isexport='Y'  order by grid_serial";
+				List list = basedao.queryForList("getSqlByRule", sql);
+				List exportlist = basedao.queryForList("getSqlByRule",
+						exportsql);
+				if (list != null && list.size() > 0 && exportlist != null
+						&& exportlist.size() > 0) {
+					Map map = (HashMap) list.get(0);
+					viewname = (String) map.get("VIEWNAME");
+					labels = (String) map.get("EXPORTTITLE");
+					filelabels = (String) map.get("EXPORTFILENAME");
+					String sql1 = "";
+					String searchSql = "";
+					String jsonString = model.getJson();
+					JSONArray jsonarray = null;
+					if (jsonString != null && !jsonString.equalsIgnoreCase("")) {
+						jsonarray = new JSONArray(jsonString);
+					}
+					if (jsonarray != null && jsonarray.length() > 0) {
+						searchSql += " where ";
+					}
+					sql = " select * from ( select rownum no,";
+					titles = new String[exportlist.size()];
+					columns = new String[exportlist.size()];
+					for (int i = 0; i < exportlist.size(); i++) {
+						Map resultMap = (HashMap) exportlist.get(i);
+						String column = (String) resultMap.get("ENFIELD");
+						String columnname = (String) resultMap.get("CHFIELD");
+						String isexport = (String) resultMap.get("ISEXPORT");
+						if (isexport != null && isexport.equalsIgnoreCase("Y")) {
+							titles[i] = columnname;
+							columns[i] = column;
+						}
+					}
+					for (int i = 0; i < list.size(); i++) {
+						Map resultMap = (HashMap) list.get(i);
+						String column = (String) resultMap.get("ENFIELD");
+						String columnname = (String) resultMap.get("CHFIELD");
+						String type = (String) resultMap.get("TYPE");
+						if (jsonarray != null && jsonarray.length() > 0) {
+							int count = jsonarray.length();
+							for (int j = 0; j < count; j++) {
+								JSONObject json = jsonarray.getJSONObject(j);
+								if (json.getString("name").equalsIgnoreCase(
+										column)) {
+									if (type == null
+											|| !type
+													.equalsIgnoreCase("DATEFIELD")) {
+										searchSql += column;
+										searchSql += " like '%";
+										searchSql += json.getString("value");
+										searchSql += "%'";
+										searchSql += " and ";
+									} else {
+										String value[] = json
+												.getString("value").split("&&");
+										if (value != null && value.length == 2) {
+											if (value[0] != null
+													&& !value[0]
+															.equalsIgnoreCase("")) {
+												searchSql += "to_date("
+														+ column
+														+ ",'YYYY-MM-DD')";
+												searchSql += " >= ";
+												searchSql += value[0];
+												searchSql += " and ";
+											}
+											if (value[1] != null
+													&& !value[1]
+															.equalsIgnoreCase("")) {
+												searchSql += "to_date("
+														+ column
+														+ ",'YYYY-MM-DD')";
+												searchSql += "<= ";
+												searchSql += value[1];
+												searchSql += " and ";
+											}
+										} else {
+											if (json.getString("value") != null
+													&& !json.getString("value")
+															.equalsIgnoreCase(
+																	"")) {
+												searchSql += "to_date("
+														+ column
+														+ ",'YYYY-MM-DD')";
+												searchSql += json
+														.getString("value");
+												searchSql += " and ";
+											}
+										}
+									}
+								}
+							}
+						}
+						if (i < (list.size() - 1)) {
+							sql += column + ",";
+							sql1 += column + ",";
+						} else {
+							sql += column;
+							sql1 += column;
+						}
+					}
+					if (searchSql != null && !searchSql.equalsIgnoreCase("")) {
+						searchSql = searchSql.trim();
+						if (searchSql.substring(searchSql.length() - 3)
+								.equalsIgnoreCase("and")) {
+							searchSql = searchSql.substring(0, searchSql
+									.length() - 3);
+						}
+					}
+					sql += " from ( select " + sql1 + " from " + viewname + " "
+							+ searchSql + " )) ";
+				}
+				List list1 = basedao.queryForList("getSqlByRule", sql);
+				HttpServletRequest request = FlexContext.getHttpRequest();
+				logDao.createLogEvent("导出", "grid自定义模块", "\"" + viewname
+						+ "\"表的导出操作", "", request);
+				return new ExportExcel().ExportExcelCommon(labels,
+						filelabels, titles, columns, list1);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	boolean judgeStrInStr(String strs, String str, String flag) {
+		if (strs != null && str != null && flag != null) {
+			String tmp[] = strs.split(flag);
+			if (tmp != null && tmp.length > 0) {
+				for (int i = 0; i < tmp.length; i++) {
+					if (tmp[i].equalsIgnoreCase(str)) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+}

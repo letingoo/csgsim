@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				layout="absolute" width="540" height="350"    
+				title="数据录入向导 :第二步（数据入库）"
+				showCloseButton="false"
+				close="{MyPopupManager.removePopUp(this)}"  fontSize="12" creationComplete="intiliz()"> 
+	
+	<mx:Script>  
+		<![CDATA[  			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import sourceCode.tableResurces.model.DataImportResultModel;
+			[bindable]  
+			public var str:ArrayCollection = new ArrayCollection();
+			/**
+			 * 
+			 * 关闭窗体
+			 * 
+			 * */
+			private function close():void  
+			{  
+				MyPopupManager.removePopUp(this);  
+			} 
+			/**
+			 * 
+			 * 初始化进入
+			 * 
+			 * */
+			public function intiliz():void
+			{
+				impole.getFileNames();
+			}
+			/**
+			 * 
+			 * 导入后的处理函数
+			 * 
+			 * */
+			public function impoleRM_resultHandler(event:ResultEvent):void
+			{
+			   this.str = event.result as ArrayCollection;
+			   this.combo.dataProvider = str;
+			 
+			}
+			/**
+			 * 
+			 * 确定
+			 * 
+			 * */
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				this.confirm();
+			}
+			/**
+			 * 
+			 * 确认是否要导入
+			 * 
+			 * */
+			private function confirm():void {
+				
+				var a:Alert = Alert.show("您确认要进行此操作吗，数据入库后将不可撤销！","请您确认！",Alert.YES|Alert.NO,this,confirmHandler,null,Alert.NO);
+
+			}
+			public function resultHandler(event:ResultEvent):void
+			{
+				var result:DataImportResultModel = event.result as DataImportResultModel;
+				
+				if(result.info=="Success")
+				{
+					if('0' == result.badDataCounts.toString()){
+					    Alert.show("数据导入成功!","提示");
+					}else{
+					    Alert.show("数据导入成功!"+" "+"共剔除"+result.badDataCounts.toString()+"条坏数据" 
+							+ " 未通过验证数据：" + result.msgDetail,"提示");
+					}					
+                    dispatchEvent(new Event('importCompleteSecEvent'));
+					this.btnConfirm.enabled=false;
+				}
+				else if(result.info=="failed"){
+					Alert.show("由于"+result.badDataCounts.toString()+"条坏数据导致导入失败,可能的原因是：数据已经存在,或数据不正确。","提示");
+				}else if(result.info=="blank")
+				{
+					Alert.show("由于"+result.badDataCounts.toString()+"条坏数据导致导入失败,可能的原因是：空数据源。","提示");
+				}
+			}
+			/**
+			 * 
+			 * 确认要导入后的处理函数
+			 * 
+			 * */
+			private function confirmHandler(event:CloseEvent):void {
+				if (event.detail == Alert.YES) {
+				   var name:String = combo.text;
+				   if(name==""||name==null||name==" ")
+				   {
+					   Alert.show("没有文件以供导入","提示");
+				   }else if(name.indexOf("DF-模板") > -1){
+					   wireStats.insertIntoOracle(name);   
+				   }else{
+					   impole2.insertIntoOracle(name);
+				   }
+				
+				} else if (event.detail == Alert.NO) {
+				  
+				   this.close();
+				}
+			}
+
+			/**
+			 * 退出
+			 * 
+			 * 
+			 * */
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				this.btnConfirm.enabled=true;
+				this.close();
+			}
+
+			/**
+			 * 
+			 * 清空列表
+			 * 
+			 * */
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				this.linkbutton1_confirm();
+			}
+			/**
+			 * 
+			 * 确认是否要清空列表
+			 * 
+			 * */
+			private function linkbutton1_confirm():void {
+				var linkbutton1_confirm:Alert = Alert.show("您确认要清空文件列表吗？清空文件列表将删除所有已上传的文件！","请您确认！",Alert.YES|Alert.NO,this,linkbutton1_confirmHandler,null,Alert.NO);
+			}
+			/**
+			 * 
+			 * 确认清空后把列表清空
+			 * 
+			 * */
+			private function linkbutton1_confirmHandler(event:CloseEvent):void{
+				if (event.detail == Alert.YES) {
+					var remote:RemoteObject=new RemoteObject("netresDao");
+					remote.endpoint = ModelLocator.END_POINT;
+					remote.showBusyCursor = true;
+					remote.ClearDir("Ex2Ora");
+					remote.addEventListener(ResultEvent.RESULT,ClearDirHandler);
+				} else if (event.detail == Alert.NO) {
+					this.close();
+				}
+			}
+			/**
+			 * 
+			 * 清空列表后的界面提示
+			 * 
+			 * */
+			private function ClearDirHandler(event:ResultEvent):void
+			{
+			  if(event.result.toString()=="Success")
+			  {
+			    Alert.show("删除成功！","提示");
+				this.intiliz();
+			  }else if(event.result.toString()=="blank")
+			  {
+				  Alert.show("文件列表已经为空！","提示");
+			  }
+			}
+			/**
+			 * 
+			 * 导入失败的处理函数
+			 * 
+			 * */
+			protected function impole2_faultHandler(event:FaultEvent):void
+			{
+				Alert.show("数据导入失败","提示");
+			}
+
+		]]>  
+	</mx:Script>
+	<mx:Label x="10" y="23" text="选择您上传的文件，然后点击确定将数据录入到数据库中。" width="342" height="28"/>
+	<mx:ComboBox id="combo" x="106" y="103" editable="false" width="268" height="25" labelField="value"/>
+	<mx:HRule x="0" y="59" width="511"/>
+	<mx:Label x="36" y="103" text="文件列表：" width="85" height="25"/>
+	<mx:Button id="btnConfirm" x="275" y="249" label="确定" width="84" height="27" click="button1_clickHandler(event)"/>
+	<mx:Button x="396" y="249" label="退出" height="27" width="85" click="button2_clickHandler(event)"/>
+	<mx:Image x="451" y="10" width="43" height="41" source="assets/images/wizeds/database.png"/>
+	<mx:HRule x="0" y="282" width="510"/>
+	<mx:Label x="10" y="253" text="注:请确认数据的正确性,提交成功后不可撤消!" width="257" height="20"/>
+	<mx:RemoteObject id="impole" destination="netresDao" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" result="impoleRM_resultHandler(event)"/>
+	<mx:RemoteObject id="impole2" destination="netresDao" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" result="resultHandler(event)" fault="impole2_faultHandler(event)"/>
+	<mx:RemoteObject id="wireStats" destination="wireStats" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" result="resultHandler(event)"/>
+	<mx:LinkButton x="396" y="103" label="清空文件列表" click="linkbutton1_clickHandler(event)"/>
+</mx:TitleWindow>  

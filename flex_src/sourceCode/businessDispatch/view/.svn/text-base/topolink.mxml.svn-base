@@ -1,0 +1,176 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="配置虚拟复用段" label="配置虚拟复用段" creationComplete="init();" width="350" height="450"  layout="absolute"  xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import flexunit.utils.ArrayList;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import org.hamcrest.mxml.collection.Array;
+			
+			import sourceCode.channelRoute.model.Circuit;
+			import sourceCode.packGraph.views.checkedEquipPack;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			
+			public var equip_a_code:String;
+			public var port_a_code:String;
+			public var parent_page:selectEquipment;
+			public var link:Link;
+			public var circuit_rateCode:String;
+			private function init():void
+			{
+				
+				var ppobj1:RemoteObject = new RemoteObject("businessDispatch");
+				ppobj1.endpoint=ModelLocator.END_POINT;
+				ppobj1.showBusyCursor=true;
+				ppobj1.getSystemcode();
+				ppobj1.addEventListener(ResultEvent.RESULT, function (e: ResultEvent):void{
+				
+					var XMLData:XMLList = new XMLList(e.result.toString());
+					systemcode.dataProvider = XMLData.children();
+					systemcode.labelField = "@label";
+				});
+				
+				var rtobj11:RemoteObject = new RemoteObject("equInfo");
+				rtobj11.endpoint = ModelLocator.END_POINT;
+				rtobj11.showBusyCursor = true;
+				rtobj11.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率)
+				rtobj11.addEventListener(ResultEvent.RESULT, function(e:ResultEvent){
+					var XMLData_Rate:XMLList = new XMLList(e.result.toString())
+					linerate.dataProvider = XMLData_Rate.children();
+					linerate.labelField = "@label";
+				})	
+				
+				
+			}
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);  
+			}
+			private function save():void
+			{
+			var obj:Object = new Object();
+			obj.equip_a = equip_a.text;
+			obj.equip_a_code = equip_a_code;
+			obj.port_a = port_a_label.text;
+			obj.systemcode = systemcode.text;
+			obj.linerate = linerate.selectedItem.@code;
+			obj.linerateName = linerate.text;
+			obj.slot_z= slot_z.text;
+			obj.port_z = port_z.text;
+			obj.equip_z = equip_z.text;
+			obj.frame_z = '1';
+			obj.pack_z_name = pack_z_name.text;
+			obj.pack_z_serial = '1';
+			obj.hasVirtualTopolinkValue = true;
+			if(link.fromNode.getClient("flag")=='virtualEquipment'){
+			
+				link.fromNode.name=equip_z.text;
+				obj.vendor = link.fromNode.getClient('x_vendor');
+				obj.equip_a_code = link.fromNode.getClient("equipcode");
+				
+				link.name="【" + link.toNode.name + "】"+port_a_label.text+'\n'+link.fromNode.name+':'+ slot_z.text+'槽-'+'1'+'盘-'+port_z.text+'端口';
+			
+			}
+			if(link.toNode.getClient("flag")=='virtualEquipment'){
+				
+				link.toNode.name=equip_z.text;
+				obj.vendor = link.toNode.getClient('x_vendor');
+				obj.equip_a_code = link.toNode.getClient("equipcode");
+				link.name="【"+link.fromNode.name +"】"+port_a_label.text+'\n'+link.toNode.name+':'+ slot_z.text+'槽-'+'1'+'盘-'+port_z.text+'端口';
+				
+			}
+			if(timeSlot.text!=null&&timeSlot.text!=""){
+				link.name = link.name+"\n【时隙】"+timeSlot.text;
+			}
+
+			
+			}
+			private function getPort(e:Event){
+			
+				var ptree:porttreeForVirtual = new porttreeForVirtual();
+				ptree.equipcode =equip_a_code;
+				ptree.rate = circuit_rateCode;
+				ptree.virtual = this;
+				PopUpManager.addPopUp(ptree, this, true);
+				PopUpManager.centerPopUp(ptree);
+				
+			}
+			private function controlTimeSlotDisplay(e:ListEvent):void{
+				 var xml:XML = linerate.selectedItem as XML;
+				 var code = xml.@code;
+				if (code == 'ZY110601' || code == 'ZY110602' || code == 'ZY110603' || code == 'ZY110604') {
+					timeSlot.enabled = true;
+				}else{
+				timeSlot.enabled = false;
+				}
+				
+				
+			}
+		
+		]]>
+	</mx:Script>
+	
+	
+	<mx:Label text="A端设备"  y="43" height="25" fontFamily="宋体" x="26" textAlign="center" fontSize="12"/>  
+	<mx:TextInput id="equip_a" width="120" x="126" y="41" fontFamily="宋体" fontSize="12"/> 
+	
+	<mx:Label text="A端端口"  y="75" x="10" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="126" y="73" editable="false" id="port_a_label" click="getPort(event)" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="Z端设备"  y="107" x="14" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="73"/>
+	<mx:TextInput id="equip_z" width="120" x="125" y="105" fontFamily="宋体" fontSize="12"/>
+	 
+	<mx:Label text="Z端机槽序号"  y="137" x="26" height="25" fontFamily="宋体" fontSize="12" width="72"/>
+	<mx:TextInput x="125" y="141" editable="true" id="slot_z" width="120" fontFamily="宋体" fontSize="12"></mx:TextInput>
+	
+	<mx:Label text="Z端机盘类型"  y="172" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput id='pack_z_name' width="120" x="124" y="172" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="Z端端口序号"  y="207" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput x="124" y="205" editable="false" id="port_z" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="系统名称"  y="237" x="26" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:ComboBox x="124" y="237" id="systemcode" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	<mx:Label text="速    率"  y="267" x="26" height="25" fontFamily="宋体" fontSize="12" width="53"/>
+	<mx:ComboBox id="linerate"  width="120" change="controlTimeSlotDisplay(event)" x="124" y="267" fontFamily="宋体" fontSize="12" />
+	
+	<mx:Label text="时    隙"    y="297" x="26" height="25" fontFamily="宋体" fontSize="12" width="56" enabled="true"/>
+	<mx:TextInput x="124" y="297" width="120"  id="timeSlot" enabled="true"/>
+	
+	<mx:Button label="保存" click="save()"  x="46" y="350" height="22" textAlign="center" fontFamily="宋体" fontSize="12"   />
+	<mx:Button label="关闭" click="close()"  x="158" y="350" height="22" textAlign="center" fontFamily="宋体" fontSize="12"/> 
+	<mx:LinkBar >
+		
+	</mx:LinkBar>
+	
+
+</mx:TitleWindow>  

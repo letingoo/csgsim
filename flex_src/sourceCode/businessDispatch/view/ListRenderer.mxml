@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:twaver="twaver.*" mouseOver="img.visible = true;" mouseOut="img.visible = false;">
+	<mx:Image source="{data.image}" width="23" height="23"/>
+	<mx:Label text="{data.name}" width="100%"/>
+	<mx:Image id="img"  width="23" height="23" source="@Embed('assets/images/trash.png')" toolTip="删除" 
+			  useHandCursor="true" buttonMode="true" visible="false" click="imgClickHandler()"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.controls.List;
+			
+			private function imgClickHandler():void{
+				List(this.owner).dataProvider.removeItemAt(List(this.owner).selectedIndex);
+				List(this.owner).dataProvider.resfresh();
+			}
+		]]>
+	</mx:Script>
+</mx:HBox>

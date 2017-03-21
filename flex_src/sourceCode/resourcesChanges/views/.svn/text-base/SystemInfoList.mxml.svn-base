@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				   width="960" 
+				   height="535" 
+				   layout="absolute"
+				   title="系统资源更新信息"				 
+				   paddingTop="0"
+				   paddingBottom="0" 
+				   creationComplete="init()" 
+				   paddingLeft="0"
+				   paddingRight="0"
+				   enableResize="true"
+				   showControls="true"
+				   windowContainer="{Application.application.windowContainer}"				  
+				   xmlns:component="common.component.*"
+				   xmlns:modecom="sourceCode.resourcesChanges.views.*"
+				   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*">
+
+	
+	<mx:Script source="../actionscript/SystemInfoList.as"/>
+		
+	<mx:Number id="lastRollOverIndex"/>
+	<mx:VBox width="100%" height="100%">
+		<component:ControlBar id="customControlBar" width="100%" height="38" showAddShurtCutButton="false" 
+							  showDelShurtCutButton="false" showExportExcelButton="true" controlExportExcel="exportExcelHandler(event)" showSearchButton="true" controlSearch="searchResourceHandler(event)"/>
+		<mx:TabNavigator id="tb_ack" x="0" y="0" width="100%" height="100%"  change="tb_ack_changeHandler(event)" creationPolicy="all">
+			
+			<modecom:ResourceChangeList  id="ResourceChange" label="待确认资源更新信息" width="100%" height="100%"/>	
+			<modecom:ResourceChangeHistoryList id="ResourceChangeHistory" label="历史资源更新信息" width="100%" height="100%"/>		
+		</mx:TabNavigator>
+	</mx:VBox>
+	
+</panel:PanelWindow>

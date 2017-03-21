@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="alarmMgr">
+	<select id="getAlarmNowCount" resultClass="Integer" parameterClass="alarmMgr.model.AlarmModel">
+			select count(*) from  view_alarm_bak
+	    	<dynamic prepend="where">
+	     		<isNotEmpty prepend="and" property="alarmtext">
+	     				(alarmtext like '%alarmtext%')
+	   			</isNotEmpty>
+	   			<isNotEmpty prepend="AND" property="alarmlevel">
+						( alarmlevel='$alarmlevel$')
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="objectinfo">
+						(objectinfo like '%$objectinfo$%')
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="alarmdesc">
+						( alarmdesc like '%$alarmdesc$%')
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="starttime">
+						(starttime ='$starttime$')
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="isacked">
+						( isacked='$isacked$')
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="ackTime">
+						(acktime ='$acktime$')
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="alarmnumber">
+						( alarmnumber like '%$alarmnumber$%')
+				</isNotEmpty>			
+			</dynamic>
+	</select>
+	<select id="getAlarmByConditions" resultClass="alarmMgr.model.AlarmModel" parameterClass="alarmMgr.model.AlarmModel">
+      select va.alarmlevel,
+       va.objectinfo,
+       va.alarmdesc,
+       va.alarmtext,
+       va.starttime,
+       va.isacked,
+       va.ackTime,
+       va.ackperson ,
+       va.arrTime,
+       va.alarmnumber from (select alarmtext,
+       alarmlevel,
+       objectinfo,
+       alarmdesc,
+       to_char(starttime,'yyyy-mm-dd hh24:mi:ss') starttime,
+       decode(isacked,0,'否 ',1,'是',isacked) isacked,
+       to_char(acktime,'yyyy-mm-dd hh24:mi:ss') ackTime,
+       ackperson ,
+       to_char(arrivetime,'yyyy-mm-dd hh24:mi:ss') arrTime,
+       alarmnumber,
+       rownum no  
+    from  view_alarm_bak 
+    <dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="end">
+					(rownum &lt;=#end# )
+			</isNotEmpty> 		
+     	</dynamic> ) va 
+     <dynamic prepend="where">
+     		<isNotEmpty prepend="AND" property="start">
+					(va.no > #start#)
+			</isNotEmpty> 		
+     	</dynamic>
+
+	</select>
+	<select id="getAlarmChart" resultClass="java.util.HashMap" parameterClass="String">
+
+    	select count(case when (alarmlevel='紧急') then alarmlevel end) as critical,
+		count(case when (alarmlevel='主要') then alarmlevel end) as major,
+		count(case when (alarmlevel='次要') then alarmlevel end) as minor,
+		count(case when (alarmlevel='提示') then alarmlevel end) as warning,
+		count(case when (alarmlevel='其它') then alarmlevel end) as other from 
+		view_alarm_bak v 	
+		<dynamic prepend="where">
+     		<isParameterPresent>
+     		 	v.belongstation in(select c.station1 as stationcode
+			        from circuit c where c.circuitcode like '%$type$%'
+			        and c.station1 is not null
+			    union
+			    select 
+			        c.station2 as stationcode
+			        from circuit c where c.circuitcode like '%$type$%'
+			        and c.station2 is not null)
+     		</isParameterPresent>
+     	</dynamic>
+    </select>
+	
+	
+	<select id="getHisAlarmInfo" resultClass="alarmMgr.model.AlarmInfoHistory"
+		parameterClass="alarmMgr.model.AlarmInfoHistory">
+		select decode(alarmlevel,
+		'critical',
+		'紧急',
+		'major',
+		'主要',
+		'minor',
+		'次要',
+		'warning',
+		'提示',
+		'其它') as alarmlevel,
+		objectinfo,
+		alarmdesc,
+		alarmtext,
+		decode(starttime, null, ' ',to_char(starttime, 'YYYY-mm-dd hh:mi:ss')) starttime,
+		isacked,
+		decode(acktime, null, ' ', to_char(acktime, 'YYYY-mm-dd hh:mi:ss')) acktime,
+		ackperson,
+		decode(arrivetime, null, ' ', to_char(arrivetime, 'YYYY-mm-dd hh:mi:ss')) arrivetime,
+		alarmnumber
+		from (select rownum num,
+		alarmlevel,
+		objectinfo,
+		decode(alarmdesc,null,' ',alarmdesc) alarmdesc,
+		decode(alarmtext,null,' ',alarmtext) alarmtext,
+		starttime,
+		decode(isacked,0,'否 ',1,'是',isacked) isacked,
+		acktime,
+		decode(ackperson,null,' ',ackperson) ackperson,
+		arrivetime,
+		alarmnumber,
+		alarmobject
+		from (select a.*,getequipname(split(objectcode, 1, '=')) ||
+		decode(split(objectcode, 3, '='), null, '', '-') ||
+		split(objectcode, 3, '=') ||
+		decode(split(objectcode, 3, '='), null, '', '槽') ||
+		split(objectcode, 4, '=') ||
+		decode(split(objectcode, 4, '='), null, '', '盘') ||
+		split(objectcode, 5, '=') ||
+		decode(split(objectcode, 5, '='), null, '', '端口') ||
+		decode(split(objectcode, 7, '='), null, '', '(') ||
+		split(objectcode, 7, '=') ||
+		decode(split(objectcode, 7, '='), null, '', '-') ||
+		split(objectcode, 6, '=') ||
+		decode(split(objectcode, 7, '='), null, '', ')') objectinfo from alarminfohistory a order by
+		alarmlevel asc)
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				(alarmlevel ='$alarmlevel$')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="objectinfo">
+				( objectinfo like '%$objectinfo$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				(alarmdesc like '%$alarmdesc$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmtext">
+				( alarmtext like '%$alarmtext$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="starttime_start">
+				(starttime >=to_date('$starttime_start$','YYYY-mm-dd hh:mi:ss'))
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="starttime_end">
+				(starttime &lt;=to_date('$starttime_end$','YYYY-mm-dd hh:mi:ss'))
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isacked">
+				( isacked='$isacked$')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="acktime_start">
+				(acktime >=to_date('$acktime_start$','YYYY-mm-dd hh:mi:ss'))
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="acktime_end">
+				(acktime &lt;=to_date('$acktime_end$','YYYY-mm-dd hh:mi:ss'))
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackperson">
+				( ackperson like '%$ackperson$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="arrivetime_start">
+				(arrivetime >=to_date('$arrivetime_start$','YYYY-mm-dd hh:mi:ss'))
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="arrivetime_end">
+				(arrivetime &lt;=to_date('$arrivetime_end$','YYYY-mm-dd hh:mi:ss'))
+					</isNotEmpty>
+		</dynamic>
+		)
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="start">
+				(num > #start#)
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="end">
+				(num &lt;=#end# )
+					</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<select id="getHisAlarmCount" resultClass="Integer"
+		parameterClass="alarmMgr.model.AlarmInfoHistory">
+		select count(*) from alarminfohistory
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				(alarmlevel ='$alarmlevel$')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="objectcode">
+				( objectcode='$objectcode$')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				(alarmdesc like '%$alarmdesc$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmtext">
+				( alarmtext like '%$alarmtext$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="starttime">
+				(starttime ='$starttime$')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isacked">
+				( isacked='$isacked$')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="acktime">
+				(acktime ='$acktime$')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackperson">
+				( ackperson like '%$ackperson$%')
+					</isNotEmpty>
+			<isNotEmpty prepend="AND" property="arrivetime">
+				(arrivetime ='$arrivetime$')
+					</isNotEmpty>
+		</dynamic>
+	</select>
+	
+	<select id="getNowAlarm" resultClass="alarmMgr.model.AlarmModel" parameterClass="java.util.HashMap">
+			      select va.alarmlevel,
+			       va.objectinfo,
+			       va.alarmdesc,
+			       va.alarmtext,
+			       va.starttime,
+			       va.isacked,
+			       va.ackTime,
+			       va.ackperson ,
+			       va.arrTime,
+			       va.alarmnumber from (select alarmtext,
+			       alarmlevel,
+			       objectinfo,
+			       alarmdesc,
+			       to_char(starttime,'yyyy-mm-dd hh24:mi:ss') starttime,
+			       decode(isacked,0,'否 ',1,'是',isacked) isacked,
+			       to_char(acktime,'yyyy-mm-dd hh24:mi:ss') ackTime,
+			       ackperson ,
+			       to_char(arrivetime,'yyyy-mm-dd hh24:mi:ss') arrTime,
+			       alarmnumber
+				    from  view_alarm_bak) va
+				    where to_date(starttime,'yyyy-mm-dd hh24:mi:ss')=to_date(to_char(sysdate,'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss')    
+	</select>
+</sqlMap>

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--转故障流程-->
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	initialize="init();"
+	width="800" height="500"
+	showCloseButton="true" 
+	title="根告警转为故障处理"
+	styleName="popwindow"
+	close="PopUpManager.removePopUp(this);"
+	layout="absolute"
+	xmlns:views="sourceCode.common.views.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import sourceCode.alarmmgr.actionscript.SequenceItemRenderer;
+			
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			public var alarmid:String;
+			private var param:ArrayCollection =new ArrayCollection();
+			public var alarmnm:String=""; 
+			public var tw:RealRootAlarm;
+			public var operPerson:String="";
+			public var flag:String="0";
+			[Bindable]
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			public var alarmstarttime:String = "";
+			public var dealresult:String = "";
+			public var isworkcase:String ="";
+			
+			private var indexRenderer:Class = SequenceItemRenderer;  
+			private var dataList:XML = <list><item label="请选择" value=""/><item label="1" value="1"/><item label="2" value="2"/>
+<item label="3" value="3"/><item label="4" value="4"/><item label="5" value="5"/><item label="6" value="6"/><item label="7" value="7"/><item label="8" value="8"/>
+<item label="9" value="9"/><item label="10" value="10"/><item label="11" value="11"/><item label="12" value="12"/></list>;
+			
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			public function init():void
+			{
+				if(flag=="1"){
+					newFault.visible=false;
+				}else{
+					
+				}
+//				pagingFunction(0,20);
+				getUserName();
+			}
+			
+			private function setFaultProcess():void{
+				var userID:String=Application.application.curUser;
+				var rtobj:RemoteObject= new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.setFaultProcess(alarmnm,userID,operPerson);
+				rtobj.addEventListener(ResultEvent.RESULT,getFaultProcessresult);
+			}
+			private function getFaultProcessresult(event:ResultEvent):void{
+				if(event.result==null){
+					Alert.show('转为故障流程处理失败',"提示信息",4,this,null,iconClass);return;
+				}
+				if(event.result=="成功"){
+					
+					tw.ackRootAlarmTo();
+					
+					var arrayDealInfo:Array=new Array();
+					arrayDealInfo[0]=alarmnm;                    //告警编号
+					arrayDealInfo[1]="根告警转故障流程";               //日志类型
+					arrayDealInfo[2]="";                               //处理信息
+					arrayDealInfo[3]=operPerson;                       //需要重写
+//					writeAlarmLog.addAlarm(arrayDealInfo);
+					Alert.show('转为故障流程处理成功',"提示信息",4,this,null,iconClass);
+					PopUpManager.removePopUp(this);
+				}else{
+					Alert.show('转为故障流程处理失败',"提示信息",4,this,null,iconClass);
+				}
+			}
+			private function select():void{
+				if(ctime.selectedItem.@value==""){
+					Alert.show("请选择间隔时间","提示信息",4,this,null,iconClass);
+				}else{
+					pagingFunction(0,50);
+				}
+			}
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void {
+				start = (pageIndex * pageSize+1).toString();
+				end = ((pageIndex * pageSize) + pageSize).toString();
+				var time:String = ctime.selectedItem.@value;
+				var alarmtime = alarmstarttime;
+				var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getFaults(alarmnm,time,alarmtime,start,end);
+				rtobj.addEventListener(ResultEvent.RESULT, load);
+			}
+			
+			private function load(event:ResultEvent):void{
+				param.removeAll();
+				var fault:ArrayCollection=event.result.listFault as ArrayCollection;
+				if(event.result.listFault==null || event.result.listFault==""){
+					Alert.show('该时间段内无已转的故障',"提示信息",4,this,null,iconClass);
+				}
+				for each(var a:Object in fault){
+					param.addItem({BUGNO:a.BUGNO,DUTYID:a.DUTYID,STARTTIME:df.format(a.STARTTIME),OBSERVEDVALUE:a.OBSERVEDVALUE,N_ALARMDESC:a.N_ALARMDESC});
+				}
+				dg.dataProvider=param;
+				
+				pagingToolBarforAlarmExp.orgData =param;
+				var count:int =int(event.result.countFault);
+				pagingToolBarforAlarmExp.totalRecord = count;
+				pagingToolBarforAlarmExp.dataBind(true);	
+			}
+			
+			
+			private function setOldFaultProcess():void{
+				if(dg.selectedItem!=null){
+					var rtobj:RemoteObject= new RemoteObject("RealRootAlarmDwr");
+					rtobj.endpoint =ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					var bugno:String = dg.selectedItem.BUGNO;
+					var dutyid:String = dg.selectedItem.DUTYID;
+					rtobj.changeToOldFaultProcess(bugno,dutyid,operPerson,alarmnm,dealresult,isworkcase);
+					rtobj.addEventListener(ResultEvent.RESULT,getOldFaultResult);
+					
+				}else{
+					Alert.show('请选择一条数据',"提示信息",4,this,null,iconClass);
+				}
+				
+			}
+			
+			private function getOldFaultResult(event:ResultEvent):void{
+				if(event.result==null){
+					Alert.show('error',"提示信息",4,this,null,iconClass);return;
+				}
+				if(event.result=="成功"){
+					
+					tw.ackRootAlarmTo();
+					PopUpManager.removePopUp(this);
+					Alert.show('转为故障流程处理成功',"提示信息",4,this,null,iconClass);
+					
+				}else{
+					Alert.show('转伴故障流程处理失败',"提示信息",4,this,null,iconClass);
+				}
+				
+			}
+			
+			
+			/***
+			 * 
+			 * 取得登录人
+			 *   
+			 */
+			public function getUserName():void{
+				var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getusername();
+				rtobj.addEventListener(ResultEvent.RESULT,function(e:ResultEvent){
+					if(e.result!=null){
+						operPerson = e.result.toString();
+					}
+				})
+			}
+			
+			
+		]]>
+	</mx:Script>
+	
+	<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		<mx:HBox width="100%" height="10%" backgroundImage="@Embed(source='assets/images/alarminfo_banner.png')" backgroundSize="100%" verticalAlign="top" horizontalGap="0">
+			<mx:Image x="0" y="0" source='assets/images/rootalarm/fault.png'/>
+		</mx:HBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" backgroundImage="@Embed(source='assets/images/alarminfopagebg.png')" backgroundSize="100%">
+			<mx:HBox width="100%" styleName="search1" backgroundImage="assets/images/iconbar_bg.png" backgroundSize="100%" verticalAlign="middle" height="35">
+				<mx:LinkButton id="newFault" label="转至新故障" styleName="iconbar" click="setFaultProcess()" icon="@Embed(source='assets/images/rootalarm/icon/newfault.png')" />
+				<mx:LinkButton id="oldFault" label="转至已有故障" styleName="iconbar" click="setOldFaultProcess()" icon="@Embed(source='assets/images/rootalarm/icon/oldfault.png')" />
+				<mx:Spacer height="10" width="100%"/>
+				<mx:Label text="与要转告警发生时间前后间隔：" fontSize="12"/>
+				<mx:ComboBox id="ctime" dataProvider="{dataList.item}" labelField="@label" textAlign="center" styleName="combox" width="80" />
+				<mx:Label text="小时" fontSize="12"/>
+				<mx:Spacer height="10" width="100%"/>
+				<mx:Button label="检 索" styleName="normal" click="select()"/>
+			</mx:HBox>
+			<mx:DataGrid id="dg" headerHeight="25"  styleName="alarm" width="100%" height="95%"  verticalAlign="middle" columnWidth="200" 
+						 verticalScrollPolicy="auto" horizontalScrollPolicy="auto">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="50" textAlign="center"/>
+					<mx:DataGridColumn headerText="故障ID" dataField="BUGNO" width="70"/>
+					<mx:DataGridColumn headerText="故障发生时间" dataField="STARTTIME" width="200" showDataTips="true"/>	
+					<mx:DataGridColumn headerText="故障对象" dataField="OBSERVEDVALUE" width="200" showDataTips="true"/>	
+					<mx:DataGridColumn headerText="故障描述" dataField="N_ALARMDESC" showDataTips="true" />
+				</mx:columns>
+			</mx:DataGrid>
+			<views:pagetoolbar width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{dg}" pagingFunction="pagingFunction">
+			</views:pagetoolbar>
+		</mx:VBox>
+	</mx:VBox>
+</mx:TitleWindow>

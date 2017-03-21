@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--网络状态监视-->
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" 
+		  xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+		  borderThickness="1" borderThicknessBottom="2"  borderThicknessLeft="2"
+		  borderThicknessRight="2" borderThicknessTop="2"
+		  headerHeight="0"  backgroundAlpha="1" borderColor="#157baa" creationComplete="init()"
+		  >
+	<mx:Style source="/assets/css/mntsubject.css"/>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.Label;
+			import mx.core.Application;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.rootalarm.views.*;
+			import sourceCode.subject.main.views.RootAlarmMonitor1;
+			
+			import twaver.*;
+			import twaver.Node;
+			import twaver.core.util.h._ED;
+			import twaver.network.layout.AutoLayouter;
+			import twaver.network.ui.AlarmAttachment;
+			import twaver.network.ui.Attachment;
+			private var getNetStatus:RemoteObject;
+			private var nodeIdCollection:ArrayCollection=new ArrayCollection;
+
+			[Embed(source='assets/images/mntsubject/netmgrbg.png')]   
+			public var netmgrbg:Class; 
+			[Embed(source='assets/images/mntsubject/tongbu.png')]   
+			public var tongbu:Class; 
+			[Embed(source='assets/images/mntsubject/tongbu1.png')]   
+			public var tongbu1:Class; 
+			[Embed(source='assets/images/mntsubject/jieru.png')]   
+			public var jieru:Class; 
+			[Embed(source='assets/images/mntsubject/jieru1.png')]   
+			public var jieru1:Class; 
+			[Embed(source='assets/images/mntsubject/zonghe.png')]   
+			public var zonghe:Class; 
+			[Embed(source='assets/images/mntsubject/dianyuan.png')]   
+			public var dianyuan:Class; 
+			[Embed(source='assets/images/mntsubject/dianyuan1.png')]   
+			public var dianyuan1:Class; 
+			[Embed(source="assets/images/mntsubject/shuju.png")]   
+			public static const  shuju:Class; 
+			[Embed(source="assets/images/mntsubject/shuju1.png")]   
+			public static const  shuju1:Class; 
+			[Embed(source="assets/images/mntsubject/trana.png")]   
+			public static const  trana:Class; 
+			[Embed(source="assets/images/mntsubject/trana1.png")]   
+			public static const  trana1:Class; 
+			[Embed(source="assets/images/mntsubject/tranb.png")]   
+			public static const  tranb:Class; 
+			[Embed(source="assets/images/mntsubject/tranb1.png")]   
+			public static const  tranb1:Class; 
+			
+			
+			[Embed(source="assets/images/mntsubject/04.swf")]   
+			public static const  sysback4:Class; 
+			[Embed(source="assets/images/mntsubject/05.swf")]   
+			public static const  sysback5:Class; 
+			[Embed(source="assets/images/mntsubject/06.swf")]   
+			public static const  sysback6:Class; 
+			
+			[Embed(source="assets/images/mntsubject/0101.swf")]   
+			public static const  sysback11:Class; 
+			[Embed(source="assets/images/mntsubject/0202.swf")]   
+			public static const  sysback22:Class; 
+			[Embed(source="assets/images/mntsubject/0303.swf")]   
+			public static const  sysback33:Class; 
+			[Embed(source="assets/images/mntsubject/0404.swf")]   
+			public static const  sysback44:Class; 
+			[Embed(source="assets/images/mntsubject/0505.swf")]   
+			public static const  sysback55:Class; 
+			[Embed(source="assets/images/mntsubject/0606.swf")]   
+			public static const  sysback66:Class; 
+			
+			
+			[Embed(source='assets/images/mntsubject/header_rightbg.png')]   
+			public var header_rightbg:Class; 
+			
+			private var autoLayouter:AutoLayouter = null;
+			private var box:ElementBox=new ElementBox();
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			private var background:Layer;
+			private var system:Layer;
+			private var backNode:Node;
+			private var alarmNodeCollection:ArrayCollection=new ArrayCollection();
+			public function init():void{
+//				DealAlarmUtil.initMessage();
+//				subscriberRealNetWorkStatus("systemAlarm");
+//				registerAlarm();
+				network.elementBox.clear();
+				network.elementBox.layerBox.clear();
+				box=network.elementBox;
+				Utils.registerImageByClass("netmgrbg", netmgrbg);
+				Utils.registerImageByClass("tongbu", tongbu);
+				Utils.registerImageByClass("tongbu1", tongbu1);
+				Utils.registerImageByClass("jieru", jieru);
+				Utils.registerImageByClass("jieru1", jieru1);
+				Utils.registerImageByClass("zonghe", zonghe);
+				Utils.registerImageByClass("dianyuan", dianyuan);
+				Utils.registerImageByClass("dianyuan1", dianyuan1);
+				Utils.registerImageByClass("shuju", shuju);
+				Utils.registerImageByClass("shuju1", shuju1);
+				Utils.registerImageByClass("trana", trana);
+				Utils.registerImageByClass("trana1", trana1);
+				Utils.registerImageByClass("tranb", tranb);
+				Utils.registerImageByClass("tranb1", tranb1);
+//				Utils.registerImageByClass("sysback4", sysback4,true);
+//				Utils.registerImageByClass("sysback5", sysback5,true);
+//				Utils.registerImageByClass("sysback6", sysback6,true);
+//				
+//				Utils.registerImageByClass("sysback11", sysback11,true);
+//				Utils.registerImageByClass("sysback22", sysback22,true);
+//				Utils.registerImageByClass("sysback33", sysback33,true);
+//				Utils.registerImageByClass("sysback44", sysback44,true);
+//				Utils.registerImageByClass("sysback55", sysback55,true);
+//				Utils.registerImageByClass("sysback66", sysback66,true);
+				
+				//初始化界面
+				drawRound();
+			 	network.movableFunction = function():Boolean{
+					return false;
+				}; 
+				network.selectionModel.filterFunction=function(data:Element):Boolean{
+					
+					return data.layerID != "background";
+				};
+				//network.setPanInteractionHandlers();
+			}
+			/*
+				初始化界面
+			*/
+			public function drawRound():void{
+				background = new Layer("background");
+				system= new Layer("system");
+				network.elementBox.layerBox.add(background, 0);
+				network.elementBox.layerBox.add(system, 1);
+				background.movable = false;
+				backNode=new Node();
+				backNode.image="netmgrbg";
+				backNode.setSize(506,238);
+				backNode.setCenterLocation(network.width/2,network.height/2);
+				backNode.layerID = "background";
+				box.add(backNode);
+				var node:Node=new Node("综合网管");
+				node.image="zonghe";
+				node.layerID='system';
+				node.setCenterLocation(backNode.centerLocation.x,backNode.centerLocation.y-35);
+				//				node.setSize(widh,height);
+				box.add(node);
+//				creatNode("综合网管","zonghe",173,58,80,80);
+				creatNode("同步时钟","tongbu",backNode.centerLocation.x-197.5,backNode.centerLocation.y-117.5,80,80);
+				creatNode("接入网","jieru",backNode.centerLocation.x-217.5,backNode.centerLocation.y-17.5,80,80);
+				creatNode("通信电源","dianyuan",backNode.centerLocation.x+80.5,backNode.centerLocation.y-120.5,80,80);
+				creatNode("数据网","shuju",backNode.centerLocation.x+125.5,backNode.centerLocation.y-10.5,80,80);
+				creatNode("传输A网","trana",backNode.centerLocation.x-126.5,backNode.centerLocation.y+59.5,80,80);
+				creatNode("传输B网","tranb",backNode.centerLocation.x-0.5,backNode.centerLocation.y+59.5,80,80);
+				getNetStatus=new RemoteObject("subject");
+				getNetStatus.endpoint = ModelLocator.END_POINT;
+				getNetStatus.addEventListener(ResultEvent.RESULT,getNetStatusCallback);
+				getNetStatus.addEventListener(FaultEvent.FAULT,faultHandler);
+				getNetStatus.getNetStatus(); 
+			}
+			
+			
+			/**
+			 * 订阅网络状态告警信息
+			 */
+			private function subscriberRealNetWorkStatus(subtopic:String):void{	
+				var consumer:Consumer =new Consumer();				
+				var channelSet:ChannelSet = new ChannelSet();   
+				channelSet.addChannel(DealAlarmUtil.streamingAMF);   
+				channelSet.addChannel(DealAlarmUtil.pollingAMF);
+				consumer.destination = DealAlarmUtil.sdestination; 
+				consumer.channelSet = channelSet;
+				consumer.subtopic = subtopic;
+				consumer.addEventListener(MessageEvent.MESSAGE,handleRealNetWorkStatus);
+				consumer.addEventListener(MessageFaultEvent.FAULT,faultHandlerMsg);
+				consumer.subscribe();
+			}
+			
+			/**
+			 * 初始化网络状态信息
+			 */
+			private function getNetStatusCallback(event:ResultEvent):void{
+				getNetStatus.removeEventListener(ResultEvent.RESULT,getNetStatusCallback);
+				var getNetStatusCollection:ArrayCollection=event.result as ArrayCollection;
+				locaSysStatus(getNetStatusCollection)
+			}
+			
+			private function handleRealNetWorkStatus(msg:MessageEvent):void{
+				if(msg.message.body==null && msg.message.body==""){
+					Alert.show('接到的消息为空',"提示信息",4,this,null,iconClass); return;
+				}
+				var networkAC:ArrayCollection = msg.message.body as ArrayCollection;
+				for(var i:int=0;i<networkAC.length;i++){
+					updateSysStatus(networkAC[i]);
+				}
+			}
+			private function updateSysStatus(para:Object):void{
+				var follower:Follower=null;
+				for(var i:int = 0;i<network.elementBox.toDatas().count;i++){
+					var ielement:IElement=network.elementBox.toDatas().getItemAt(i);
+					if(ielement is Follower){
+						if(Follower(ielement).name==para.SYSTEMCODE){
+							var alarmCount=para.ROOTALARM;
+							var flag:String=para.SYSSTATUS as String;
+							var j:String=String(Follower(ielement).id).split("sys")[0];
+							if(flag=="1"){
+								Follower(ielement).host.image="sysback"+j+""+j;
+							}else if(flag=="2"){
+								Follower(ielement).host.image="sysback"+j;
+							}else{
+								Follower(ielement).host.image="sysback"+j;
+							}
+							addAlarm(null,Follower(ielement).id,box.alarmBox);
+							if(alarmCount!="0" && alarmCount!=null){
+								Follower(ielement).alarmState.setNewAlarmCount(AlarmSeverity.getByValue(int(1)),alarmCount);	
+							}
+						}
+					}
+				}
+			}
+
+			/**
+			 * 定位系统状态信息
+			 * 
+			 * 1表示未确认，2表示确认，3表示正常的
+			 * 
+			 */
+			private function locaSysStatus(getNetStatusCollection:ArrayCollection):void{
+				alarmNodeCollection.removeAll();
+				for(var i:int=0;i<getNetStatusCollection.length;i++){
+						var sys:String=getNetStatusCollection[i].BELONGTRANSYS as String;
+						var alarmCount:String=getNetStatusCollection[i].ROOTALARM;
+						var ackingCount:String=getNetStatusCollection[i].ACKINGCOUNT;
+						var node:Node=null;
+						node=network.elementBox.getDataByID(sys) as Node;
+						if(node!=null){
+							if(alarmCount!="0"){
+								if(changeSysName(sys)!=""){
+									node.image=changeSysName(sys);
+								}
+								if(ackingCount!="0"){
+									alarmNodeCollection.addItem(node);
+								}
+							}
+						}
+				}
+				var timer:Timer = new Timer(500); 
+				timer.addEventListener(TimerEvent.TIMER,function tick(event:TimerEvent = null):void {
+					for(var i:int=0;i<alarmNodeCollection.length;i++){
+						var node:Node = alarmNodeCollection[i] as Node;
+						if(node.image.indexOf("1")>-1){
+							node.image=node.image.split("1")[0];
+						}else{
+							node.image=node.image+"1";
+						}
+					}
+				}); 
+				timer.start();
+			}
+			public  function changeSysName(sys:String):String{
+				var str:String="";
+				if(sys=="传输A网"){
+					str="trana1";
+				}else if(sys=="传输B网"){
+					str="tranb1";
+				}else if(sys=="传输B网"){
+					str="tranb1";
+				}
+				return str;
+			}
+			public static function registerAlarm():void{
+				AlarmSeverity.clear();
+				AlarmSeverity.register(1,'CRITICAL','',0xFF0000);//紧急告警
+				AlarmSeverity.register(2,'MAJOR','',0xFF9900);//主要告警
+				AlarmSeverity.register(3,'MINOR','',0xFFFF00);//次要告警
+				AlarmSeverity.register(4,'WARNING','',0x00FFFF);//一般告警
+			}
+			
+			
+			//生成node节点   ---各个专业的
+			private function creatNode(name:String,image:String,x:int,y:int,widh:int,height:int):void{
+				
+				var node:Node=new Node(name);
+				node.image=image;
+				node.setLocation(x,y);
+				node.layerID='system';
+//				node.setSize(widh,height);
+				box.add(node);
+			}
+			
+			//生成Node节点   ----各个专业下的背景图片
+			private function creatBackNode(name:String,backimage:String,x:int,y:int):Node{
+				var backname=name+"_back";
+				var backNode:Node=new Node(backname);
+				//backNode.name=backname;
+				backNode.image=backimage;
+				backNode.setLocation(x,y);
+				box.add(backNode);
+				nodeIdCollection.addItem(backNode.id);
+				return backNode;
+			}
+			
+			//生成Node节点的泡泡
+			private function addAlarm(alarmID:Object,elementID:Object,alarmBox:AlarmBox):void{
+				var alarm:Alarm=new Alarm(alarmID,elementID);
+				alarmBox.add(alarm);
+			}
+			
+			
+		
+			
+			//Node节点双击
+			protected function network_doubleClickHandler(event:MouseEvent):void
+			{
+				if(network.selectionModel.lastData!=null  && Node(network.selectionModel.lastData).layerID.toString()=="system"){
+					var sysname:String=network.selectionModel.lastData.id.toString();
+					if(sysname=="综合网管"){
+						Application.application.openModel("自身监控", false);
+						
+					}else{
+						
+					  var opentype:Boolean = Application.application.isOpen("网络拓扑图");
+					  
+					  if(opentype){
+						  Registry.register("systemcode",sysname);
+						  Registry.register("alarm","true");
+						  Application.application.openModel("网络拓扑图", false);
+					  }else{
+						  Application.application.sysmap.closeWindow();
+						  Registry.register("systemcode",sysname);
+						  Registry.register("alarm","true");
+						  Application.application.openModel("网络拓扑图", false);					  
+					  }
+					  
+					}
+					
+				}
+				
+			}
+			
+			//Node节点单击
+			protected function network_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				
+				var getSysOrg_itemMenu:ContextMenuItem=new ContextMenuItem("查看系统组织图");
+				getSysOrg_itemMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,getSysOrg)
+				
+				var getRootAlarm_itemMenu:ContextMenuItem=new ContextMenuItem("查看根告警详情");
+				getRootAlarm_itemMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,getRootAlarm)
+				
+				network.contextMenu=new ContextMenu();	
+				network.contextMenu.hideBuiltInItems();	
+				
+				if(network.selectionModel.lastData!=null  && network.selectionModel.lastData.getClient("NodeType")=="major" && network.selectionModel.lastData is Node)
+				{
+					if(network.selectionModel.lastData.name!="综合监控视图"){
+						network.contextMenu.customItems=[getSysOrg_itemMenu,getRootAlarm_itemMenu];		
+					}
+				}
+			}
+			
+			
+			//查看系统组织图
+			private function getSysOrg(event:ContextMenuEvent):void{
+				if(network.selectionModel.lastData!=null  && network.selectionModel.lastData.getClient("NodeType")=="major" && network.selectionModel.lastData is Node){
+					
+					var sysname:String=network.selectionModel.lastData.name;
+					Registry.register("systemcode",sysname);
+					Application.application.openModel("系统组织图", false);					
+				} 
+				
+			}
+			
+			//查看根告警详情
+			private function getRootAlarm(event:ContextMenuEvent):void{
+				if(network.selectionModel.lastData!=null  && network.selectionModel.lastData.getClient("NodeType")=="major" && network.selectionModel.lastData is Node){
+					
+					var rootalarmmonitor1:RootAlarmMonitor1=new RootAlarmMonitor1();
+					var sysname:String=network.selectionModel.lastData.name;
+					var obj:Object=new Object();
+					obj.BELONGTRANSYS=sysname;
+					rootalarmmonitor1.linkRelationUI(obj,'rootalarm');
+				} 
+			}
+			
+			private function faultHandlerMsg(event:MessageFaultEvent):void{
+//				Alert.show(event.faultString,"消息处理失败！！",4,this,null,iconClass);			
+			}
+			
+			private function faultHandler(evt:FaultEvent):void{
+				Alert.show(evt.fault.toString(),"提示信息",4,this,null,iconClass);
+			}
+
+		]]>
+	</mx:Script>
+
+	
+	<mx:Grid width="100%" height="100%" verticalGap="0" horizontalGap="0"  backgroundColor="#FFFFFF">
+		<mx:GridRow width="100%" height="28" >
+			<!-- 以下banner 条部分-->
+			<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="100%" height="100%" colSpan="2">						
+				<mx:Grid id="transline" width="100%" height="28" verticalGap="0" horizontalGap="0" backgroundColor="#FFFFFF">
+					<mx:GridRow width="100%" height="28" backgroundImage="@Embed(source='assets/images/mntsubject/themeheader.png')" backgroundSize="100%" >
+						<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="30%" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerbg.png')" backgroundSize="100%" color="#FFFFFF">				          
+							<mx:Label text="网络状态监视"  />
+						</mx:GridItem>
+						<mx:GridItem horizontalAlign="right"  width="35" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerrightbg.png')" />
+						<mx:GridItem horizontalAlign="right" verticalAlign="middle" width="55%" height="100%">
+							<mx:HBox>
+								<!--<mx:LinkButton icon="@Embed(source='assets/images/mntsubject/Form.png')" click="liebiao_clickHandler()"/>
+								<mx:LinkButton icon="@Embed(source='assets/images/mntsubject/Columnar.png')" click="createPie()"/>-->
+							</mx:HBox>
+						</mx:GridItem>
+					</mx:GridRow>
+				</mx:Grid>
+			</mx:GridItem>	
+			<!-- 以上banner 条部分-->
+		</mx:GridRow>	
+		
+		<mx:GridRow width="100%"  height="100%">
+			<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="100%" height="100%" colSpan="2">						
+				<twaver:Network id="network" width="100%" height="100%"  verticalScrollPolicy="off" horizontalScrollPolicy="off"
+								doubleClickEnabled="true" doubleClick="network_doubleClickHandler(event)"	
+								click="network_clickHandler(event)"/>
+			</mx:GridItem>	
+		</mx:GridRow>	
+	</mx:Grid>
+</mx:Panel>

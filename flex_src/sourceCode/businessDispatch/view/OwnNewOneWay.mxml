@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="650" height="564" title="方式基本信息" fontSize="13"
+				showCloseButton="true"
+				creationComplete="iniApp()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{PopUpManager.removePopUp(this)}" xmlns:actionscript="sourceCode.businessDispatch.actionscript.*">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			import mx.utils.StringUtil;
+			private var XMLData_Rates:XMLList;//速率下拉框
+			private var XMLData_userCom:XMLList;//使用单位下拉框
+			private var XMLData_leasers:XMLList;//申请单位下拉框
+			private var XMLData_opTypes:XMLList;//业务类型下拉框
+			private var XMLData_ccLevels:XMLList;//业务等级下拉框
+			private var XMLData_infTypes:XMLList;//接口类型下拉框
+			private var XMLData_state:XMLList;//申请目的下拉框
+			private var stations_ac:ArrayCollection;//局站下拉框数据
+			private var stations_ac_tmp:ArrayCollection;//局站下拉框临时数据
+			public var selectUnit:SelectUnit = new SelectUnit;//选择单位小页面
+			private var treeXML:XMLList = new XMLList();
+			private var folderCollection:XMLList;
+			public var ccLevelname:String = "";
+			private var sss:String = "";
+			public var optyname:String = "";
+			public var aStationcode:String = "";
+			public var zStationcode:String = "";
+			public var select_Equip:selectEquipment;
+
+			protected function iniApp():void
+			{
+				var robj:RemoteObject = new RemoteObject("equInfo");
+				robj.endpoint = ModelLocator.END_POINT;
+				robj.showBusyCursor = true;
+				robj.getFromXTBM('YW0102__');//根据系统编码查询对应信息(速率)ZY1106__
+				robj.addEventListener(ResultEvent.RESULT, RatesInfo);
+				
+				var robj1:RemoteObject = new RemoteObject("businessDispatch");
+				robj1.endpoint = ModelLocator.END_POINT;
+				robj1.showBusyCursor =true;
+				robj1.getXTBM('YW010601__');//使用单位
+				robj1.addEventListener(ResultEvent.RESULT,userComInfo);
+				var robj2:RemoteObject = new RemoteObject("businessDispatch");
+				robj2.endpoint = ModelLocator.END_POINT;
+				robj2.getXTBM('YW010601__');//申请单位
+				robj2.addEventListener(ResultEvent.RESULT,leaserInfo);
+				var robj3:RemoteObject = new RemoteObject("businessDispatch");
+				robj3.endpoint = ModelLocator.END_POINT;
+				robj3.getXTBM('YW120915__');//业务类型
+				robj3.addEventListener(ResultEvent.RESULT,opTypeInfo);
+				var robj4:RemoteObject = new RemoteObject("businessDispatch");
+				robj4.endpoint = ModelLocator.END_POINT;
+				robj4.getXTBM('YW010710__');//业务等级
+				robj4.addEventListener(ResultEvent.RESULT,ccLevelInfo);
+				var robj5:RemoteObject = new RemoteObject("businessDispatch");
+				robj5.endpoint = ModelLocator.END_POINT;
+				robj5.getXTBM('JK01__');//接口类型
+				robj5.addEventListener(ResultEvent.RESULT,infTypeInfo);
+				var robj6:RemoteObject = new RemoteObject("businessDispatch");
+				robj6.endpoint = ModelLocator.END_POINT;
+				robj6.getXTBM('YW0103__');//申请目的
+				robj6.addEventListener(ResultEvent.RESULT,stateInfo);
+				
+				var robj7:RemoteObject = new RemoteObject("businessDispatch");//站点 2011-4-6
+				robj7.endpoint = ModelLocator.END_POINT;
+				robj7.getAllStations();
+				robj7.addEventListener(ResultEvent.RESULT,stationsHandler);
+			}
+			private function stateInfo(e:ResultEvent):void{
+				XMLData_state = new XMLList(e.result.toString());
+				state.dataProvider = XMLData_state.children();
+				state.labelField='@xtxx';
+				state.selectedIndex= -1;
+			}
+			private function YwLevel(e:ResultEvent):void{
+				ccLevelname = e.result.toString();
+				circuitlevel.selectedIndex = selectccLeve(sss);
+			}   
+			private function YwLevel_gd(e:ResultEvent):void{
+				ccLevelname = e.result.toString();
+				var yewumm:String=e.result.toString();
+				circuitlevel.selectedIndex = selectccLeveOK(yewumm);
+			}   
+			private function RatesInfo(event:ResultEvent):void{
+				XMLData_Rates = new XMLList(event.result.toString());	
+				rate.dataProvider = XMLData_Rates.children();
+				rate.labelField = "@label";
+//				rate.selectedIndex =-1;
+//				rate.selectedIndex = selectRate(event.result.toString());
+			} 
+			private function userComInfo(e:ResultEvent):void{
+				
+				XMLData_userCom = new XMLList(e.result.toString());
+				userCom.dataProvider = XMLData_userCom.children();
+				userCom.labelField = "@xtxx";
+//				userCom.selectedIndex = -1;
+//				userCom.selectedIndex = selectUserCom(e.result.toString());
+			}
+			public function leaserInfo(e:ResultEvent):void{
+				XMLData_leasers = new XMLList(e.result.toString());
+				request_unit.dataProvider = XMLData_leasers.children();
+				request_unit.labelField = "@xtxx";
+//				request_unit.selectedIndex= -1;
+//				request_unit.selectedIndex = selectLeaser(e.result.toString());
+			}
+			public function opTypeInfo(e:ResultEvent):void{
+				XMLData_opTypes = new XMLList(e.result.toString());
+				operationType.dataProvider = XMLData_opTypes.children();
+				operationType.labelField = "@xtxx";
+//				operationType.selectedIndex = -1;
+//				operationType.selectedIndex = selectOpty(e.result.toString());
+			}
+			public function ccLevelInfo(e:ResultEvent):void{
+				XMLData_ccLevels = new XMLList(e.result.toString());
+				sss = e.result.toString();
+				circuitlevel.dataProvider = XMLData_ccLevels.children();
+				circuitlevel.labelField = "@xtxx";
+				var robj6:RemoteObject = new RemoteObject("businessDispatch");
+				robj6.endpoint = ModelLocator.END_POINT;
+				robj6.getCircuitLevel(optyname);
+				robj6.addEventListener(ResultEvent.RESULT,YwLevel); 
+			}
+			public function infTypeInfo(e:ResultEvent):void{
+				XMLData_infTypes = new XMLList(e.result.toString());
+				interfaceType.dataProvider = XMLData_infTypes.children();
+				interfaceType.labelField= "@xtxx";
+//				interfaceType.selectedIndex = -1;
+//				interfaceType.selectedIndex = selectInfType(e.result.toString());
+			}
+			public function stationsHandler(e:ResultEvent):void{
+				stations_ac = e.result as ArrayCollection;
+//				Alert.show(ac.length+"   "+ac[0].STATIONNAME);
+				aStationName.dataProvider = stations_ac;
+				aStationName.labelField = "LABEL";
+				aStationName.addEventListener(KeyboardEvent.KEY_UP,select);
+				
+				zStationName.dataProvider = stations_ac;
+				zStationName.labelField = "LABEL";
+				zStationName.addEventListener(KeyboardEvent.KEY_UP,select1);
+				
+//				stations_ac.filterFunction = 
+			}
+			private function select(e:KeyboardEvent):void{
+//				Alert.show("1");
+				var key:String = aStationName.text;
+				if(vprjName(key)){
+					stations_ac_tmp = new ArrayCollection();
+					if(e.keyCode!=Keyboard.UP&&e.keyCode!=Keyboard.DOWN&&e.keyCode!=Keyboard.LEFT&&e.keyCode!=Keyboard.RIGHT&&e.keyCode!=Keyboard.ENTER){
+					
+						if(StringUtil.trim(aStationName.text)!=""){
+							for(var i:int =0;i<stations_ac.length;i++){
+								var item:String = stations_ac[i].LABEL;
+								if(item.indexOf(key)!=-1){
+									stations_ac_tmp.addItem(stations_ac[i])
+								}
+							}
+							aStationName.dataProvider = stations_ac_tmp;
+							aStationName.dropdown.dataProvider = stations_ac_tmp;
+							if(aStationName!=null)aStationName.open();
+						}
+					}
+				}
+			}
+			private function select1(e:KeyboardEvent):void{
+				//				Alert.show("1");
+				var key:String = zStationName.text;
+				if(vprjName(key)){
+					stations_ac_tmp = new ArrayCollection();
+					if(e.keyCode!=Keyboard.UP&&e.keyCode!=Keyboard.DOWN&&e.keyCode!=Keyboard.LEFT&&e.keyCode!=Keyboard.RIGHT&&e.keyCode!=Keyboard.ENTER){
+						
+						if(StringUtil.trim(zStationName.text)!=""){
+							for(var i:int =0;i<stations_ac.length;i++){
+								var item:String = stations_ac[i].LABEL;
+								if(item.indexOf(key)!=-1){
+									stations_ac_tmp.addItem(stations_ac[i])
+								}
+							}
+							zStationName.dataProvider = stations_ac_tmp;
+							zStationName.dropdown.dataProvider = stations_ac_tmp;
+							if(zStationName!=null)zStationName.open();
+						}
+					}
+				}
+			}
+			//正则表达式
+			private function vprjName(prjName:String):Boolean{//return,颠倒过
+				var vname:RegExp=/^[A-Za-z0-9]+$/;
+					// /\u4e00-\u9fa5/; 
+				//  /^[\w\u4e00-\u9fa5]{0,16}$/
+				if(!vname.exec(prjName)) return true;
+				return false; 
+			}
+			
+
+
+//			public function selectRate(s:String):int{
+//				var xml:XML = XML(s);
+//				for(var i:int=0;i<xml.children().length();i++){
+//					if(ratename == xml.name[i].@label){
+//						return i; 
+//					}
+//				}
+//				return -1;
+//			}
+//			public function selectUserCom(s:String):int{
+//				var xml:XML = XML(s);
+//				for(var i:int=0;i<xml.children().length();i++){
+//					if(propertyname == xml.name[i].@xtxx){
+//						return i; 
+//					}
+//				}
+//				return -1;
+//			}
+//			public function selectLeaser(s:String):int{
+//				var xml:XML = XML(s);
+//				for(var i:int=0;i<xml.children().length();i++){
+//					if(leasername == xml.name[i].@xtxx){
+//						return i; 
+//					}
+//				}
+//				return -1;
+//			}
+//			public function selectOpty(s:String):int{
+//				var xml:XML = XML(s);
+//				for(var i:int=0;i<xml.children().length();i++){
+//					if(optyname == xml.name[i].@xtxx){
+//						return i; 
+//					}
+//				}
+//				return -1;
+//			}
+			public function selectccLeve(s:String):int{
+				var xml:XML = XML(s);
+				for(var i:int=0;i<xml.children().length();i++){
+					if(ccLevelname == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+			public function selectccLeveOK(s:String):int{
+//								var xml:XML = XML(s);
+				var xml:XML =XML(XMLData_ccLevels);
+				//				Alert.show(xml.toString())
+				for(var i:int=0;i<xml.children().length();i++){
+					if(s == xml.name[i].@xtxx){
+						return i; 
+					}
+				}
+				return -1;
+			}
+//			public function selectInfType(s:String):int{
+//				var xml:XML = XML(s);
+//				for(var i:int=0;i<xml.children().length();i++){
+//					if(infTpyename == xml.name[i].@xtxx){
+//						return i; 
+//					}
+//				}
+//				return -1;
+//			}
+			protected function department_clickHandler(event:MouseEvent):void
+			{
+				//Alert.show(allStr.@speedname);
+				//				Alert.show(allStr.@speed+"asdasdasd");有
+				var orbj:RemoteObject = new RemoteObject("businessDispatch");
+				orbj.endpoint= ModelLocator.END_POINT;
+				orbj.showBusyCursor = true;
+				orbj.gerSUTree();
+				orbj.addEventListener(ResultEvent.RESULT,SUTree);
+				
+			}
+			private function SUTree(e:ResultEvent):void{
+				PopUpManager.addPopUp(selectUnit, this, true);
+				PopUpManager.centerPopUp(selectUnit);
+				treeXML = new XMLList(e.result.toString());
+				//	var xml:XML = XML(e.result.toString());
+				folderCollection = new XMLList(treeXML);
+				selectUnit.selectUnitTree.dataProvider = folderCollection.node;
+				var shuzu:Array = department.text.split(",");
+				for(var i:int = 0;i<shuzu.length;i++){
+					//if(shuzu[i] == xml.node[i].@xtxx ){
+					var ss:String = shuzu[i];
+					for each (var element:XML in treeXML.elements()) {
+						if(element.@isBranch==false){//分支节点
+							if(element.@name==ss){
+								element.@checked = "1";		
+							}
+						}
+					}
+					//}
+				}
+			}
+			protected function operationType_changeHandler(event:ListEvent):void
+			{
+				var YewuName:String =operationType.selectedItem.@xtxx;
+				var robj6:RemoteObject = new RemoteObject("businessDispatch");
+				robj6.endpoint = ModelLocator.END_POINT;
+				robj6.getCircuitLevel(YewuName);
+				robj6.addEventListener(ResultEvent.RESULT,YwLevel_gd); 
+			}
+
+			protected function aStationName_clickHandler(event:MouseEvent):void
+			{
+					var stations:StationTree = new StationTree();
+					PopUpManager.addPopUp(stations,this,true);
+					stations.page_parent=this;
+					stations.whichOne = "aONOW";
+					PopUpManager.centerPopUp(stations);
+				
+			}
+
+
+			protected function zStationName_clickHandler(event:MouseEvent):void
+			{
+				var stations:StationTree = new StationTree();
+				PopUpManager.addPopUp(stations,this,true);
+				stations.page_parent=this;
+				stations.whichOne = "zONOW";
+				PopUpManager.centerPopUp(stations);
+			}
+
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				if(formName.text==null||formName.text ==""){
+					Alert.show("业务名称不能为空！","温馨提示");
+				}else if(aStationName.text==null||aStationName.text ==""){
+					Alert.show("起始局站不能为空！","温馨提示");
+				}else if(zStationName.text==null||zStationName.text ==""){
+					Alert.show("终止局站不能为空！","温馨提示");
+				}else if(request_unit.text==null||request_unit.text ==""){
+					Alert.show("申请单位不能为空！","温馨提示");
+				}else if(userCom.text==null||userCom.text ==""){
+					Alert.show("使用单位不能为空！","温馨提示");
+				}else if(operationType.text==null||operationType.text ==""){
+					Alert.show("业务类型不能为空！","温馨提示");
+				}else if(circuitlevel.text==null||circuitlevel.text ==""){
+					Alert.show("业务等级不能为空！","温馨提示");
+				}else if(rate.text==null||rate.text ==""){
+					Alert.show("速率不能为空！","温馨提示");
+				}/* else if(requestionID.text==null||requestionID.text ==""){
+					Alert.show("申请名称不能为空！","温馨提示");
+				} */else if(state.text==null||state.text ==""){
+					Alert.show("电路状态不能为空！","温馨提示");
+				}else if(starttime.text==null||starttime.text ==""){
+					Alert.show("申请时间不能为空！","温馨提示");
+				}else if(finishtime.text==null||finishtime.text ==""){
+					Alert.show("完成时间不能为空！","温馨提示");
+				}else if(interfaceType.text==null||interfaceType.text ==""){
+					Alert.show("接口类型不能为空！","温馨提示");
+				}else if(department.text == ""||department == null){
+					Alert.show("执行单位不能为空！","温馨提示");
+				}else{
+					var obj:Object = new Object();
+					obj.startTime = new String(starttime.text);//
+					obj.form_id = "";//直接开通的方式没有form_id
+					obj.formName = new String(formName.text);
+//					obj.form_no = new String(allStrOfOthers.requisitionid);
+					obj.property = new String(request_unit.text);
+					obj.leaser = new String(parentApplication.curUser); 
+//					obj.requestionID = new String(allStrOfOthers.form_id);//
+					obj.operationType= new String(operationType.text); 
+					obj.rate = new String(rate.selectedItem.@code);
+					obj.circuitLevel = new String(circuitlevel.selectedItem.@xtbm);
+					obj.circuitLevelName = new String(circuitlevel.selectedItem.@xtxx); //业务等级
+					obj.appdepartment = new String(request_unit.text);
+					obj.applier = new String(parentApplication.curUser);
+					obj.x_purpose=new String(state.selectedItem.@xtbm);
+					
+					
+					obj.modeName = formName.text;//业务名称
+					obj.rateName = rate.text;//速率
+					obj.interfaceType = interfaceType.text;//接口类型
+					obj.state=new String(state.selectedItem.@xtbm);//申请目的
+					obj.stateName = state.text;//电路状态
+					obj.reqendtime = finishtime.text;//完成时间
+					obj.station_a = aStationName.text;//A站点
+					obj.station_z = zStationName.text;//Z站点
+					obj.useOfUnits = new String(userCom.selectedItem.@xtbm);//使用单位
+					obj.applicantCom = new String(request_unit.selectedItem.@xtbm);//申请单位
+					obj.depar = (selectUnit.dtStr).substr(0,(selectUnit.dtStr).length-1);//执行单位
+					obj.departmentid = (selectUnit.dtidStr).substr(0,(selectUnit.dtidStr).length-1);//执行的单位的ID  //selectUnit.selectUnitTree.selectedItem.@xtbm;
+					obj.cooperateDepartment = cooperateDepartment.text;//配合单位
+					obj.beizhu = beizhu.text;//备注
+					obj.requestionID = requestionID.text;//老方式单编号
+					obj.wsqd = "1";
+					select_Equip = new selectEquipment;
+					select_Equip.obj = obj;
+					PopUpManager.addPopUp(select_Equip,this,true);
+					PopUpManager.removePopUp(this);
+				}
+			}
+
+
+			protected function aStationName_changeHandler(event:ListEvent):void
+			{
+			
+			}
+
+		]]>
+	</mx:Script>
+	<mx:Canvas width="100%" height="100%">
+	<mx:Form x="10" y="10" width="620" height="66">
+		<mx:FormItem label="业务名称:">
+			<mx:TextInput id="formName" width="508"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Form x="10" y="84" width="286" height="231">
+		<mx:FormItem label="起始局站:">
+			<!--<mx:TextInput id="aStationName" width="160" click="aStationName_clickHandler(event)" editable="false" />-->
+			<mx:ComboBox id="aStationName" width="160" editable="true" />
+		</mx:FormItem>
+		<mx:FormItem label="申请单位:">
+			<mx:ComboBox id="request_unit" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+		</mx:FormItem>
+		<mx:FormItem label="业务类型:">
+			<mx:ComboBox id="operationType" width="160" change="operationType_changeHandler(event)" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+		</mx:FormItem>
+		<mx:FormItem label="速率:">
+			<mx:ComboBox id="rate" width="160"  fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+		</mx:FormItem>
+		<mx:FormItem label="申请目的:">
+			<mx:ComboBox id="state" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+		</mx:FormItem>
+		<mx:FormItem label="接口类型:">
+			<mx:ComboBox id="interfaceType" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Form x="334" y="84" width="296" height="231">
+		<mx:FormItem label="终止局站:">
+			<!--<mx:TextInput id="zStationName" width="160" click="zStationName_clickHandler(event)" editable="false"/>-->
+			<mx:ComboBox id="zStationName" width="160" editable="true" />
+		</mx:FormItem>
+		<mx:FormItem label="使用单位:" horizontalAlign="left">
+			<mx:ComboBox id="userCom" width="160"/>
+		</mx:FormItem>
+		<mx:FormItem label="业务等级:">
+			<mx:ComboBox id="circuitlevel" width="160"/>
+		</mx:FormItem>
+		<!--<mx:FormItem label="申请名称:">
+			<mx:TextInput id="requestionID" width="160"/>
+		</mx:FormItem>-->
+		<mx:FormItem label="申请日期:">
+			<mx:DateField id="starttime" width="160" formatString="YYYY-MM-DD" dayNames="{ModelLocator.days}" monthNames="{ModelLocator.monthNames}" yearNavigationEnabled="true" />
+		</mx:FormItem>
+		<mx:FormItem label="完成日期:">
+			<mx:DateField id="finishtime" width="160" formatString="YYYY-MM-DD" dayNames="{ModelLocator.days}" monthNames="{ModelLocator.monthNames}" yearNavigationEnabled="true"/>
+		</mx:FormItem>
+		<mx:FormItem label="原方式单编号:">
+			<mx:TextInput id="requestionID" width="160"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Form x="10" y="308" width="620" height="175">
+		<mx:FormItem width="587" label="执行单位:" height="42">
+			<mx:TextArea id="department" width="509" height="41" click="department_clickHandler(event)" text="{selectUnit.dtStr}" editable="false"/>
+		</mx:FormItem>
+		<mx:FormItem width="586" label="配合单位:" height="50">
+			<mx:TextArea id="cooperateDepartment" width="509" height="49"/>
+		</mx:FormItem>
+		<mx:FormItem width="587" label="备注:" height="35">
+			<mx:TextArea id="beizhu" width="510" height="34"/>
+		</mx:FormItem>
+			
+	</mx:Form>
+	</mx:Canvas>
+	<mx:Validator source="{formName}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{aStationName}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{zStationName}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{request_unit}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{userCom}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{operationType}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{circuitlevel}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{rate}" property="text" requiredFieldError="该项不能为空！"/>
+	<!--<mx:Validator source="{requestionID}" property="text" requiredFieldError="该项不能为空！"/>-->
+	<mx:Validator source="{state}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{starttime}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{finishtime}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{interfaceType}" property="text" requiredFieldError="该项不能为空！"/>
+	<mx:Validator source="{department}" property="text" requiredFieldError="该项不能为空！"/>
+	
+	<mx:Canvas x="0" y="480" width="100%" height="47" backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+		<mx:Button x="339" y="10" label="下一步" width="80" styleName="loginprimary"  click="button2_clickHandler(event)"  />
+		<mx:Button x="484" y="10" label="取消" width="80" styleName="loginsecondary" click="button1_clickHandler(event)"/>
+	</mx:Canvas>
+	
+</mx:TitleWindow>

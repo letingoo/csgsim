@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="580"
+				height="400"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="closeWindow()">
+	<mx:Style>
+		.myStyleClass{
+			
+			title-style-name: "styletitle";
+			
+		}
+		.styletitle{
+			backgroundColor: #ffffff;
+			font-size:20;
+			font-weight:normal;
+			color:gray;
+			disabledColor:#0000FF;
+		}
+	</mx:Style>
+	<mx:Script source="../actionscript/userEventMaintainTitle.as" />
+	
+	<mx:RemoteObject id="subMessage" destination="RemoteMessage"  endpoint="{ModelLocator.END_POINT}" 
+					 result="subMessage_resultHandler(event)" /> 
+
+	<mx:HBox width="100%"
+			 height="30"
+			 verticalAlign="middle"
+			 horizontalAlign="center"
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+			 backgroundSize="100%">
+		<mx:LinkBar dataProvider="{vs}" labelField="name"  linkButtonStyleName="styletitle"/>
+		</mx:HBox>
+		
+		<mx:ViewStack id="vs" width="100%" height="100%">
+			<mx:Canvas name="普通处理"  id="pt_cl">
+				<mx:VBox width="100%"
+						 height="100%"
+						 paddingTop="30"
+						 paddingBottom="0"
+						 paddingLeft="0"
+						 paddingRight="0"
+						 horizontalAlign="center"
+						 verticalGap="0">
+		<mx:HBox width="100%"
+				 height="50%">
+			
+			<mx:Form width="100%" height="100%">
+				
+				<mx:FormItem label="处理方法" required="true">
+					<mx:TextInput id="operatetype" width="180" editable="false" click="selectOperateTypeHnadler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="备注" >
+					<mx:TextArea id="remark" width="380" height="100"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+	
+		</mx:HBox>
+		<mx:TextArea id="steps" width="460"  creationComplete="fontColor()" visible="{isShow}" borderStyle="none" backgroundAlpha="0" horizontalCenter="center" height="100" editable="false"/>
+		<mx:HBox width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			
+			<mx:Button id="btn"
+					   label="确定"
+					   styleName="loginprimary"
+					   width="80"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="80"/>
+			<mx:Button label="取消"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="closeButton()"/>
+			
+		</mx:HBox>
+				</mx:VBox>
+		</mx:Canvas>
+			
+	<mx:Canvas name="环回处理" id="hh_cl">
+		<mx:VBox width="100%"
+				 height="100%"
+				 paddingTop="30"
+				 paddingBottom="0"
+				 paddingLeft="0"
+				 paddingRight="0"
+				 horizontalAlign="center"
+				 verticalGap="0">
+		<mx:HBox width="100%"
+				 height="80%" horizontalAlign="center">
+			
+			<mx:Form width="100%" height="100%"  borderStyle="solid" horizontalCenter="center">
+				
+				<mx:FormItem label="环回方法：" height="30"  horizontalAlign="center">
+					<mx:HBox width="100%" height="100%">
+						<mx:RadioButton groupName="survey" id="hh1" label="环回(内环)" selected="true" color="0x323232" click="displayAnswer(hh1.label);" /> 
+						<mx:RadioButton groupName="survey" id="hh2" label="环回(外环)" color="0x323232" click="displayAnswer(hh2.label);" /> 
+					</mx:HBox>
+					
+				</mx:FormItem>
+				
+				<mx:FormItem label="环回位置："  height="60"   horizontalAlign="center">
+					<mx:TextInput id="txtaendptp" editable="false" click="portClickHanlder(event,'aptp')" width="100%" />
+					<mx:TextInput id="txtzendptp" editable="false" click="portClickHanlder(event,'zptp')" width="100%" />
+				</mx:FormItem>
+				<mx:FormItem label="环回结果："  height="30"   horizontalAlign="center">
+					<mx:Label id="txtresult" width="100%" />
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+		</mx:HBox>
+			<mx:HBox width="100%"
+					 height="20%"
+					 verticalAlign="middle"
+					 horizontalAlign="center"
+					 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+					 backgroundSize="100%">
+				
+				<mx:Button id="btn_hh"
+						   label="确定"
+						   styleName="loginprimary"
+						   width="80"
+						   click="btn_hh_clickHandler(event)"/>
+				<mx:Spacer width="80"/>
+				<mx:Button label="取消"
+						   width="80"
+						   styleName="loginsecondary"
+						   click="closeButton()"/>
+				
+			</mx:HBox>
+		</mx:VBox>
+		
+
+	</mx:Canvas>
+	</mx:ViewStack>
+
+</mx:TitleWindow>

@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/ocableroute/model
+END
+OcableEquipment.as
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/ocableroute/model/OcableEquipment.as
+END
+OcableFiber.as
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/ocableroute/model/OcableFiber.as
+END
+OcableRouteData.as
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/ocableroute/model/OcableRouteData.as
+END
+OcableRouteContent.as
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/ocableroute/model/OcableRouteContent.as
+END
+OcableStation.as
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/ocableroute/model/OcableStation.as
+END
+OcablePort.as
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/ocableroute/model/OcablePort.as
+END

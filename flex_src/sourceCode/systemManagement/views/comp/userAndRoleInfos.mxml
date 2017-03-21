@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				showCloseButton="true" close="close()" layout="absolute"
+				title="用户详细信息" fontWeight="bold"
+				width="637" height="474" fontSize="13" 
+				horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	<mx:Script source="../../actionscript/comp/userAndRoleInfos.as"/>
+	<mx:Grid x="0" y="0" width="100%" height="100%" borderSides="left,top,middle,right,bottom" verticalGap="0" horizontalGap="0" borderThickness="1" >
+		<mx:GridRow width="100%" height="65%">
+			<mx:GridItem width="25%" height="100%" backgroundColor="#EFFFFF">
+				<mx:Canvas width="100%" height="100%" borderThickness="1" borderStyle="solid" borderColor="#1DDEEE" borderSides="left,top" horizontalScrollPolicy="off">
+					<mx:Image source="@Embed('assets/images/sysManager/userInfos.png')" height="167" width="167" x="0" y="34"/>
+					<mx:Label x="31.5" y="190" text="用户基本信息" fontSize="14"/>
+				</mx:Canvas>
+			</mx:GridItem>
+			<mx:GridItem width="75%" height="100%">
+				<mx:Canvas width="100%" height="100%" borderThickness="1" borderStyle="solid" borderColor="#1DDEEE" borderSides="left,top,right">
+						<mx:Label x="20" y="34" text="用户名:"/>
+						<mx:Label x="32" y="67" text="性别:"/>
+						<mx:Label x="32" y="106" text="职位:"/>
+						<mx:Label x="32" y="143" text="学历:"/>
+						<mx:Label x="32" y="179" text="生日:"/>
+						<mx:Label x="32" y="218" text="备注:"/>
+						<mx:Label x="222" y="34" text="真实姓名:"/>
+						<mx:Label x="222" y="67" text="所属单位:"/>
+						<mx:Label x="222" y="106" text="固定电话:"/>
+						<mx:Label x="222" y="143" text="移动电话:"/>
+						<mx:Label x="222" y="180" text="通信地址:"/>
+						<mx:TextInput x="83" y="31" width="131" id="user_id" height="25" editable="false"/>
+						<mx:TextInput x="83" y="66" width="131" id="user_sex" height="25" editable="false"/>
+						<mx:TextInput x="83" y="104" width="131" id="user_post" height="25" editable="false"/>
+						<mx:TextInput x="83" y="140" width="131" id="education" height="25" editable="false"/>
+						<mx:TextInput x="83" y="176" width="131" id="birthday" height="25" editable="false"/>
+						<mx:TextInput x="83" y="214" width="131" id="remark" height="25" editable="false"/>
+						<mx:TextInput x="296" y="32" width="124" id="user_name" height="25" editable="false"/>
+						<mx:TextInput x="296" y="66" width="124" id="user_dept" height="25" editable="false"/>
+						<mx:TextInput x="296" y="105" width="124" id="telephone" height="25" editable="false"/>
+						<mx:TextInput x="296" y="141" width="124" id="mobile" height="25" editable="false"/>
+						<mx:TextInput x="296" y="176" width="124" id="address" height="25" editable="false"/>
+                </mx:Canvas>
+			</mx:GridItem>
+		</mx:GridRow>
+		<mx:GridRow width="100%" height="35%">
+			<mx:GridItem width="25%" height="100%" backgroundColor="#EFFFFF" >	
+				<mx:Canvas width="100%" height="100%" borderThickness="1" borderStyle="solid" borderColor="#1DDEEE" borderSides="left,bottom,top">
+					<mx:Image source="@Embed('assets/images/sysManager/roleInfos.png')" height="167" width="167" x="-10" y="-20"/>
+					<mx:Label x="34" y="125" text="已配置角色" fontSize="14"/>
+				</mx:Canvas>
+			</mx:GridItem>
+			<mx:GridItem width="75%" height="100%" >
+				<mx:Canvas width="100%" height="100%" borderThickness="1" borderStyle="solid" borderColor="#1DDEEE" borderSides="left,top,bottom,right">
+				<mx:TextArea borderThickness="0" x="15" y="44" width="436" height="64" fontSize="14" id="rolesinfos" text="{_rolesinfos}" editable="false"/>
+				</mx:Canvas>
+			</mx:GridItem>
+		</mx:GridRow>
+	</mx:Grid>
+</mx:TitleWindow>

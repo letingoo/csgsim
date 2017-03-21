@@ -1,0 +1,794 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="businessRessDao">
+	<select id="getRessCount" resultClass="Integer"
+		parameterClass="resManager.resBusiness.model.BusinessRessModel">
+		select count(*) from business
+		<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="business_name">
+				(business_name like
+				'%$business_name$%')
+	        </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="circuitcode">
+				(getcirusernamebycode(circuitcode) like
+				'%$circuitcode$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="end_id_a">
+				(getstationbycode(end_id_a) like
+				'%$end_id_a$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="end_id_z">
+				(getstationbycode(end_id_z) like
+				'%$end_id_z$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="business_type">
+				(getxtxx(business_type) like
+				'%$business_type$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="business_rate">
+				(getxtxx(business_rate) like
+				'%$business_rate$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="business_state">
+				(getxtxx(business_state) like
+				'%$business_state$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="version_id">
+				(version_id like
+				'%$version_id$%')
+	        </isNotEmpty>
+		</dynamic>
+	</select>
+	<select id="getRess" resultClass="resManager.resBusiness.model.BusinessRessModel"
+		parameterClass="resManager.resBusiness.model.BusinessRessModel">
+		select * from (
+		select rownum no,a.* from ( select 
+		decode(business_id,null,'',business_id) business_id,
+		decode(business_name,null,'',business_name) business_name,
+		decode(getcirusernamebycode(circuitcode),null,'',getcirusernamebycode(circuitcode)) circuitcode,
+		decode(getstationbycode(end_id_a),null,'',getstationbycode(end_id_a)) end_id_a,
+		decode(getstationbycode(end_id_z),null,'',getstationbycode(end_id_z)) end_id_z,
+		decode(getxtxx(business_type),null,'',getxtxx(business_type)) business_type,
+		decode(getxtxx(business_rate),null,'',getxtxx(business_rate)) business_rate,
+		decode(getxtxx(business_state),null,'',getxtxx(business_state)) business_state,
+		decode(version_id,null,'',version_id) version_id
+		from business
+		<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="business_name">
+				(business_name like
+				'%$business_name$%')
+	        </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="circuitcode">
+				(getcirusernamebycode(circuitcode) like
+				'%$circuitcode$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="end_id_a">
+				(getstationbycode(end_id_a) like
+				'%$end_id_a$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="end_id_z">
+				(getstationbycode(end_id_z) like
+				'%$end_id_z$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="business_type">
+				(getxtxx(business_type) like
+				'%$business_type$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="business_rate">
+				(getxtxx(business_rate) like
+				'%$business_rate$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="business_state">
+				(getxtxx(business_state) like
+				'%$business_state$%')
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="version_id">
+				(version_id like
+				'%$version_id$%')
+	        </isNotEmpty>
+		</dynamic>
+		order by $sort$ $dir$)a	) 
+		where no>#start# and no &lt;=#end#
+		
+	</select>
+	<insert id="insertRess" parameterClass="resManager.resBusiness.model.BusinessRessModel">
+		insert into business
+		values(seq_business.nextval,'$business_name$',
+		'$end_id_a$',
+		'$end_id_z$',
+		'$business_type$',
+		'$business_rate$',
+		'$business_state$',
+		'$version_id$'
+		)
+	</insert>
+	<delete id="delRess" parameterClass="resManager.resBusiness.model.BusinessRessModel">
+		delete from
+		business where business_id =#business_id#
+	</delete>
+	<update id="updateRess" parameterClass="resManager.resBusiness.model.BusinessRessModel">
+		update business
+		set business_name='$business_name$',
+		end_id_a='$end_id_a$',
+		end_id_z='$end_id_z$',
+		business_type='$business_type$',
+		business_rate='$business_rate$',
+		business_state='$business_state$',
+		version_id='$version_id$'
+		where business_name='$business_name_bak$'
+	</update>
+	<select id="getCircuitBySearchText" resultClass="netres.model.ComboxDataModel" parameterClass="java.util.Map">
+		select distinct t.circuitcode as id,t.username as label from  circuit t  
+			<dynamic prepend="WHERE">
+				<isNotEmpty prepend="AND" property="searchtext">
+					t.username like '%$searchtext$%'
+				</isNotEmpty>
+			</dynamic>
+			order by t.circuitcode
+	</select>
+	<select id="getCircuitCodeBySearchText" resultClass="netres.model.ComboxDataModel" parameterClass="java.util.Map">
+		select distinct t.circuitcode as label,t.username as id from  circuit t  
+			<dynamic prepend="WHERE">
+				<isNotEmpty prepend="AND" property="searchtext">
+					t.circuitcode like '%$searchtext$%'
+				</isNotEmpty>
+			</dynamic>
+			order by t.circuitcode
+	</select>
+	<select id="getStationAByCircuitcode" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		 select getstationcode(t.station1) as id, t.station1 as label  from  circuit  t where  t.circuitcode = #circuitcode#
+	</select>
+	<select id="getStationZByCircuitcode" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		 select getstationcode(t.station2) as id, t.station2 as label  from  circuit  t where  t.circuitcode = #circuitcode#
+	</select>
+	<select id="getCircuitList" resultClass="resManager.resBusiness.model.Circuit"
+		parameterClass="resManager.resBusiness.model.Circuit">
+		select * from (
+		select circuitcode,
+		username,
+		station1,
+		station2,
+		x_purpose,
+		portserialno1,
+		portserialno2,
+		portcode1,
+		portname1,
+		portcode2,
+		portname2,
+		gettimeslotvc4_vc12(slot1,'VC12') slot1,
+    	gettimeslotvc4_vc12(slot2,'VC12') slot2,
+		rate,
+<!-- 		to_char(usetime,'YYYY-MM-DD')  -->
+		usetime,
+		path,remark,delay1,delay2,
+		row_number() over(order by $sort$ $dir$) as no
+		from view_circuit
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="and" property="circuitcode">
+				circuitcode like
+				'%$circuitcode$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="username">
+				username like
+				'%$username$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="station1">
+				station1 like
+				'%$station1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="station2">
+				station2 like
+				'%$station2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="x_purpose">
+				x_purpose like
+				'%$x_purpose$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portserialno1">
+				portserialno1 like
+				'%$portserialno1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portserialno2">
+				portserialno2 like
+				'%$portserialno2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portname1">
+				portcode1 like
+				'%$portname1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portname2">
+				portcode2 like
+				'%$portname2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="slot1">
+				slot1 like '%$slot1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="slot2">
+				slot2 like '%$slot2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="rate">
+				rate like '%$rate$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="usetime">
+				usetime
+				=to_date('$usetime$','YYYY-MM-DD')
+			</isNotEmpty>
+			<!-- <isNotEmpty prepend="and" property="usetime_end"> -->
+			<!-- usetime &lt;= '$usetime_end$' -->
+			<!-- </isNotEmpty> -->
+			<isNotEmpty prepend="and" property="path">
+				path like '%$path$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="remark">
+				remark like '%$remark$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="delay1">
+				delay1 like '%$delay1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="delay2">
+				delay2 like '%$delay2$%'
+			</isNotEmpty>
+		</dynamic>
+		) where no &lt;= $end$
+		and no > $index$
+
+	</select>
+	
+	<select id="getCircuitListCount" resultClass="java.lang.Integer"
+		parameterClass="resManager.resBusiness.model.Circuit">
+		select count(*) from view_circuit
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="and" property="circuitcode">
+				circuitcode like
+				'%$circuitcode$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="username">
+				username like
+				'%$username$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="station1">
+				station1 like
+				'%$station1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="station2">
+				station2 like
+				'%$station2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="x_purpose">
+				x_purpose like
+				'%$x_purpose$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portserialno1">
+				portserialno1 like
+				'%$portserialno1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portserialno2">
+				portserialno2 like
+				'%$portserialno2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portname1">
+				portcode1 like
+				'%$portname1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portname2">
+				portcode2 like
+				'%$portname2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="slot1">
+				slot1 like '%$slot1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="slot2">
+				slot2 like '%$slot2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="rate">
+				rate like '%$rate$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="usetime">
+				usetime
+				=to_date('$usetime$','YYYY-MM-DD')
+			</isNotEmpty>
+			<!-- <isNotEmpty prepend="and" property="usetime_end"> -->
+			<!-- usetime &lt;= '$usetime_end$' -->
+			<!-- </isNotEmpty> -->
+			<isNotEmpty prepend="and" property="path">
+				path like '%$path$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="remark">
+				remark like '%$remark$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="delay1">
+				delay1 like '%$delay1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="delay2">
+				delay2 like '%$delay2$%'
+			</isNotEmpty>
+		</dynamic>
+	</select>
+	<select id="getCircuitCode" parameterClass="String" resultClass="String">
+		select
+		nvl(max(substr(d.circuitcode,instr(d.circuitcode,'.')+1,length(d.circuitcode))),'0')+1
+		as num from circuit d where d.circuitcode like '%$schedulerid$.%'
+	</select>
+	
+	<delete id="deleteCircuit" parameterClass="String">
+		delete circuit where
+		circuitcode
+		= #circuitcode#
+	</delete>
+	<insert id="addCircuit" parameterClass="resManager.resBusiness.model.Circuit">
+		insert into
+<!-- 		lian -->
+		circuit(circuitcode,sync_status，schedulerid,station1,x_purpose,portserialno1,slot1,
+		usetime,username,station2,rate,portserialno2,slot2,portcode1,portcode2,path,remark,delay1,delay2)
+		values('$circuitcode$','ZT02', '$schedulerid$', '$station1$', '$x_purpose$',
+		'$portserialno1$',
+		'$slot1$', to_date('$usetime$','YYYY-MM-DD'),
+		'$username$', '$station2$', '$rate$', '$portserialno2$',
+		'$slot2$','$portcode1$','$portcode2$','$path$','$remark$','$delay1$','$delay2$')
+	</insert>
+
+	<update id="modifyCircuit" parameterClass="resManager.resBusiness.model.Circuit">
+		update circuit
+		set station1=
+		'$station1$',
+		x_purpose= '$x_purpose$',
+		portserialno1= '$portserialno1$',
+		slot1= '$slot1$',
+		usetime= to_date('$usetime$','YYYY-MM-DD'),
+		username= '$username$',
+		station2=
+		'$station2$',
+		rate= '$rate$',
+		portserialno2= '$portserialno2$',
+		slot2= '$slot2$',
+		portcode1 ='$portcode1$',
+		portcode2 ='$portcode2$',
+		path='$path$',
+		remark='$remark$',
+		delay1='$delay1$',
+		delay2='$delay2$'
+		where circuitcode =
+		'$circuitcode$'
+	</update>
+	
+	<select id="getEquipNameByEquipcode" parameterClass="String" resultClass="string">
+         select t.s_sbmc from  equipment  t where t.equipcode = #equipcode#
+    </select>
+    <select id="getStationList" resultClass="netres.model.ComboxDataModel">
+    	select t.stationcode id,t.stationname label  from station  t
+    </select>
+    <select id="getX_purposeList" resultClass="netres.model.ComboxDataModel">
+    	select t.xtbm id,t.xtxx label from xtbm t where  t.xtbm like '%BUS010%' order by t.xtbm
+    </select>
+    <select id="getRateList" resultClass="netres.model.ComboxDataModel">
+    	select t.xtbm id,t.xtxx label from xtbm t where   t.xtbm like '%ZY1106%'  order by t.xtbm
+    </select>
+    <select id="getCircuitBusinessCount" parameterClass="resManager.resBusiness.model.CircuitBusinessModel" resultClass="java.lang.Integer">
+    	select count(*) from business_circuit 
+    	<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="business_id">
+				business_id like
+				'%$business_id$%'
+	        </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="circuitcode">
+				circuitcode like
+				'%$circuitcode$%'
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="business_name">
+				business_name like
+				'%$business_name$%'
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="username">
+				username like
+				'%$username$%'
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				updateperson like
+				'%$updateperson$%'
+	        </isNotEmpty>
+		</dynamic>
+    </select>
+    <select id="getCircuitBusinessList" parameterClass="resManager.resBusiness.model.CircuitBusinessModel" resultClass="resManager.resBusiness.model.CircuitBusinessModel">
+    	select * from (
+    	select rownum no,t.* from business_circuit t order by updateperson
+    	<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="business_id">
+				t.business_id like
+				'%$business_id$%'
+	        </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="circuitcode">
+				t.circuitcode like
+				'%$circuitcode$%'
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="business_name">
+				t.business_name like
+				'%$business_name$%'
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="username">
+				t.username like
+				'%$username$%'
+	        </isNotEmpty>
+			<isNotEmpty prepend="AND" property="updateperson">
+				t.updateperson like
+				'%$updateperson$%'
+	        </isNotEmpty>
+		</dynamic>
+		) where no &lt;= $end$
+		and no > $index$
+    </select>
+    <insert id="addCircuitBusiness" parameterClass="resManager.resBusiness.model.CircuitBusinessModel">
+   		insert into business_circuit(BUSINESS_ID,CIRCUITCODE,BUSINESS_NAME,USERNAME,UPDATEPERSON)
+   		values(
+   		'$business_id$',
+		'$circuitcode$',
+		'$business_name$',
+		'$username$',
+		'$updateperson$'
+		)
+    </insert>
+    <select id="getBusinessBySearchText" parameterClass="java.util.Map" resultClass="netres.model.ComboxDataModel">
+    		select distinct t.business_id as id, t.business_name as label from business t
+			<dynamic prepend="WHERE">
+				<isNotEmpty prepend="AND" property="searchtext">
+					t.business_name like '%$searchtext$%'
+				</isNotEmpty>
+			</dynamic>
+			order by t.business_id
+    </select>
+    <select id="getBusinessIdBySearchText" parameterClass="java.util.Map" resultClass="netres.model.ComboxDataModel">
+    		select distinct t.business_id as label, t.business_name as id from business t
+			<dynamic prepend="WHERE">
+				<isNotEmpty prepend="AND" property="searchtext">
+					t.business_id like '%$searchtext$%'
+				</isNotEmpty>
+			</dynamic>
+			order by t.business_id
+    </select>
+    <update id="modifyCircuitBusiness" parameterClass="resManager.resBusiness.model.CircuitBusinessModel">
+    	update business_circuit
+		set 
+		business_id = '$business_id$',
+		circuitcode = '$circuitcode$',
+		business_name= '$business_name$',
+		username= '$username$',
+		updateperson= '$updateperson$'
+		where business_id = '$business_id_bak$' and circuitcode =
+		'$circuitcode_bak$' 
+	</update>
+	<delete id="deleteCircuitBusiness" parameterClass="java.util.Map">
+		delete business_circuit where 
+		business_id = #business_id#
+		and 
+		circuitcode
+		= #circuitcode#
+	</delete>
+		<select id="getUnusedCCCount" resultClass="Integer">
+		select count(*) from cc where id not in 
+		(select ccid from circuit_cc)
+	</select>
+	<delete id="deleteUnusedCC">
+		delete from cc where id not in 
+		(select ccid from circuit_cc)
+	</delete>
+	<select id="MygetCircuitList" resultClass="resManager.resBusiness.model.Circuit"
+		parameterClass="resManager.resBusiness.model.Circuit">
+		select * from (
+		select circuitcode,
+		username,
+		station1,
+		station2,
+		x_purpose,
+		portserialno1,
+		portserialno2,
+		portcode1,
+		portcode2,
+		slot1,
+		slot2,
+		rate,
+		to_char(usetime,'YYYY-MM-DD') usetime,
+		row_number() over(order by $sort$ $dir$) as no
+		from circuit
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="and" property="systemcode">
+				(getSystemcodeByPortCode(portcode1) like '%$systemcode$%'
+				or getSystemcodeByPortCode(portcode2) like '%$systemcode$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="circuitcode">
+				circuitcode like
+				'%$circuitcode$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="username">
+				username like
+				'%$username$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="station1">
+				station1 like
+				'%$station1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="station2">
+				station2 like
+				'%$station2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="x_purpose">
+				x_purpose like
+				'%$x_purpose$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portserialno1">
+				portserialno1 like
+				'%$portserialno1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portserialno2">
+				portserialno2 like
+				'%$portserialno2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="slot1">
+				slot1 like '%$slot1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="slot2">
+				slot2 like '%$slot2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="rate">
+				rate ='$rate$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="usetime">
+				usetime
+				=to_date('$usetime$','YYYY-MM-DD')
+			</isNotEmpty>
+			<!-- <isNotEmpty prepend="and" property="usetime_end"> -->
+			<!-- usetime &lt;= '$usetime_end$' -->
+			<!-- </isNotEmpty> -->
+		</dynamic>
+		) where no &lt;= $end$
+		and no > $index$
+	</select>
+	
+	<select id="MygetCircuitListCount" resultClass="java.lang.Integer"
+		parameterClass="resManager.resBusiness.model.Circuit">
+		select count(*) from circuit
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="and" property="systemcode">
+				(getSystemcodeByPortCode(portcode1) like '%$systemcode$%'
+				or getSystemcodeByPortCode(portcode2) like '%$systemcode$%')
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="circuitcode">
+				circuitcode like
+				'%$circuitcode$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="username">
+				username like
+				'%$username$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="station1">
+				station1 like
+				'%$station1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="station2">
+				station2 like
+				'%$station2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="x_purpose">
+				x_purpose like
+				'%$x_purpose$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portserialno1">
+				portserialno1 like
+				'%$portserialno1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portserialno2">
+				portserialno2 like
+				'%$portserialno2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portname1">
+				portname1 like
+				'%$portname1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="portname2">
+				portname2 like
+				'%$portname2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="slot1">
+				slot1 like '%$slot1$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="slot2">
+				slot2 like '%$slot2$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="rate">
+				rate ='$rate$'
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="usetime">
+				usetime
+				=to_date('$usetime$','YYYY-MM-DD')
+			</isNotEmpty>
+			<!-- <isNotEmpty prepend="and" property="usetime_end"> -->
+			<!-- usetime &lt;= '$usetime_end$' -->
+			<!-- </isNotEmpty> -->
+		</dynamic>
+	</select>
+	
+	<select id="getSlotALstByPortcode" parameterClass="string" resultClass="netres.model.ComboxDataModel">
+		select distinct t.aslot id,t.aslot label from cc t where t.aptp=#portcode#  or t.zptp=#portcode#  order by t.aslot asc
+		<!-- a端和z端同时查询 -->
+	</select>
+	<select id="getSlotZLstByPortcode" parameterClass="map" resultClass="netres.model.ComboxDataModel">
+		select distinct t.zslot id,t.zslot label from cc t where <!--t.aptp=#portcodeA# and  -->t.zptp=#portcodeB# or t.aptp=#portcodeB#  order by t.zslot asc
+		<!-- a端和z端同时查询 -->
+	</select>
+	
+	<select id="getCircuitChannelList" parameterClass="resManager.resBusiness.model.CircuitChannel" resultClass="resManager.resBusiness.model.CircuitChannel">
+		select * from(
+		select t.channelcode,
+	       circuit,
+	       porta,
+	       slot1,
+	       portz,
+	       slot2,
+	       rate,
+	       t.portserialno1 as portcode1,
+	       t.portserialno2 as portcode2,
+	       t.circuitcode,
+	       t.x_purpose,
+	       row_number() over(order by $sort$ $dir$) as no
+	  	from v_channel_tmp t where 1=1
+	  	<isNotEmpty prepend="and" property="channelcode">
+			channelcode like
+			'%$channelcode$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="circuit">
+			circuit like
+			'%$circuit$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="porta">
+			porta like
+			'%$porta$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="slot1">
+			slot1 like
+			'%$slot1$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="portz">
+			portz like
+			'%$portz$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="slot2">
+			slot2 like
+			'%$slot2$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="rate">
+			rate like
+			'%$rate$%'
+		</isNotEmpty>
+		) where no &lt;= $end$
+		and no > $start$
+	</select>
+	
+	<select id="getCircuitChannelCount" parameterClass="resManager.resBusiness.model.CircuitChannel" resultClass="java.lang.Integer">
+		select count(*) from v_channel_tmp where 1=1
+		<isNotEmpty prepend="and" property="channelcode">
+			channelcode like
+			'%$channelcode$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="circuit">
+			circuit like
+			'%$circuit$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="porta">
+			porta like
+			'%$porta$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="slot1">
+			slot1 like
+			'%$slot1$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="portz">
+			portz like
+			'%$portz$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="slot2">
+			slot2 like
+			'%$slot2$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="rate">
+			rate like
+			'%$rate$%'
+		</isNotEmpty>
+	</select>
+	
+	<select id="getCircuitByMapA" parameterClass="map" resultClass="string">
+		
+		select t.circuitcode from circuit t where t.rate=#rate# and t.portcode1=#portcode# and t.slot1=#slot# 
+		<isNotEmpty prepend="and" property="circuitcode">
+			 t.circuitcode!=#circuitcode#
+		</isNotEmpty>
+		union 
+		select t.circuitcode from circuit t where t.rate=#rate# and t.portcode2=#portcode# and t.slot2=#slot#
+		<isNotEmpty prepend="and" property="circuitcode">
+			 t.circuitcode!=#circuitcode#
+		</isNotEmpty>
+		
+	</select>
+	
+	<select id="getRess_Business_id" parameterClass="string" resultClass="string">
+		select distinct t.business_id from business_circuit t where t.circuitcode=#circuitcode#
+	</select>
+	
+	<delete id="deleteCircuitRoutByCircuitcode1" parameterClass="map">
+		delete from circuit_cc t where t.circuitcode=#v_name#
+	</delete>
+	
+	<select id="getequipcodelst" parameterClass="string" resultClass="string">
+		select distinct t.equipcode from equipment t where t.system_name=#systemcode#
+	</select>
+	
+	<select id="getequipcodeBytoplink" parameterClass="string" resultClass="string">
+		select distinct equipcode
+  from (select t.equip_z equipcode
+          from en_topolink t
+         where t.equip_a = #tempcode#
+        union
+        select t.equip_a equipcode
+          from en_topolink t
+         where t.equip_z = #tempcode#)
+	</select>
+	
+	<select id="getSystemCodeByPortcode" parameterClass="string" resultClass="string">
+		select distinct t.system_name
+		  from equipment t, equiplogicport e
+		 where t.equipcode = e.equipcode
+		   and e.logicport = #portcode#
+	</select>
+	
+	<select id="getEquipcodeByPortcode" parameterClass="string" resultClass="string">
+		select t.equipcode from equiplogicport t where t.logicport=#porta#
+	</select>
+	
+	<select id="getEndPortcodeByToplink" parameterClass="map" resultClass="resManager.resNet.model.CCModel">
+		select t.zendptp zptp,t.aendptp aptp
+		  from en_topolink t
+		 where t.equip_a = #equipA#
+		   and t.equip_z = #equipZ#
+		union
+		
+		select t.aendptp zptp,t.zendptp aptp
+		  from en_topolink t
+		 where t.equip_z = #equipA#
+		   and t.equip_a = #equipZ#
+	</select>
+	
+	<select id="getCCbyMap" parameterClass="map" resultClass="resManager.resNet.model.CCModel">
+		select * from cc where cc.id=#ID#
+	</select>
+	<insert id="insertCCInfoByMap" parameterClass="map">
+		insert into  cc(id,pid,rate,direction,aptp,aslot,zptp,zslot,isdefault,sync_status) 
+		values(#ID#,#PID#,'VC12','BI',#APTP#,#ASLOT#,#ZPTP#,#ZSLOT#,'0','ZT00')
+	</insert>
+	
+	<update id="updateEquiplogicportCircuit" parameterClass="string">
+		update equiplogicport t set t.circuit='' where t.circuit=#circuitcode#
+	</update>
+	
+	<delete id="deleteCCByCircuitcode" parameterClass="string">
+		delete from cc c where c.id in (
+			select t.ccid from circuit_cc t where t.circuitcode=#circuitcode# )
+	</delete>
+	<select id="getPortRateBycode" parameterClass="string" resultClass="string">
+		select e.x_capability from equiplogicport e where e.logicport=#portcode#
+	</select>
+	
+	<select id="getSlotusedLstByPortcode" parameterClass="string" resultClass="string">
+		select distinct t.ts_a
+		  from circuit_cc t
+		 where t.tp_id_a = #portcode#
+		union
+		select distinct t.ts_z
+		  from circuit_cc t
+		 where t.tp_id_z = #portcode#
+	</select>
+	<delete id="deleteCCByCircuitcodeMap" parameterClass="map">
+		delete from cc c
+ 	where c.id in
+       (select t.ccid from circuit_cc t where t.circuitcode = #circuitcode#)
+	</delete>
+	
+		
+</sqlMap>

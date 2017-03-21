@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/csgsim/!svn/ver/1/java_src/com/metarnet/mnt/rootalarm/dao
+END
+RealRootAlarmImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/csgsim/!svn/ver/1/java_src/com/metarnet/mnt/rootalarm/dao/RealRootAlarmImpl.java
+END
+RealRootAlarmDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/csgsim/!svn/ver/1/java_src/com/metarnet/mnt/rootalarm/dao/RealRootAlarmDAO.java
+END
+RootAlarmMgrImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/csgsim/!svn/ver/1/java_src/com/metarnet/mnt/rootalarm/dao/RootAlarmMgrImpl.java
+END
+RootAlarmMgrDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/csgsim/!svn/ver/1/java_src/com/metarnet/mnt/rootalarm/dao/RootAlarmMgrDAO.java
+END

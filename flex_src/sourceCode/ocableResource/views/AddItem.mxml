@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="298" 
+		 height="144"
+		
+		 creationComplete="init()"
+		 horizontalAlign="center"
+		 close="close(event)"
+		 layout="absolute"
+		 showCloseButton="true"
+		 
+		 fontSize="14">
+
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			private var _fileName:String;
+			
+			
+			
+
+			
+			
+			public function get fileName():String
+			{
+				return _fileName;
+			}
+
+			public function set fileName(value:String):void
+			{
+				_fileName = value;
+			}
+
+			private function init():void
+			{
+				this.fileName="";
+			
+				
+			}
+			private function save(event:MouseEvent):void
+			{
+				if(txtName.text.length == 0)
+				{
+					Alert.show("不能为空","温馨提示");
+				}
+				else
+				{
+					this.dispatchEvent(new Event("addFileORFolder"));
+				}
+			}
+			private function close(event:Event):void
+			{
+				
+				MyPopupManager.removePopUp(this);
+				
+			}
+		]]>
+	</mx:Script>
+	<mx:Binding source="txtName.text" destination="this.fileName">		
+	</mx:Binding>
+
+	<mx:FormItem label="名称:" required="true" width="100%" x="0" y="19" >
+	<mx:TextInput id="txtName" width="90%"  />
+	</mx:FormItem>
+
+	<mx:Button  click="save(event)" label="保存"  x="75" y="70">		
+	</mx:Button>
+	<mx:Button click="close(event)" label="取消"  x="144" y="70">		
+	</mx:Button>
+
+</mx:TitleWindow>

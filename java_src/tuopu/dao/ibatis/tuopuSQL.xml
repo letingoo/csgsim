@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="tuopu">
+
+	<select id="getNbmc" resultClass="java.util.HashMap"
+		parameterClass="java.util.Map">
+    <![CDATA[
+select s_sbmc,rat from (select equipcode,s_sbmc from equipment where equipment.equipcode in(select equipcode from equiplogicport where logicport in (select tp_id_a from circuit_cc union select tp_id_z from circuit_cc) and X_CAPABILITY in(select xtbm from xtbm where xtxx=#rate#)group by equipcode) ) t1, 
+ (select equipcode,count(logicport) as rat from equiplogicport where logicport in (select tp_id_a from circuit_cc union select tp_id_z from circuit_cc) and X_CAPABILITY in(select xtbm from xtbm where xtxx=#rate#)  group by equipcode) t2,re_sys_equip t3
+ where  t1.equipcode=t2.equipcode and t2.equipcode=t3.equipcode and t3.systemcode=#systemname#
+  ]]>
+	</select>
+
+	<select id="getRep" resultClass="java.util.HashMap"
+		parameterClass="java.util.Map">
+  <![CDATA[
+select s_sbmc,logicport,rep from (select s_sbmc,logicport from (select s_sbmc,equipcode from (select equipcode,s_sbmc from equipment where equipment.equipcode in(select equipcode from equiplogicport where logicport in (select tp_id_a from circuit_cc union select tp_id_z from circuit_cc) and X_CAPABILITY in(select xtbm from xtbm where xtxx=#rate#)group by equipcode) )) t1,
+(select equipcode,logicport from equiplogicport where logicport in (select tp_id_a from circuit_cc union select tp_id_z from circuit_cc) and X_CAPABILITY in(select xtbm from xtbm where xtxx=#rate#)) t2 
+where  t1.equipcode=t2.equipcode and t1.s_sbmc=#sbmc#) t3,
+(select tp_id_a,count(tp_id_a)as rep from(Select tp_id_a from circuit_cc  where tp_id_a in (select logicport from (select s_sbmc,logicport from (select s_sbmc,equipcode from (select equipcode,s_sbmc from equipment where equipment.equipcode in(select equipcode from equiplogicport where logicport in (select tp_id_a from circuit_cc union select tp_id_z from circuit_cc) and X_CAPABILITY in(select xtbm from xtbm where xtxx=#rate#)group by equipcode) )) t1,
+(select equipcode,logicport from equiplogicport where logicport in (select tp_id_a from circuit_cc union select tp_id_z from circuit_cc) and X_CAPABILITY in(select xtbm from xtbm where xtxx=#rate#)) t2 
+where  t1.equipcode=t2.equipcode and t1.s_sbmc=#sbmc#))
+Union all Select tp_id_z from circuit_cc  where tp_id_z in (select logicport from (select s_sbmc,logicport from (select s_sbmc,equipcode from (select equipcode,s_sbmc from equipment where equipment.equipcode in(select equipcode from equiplogicport where logicport in (select tp_id_a from circuit_cc union select tp_id_z from circuit_cc) and X_CAPABILITY in(select xtbm from xtbm where xtxx=#rate#)group by equipcode) )) t1,
+(select equipcode,logicport from equiplogicport where logicport in (select tp_id_a from circuit_cc union select tp_id_z from circuit_cc) and X_CAPABILITY in(select xtbm from xtbm where xtxx=#rate#)) t2 
+where  t1.equipcode=t2.equipcode and t1.s_sbmc=#sbmc# ))
+order by tp_id_a
+)
+group by tp_id_a
+) t4
+where t3. Logicport=t4.tp_id_a     
+    ]]>
+	</select>
+	<select id="getEqName" resultClass="String" parameterClass="String">
+       <![CDATA[
+    select s_sbmc from equipment t1,re_sys_equip t2 where t2.equipcode=t1.equipcode and t2.systemcode=#sysname#
+        ]]>
+	</select>
+
+
+	<select id="getOpeee" resultClass="java.util.HashMap">
+       <![CDATA[
+       
+        select circuit.username,circuit.x_purpose,circuit.delay1,circuit_cc.rate from circuit,circuit_cc where circuit.circuitcode=circuit_cc.circuitcode
+        ]]>
+	</select>
+	<select id="getOp" resultClass="java.util.HashMap">
+       <![CDATA[
+       select distinct* from(select circuit.username,decode(circuit.x_purpose,null,'EMS业务',circuit.x_purpose) as x_purpose,circuit_cc.rate from circuit,circuit_cc where circuit.circuitcode=circuit_cc.circuitcode)
+        ]]>
+	</select>
+
+	<select id="getID" resultClass="String">
+       <![CDATA[
+          select equipcode from equipment where s_sbmc=#name#
+        ]]>
+	</select>
+</sqlMap> 

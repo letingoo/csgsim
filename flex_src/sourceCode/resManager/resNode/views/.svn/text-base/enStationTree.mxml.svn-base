@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*"
+				title="选择局站"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="App(event);initEvent();"
+				layout="absolute" minWidth="955" minHeight="600" width="400" height="400" fontSize="13">
+	
+	<mx:Script source="../actionscript/enStationTree.as" />
+	
+	<mx:TabNavigator id="tabTree"  creationPolicy="all" change="changeItems(event)"  height="100%" width="100%" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" verticalGap="0" horizontalGap="0">
+		<mx:VBox width="100%" height="100%" label="地区" verticalGap="0" horizontalGap="0">
+			<component:SearchTextInput id="searchText" height="35" width="100%" clickButton="stationsTree_clickHandler(event)" searchEnter="stationsTree_clickHandler(event)"/>
+			<mx:Tree id="stationsTree" x="0" y="0" 
+			 width="100%" height="100%" 
+			 dataProvider="{folderCollection}"
+			 labelField="@label"
+			 defaultLeafIcon="{leafPic}" 
+			 borderStyle="none"
+			 doubleClickEnabled="true"
+			 doubleClick="stationsTree_doubleClickHandler(event)"
+			 change="stationsTree_changeHandler()"
+			 itemOpen="stationsTree_changeHandler()"
+			 itemClick="ModelLocator.tree_itemClick(event,stationsTree)"
+			 itemRollOver="curIndex = event.rowIndex"
+			 verticalScrollPolicy="auto"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" label="电压等级" verticalGap="0" horizontalGap="0" id="voltbox">
+			<component:SearchTextInput id="searchText1" height="35" width="100%" clickButton="stationsTree1_clickHandler(event)" searchEnter="stationsTree1_clickHandler(event)"/>
+			<mx:Tree id="stationsTree1" 
+			 dataProvider="{folderCollection1}"					
+		 	 labelField="@label"
+			 defaultLeafIcon="{leafPic}" 
+			 width="100%" 
+			 height="100%" 				 
+			 borderStyle="none"
+			 doubleClickEnabled="true" 
+			 doubleClick="stationsTree_doubleClickHandler(event)" 
+			 change="stationsTree1_changeHandler()"
+			 itemOpen="stationsTree1_changeHandler()" 
+			 itemClick="ModelLocator.tree_itemClick(event,stationsTree1)"
+			 itemRollOver="curIndex = event.rowIndex"
+			 verticalScrollPolicy="auto"/>
+		</mx:VBox>
+	</mx:TabNavigator>	
+
+</mx:TitleWindow>

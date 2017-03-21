@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" height="100%"
+		 creationComplete="initApp()"
+		 xmlns:common="twaver.common.*"
+		 xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+		 xmlns:local="*" xmlns:views="sourceCode.tableResurces.views.*" 
+		 xmlns:views1="sourceCode.businessGraph.views.*" 
+		 xmlns:view="sourceCode.businessDispatch.view.*" 
+		 xmlns:actionscript="sourceCode.tableResurces.actionscript.*" 
+		 xmlns:component="common.component.*" xmlns:actionscript1="sourceCode.tableResurces.actionscript.*">
+
+	<mx:Script>
+		<![CDATA[
+			import common.other.events.EventNames;
+			
+			import sourceCode.businessDispatch.Event.BusinessDispatchEvent;
+			import sourceCode.businessDispatch.Event.BusinessDispatchEventForOther;
+			import sourceCode.businessDispatch.model.SelectOthersCircuit;
+			import sourceCode.businessDispatch.model.SelectTodoCircuit;
+			
+			import twaver.SequenceItemRenderer;
+			[Bindable]   
+			public var folderCollection:XMLList;
+			[Bindable]   
+			public var folderList:XMLList= new XMLList(); 
+			
+			[Bindable]private var StationA_xml:XMLList;
+			[Bindable]private var StationZ_xml:XMLList;
+			
+			private var indexRenderer:Class = SequenceItemRenderer;
+			private var curIndex:int;
+			private var catalogsid:String; 
+			private var type:String;
+			private var item:Object;
+			
+			protected function close_clickHandler(event:MouseEvent):void
+			{
+				this.currentState ='';
+			}
+
+			protected function select_clickHandler(event:MouseEvent):void
+			{
+				Application.application.showLoading();
+//			this.currentState ='';
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				if(label=="待制作申请单" && this.currentState=='select'){
+				var model:SelectTodoCircuit = new SelectTodoCircuit();
+				model.formname = select_formName.text;
+				model.specialtytype = select_operationType.text;
+				model.specialtyname = select_specialtyname.text;
+				model.speedname = select_rate.text;
+				model.porttype = select_porttype.text;
+				model.appdepartment = select_property.text;
+				model.applier = select_applier.text;
+				model.starttime =select_start_time.text;
+				model.finishtime = select_finish_time.text;
+				model.asite = select_StationA.text;
+				model.zsite = select_StationZ.text;
+				model.purpose = select_purpose.text;
+				businessDispatchRemote.getItems(model);
+				}else{
+					var mode:SelectOthersCircuit = new SelectOthersCircuit();
+					mode.circuitcode = select_purpose.text;
+					mode.createtime = select_start_time.text;
+					mode.usetime = select_finish_time.text;
+					mode.form_name = select_formName.text;
+					mode.interfacetype = select_porttype.text;
+					mode.leaser = select_applier.text;
+					if(select_rate.selectedIndex!=-1)mode.rate = select_rate.selectedItem.@label; //select_rate.text;
+					mode.remark = select_specialtyname.text;
+					if(select_property.selectedIndex!=-1)	mode.requestcom = select_property.selectedItem.@xtxx;
+					mode.station1 = select_StationA.text;
+					mode.station2 = select_StationZ.text;
+					mode.operationtype = select_operationType.text;
+					if(label == "待作废申请单"){
+						//businessDispatchRemote.getRepealedCircuitInfo(mode);
+					}else if(label == "未通过申请单"){
+					//	businessDispatchRemote.getFailedCircuit(mode);
+					}else if(label == "已完成申请单"){
+						businessDispatchRemote.getCompletedCircuit(mode);
+					}else if(label == "已开通申请单"){
+						businessDispatchRemote.getOpenCircuit(mode);
+					
+					}
+				}
+				businessDispatchRemote.addEventListener(ResultEvent.RESULT,setDataProvide);
+			}
+			
+			protected function selectButton_clickHandler():void
+			{	
+				var bs:businessDispatchSearch = new businessDispatchSearch();
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				bs.info = label;
+				PopUpManager.addPopUp(bs,this,true);
+				PopUpManager.centerPopUp(bs);
+//				getStations();
+//				addEventListener("getChildNode",getChildNode);
+//				 var robj7:RemoteObject = new RemoteObject("equInfo");
+//				robj7.endpoint = ModelLocator.END_POINT;
+//				robj7.showBusyCursor = true;
+//				robj7.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率)
+//				robj7.addEventListener(ResultEvent.RESULT, select_RatesInfo); 
+//				var robj8:RemoteObject = new RemoteObject("businessDispatch");
+//				robj8.endpoint = ModelLocator.END_POINT;
+//				robj8.getXTBM('YW010601__');//申请单位
+//				robj8.addEventListener(ResultEvent.RESULT,select_leaserInfo);
+//				var robj14:RemoteObject = new RemoteObject("businessDispatch");
+//				robj14.endpoint = ModelLocator.END_POINT;
+//				robj14.getXTBM('JK01__');//接口类型
+//				robj14.addEventListener(ResultEvent.RESULT,select_infTypeInfo);
+//				var robj13:RemoteObject = new RemoteObject("businessDispatch");
+//				robj13.endpoint = ModelLocator.END_POINT; 
+//				/*  robj13.getXTBMother('YW120915__');//业务类型
+//				robj13.addEventListener(ResultEvent.RESULT,select_opTypeInfo);  */
+				bs.addEventListener("businessDispatchSearchforOthers",SearchHandlerforOther);
+				bs.addEventListener("businessDispatchSearch",SearchHandler);
+//				if(label=="待制作申请单"){
+////					this.currentState='select';
+//					bs.info = "待制作申请单";
+////					labelId.text = "申请目的：";
+////					robj13.getXTBM('YW120915__');//业务类型
+//					//select_operationType.dataProvider
+//				/* var robj9:RemoteObject = new RemoteObject("businessDispatch");
+//				robj9.endpoint = ModelLocator.END_POINT;
+//				robj9.getXTBM('YW120915__');//业务类型
+//				robj9.addEventListener(ResultEvent.RESULT,select_opTypeInfo); */
+//				
+//				}else{
+//					bs.info = "sad";
+////					this.currentState='select';
+////					labelId.text = "电路编号：";
+////					robj13.getXTBMother('YW120915__');//业务类型
+//				}
+//				robj13.addEventListener(ResultEvent.RESULT,select_opTypeInfo); 
+			}
+			public function SearchHandler(e:BusinessDispatchEvent):void{
+				var model:SelectTodoCircuit = e.model;
+				businessDispatchRemote.getItems(model);
+				businessDispatchRemote.addEventListener(ResultEvent.RESULT,setDataProvide);
+			}
+			public function SearchHandlerforOther(e:BusinessDispatchEventForOther):void{
+				var mode:SelectOthersCircuit = e.model;
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				if(label == "待作废申请单"){
+					businessDispatchRemote.getRepealedCircuitInfo(mode);
+				}else if(label == "未通过申请单"){
+						businessDispatchRemote.getFailedCircuit(mode);
+				}else if(label == "已完成申请单"){
+					businessDispatchRemote.getCompletedCircuit(mode);
+				}else if(label == "已开通申请单"){
+					businessDispatchRemote.getOpenCircuit(mode);
+				}
+				businessDispatchRemote.addEventListener(ResultEvent.RESULT,setDataProvide);
+			}
+			
+			public function getStations():void{
+				var obj:RemoteObject = new RemoteObject("businessDispatch");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor=true;
+				obj.getStations(" ","root");
+				obj.addEventListener(ResultEvent.RESULT,getStationsTree);
+			}
+			
+			public function getStationsTree(e:ResultEvent):void{
+				folderList = new XMLList(e.result.toString());
+//				folderCollection=new XMLList(folderList); 
+				StationA_xml = folderList;
+				StationZ_xml = StationA_xml.copy();
+				select_StationA.dataProvider = StationA_xml;
+				select_StationA.selectedIndex = -1;
+				select_StationA.treeSelectedItem=null;
+				select_StationZ.dataProvider = StationZ_xml;
+				select_StationZ.selectedIndex = -1;
+				select_StationZ.treeSelectedItem=null;
+			}
+				
+			
+			public function select_infTypeInfo(e:ResultEvent):void{
+				XMLData_infTypes = new XMLList(e.result.toString());
+				select_porttype.dataProvider = XMLData_infTypes.children();
+				select_porttype.labelField= "@xtxx";
+				select_porttype.selectedIndex = -1;
+			}
+			public function select_opTypeInfo(e:ResultEvent):void{
+				var XMLData_opTypes:XMLList = new XMLList(e.result.toString());
+				select_operationType.dataProvider =null;
+				select_operationType.initialized = true
+				select_operationType.dataProvider = XMLData_opTypes.children();
+				select_operationType.labelField = "@xtxx";
+				select_operationType.selectedIndex = -1;
+			}
+			private function select_RatesInfo(event:ResultEvent):void{
+				XMLData_Rates = new XMLList(event.result.toString());	
+				select_rate.dataProvider = XMLData_Rates.children();
+				select_rate.labelField = "@label";
+				select_rate.selectedIndex = -1;
+			} 
+			public function select_leaserInfo(e:ResultEvent):void{
+				XMLData_leasers = new XMLList(e.result.toString());
+				select_property.dataProvider = XMLData_leasers.children();
+				select_property.labelField = "@xtxx";
+				select_property.selectedIndex = -1;
+			} 
+
+
+			protected function seteventhandler1_handlerHandler(event:Object):void
+			{
+				this.currentState = '';
+			}
+			protected function reset_clickHandler(event:MouseEvent):void
+			{
+				select_formName.text = "";
+				select_applier.text = "";
+				select_finish_time.text = "";
+				select_operationType.selectedIndex = -1;
+				select_porttype.selectedIndex = -1;
+				select_property.selectedIndex = -1;
+				select_purpose.text = "";
+				select_rate.selectedIndex = -1;
+				select_specialtyname.text = "";
+				select_start_time.text = "";
+				select_StationA.text = "";
+				select_StationA.selectedIndex = -1;
+				select_StationA.treeSelectedItem=null;
+				select_StationZ.selectedIndex = -1;
+				select_StationZ.treeSelectedItem=null;
+				select_StationZ.text = "";
+				var label:String = tabnavigator.getTabAt(tabnavigator.selectedIndex).label;
+				var mode:SelectOthersCircuit = new SelectOthersCircuit();
+				if(label=="待制作申请单"){
+					businessDispatchRemote.getItems();
+					businessDispatchRemote.addEventListener(ResultEvent.RESULT,setDataProvide);
+				}else if(label == "待作废申请单"){
+					businessDispatchRemote.getRepealedCircuitInfo(mode);
+					
+				}else if(label == "未通过申请单"){
+						businessDispatchRemote.getFailedCircuit(mode);
+					
+				}else if(label == "已完成申请单"){
+					businessDispatchRemote.getCompletedCircuit(mode);
+					businessDispatchRemote.addEventListener(ResultEvent.RESULT,setDataProvide1);
+				}else if(label == "已开通申请单"){
+					businessDispatchRemote.getOpenCircuit(mode);
+					businessDispatchRemote.addEventListener(ResultEvent.RESULT,setDataProvide1);
+				}
+				
+			}
+			public function getChildNode(event:Object):void{
+				var rt:RemoteObject=new RemoteObject("businessDispatch");
+				rt.endpoint = ModelLocator.END_POINT;
+				rt.showBusyCursor = true;
+				item = event.TreeSelectedItem;
+				if(event.TreeSelectedItem.@type=="domainname"){
+					catalogsid = event.TreeSelectedItem.@label;
+					type="system";
+					rt.getStations(catalogsid,type);
+				}
+				else if(event.TreeSelectedItem.@node=="2"){
+					catalogsid = event.TreeSelectedItem.@code;
+					type="rate";
+					rt.getStations(catalogsid,type);
+				} 
+				
+				rt.addEventListener(ResultEvent.RESULT,getChildNodeResult);
+			}   
+			public function getChildNodeResult(event:ResultEvent):void{
+				var selectedNode:XML = item as XML;
+				var child:XMLList= new XMLList(event.result); 		
+				selectedNode.appendChild(child);
+			}
+
+			protected function newOneWay_clickHandler():void
+			{
+				var oneWay:OwnNewOneWay = new OwnNewOneWay();
+				PopUpManager.addPopUp(oneWay,this,true);
+				PopUpManager.centerPopUp(oneWay);
+			}
+			
+			protected function controlBar_controlAddPicHandler():void
+			{
+				var added:addedBusiness = new addedBusiness();
+				PopUpManager.addPopUp(added,this,true);
+				PopUpManager.centerPopUp(added);
+			}
+
+		]]>
+	</mx:Script>
+
+			
+	<mx:Script source="../actionscript/businessDispatch.as"/>       
+	<mx:states>
+		<mx:State name="select">
+			<mx:SetProperty target="{tabnavigator}" name="width" value="80%"/>
+			<mx:AddChild relativeTo="{hbox1}" position="lastChild">
+				<mx:Panel id="selectPanel" width="30%" height="100%" layout="absolute" title="查询" titleIcon="{ModelLocator.searchIcon}" fontSize="13">
+					<mx:Label x="10" y="10" text="申请名称："/>
+					<mx:TextInput id="select_formName" x="84" y="11"/>
+					
+					<mx:Label x="10" y="40" text="业务类型："/>
+					<mx:ComboBox id="select_operationType" x="84" y="41" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+					
+					<mx:Label x="10" y="70" text="业务名称："/>
+					<mx:TextInput id="select_specialtyname" x="84" y="71"/>
+					
+					<mx:Label x="10" y="100" text="速率："/>
+					<mx:ComboBox id="select_rate" x="84" y="101" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+					
+					<mx:Label x="10" y="130" text="端口类型："/>
+					<mx:ComboBox id="select_porttype" x="84" y="131" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+					
+					<mx:Label x="10" y="160" text="申请单位："/>
+					<mx:ComboBox id="select_property" x="84" y="161" width="160" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+					
+					<mx:Label x="10" y="190" text="申请人："/>
+					<mx:TextInput id="select_applier" x="84" y="191"/>
+					
+					<mx:Label x="10" y="220" text="申请日期："/>
+					<mx:ApplicationControlBar  dock="true" visible="false"> 
+						<mx:Form styleName="plain"> 
+							<mx:FormItem label="yearNavigationEnabled:"> 
+								<mx:CheckBox id="checkBox" selected="true" /> 
+							</mx:FormItem> 
+						</mx:Form> 
+					</mx:ApplicationControlBar> 
+
+					<mx:DateField id="select_start_time" width="160"  x="84" y="221" formatString="YYYY-MM-DD" showToday="true" fontFamily="宋体" fontSize="12" monthNames="{ModelLocator.monthNames}" dayNames="{ModelLocator.days}" yearNavigationEnabled="{checkBox.selected}" />
+					
+					<mx:Label x="10" y="250" text="完成日期："/>
+					<mx:DateField id="select_finish_time" width="160" x="84" y="251" formatString="YYYY-MM-DD" showToday="true" fontFamily="宋体" fontSize="12" monthNames="{ModelLocator.monthNames}" dayNames="{ModelLocator.days}" yearNavigationEnabled="{checkBox.selected}"/>
+					
+					<mx:Label x="10" y="280" text="A端站点："/>
+					<!--<mx:TextInput id="select_StationA" x="84" y="281"/>-->
+					<actionscript1:TreeComboBox id="select_StationA" x="84" y="281" width="160"  
+											   rowCount="80" labelField="@label"  />
+					<!--fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"-->
+
+					<mx:Label x="10" y="310" text="Z端站点："/>
+					<!--<mx:TextInput id="select_StationZ" x="84" y="311"/>-->
+					<actionscript1:TreeComboBox id="select_StationZ" x="84" y="311" width="160" 
+											   rowCount="80" labelField="@label"/><!--dataProvider="{StationZ_xml}"-->
+					<mx:Label id="labelId" x="10" y="340" text="申请目的："/>
+					<mx:TextInput id="select_purpose" x="84" y="341"/>
+					
+					<mx:Button id="select" x="10" y="402" label="查询" click="select_clickHandler(event)"/>
+					<mx:Button id="close" x="87.5" y="402" label="取消" click="close_clickHandler(event)"/>
+					<mx:Button id="reset" x="165" y="402" label="重置" click="reset_clickHandler(event)"/>
+					
+				</mx:Panel>
+			</mx:AddChild>
+			<mx:SetEventHandler target="{controlBar.selectButton}" name="click" handler="seteventhandler1_handlerHandler(event)"/>
+		</mx:State>
+	</mx:states>
+	<!--<mx:HBox width="100%" height="38" verticalAlign="middle"
+			 backgroundImage="@Embed(source='assets/images/iconbar_bg.png')" backgroundSize="100%"
+			 paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" borderStyle="none" borderThickness="0">
+		<mx:Image source="assets/images/iconbar_left.png" scaleContent="false"/>
+		<mx:LinkButton label="加为快捷方式" icon="@Embed(source='assets/images/icon_tjkjfs.png')" styleName="iconbar"
+					   click="parentApplication.addShorcut('方式调度','dispatcher')"/>
+		<mx:LinkButton label="取消快捷方式" icon="@Embed(source='assets/images/icon_qxkjfs.png')" styleName="iconbar"
+					   click="parentApplication.delShortcut('方式调度')"/>
+		<mx:Image source="assets/images/iconbar_line.png"/>
+		<mx:LinkButton label="查询" icon="@Embed(source='assets/images/icons/icon_search.png')" styleName="linkButton"
+					   click="" id="selectButton"/>
+		<mx:LinkButton label="制作方式单" icon="{ModelLocator.newOneWay}" styleName="linkButton" id="newOneWay" click="" />
+		<mx:Spacer height="38" width="100%"/>
+		<mx:Image source="assets/images/iconbar_right.png"/>
+	</mx:HBox>-->
+	<!--showAddPicButton="true" controlAddPic="controlBar_controlAddPicHandler()" 去掉补充方式制作图按钮-->
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="方式调度" imgName="dispatcher"
+						  showSearchButton="true" showMakemodeButton="false" 
+						  controlSearch="selectButton_clickHandler()" controlMakemodel="newOneWay_clickHandler()"/>
+	<mx:RemoteObject destination="businessDispatch"  showBusyCursor="false" id="businessDispatchRemote" endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)"/>
+	<mx:HBox width="100%" height="100%" id="hbox1">
+	<mx:TabNavigator width="100%" id="tabnavigator" creationPolicy="all"   height="100%" y="35" fontSize="12" fontFamily="Verdana" change="ChangeEvent()">
+		<mx:VBox width="100%" height="100%" label="待制作申请单" fontSize="12" id="vbox1">
+			<mx:DataGrid width="100%" height="100%" fontSize="12" id="todobusinessGrid" itemRollOver="{lastRollOverIndex = event.rowIndex}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="申请单号" dataField="@form_no" width="170"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="@type" width="150"/>
+					<mx:DataGridColumn headerText="业务名称" dataField="@specialtyname" width="200"/>
+					<mx:DataGridColumn headerText="速率" dataField="@speedname" width="150"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="@porttype"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="@appdepartment" width="150"/>
+					<mx:DataGridColumn headerText="申请人" dataField="@applier"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="@start_time" width="150"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="@finish_time" width="150"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="@station_a" width="150"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="@station_z" width="150"/>
+					<mx:DataGridColumn headerText="申请目的" dataField="@purpose"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<view:pagetoolbarforWay id="todobusinessGridPagingBar" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="待作废申请单">
+			<mx:DataGrid width="100%" height="100%" dragEnabled="true" 
+						 horizontalScrollPolicy="auto" horizontalCenter="16" verticalCenter="-152" editable="false" rowCount="5"
+						 id="repealedLstGrid" itemRollOver="lastRollOverIndex = event.rowIndex">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="申请单号" dataField="form_name" width="170"/> 
+					<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="业务名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<view:pagetoolbarforWay id="repealedLstGridPagingBar" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="未通过申请单">
+			<mx:DataGrid id="failedLstGrid" dragEnabled="true"  horizontalScrollPolicy="auto" 
+						 width="100%" horizontalCenter="16"  verticalCenter="-152" editable="false" rowCount="5" height="100%"
+						 itemRollOver="lastRollOverIndex = event.rowIndex">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="申请单号" dataField="form_name" width="170"/> 
+					<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="业务名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>	
+			<view:pagetoolbarforWay id="failedLstGridPagingBar" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="已完成申请单">
+			<mx:DataGrid dragEnabled="true"  horizontalScrollPolicy="auto" 
+						 width="100%" horizontalCenter="16"  verticalCenter="-152" editable="false" rowCount="5" height="100%" id="completedLstGrid"
+						 itemRollOver="lastRollOverIndex = event.rowIndex">
+				
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="申请单号" dataField="form_name" width="170"/> 
+					<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="业务名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+					
+				</mx:columns>
+			</mx:DataGrid>	
+			<view:pagetoolbarforWay id="completedLstGridPagingBar" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="100%" height="100%" verticalGap="0" label="已开通申请单">
+			<mx:DataGrid id="OpenGrid" dragEnabled="true"   horizontalScrollPolicy="auto" 
+						 width="100%" horizontalCenter="16"  verticalCenter="-152" rowCount="5" height="100%"
+						 itemRollOver="lastRollOverIndex = event.rowIndex">
+				<mx:columns>
+					<mx:DataGridColumn headerText="序号" width="50" itemRenderer="{new ClassFactory(indexRenderer)}"/> 
+					<mx:DataGridColumn headerText="申请单号/原方式单号" dataField="form_name" width="170"/>
+					<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" width="160"/>
+					<mx:DataGridColumn headerText="业务类型" dataField="operationtype" width="80"/>
+					<mx:DataGridColumn headerText="业务名称" dataField="remark" width="280"/>
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="50"/>
+					<mx:DataGridColumn headerText="端口类型" dataField="interfacetype" width="70"/>
+					<mx:DataGridColumn headerText="申请单位" dataField="requestcom" width="100"/>
+					<mx:DataGridColumn headerText="申请人" dataField="leaser" width="70"/>
+					<mx:DataGridColumn headerText="申请日期" dataField="createtime" width="100"/>
+					<mx:DataGridColumn headerText="完成日期" dataField="usetime" width="100"/>
+					<mx:DataGridColumn headerText="A端站点" dataField="station1" width="80"/>
+					<mx:DataGridColumn headerText="Z端站点" dataField="station2" width="80"/>
+				</mx:columns>
+			</mx:DataGrid>		
+			<view:pagetoolbarforWay id="OpenGridPagingBar" width="100%"/>
+		</mx:VBox> 
+	</mx:TabNavigator>
+	</mx:HBox>
+	</mx:VBox>

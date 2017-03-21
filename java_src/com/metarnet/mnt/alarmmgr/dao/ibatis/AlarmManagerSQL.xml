@@ -1,0 +1,1492 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="AlarmManager">
+	<select id="getTranssysName" resultClass="java.util.HashMap"
+		parameterClass="String">
+		select xtbm,xtxx from v_xtbm_foralarm where
+		xtype=#xtype#		
+	</select>
+
+	<select id="getTreeData" resultClass="String" parameterClass="java.util.HashMap">
+		select distinct r.systemcode
+		from re_sys_equip r, equipment t
+		where
+		r.equipcode = t.equipcode
+		<dynamic>
+			<isNotEmpty prepend="and" property="sysname">
+				r.systemcode=#sysname#
+			</isNotEmpty>
+		</dynamic>
+
+	</select>
+	<select id="getTreeEquipData" resultClass="String"
+		parameterClass="String">
+
+		select t.equipname
+		from re_sys_equip r, equipment t
+		where r.equipcode = t.equipcode and r.systemcode=#syscode#
+	    
+	</select>
+
+	<select id="getAlarmlevelcount" resultClass="String"
+		parameterClass="java.util.HashMap">
+		select alarmlevel || '@' || count(*) from $table$ v 
+		where 1=1
+<!--			<isNotEqual prepend="AND" property="alarmType" compareValue="接口">-->
+<!--				v.iscleared=#iscleared#-->
+<!--			</isNotEqual>-->
+			<isNotEmpty prepend="and" property="belongtransys">
+				v.belongtransys=#belongtransys#
+	     	</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject=#belongpackobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongshelfcode">
+				v.belongequip in(select
+				equipcode from equipframe f where
+				f.equipshelfcode=#belongshelfcode#)
+           </isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject=#belongportobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode=#belongportcode#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongequip">
+				v.belongequip=#belongequip#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="iscleared">
+				v.iscleared=#iscleared#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isAck">
+				v.isacked=#isAck#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isRootAlarm">
+				v.isrootalarm=#isRootAlarm#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="vendor">
+				v.vendor=#vendor#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmObj">
+				v.alarmobjdesc like
+				'%$alarmObj$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date(#beginTime#,'YYYY-mm-dd hh24:mi:ss') 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date(#endTime#,'YYYY-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="query">
+				(v.alarmman like
+				'%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="and" property="queryFlag">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+				<isNotEmpty prepend="AND" property="alarmType">
+				v.alarmtype = #alarmType#
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="and" property="interposename">-->
+<!--				getinterposename(v.interposeid) like '%$interposename$%'-->
+<!--			</isNotEmpty>-->
+		group by alarmlevel 
+	</select>
+
+
+
+
+	<select id="getAlarmlevelcountflag" resultClass="String"
+		parameterClass="java.util.HashMap">
+		select alarmlevel || '@' || count(*) from $table$ where
+		dealperson=#dealperson# and isrootalarm=1
+		<isNotEmpty prepend="AND" property="starttime">
+			firststarttime&gt;=$starttime$
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="endtime">
+			firststarttime&lt;=$endtime$
+		</isNotEmpty>
+		<isNotEmpty prepend="and" property="isAck">
+			isacked=#isAck#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="iscleared">
+			iscleared=#iscleared#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="query">
+			alarmman=#alarmman#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="queryFlag">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+		</isNotEmpty>
+				<isNotEmpty prepend="AND" property="alarmType">
+				instr(#alarmType#,getAlarmTypeByAlarmNumber(v.alarmnumber))>0
+			</isNotEmpty>
+		group by alarmlevel
+	</select>
+
+
+	<select id="getAlarmByAlarmLevel" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+
+		select
+		v.alarmlevelname,v.alarmobject,v.alarmobjdesc,v.firststarttime,v.isackedzh,
+		v.laststarttime,v.isrootalarmzh,v.vendorzh from v_alarminfonew v
+
+		<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+					</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<select id="getAlarmByLevTrans" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+
+		select
+		v.alarmlevelname,v.alarmobject,v.alarmobjdesc,v.firststarttime,v.isackedzh,
+		v.laststarttime,v.isrootalarmzh,v.vendorzh from v_alarminfonew v where
+		v.alarmlevel=#alarmlevel# and v.belongtransys=#transname#
+				
+		</select>
+
+	<select id="getsAlarmManangerInfos" resultClass="java.util.HashMap"
+		parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+
+		select *
+  from (select decode(carrycircuit,null,'',carrycircuit) carrycircuit,
+                decode(alarmnumber,null,'',alarmnumber) alarmnumber,
+               decode(vendor,null,'',vendor)  vendor,
+               decode(belongtransys, null, '', belongtransys) belongtransys,
+               decode(belongequip,null,'',belongequip) belongequip,
+               decode(belongpackobject,null,'',belongpackobject) belongpackobject,
+               decode(belongportobject,null,'',belongportobject) belongportobject,
+               decode(isworkcasezh,null,'',isworkcasezh) isworkcasezh,
+               decode(alarmdesc,null,'',alarmdesc) alarmdesc,
+               decode(alarmlevelname,null,'',alarmlevelname) alarmlevelname,
+               decode(alarmobject,null,'',alarmobject) alarmobject,
+               decode(alarmobjdesc,null,'',alarmobjdesc) alarmobjdesc,
+               decode(firststarttime,null,'',to_char(firststarttime,'yyyy-mm-dd hh24:mi:ss')) firststarttime,
+               decode(isackedzh,null,'',isackedzh) isackedzh,
+               decode(objclasszh,null,'',objclasszh) objclasszh,
+               decode(isrootalarmzh,null,'',isrootalarmzh) isrootalarmzh,
+               decode(laststarttime,null,'',laststarttime) laststarttime,
+               decode(vendorzh,null,'',vendorzh) vendorzh,
+               decode(belongslot,null,'',belongslot) belongslot,
+               decode(belongport,null,'',belongport) belongport,
+               decode(belongpack,null,'',belongpack) belongpack,
+               decode(belongportcode,null,'',belongportcode) belongportcode,
+               decode(ackperson,null,'',ackperson) ackperson,
+               decode(acktime,null,'',acktime) acktime,
+               decode(flashcount,null,'',flashcount) flashcount,
+               decode(dealresultzh,null,'',dealresultzh) dealresultzh,
+               decode(alarmType,'割接',to_char(firststarttime,'yyyy-mm-dd hh24:mi:ss'),endtime) endtime,
+               decode(dealperson,null,'',dealperson) dealperson,
+               decode(bugno,null,'',bugno) bugno,
+               decode(isworkcase,null,'',isworkcase) isworkcase,
+               decode(dealresult,null,'',dealresult) dealresult,
+               decode(belongstation,null,'',belongstation) belongstation,
+               decode(unit,null,'',unit) unit,
+               decode(area,null,'',area) area,
+               decode(alarmType,'割接','是','否') isfilter,
+               decode(isbugno,null,'',isbugno) isbugno,
+               decode(ackcontent,null,'',ackcontent) ackcontent,
+               alarmType,
+               interposename,
+               rn
+          from (select distinct row_number() OVER(ORDER BY v.firststarttime DESC) AS rn,
+                       v.carrycircuit,
+                       v.alarmnumber,
+                       v.vendor,
+                       v.belongtransys,
+                       v.belongequip,
+                       v.belongpackobject,
+                       v.belongportobject,
+                       v.isworkcasezh,
+                       v.alarmdesc,
+                       v.alarmlevelname,
+                       v.alarmobject,
+                       v.alarmobjdesc,
+                       v.firststarttime,
+                       v.isackedzh,
+                       v.objclasszh,
+                       v.isrootalarmzh,
+                       v.laststarttime,
+                       v.vendorzh,
+                       v.belongslot,
+                       v.belongport,
+                       v.belongpack,
+                       v.belongportcode,
+                       v.ackperson,
+                       v.acktime,
+                       v.flashcount,
+                       v.dealresultzh,
+                       v.endtime,
+                       v.dealperson,
+                       v.bugno,
+                       v.isworkcase,
+                       v.dealresult,
+                       v.belongstation,
+                       v.unit,
+                       v.area,
+                       v.isfilter,
+                       v.isbugno,
+                       v.ackcontent,
+<!--                       getAlarmTypeByAlarmNumber(v.alarmnumber) alarmType,-->
+						v.alarmtype alarmType,
+                       getinterposename(v.interposeid) interposename
+		from $tablename$ v 
+		<dynamic prepend="where">
+			
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject=#belongpackobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongshelfcode">
+				v.belongequip in(select
+				equipcode from equipframe f where
+				f.equipshelfcode=#belongshelfcode#)
+           </isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject=#belongportobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode=#belongportcode#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongequip">
+				v.belongequip=#belongequip#
+			</isNotEmpty>
+			
+<!--			<isNotEqual prepend="AND" property="iscleared" compareValue="接口">-->
+<!--				v.iscleared=#iscleared#-->
+<!--			</isNotEqual>-->
+
+			<isNotEmpty prepend="AND" property="isAck">
+				v.isacked=#isAck#
+			</isNotEmpty>
+
+<!--			<isNotEmpty prepend="AND" property="isRootAlarm">-->
+<!--				v.isrootalarm=#isRootAlarm#-->
+<!--			</isNotEmpty>-->
+
+			<isNotEmpty prepend="AND" property="vendor">
+				v.vendor=#vendor#
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="belongtransys">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmObj">
+				v.alarmobjdesc like
+				'%$alarmObj$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date(#beginTime#,'YYYY-mm-dd hh24:mi:ss') 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date(#endTime#,'YYYY-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="AND" property="dealperson">-->
+<!--				v.dealperson =#dealperson#-->
+<!--			</isNotEmpty>-->
+			<isNotEmpty prepend="AND" property="belongstation">
+				v.belongstation like '%$belongstation$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="area">
+				v.area like '%$area$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="confirmTime">
+				to_char(v.acktime,'yyyy-MM-dd') =#confirmTime#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackperson">
+				v.ackperson =#ackperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isworkcase">
+				v.isworkcase like
+				'%$isworkcase$%'
+			</isNotEmpty>
+		
+			<isNotEmpty prepend="AND" property="flashcount">
+				v.flashcount like
+				'%$flashcount$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="query">
+				(v.alarmman = #alarmman# or v.alarmman is null)
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="queryFlag">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmType">
+				v.alarmtype=#alarmType#
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="and" property="interposename">-->
+<!--				getinterposename(v.interposeid) like '%$interposename$%'-->
+<!--			</isNotEmpty>-->
+			order by v.firststarttime desc
+		</dynamic>) where rn &lt;=$end$ )where rn > $start$
+	</select>
+
+
+	<select id="getsAlarmManangerCount" resultClass="int"
+		parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+		select count(*) from $tablename$ v
+		<dynamic prepend="where">
+
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject=#belongpackobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongshelfcode">
+				v.belongequip in(select
+				equipcode from equipframe f where
+				f.equipshelfcode=#belongshelfcode#)
+           </isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject=#belongportobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode=#belongportcode#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongequip">
+				v.belongequip=#belongequip#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isAck">
+				v.isacked=#isAck#
+			</isNotEmpty>
+
+<!--			<isNotEqual prepend="AND" property="iscleared" compareValue="接口">-->
+<!--				v.iscleared=#iscleared#-->
+<!--			</isNotEqual>-->
+
+<!--			<isNotEmpty prepend="AND" property="isRootAlarm">-->
+<!--				v.isrootalarm=#isRootAlarm#-->
+<!--			</isNotEmpty>-->
+
+			<isNotEmpty prepend="AND" property="vendor">
+				v.vendor=#vendor#
+			</isNotEmpty>
+            <isNotEmpty prepend="AND" property="belongtransys">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmObj">
+				v.alarmobjdesc like
+				'%$alarmObj$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date(#beginTime#,'YYYY-mm-dd hh24:mi:ss') 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date(#endTime#,'YYYY-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="AND" property="dealperson">-->
+<!--				v.dealperson =#dealperson#-->
+<!--			</isNotEmpty>-->
+			<isNotEmpty prepend="AND" property="belongstation">
+				v.belongstation like '%$belongstation$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="area">
+				v.area like '%$area$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="confirmTime">
+				to_char(v.acktime,'yyyy-MM-dd')=#confirmTime#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackperson">
+				v.ackperson =#ackperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isworkcase">
+				v.isworkcase like
+				'%$isworkcase$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="flashcount">
+				v.flashcount like
+				'%$flashcount$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="query">
+				(v.alarmman = #alarmman# or v.alarmman is null)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="queryFlag">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+				<isNotEmpty prepend="AND" property="alarmType">
+				v.alarmtype=#alarmType#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="interposename">
+				getinterposename(v.interposeid) like '%$interposename$%'
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<select id="getsAlarmManangerInfosflag" resultClass="java.util.HashMap"
+		parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+
+		select * from (
+		select row_number()OVER(ORDER BY v.firststarttime DESC) AS rn,
+		v.carrycircuit,v.alarmnumber,v.vendor,v.belongtransys,v.belongequip,v.belongpackobject,v.belongportobject,v.isworkcasezh,
+		v.alarmdesc,v.alarmlevelname,v.alarmobject,v.alarmobjdesc,v.firststarttime,v.isackedzh,v.objclasszh,v.isrootalarmzh,
+		v.laststarttime,v.vendorzh,v.belongslot,v.belongport,v.belongpack,v.belongportcode,v.ackperson,v.acktime,v.flashcount,v.dealresultzh,v.endtime,
+		v.dealperson,
+        v.bugno,
+        v.isworkcase,
+        v.dealresult,
+        v.ackcontent
+		from $tablename$ v where v.dealperson=#dealperson#
+		<dynamic prepend="and">
+
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject=#belongpackobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongshelfcode">
+				v.belongequip in(select
+				equipcode from equipframe f where
+				f.equipshelfcode=#belongshelfcode#)
+           </isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject=#belongportobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode=#belongportcode#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongequip">
+				v.belongequip=#belongequip#
+			</isNotEmpty>
+
+			<isNotEqual prepend="AND" property="iscleared" compareValue="接口">
+				v.iscleared=0
+			</isNotEqual>
+
+			<isNotEmpty prepend="AND" property="isAck">
+				v.isacked=#isAck#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isRootAlarm">
+				v.isrootalarm=#isRootAlarm#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="vendor">
+				v.vendor=#vendor#
+			</isNotEmpty>
+            <isNotEmpty prepend="AND" property="belongtransys">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmObj">
+				v.alarmobjdesc like
+				'%$alarmObj$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date($beginTime$) 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date($endTime$)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="dealperson">
+				v.dealperson =#dealperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongstation">
+				v.belongstation =#belongstation#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="area">
+				v.area =#area#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="confirmTime">
+				v.acktime =#confirmTime#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackperson">
+				v.ackperson =#ackperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isworkcase">
+				v.isworkcase like
+				'%$isworkcase$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="dealresult">
+				v.dealresult like
+				'%$dealresult$%'
+			</isNotEmpty>
+			
+			
+			
+						<isNotEmpty prepend="AND" property="carrycircuit">
+				v.carrycircuit like
+				'%$carrycircuit$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="flashcount">
+				v.flashcount like
+				'%$flashcount$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isbugno">
+				v.isbugno like
+				'%$isbugno$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackcontent">
+				v.ackcontent like
+				'%$ackcontent$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isfilter">
+				v.isfilter like
+				'%$isfilter$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="unit">
+				v.unit like
+				'%$unit$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmman">
+				v.alarmman like
+				'%$alarmman$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="end">
+              rownum  &lt;= #end#
+            </isNotEmpty>
+		</dynamic>
+		) vv where vv.rn &gt;= #start# and vv.rn &lt;= #end#
+	</select>
+
+
+	<select id="getsAlarmManangerCountflag" resultClass="int"
+		parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+		select count(*) from $tablename$ v where v.dealperson=#dealperson#
+		<dynamic prepend="AND">
+
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject=#belongpackobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongshelfcode">
+				v.belongequip in(select
+				equipcode from equipframe f where
+				f.equipshelfcode=#belongshelfcode#)
+           </isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject=#belongportobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode=#belongportcode#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongequip">
+				v.belongequip=#belongequip#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isAck">
+				v.isacked=#isAck#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="iscleared">
+				v.iscleared=#iscleared#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isRootAlarm">
+				v.isrootalarm=#isRootAlarm#
+			</isNotEmpty>
+
+
+			<isNotEmpty prepend="AND" property="vendor">
+				v.vendor=#vendor#
+			</isNotEmpty>
+
+ 			<isNotEmpty prepend="AND" property="belongtransys">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmObj">
+				v.alarmobjdesc like
+				'%$alarmObj$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date($beginTime$) 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date($endTime$)
+			</isNotEmpty>
+			
+			
+						<isNotEmpty prepend="AND" property="carrycircuit">
+				v.carrycircuit like
+				'%$carrycircuit$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="flashcount">
+				v.flashcount like
+				'%$flashcount$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isbugno">
+				v.isbugno like
+				'%$isbugno$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackcontent">
+				v.ackcontent like
+				'%$ackcontent$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isfilter">
+				v.isfilter like
+				'%$isfilter$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="unit">
+				v.unit like
+				'%$unit$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmman">
+				v.alarmman like
+				'%$alarmman$%'
+			</isNotEmpty>
+			<isNotEqual prepend="AND" property="iscleared" compareValue="接口">
+				v.iscleared=0
+			</isNotEqual>
+		</dynamic>
+	</select>
+
+
+	<select id="getKeyBusiness" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select *
+		from (select rownum rn,
+		alarmlevelname,
+		circuitcode,
+		username,
+		circuittype,
+		usetime,
+		rate,
+		portserialno1,
+		portserialno2,
+		isacked
+		from
+		v_alarmrelatecircuit
+
+		<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="username">
+				username=#circuitname#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isacked">
+				isacked=#isacked#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmnumber">
+				alarmnumber=#alarmnumber#
+					</isNotEmpty>
+		</dynamic>
+		) vv
+		where vv.rn between #start# and #end#
+	</select>
+
+	<select id="getKeyBusinessCount" resultClass="int"
+		parameterClass="java.util.HashMap">
+		select count(*) from v_alarmrelatecircuit v
+		<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="username">
+				username=#circuitname#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isacked">
+				isacked=#isacked#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmnumber">
+				alarmnumber=#alarmnumber#
+					</isNotEmpty>
+		</dynamic>
+
+	</select>
+	<select id="getKeyBusiness_hz" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select * from (select rownum rn,a.* from (select distinct
+		circuitcode,username,circuittype,usetime,rate,portserialno1,portserialno2,portcode1,portcode2,alarmdetail,station1,station2,powerline
+		from v_alarmrelatecircuit
+		where iscleared=0
+
+
+		<dynamic prepend="AND">
+			<isNotEmpty prepend="AND" property="username">
+				circuittype='$username$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station1">
+				station1='$station1$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station2">
+				station2='$station2$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="powerline">
+				powerline='$powerline$'
+			</isNotEmpty>
+		</dynamic>
+		) a) vv
+
+		where vv.rn between #start# and #end#
+	</select>
+<select id="getKeyBusiness_hz1" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select * from (select rownum rn,a.* from (select distinct
+		circuitcode,username,circuittype,usetime,rate,portserialno1,portserialno2,portcode1,portcode2,alarmdetail,station1,station2,powerline
+		from v_alarmrelatecircuit
+		where 
+		   (station1 = '$station1$' and station2 = '$station2$' and circuittype='$username$' and iscleared=0)
+        or  (station1 = '$station2$' and station2 = '$station1$' and circuittype='$username$' and iscleared=0)
+		) a) vv
+
+		where vv.rn between #start# and #end#
+	</select>
+	<select id="getKeyBusinessCount_hz" resultClass="int"
+		parameterClass="java.util.HashMap">
+		select count(*) from (select distinct
+		circuitcode,username,circuittype,usetime,rate,portserialno1,portserialno2,station1,station2,powerline
+		from v_alarmrelatecircuit where iscleared=0
+		<dynamic prepend="AND">
+			<isNotEmpty prepend="AND" property="username">
+				circuittype='$username$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station1">
+				station1='$station1$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station2">
+				station2='$station2$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="powerline">
+				powerline='$powerline$'
+			</isNotEmpty>
+		</dynamic>
+		)
+
+	</select>
+<select id="getKeyBusinessCount_hz1" resultClass="int"
+		parameterClass="java.util.HashMap">
+		select count(*) from (select distinct
+		circuitcode,username,circuittype,usetime,rate,portserialno1,portserialno2,station1,station2,powerline
+		from v_alarmrelatecircuit where 
+		 (station1 = '$station1$' and station2 = '$station2$' and circuittype='$username$' and iscleared=0)
+        or  (station1 = '$station2$' and station2 = '$station1$' and circuittype='$username$' and iscleared=0)
+		)
+
+	</select>
+
+
+	<select id="getKeyBusiness_hz_operaType" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select * from (select rownum rn,a.* from (select distinct
+		circuitcode,username,circuittype,usetime,rate,portserialno1,portserialno2,portcode1,portcode2,alarmdetail,station1,station2,powerline
+		from v_alarmrelatecircuit
+		where iscleared=0
+
+
+		<dynamic prepend="AND">
+			<isNotEmpty prepend="AND" property="circuittype">
+				circuittype='$operationtype$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station1">
+				station1='$station1$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station2">
+				station2='$station2$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="powerline">
+				powerline='$powerline$'
+			</isNotEmpty>
+		</dynamic>
+
+		) a) vv
+
+		where vv.rn between #start# and #end#
+	</select>
+
+	<select id="getKeyBusinessCount_hz_operaType" resultClass="int"
+		parameterClass="java.util.HashMap">
+		select count(*) from (select distinct
+		circuitcode,username,circuittype,usetime,rate,portserialno1,portserialno2,station1,station2,powerline
+		from v_alarmrelatecircuit where iscleared=0
+		<dynamic prepend="AND">
+			<isNotEmpty prepend="AND" property="circuittype">
+				circuittype='$operationtype$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station1">
+				station1='$station1$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station2">
+				station2='$station2$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="powerline">
+				powerline='$powerline$'
+			</isNotEmpty>
+		</dynamic>
+		)
+	</select>
+
+	<select id="getCircuitCount" resultClass="string" parameterClass="String">
+
+	<!--  	select count(distinct belongtsstm4) circuitcount from alarminfo a
+		where a.belongtsstm4 is not null and a.iscleared='0' and alarmnumber
+		in
+		(select ALM_COMPANY from alarm_affection where alm_number
+		=#alarmnu#)-->
+	select decode(t.belongtsstm16,null,'0',t.belongtsstm16) from alarminfo t 
+	where t.iscleared='0' and alarmnumber=#alarmnu#
+	</select>
+
+
+	<select id="getAlarmConfirm" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+
+		select * from alarminfo where alarmnumber=#alarmid#
+
+	</select>
+
+	<!--处理专业为“传输”的确认告警-->
+	<update id="updateAlarmConfirm" parameterClass="java.util.HashMap">
+		update alarminfo
+		a set
+		a.ackcontent=#ackcontent#
+		where a.alarmnumber=#alarmid# 
+	</update>
+
+	<select id="getExportKeyBusiness_hz" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select * from (select rownum rn,a.* from (select distinct
+		circuitcode,username,circuittype,usetime,rate,portserialno1,portserialno2,alarmdetail
+		from v_alarmrelatecircuit
+		where iscleared=0
+
+		<dynamic prepend="AND">
+			<isNotEmpty prepend="AND" property="username">
+				username='$username$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station1">
+				station1='$station1$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="station2">
+				station2='$station2$'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="powerline">
+				powerline='$powerline$'
+		</isNotEmpty>
+		</dynamic>
+		) a) vv
+	</select>
+
+	<select id="getProDate" resultClass="java.util.HashMap"
+		parameterClass="java.util.HashMap">
+		select changedate,starttime,endtime from dateequip
+	</select>
+
+   <select id="getAlarmsDutyid" resultClass="java.util.HashMap"
+		parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+
+		select * from (
+		select rownum
+		rn,v.alarmnumber,v.vendor,v.belongtransys,v.belongequip,v.belongpackobject,v.belongportobject,v.isworkcasezh,v.observedvalue,
+		v.alarmdesc,v.alarmlevelname,v.alarmobject,v.alarmobjdesc, to_char(v.firststarttime, 'YYYY-MM-DD HH24:MI:SS')firststarttime,v.isackedzh,v.objclasszh,v.isrootalarmzh,
+		v.laststarttime,v.vendorzh,v.belongslot,v.belongport,v.belongpack,v.belongportcode,v.ackperson,v.acktime,v.flashcount,v.dealresultzh,v.endtime,
+		v.dealperson,
+        v.bugno,
+        v.dutyid,
+        v.isworkcase,
+        v.dealresult,
+        '转已有故障'oper,
+        v.ackcontent
+		from v_alarminfonew v,comm_base_form c where  <![CDATA[rownum <= #end#]]>
+		and  v.dutyid is not null and  v.isrootalarm = 1 and v.dutyid=c.form_id and c.wf_name='commFaultFlow' and not c.form_status in('已归档','已作废')
+		<dynamic prepend="and">
+			<isNotEmpty prepend="AND" property="dutyid">
+				v.dutyid=#dutyid#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date('$beginTime$','YYYY-mm-dd hh24:mi:ss') 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date('$endTime$','YYYY-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+		</dynamic>
+		order by v.firststarttime desc
+		) vv where vv.rn >= #start#  
+	</select>
+    <select id="getAlarmsDutyidCount" resultClass="int"
+		parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+		select count(*) from v_alarminfonew v ,comm_base_form c where v.isrootalarm='1' and v.dutyid is not null and v.dutyid=c.form_id and c.wf_name='commFaultFlow' and not c.form_status in('已归档','已作废')
+		<dynamic prepend="AND">
+
+			<isNotEmpty prepend="AND" property="dutyid">
+				v.dutyid=#dutyid#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+					&gt;=to_date('$beginTime$','YYYY-mm-dd hh24:mi:ss') 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date('$endTime$','YYYY-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+		</dynamic>
+	</select>
+	<select id="getcountBySearch" resultClass="String"
+		parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+		select alarmlevel || '@' || count(*) from $tablename$ v
+		<dynamic prepend="where">
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject=#belongpackobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongshelfcode">
+				v.belongequip in(select
+				equipcode from equipframe f where
+				f.equipshelfcode=#belongshelfcode#)
+           </isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject=#belongportobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode=#belongportcode#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongequip">
+				v.belongequip=#belongequip#
+			</isNotEmpty>
+			
+<!--			<isNotEqual prepend="AND" property="iscleared" compareValue="接口">-->
+<!--				v.iscleared=#iscleared#-->
+<!--			</isNotEqual>-->
+
+			<isNotEmpty prepend="AND" property="isAck">
+				v.isacked=#isAck#
+			</isNotEmpty>
+
+<!--			<isNotEmpty prepend="AND" property="isRootAlarm">-->
+<!--				v.isrootalarm=#isRootAlarm#-->
+<!--			</isNotEmpty>-->
+
+			<isNotEmpty prepend="AND" property="vendor">
+				v.vendor=#vendor#
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="belongtransys">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmObj">
+				v.alarmobjdesc like
+				'%$alarmObj$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date(#beginTime#,'YYYY-mm-dd hh24:mi:ss') 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date(#endTime#,'YYYY-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+<!--			<isNotEmpty prepend="AND" property="dealperson">-->
+<!--				v.dealperson =#dealperson#-->
+<!--			</isNotEmpty>-->
+			<isNotEmpty prepend="AND" property="belongstation">
+				v.belongstation like '%$belongstation$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="area">
+				v.area like '%$area$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="confirmTime">
+				to_char(v.acktime,'yyyy-MM-dd') =#confirmTime#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackperson">
+				v.ackperson =#ackperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isworkcase">
+				v.isworkcase like
+				'%$isworkcase$%'
+			</isNotEmpty>
+		
+			<isNotEmpty prepend="AND" property="flashcount">
+				v.flashcount like
+				'%$flashcount$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="query">
+				(v.alarmman = #alarmman# or v.alarmman is null)
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="queryFlag">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmType">
+				v.alarmtype=#alarmType#
+			</isNotEmpty>
+		</dynamic>
+		group by alarmlevel 
+	</select>
+	
+	<select id="queryVisiable" resultClass="String" parameterClass="String">
+		select t.chfield from tabledictionarynew t where t.tablename =#tablename#	and t.querybyvalue = 'Y'
+	</select>
+	
+	<delete id="deleteAlarmByAlarmNumber" parameterClass="string" >
+		delete from alarminfo t where t.alarmnumber=#alarmnumber#
+	</delete>
+	
+	<select id="getAllRootAlarmInfosLst" parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos"
+	 resultClass="java.util.HashMap">
+		select *
+  from (select decode(carrycircuit,null,'',carrycircuit) carrycircuit,
+                decode(alarmnumber,null,'',alarmnumber) alarmnumber,
+               decode(vendor,null,'',vendor)  vendor,
+               decode(belongtransys,null,'',belongtransys) belongtransys,
+               decode(belongequip,null,'',belongequip) belongequip,
+               decode(belongpackobject,null,'',belongpackobject) belongpackobject,
+               decode(belongportobject,null,'',belongportobject) belongportobject,
+               decode(isworkcasezh,null,'',isworkcasezh) isworkcasezh,
+               decode(alarmdesc,null,'',alarmdesc) alarmdesc,
+               decode(alarmlevelname,null,'',alarmlevelname) alarmlevelname,
+               decode(alarmobject,null,'',alarmobject) alarmobject,
+               decode(alarmobjdesc,null,'',alarmobjdesc) alarmobjdesc,
+               decode(firststarttime,null,'',to_char(firststarttime,'yyyy-mm-dd hh24:mi:ss')) firststarttime,
+               decode(isackedzh,null,'',isackedzh) isackedzh,
+               decode(objclasszh,null,'',objclasszh) objclasszh,
+               decode(isrootalarmzh,null,'',isrootalarmzh) isrootalarmzh,
+               decode(laststarttime,null,'',laststarttime) laststarttime,
+               decode(vendorzh,null,'',vendorzh) vendorzh,
+               decode(belongslot,null,'',belongslot) belongslot,
+               decode(belongport,null,'',belongport) belongport,
+               decode(belongpack,null,'',belongpack) belongpack,
+               decode(belongportcode,null,'',belongportcode) belongportcode,
+               decode(ackperson,null,'',ackperson) ackperson,
+               decode(acktime,null,'',acktime) acktime,
+               decode(flashcount,null,'',flashcount) flashcount,
+               decode(dealresultzh,null,'',dealresultzh) dealresultzh,
+               decode(endtime,null,'',endtime) endtime,
+               decode(dealperson,null,'',dealperson) dealperson,
+               decode(bugno,null,'',bugno) bugno,
+               decode(isworkcase,null,'',isworkcase) isworkcase,
+               decode(dealresult,null,'',dealresult) dealresult,
+               decode(belongstation,null,'',belongstation) belongstation,
+               decode(unit,null,'',unit) unit,
+               decode(area,null,'',area) area,
+               decode(isfilter,null,'',isfilter) isfilter,
+               decode(isbugno,null,'',isbugno) isbugno,
+               decode(ackcontent,null,'',ackcontent) ackcontent,
+               alarmType,
+               interposename,
+               rn
+          from (select distinct row_number() OVER(ORDER BY v.firststarttime DESC) AS rn,
+                       v.carrycircuit,
+                       v.alarmnumber,
+                       v.vendor,
+                       v.belongtransys,
+                       v.belongequip,
+                       v.belongpackobject,
+                       v.belongportobject,
+                       v.isworkcasezh,
+                       v.alarmdesc,
+                       v.alarmlevelname,
+                       v.alarmobject,
+                       v.alarmobjdesc,
+                       v.firststarttime,
+                       v.isackedzh,
+                       v.objclasszh,
+                       v.isrootalarmzh,
+                       v.laststarttime,
+                       v.vendorzh,
+                       v.belongslot,
+                       v.belongport,
+                       v.belongpack,
+                       v.belongportcode,
+                       v.ackperson,
+                       v.acktime,
+                       v.flashcount,
+                       v.dealresultzh,
+                       v.endtime,
+                       v.dealperson,
+                       v.bugno,
+                       v.isworkcase,
+                       v.dealresult,
+                       v.belongstation,
+                       v.unit,
+                       v.area,
+                       v.isfilter,
+                       v.isbugno,
+                       v.ackcontent,
+                       getAlarmTypeByAlarmNumber(v.alarmnumber) alarmType,
+                       getinterposename(v.interposeid) interposename
+		from v_alarminfonew v 
+		<dynamic prepend="where">
+			
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject=#belongpackobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongshelfcode">
+				v.belongequip in(select
+				equipcode from equipframe f where
+				f.equipshelfcode=#belongshelfcode#)
+           </isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject=#belongportobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode=#belongportcode#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongequip">
+				v.belongequip=#belongequip#
+			</isNotEmpty>
+			
+			<isNotEqual prepend="AND" property="iscleared" compareValue="接口">
+				v.iscleared=#iscleared#
+			</isNotEqual>
+
+			<isNotEmpty prepend="AND" property="isAck">
+				v.isacked=#isAck#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isRootAlarm">
+				v.isrootalarm=#isRootAlarm#
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="isrootalarmzh">
+				v.pristinerootalarm=#isrootalarmzh#
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="vendor">
+				v.vendor=#vendor#
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="belongtransys">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmObj">
+				v.alarmobjdesc like
+				'%$alarmObj$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date(#beginTime#,'YYYY-mm-dd hh24:mi:ss') 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date(#endTime#,'YYYY-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="dealperson">
+				v.dealperson =#dealperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongstation">
+				v.belongstation =#belongstation#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="area">
+				v.area =#area#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="confirmTime">
+				to_char(v.acktime,'yyyy-MM-dd') =#confirmTime#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackperson">
+				v.ackperson =#ackperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isworkcase">
+				v.isworkcase like
+				'%$isworkcase$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="dealresult">
+				v.dealresult like
+				'%$dealresult$%'
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="carrycircuit">
+				v.carrycircuit like
+				'%$carrycircuit$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="flashcount">
+				v.flashcount like
+				'%$flashcount$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isbugno">
+				v.isbugno like
+				'%$isbugno$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackcontent">
+				v.ackcontent like
+				'%$ackcontent$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isfilter">
+				v.isfilter like
+				'%$isfilter$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="unit">
+				v.unit like
+				'%$unit$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="query">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="queryFlag">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmType">
+				instr(#alarmType#,getAlarmTypeByAlarmNumber(v.alarmnumber))>0
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="interposename">
+				getinterposename(v.interposeid) like '%$interposename$%'
+			</isNotEmpty>
+			order by v.firststarttime desc
+		</dynamic>) where rn &lt;=$end$ )where rn > $start$
+	</select>
+	
+	<select id="getAllRootAlarmInfoLstCount" resultClass="int"
+		parameterClass="com.metarnet.mnt.alarmmgr.model.AlarmInfos">
+		select count(*) from v_alarminfonew v
+		<dynamic prepend="where">
+
+			<isNotEmpty prepend="AND" property="belongpackobject">
+				v.belongpackobject=#belongpackobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongshelfcode">
+				v.belongequip in(select
+				equipcode from equipframe f where
+				f.equipshelfcode=#belongshelfcode#)
+           </isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportobject">
+				v.belongportobject=#belongportobject#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongportcode">
+				v.belongportcode=#belongportcode#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="belongequip">
+				v.belongequip=#belongequip#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="isAck">
+				v.isacked=#isAck#
+			</isNotEmpty>
+
+			<isNotEqual prepend="AND" property="iscleared" compareValue="接口">
+				v.iscleared=#iscleared#
+			</isNotEqual>
+
+			<isNotEmpty prepend="AND" property="isRootAlarm">
+				v.isrootalarm=#isRootAlarm#
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="isrootalarmzh">
+				v.pristinerootalarm=#isrootalarmzh#
+			</isNotEmpty>
+			
+			<isNotEmpty prepend="AND" property="vendor">
+				v.vendor=#vendor#
+			</isNotEmpty>
+            <isNotEmpty prepend="AND" property="belongtransys">
+				v.belongtransys=#belongtransys#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="alarmObj">
+				v.alarmobjdesc like
+				'%$alarmObj$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmdesc">
+				v.alarmdesc like
+				'%$alarmdesc$%'
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="alarmlevel">
+				v.alarmlevel=#alarmlevel#
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="beginTime">
+				v.firststarttime
+				&gt;=to_date(#beginTime#,'YYYY-mm-dd hh24:mi:ss') 
+			</isNotEmpty>
+
+			<isNotEmpty prepend="AND" property="endTime">
+				v.firststarttime
+				&lt;=to_date(#endTime#,'YYYY-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="dealperson">
+				v.dealperson =#dealperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="belongstation">
+				v.belongstation =#belongstation#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="area">
+				v.area =#area#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="confirmTime">
+				to_char(v.acktime,'yyyy-MM-dd')=#confirmTime#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackperson">
+				v.ackperson =#ackperson#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isworkcase">
+				v.isworkcase like
+				'%$isworkcase$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="dealresult">
+				v.dealresult like
+				'%$dealresult$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="carrycircuit">
+				v.carrycircuit like
+				'%$carrycircuit$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="flashcount">
+				v.flashcount like
+				'%$flashcount$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isbugno">
+				v.isbugno like
+				'%$isbugno$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ackcontent">
+				v.ackcontent like
+				'%$ackcontent$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="isfilter">
+				v.isfilter like
+				'%$isfilter$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="unit">
+				v.unit like
+				'%$unit$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="query">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="queryFlag">
+				(v.alarmman like '%$alarmman$%' or v.alarmman is null)
+			</isNotEmpty>
+				<isNotEmpty prepend="AND" property="alarmType">
+				instr(#alarmType#,getAlarmTypeByAlarmNumber(v.alarmnumber))>0
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="interposename">
+				getinterposename(v.interposeid) like '%$interposename$%'
+			</isNotEmpty>
+		</dynamic>
+	</select>
+	
+	<update id="updateAlarmAckStatus" parameterClass="map">
+		update alarminfo t set 
+		t.ackperson= #ackperson#,
+		t.acktime=to_date(#acktime#,'YYYY-mm-dd hh24:mi:ss'),
+		t.isacked='1' 
+		where t.alarmnumber=#alarmnumber#
+	</update>
+	
+</sqlMap>

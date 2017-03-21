@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+				width="400"
+				height="400"
+				title="选择设备"
+				fontSize="13"
+				showCloseButton="true"
+				creationComplete="titlewindow1_creationCompleteHandler();initEvent();"
+				close="{PopUpManager.removePopUp(this);}"
+				minWidth="955" minHeight="600">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.events.ListEvent;
+			[Embed('assets/images/file/fileLeaf.gif')]
+			[Bindable]
+			public var leafPic:Class;
+			import common.other.events.EventNames;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			public var stationcode:String;
+			public var XMLData:XMLList;
+			public var catalogsid:String;
+			public var type:String;
+			private var curIndex:int;
+			public var whichT:String;
+			private var selectedNode:XML;
+			[Bindable]   
+			public var folderList:XMLList= new XMLList(); 
+			
+			[Bindable]   
+			public var folderCollection:XMLList;
+			public var page_parent:Object;
+
+			protected function titlewindow1_creationCompleteHandler():void
+			{
+				var obj:RemoteObject = new RemoteObject("businessDispatch");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor=true;
+				obj.getEquip(stationcode,"root");
+				obj.addEventListener(ResultEvent.RESULT,getEquipTree);
+			}
+			private function initEvent():void{  
+				addEventListener(EventNames.CATALOGROW,gettree);
+			}  
+			private function gettree(e:Event):void{  
+				var rt_TimeslotTree:RemoteObject = new RemoteObject("businessDispatch");
+				rt_TimeslotTree.endpoint = ModelLocator.END_POINT;
+				rt_TimeslotTree.showBusyCursor =true;
+				rt_TimeslotTree.getEquip(stationcode,type);//获取树的数据
+				rt_TimeslotTree.addEventListener(ResultEvent.RESULT, generateRateTreeInfo);
+			}
+			private function generateRateTreeInfo(event:ResultEvent):void
+			{
+				var str:String = event.result as String;  
+				if(str!=null&&str!="")
+				{  
+					var child:XMLList= new XMLList(str);
+					if(selectedNode.children()==null||selectedNode.children().length()==0)
+					{ 	
+						selectedNode.appendChild(child);
+						equipTree.callLater(openTree,[selectedNode]);
+					}
+				}  
+			}
+			private function openTree(xml:XML):void{
+				if(equipTree.isItemOpen(xml))
+					equipTree.expandItem(xml,false);
+				equipTree.expandItem(xml,true);
+			}
+
+			public function getEquipTree(e:ResultEvent):void{
+				folderList = new XMLList(e.result.toString());
+				folderCollection=new XMLList(folderList); 
+				equipTree.dataProvider = folderCollection;
+			}
+
+			protected function equipTree_changeHandler():void
+			{
+				equipTree.selectedIndex = curIndex;
+				if(equipTree.selectedItem.@isBranch==true && equipTree.selectedItem.@node=="1"){
+					selectedNode = equipTree.selectedItem as XML; 
+					var id:String = this.equipTree.selectedItem.@id;
+					type=id;
+					dispatchEvent(new Event(EventNames.CATALOGROW));
+				}else if(equipTree.selectedItem.@isBranch==true && equipTree.selectedItem.@node=="2"){
+					selectedNode = equipTree.selectedItem as XML; 				
+					var thisId:String = this.equipTree.selectedItem.@id;
+					type=thisId;
+					dispatchEvent(new Event(EventNames.CATALOGROW));
+				}
+			}
+
+
+			protected function equipTree_doubleClickHandler(event:MouseEvent):void
+			{
+				if(equipTree.selectedItem.@isBranch==false &&equipTree.selectedItem.@leaf==true){
+					if(whichT=="a"){
+						page_parent.aEquipName.text = equipTree.selectedItem.@text;
+					}else if(whichT=="z"){
+						page_parent.zEquipName.text = equipTree.selectedItem.@text;	
+					}
+					this.close();
+				}else{
+					
+				}
+			}
+			public function close():void{
+				PopUpManager.removePopUp(this);
+			}
+
+		]]>
+	</mx:Script>
+	<mx:Tree id="equipTree"
+			 width="100%" height="100%"
+			 labelField="@text"
+			 dataProvider="{folderCollection}"
+			 defaultLeafIcon="{leafPic}" 
+			 borderStyle="none"
+			 change="equipTree_changeHandler()"
+			 itemOpen="equipTree_changeHandler()"
+			 itemRollOver="curIndex = event.rowIndex"
+			 doubleClickEnabled="true"
+			 doubleClick="equipTree_doubleClickHandler(event)"
+			 />
+</mx:TitleWindow>

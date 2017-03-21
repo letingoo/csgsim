@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/businessDispatch/model
+END
+ResultModel.as
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/businessDispatch/model/ResultModel.as
+END
+CreateCircuitInfo.as
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/businessDispatch/model/CreateCircuitInfo.as
+END
+SelectOthersCircuit.as
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/businessDispatch/model/SelectOthersCircuit.as
+END
+SelectTodoCircuit.as
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/csgsim/!svn/ver/1/flex_src/sourceCode/businessDispatch/model/SelectTodoCircuit.as
+END

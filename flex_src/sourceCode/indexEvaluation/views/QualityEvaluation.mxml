@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:MecGrid="com.mechan.MecGrid.*"
+		 xmlns:ns1="com.fusioncharts.components.*"
+		 width="100%" height="100%" verticalScrollPolicy="auto" creationComplete="calculateWeight()" horizontalAlign="center" >
+	
+	<mx:Script source="../actionscript/QualityEvaluation.as"/>
+
+		<mx:VBox width="100%" height="100%" borderColor="0x6666FF" borderThickness="3" >
+			<mx:HBox width="100%" height="25" >
+				<mx:Button label="导出Excel" width="120" click="saveAsExcel()"/>
+				<mx:Spacer  width="20"/>
+				<!--<mx:Text id="s" color="red" text="请按回车键完成修改操作" textAlign="center" fontSize="20"/>
+				<mx:Spacer width="20"/>
+				<mx:Button id="calculate" label="计算权重" width="100" click="calculateWeight()" styleName="loginprimary"/>
+				<mx:Spacer  width="300"/>-->
+				<mx:Text id="tipShow" color="red" textAlign="center" fontSize="20"/>
+			</mx:HBox>
+			
+			<mx:VBox width="100%" height="100%" verticalGap="0" borderColor="3394815" borderThickness="1">
+				
+				<mx:DataGrid 
+					id ="dg" 
+					width="100%" 
+					height="100%" 
+					horizontalScrollPolicy="auto" 
+					doubleClickEnabled="true" liveScrolling="false" editable="true" dataProvider="{dataLst}" itemEditEnd="editHandle(event)">
+					<mx:columns>
+						<mx:DataGridColumn headerText="id" dataField="id" width="150" visible="false"/>
+						<mx:DataGridColumn headerText="准则层名" dataField="first_level" width="150" editable="false" sortable="false"/>
+						<mx:DataGridColumn headerText="网络名称" dataField="network" width="150" editable="false" sortable="false"/>
+						<mx:DataGridColumn headerText="指标类别" dataField="type" width="150" editable="false" sortable="false"/>
+						<mx:DataGridColumn headerText="指标名称" dataField="name"  width="300" editable="false" sortable="false"/>
+						<mx:DataGridColumn headerText="自愈值" dataField="self_healing_value" editable="false"  width="80" sortable="false"/>
+						<mx:DataGridColumn headerText="得分值(可编辑)"   dataField="score"  editable="true"  width="150" sortable="false"/>
+						<!--editorDataField="value"-->	
+						<!--<mx:itemRenderer>     
+								<mx:Component> 
+									<mx:TextInput enter="outerDocument.myProject_changeHandler(this.text)" /> 
+								</mx:Component>     
+							</mx:itemRenderer>   	
+						</mx:DataGridColumn>-->
+						<mx:DataGridColumn headerText="权重值" dataField="weight" editable="false"  width="80" sortable="false"/>
+					</mx:columns>
+					
+				</mx:DataGrid>
+				
+				<mx:Spacer height="15"/>
+				
+			</mx:VBox>
+			<mx:HBox width="100%" height="28">
+				<mx:Text id="txtFormula"  width="1260" fontSize="18" click="showCalculate(event);" color="red" toolTip="点击查看计算过程"/>
+			</mx:HBox>
+		</mx:VBox>
+	
+</mx:VBox>

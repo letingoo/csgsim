@@ -1,0 +1,65 @@
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/svn/csgsim/!svn/ver/1/dbscript/tables
+END
+MODULE_STATUS_CHANGE.tab
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/csgsim/!svn/ver/1/dbscript/tables/MODULE_STATUS_CHANGE.tab
+END
+mnt_subject.tab
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/csgsim/!svn/ver/1/dbscript/tables/mnt_subject.tab
+END
+V_MNT_REPAIR_FROM_MIS.tab
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/csgsim/!svn/ver/1/dbscript/tables/V_MNT_REPAIR_FROM_MIS.tab
+END
+mnt_sugject_resource_totalgrid.tab
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/csgsim/!svn/ver/1/dbscript/tables/mnt_sugject_resource_totalgrid.tab
+END
+MNT_ALARM_WATCH_CONFIG.tab
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/csgsim/!svn/ver/1/dbscript/tables/MNT_ALARM_WATCH_CONFIG.tab
+END
+droptable.sql
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/csgsim/!svn/ver/1/dbscript/tables/droptable.sql
+END
+mnt_subject_resource_graph.tab
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/csgsim/!svn/ver/1/dbscript/tables/mnt_subject_resource_graph.tab
+END
+V_MNT_DEALALARMMETHOD_TMP.tab
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/csgsim/!svn/ver/1/dbscript/tables/V_MNT_DEALALARMMETHOD_TMP.tab
+END
+mnt_subject_datasource.tab
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/csgsim/!svn/ver/1/dbscript/tables/mnt_subject_datasource.tab
+END
+mnt_subjectdisplayconfig.tab
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/csgsim/!svn/ver/1/dbscript/tables/mnt_subjectdisplayconfig.tab
+END

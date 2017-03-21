@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--暂时没用到  设备信息-->
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:ui="sourceCode.alarmmgr.actionscript.*"
+				width="200"
+				height="500"
+				styleName="setting" 
+				showCloseButton="true"
+				close="PopUpManager.removePopUp(this)"
+				initialize="init()"
+				title="选择设备"
+				>
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import sourceCode.alarmmgr.actionscript.*;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.core.mx_internal;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.PopUpManagerChildList;
+			public var xml:String;
+			public var selectedNode:XML;
+			public var  selectedvalue:String;
+			private var _tc:Function;
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			public function  init():void{
+				initTree(xml);
+				addEventListener(MyClickEvent.ITEM_CLICK,closewindow);
+			}
+			
+			public function initTree(xml:String):void {
+				var XMLData:XMLList = new XMLList(xml);
+				var folderCollection:XMLListCollection = new XMLListCollection(XMLData);
+				//				Alert.show(ac.toString());
+				tree.dataProvider = folderCollection;	
+			}
+			private function selAll():void {
+				var text:String=searchText.text;
+				if(text.length>0) {
+					var items:Array=[];
+					var list:XMLList=new XMLList();
+					list[0]=tree.dataProvider[0];    
+					searchItems(list,text,items);
+					tree.selectedItems=items;
+					
+					
+				} else {
+					Alert.show("输入查找的文字","提示信息",4,this,null,iconClass);
+				}
+			}
+			private function searchItems(list:XMLList,find:String,items:Array):void {
+				for(var i:int=0;i<list.length();i++) {
+					var one:XML=list[i];
+					var label:String=one.@label;
+					if(label==searchText.text){tree.firstVisibleItem =one;}
+					if(label!=null && label.indexOf(find)>=0) {
+						//tree.firstVisibleItem =one;
+						tree.expandItem(one,true,true);
+						var parXML:XML = one;
+						while(parXML.parent()!=null){
+							parXML = parXML.parent();
+							tree.expandItem(parXML,true,true);
+						}
+						items.push(one);
+					}
+					searchItems(one.children(),find,items);
+				}}
+			public function treeChanged(event:Event):void {
+				selectedNode=Tree(event.target).selectedItem as XML;
+				selectedvalue=selectedNode.@label;
+			}
+			public function viewPraventItem(e:Event):void
+			{  
+				//获取选中目录    
+				selectedvalue=selectedNode.@label;
+				var ITEM_CLICK:String="item_click";
+				this.dispatchEvent(new MyClickEvent(ITEM_CLICK));
+			}
+			
+			public function set tc(f:Function){
+				this._tc=f;
+			}
+			public function closewindow(event:MyClickEvent){
+				this._tc(selectedvalue);
+				var transfer:String="transfer";
+				this.dispatchEvent(new MyClickEvent(transfer));	
+				PopUpManager.removePopUp(this)
+			}
+			
+		]]>
+	</mx:Script>
+
+	<mx:HBox id="explorerPane" width="100%" height="100%" verticalGap="0" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		<mx:VBox id="treeCanvas" width="100%" height="100%" horizontalScrollPolicy="auto" verticalScrollPolicy="auto">
+			<mx:HBox width="100%" height="3%">
+				<ui:SearchTextInput id="searchText" styleName="finderInput" width="130" height="100%"  />
+				<mx:Button width="50" height="100%"  click="selAll()" icon = "@Embed(source='assets/images/rootalarm/search.png')">
+				</mx:Button>
+			</mx:HBox>
+			<mx:Tree 
+				id="tree"
+				labelField="@label"
+				width="100%" height="97%"  itemClick="viewPraventItem(event);" change="treeChanged(event)">
+			</mx:Tree>
+		</mx:VBox>
+	</mx:HBox>
+
+</mx:TitleWindow>
+

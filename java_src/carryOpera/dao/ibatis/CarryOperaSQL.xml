@@ -1,0 +1,1421 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="CarrayOpera">
+	<!-- 查看局站落地业务个数 -->
+	<select id="getGroundOperaCountByStationcode" resultClass="int"
+		parameterClass="String">
+	 <![CDATA[ 
+		select count(distinct cir.circuitcode)
+			  from circuit cir
+			 where getstationnamebyportcode(cir.portcode1) =
+			       #stationcode#
+			    or getstationnamebyportcode(cir.portcode2) =
+			       #stationcode#				
+		]]>
+	</select>
+
+	<!-- 查看局站业务个数 -->
+	<select id="getCarryOperaCountByStationcode" resultClass="int"
+		parameterClass="String">
+	 <![CDATA[ 
+			select count(distinct c.circuitcode)
+			  from cctmp c
+			 where (getstationnamebyportcode(c.aptp) = #stationcode# or
+			       getstationnamebyportcode(c.zptp) = #stationcode#)
+		]]>
+	</select>
+	<!-- 查看局站落地业务 -->
+	<select id="getGroundOperaByStationcode" resultClass="carryOpera.model.CarryOperaModel"
+		parameterClass="java.util.HashMap">
+		select *
+		from (select rownum no,
+		circuitcode,
+		rate,
+		portserialno1,
+		slot1,
+		portserialno2,
+		slot2,
+		username,
+		transrate,
+		remark
+		from (select distinct cir.circuitcode,
+		cir.rate as rate,
+		cir.portserialno1 portserialno1,
+		cir.slot1 slot1,
+		cir.portserialno2 portserialno2,
+		cir.slot2 slot2,
+		cir.username username,
+		cir.rate transrate,
+		cir.remark remark
+		from circuit cir
+		where (getstationnamebyportcode(cir.portcode1) =
+		#stationcode# or
+		getstationnamebyportcode(cir.portcode2) =
+		#stationcode#)
+
+		))
+		where no > #start#
+		and no &lt;
+			    = #end#
+    </select>	
+	<!-- 查看局站业务 -->
+	<select id="getCarryOperaByStationcode" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">	
+			select *
+      from (select rownum no,
+                   circuitcode,
+                   rate,
+                   portserialno1,
+                   slot1,
+                   portserialno2,
+                   slot2,
+                   username,
+                   transrate,
+                   remark,
+                   islorduse
+              from (select distinct mn.circuitcode,
+                                    cir.rate as rate,
+                                    cir.portserialno1 portserialno1,
+                                    cir.slot1,
+                                    cir.portserialno2 portserialno2,
+                                    cir.slot2 slot2,
+                                    cir.username username,
+                                    cir.rate transrate,
+                                    cir.remark remark,
+                                    decode(getlordusecount(mn.label),null,'否',0,'否','是') islorduse
+                      from (select distinct m.*
+                              from (select c.*, tp.label
+                                      from cctmp c, en_topolink tp
+                                     where c.aptp = tp.aendptp
+                                        or c.zptp = tp.zendptp) m,
+                                   (select c.*, tp.label
+                                      from cctmp c, en_topolink tp
+                                     where c.aptp = tp.zendptp
+                                        or c.zptp = tp.zendptp) n
+                             where m.label = n.label
+		                           and m.circuitcode = n.circuitcode) mn,
+		                       circuit cir
+		                 where (getstationnamebyportcode(mn.aptp) =
+		                       #stationcode# or
+		                       getstationnamebyportcode(mn.zptp) =
+		                       #stationcode#)
+		                   and mn.circuitcode = cir.circuitcode))
+		where no > #start#
+			and no &lt;= #end#
+
+
+    </select>
+	
+	
+		<!-- 查看设备落地业务个数 -->
+	<select id="getGroundOperaCountByEquipcode" resultClass="int" parameterClass="String">
+	 <![CDATA[ 
+			select count(distinct cir.circuitcode)
+			  from circuit cir
+			 where getequipcodebyportid(cir.portserialno1) = #equipcode#
+			    or getequipcodebyportid(cir.portserialno2) = #equipcode#
+		]]>	
+	</select>		
+	
+	
+	
+		<!-- 查看设备业务个数 -->
+	<select id="getCarryOperaCountByEquipcode" resultClass="int" parameterClass="String">
+	 <![CDATA[ 
+		SELECT count(*)
+		FROM ( SELECT DISTINCT CIR.CIRCUITCODE,
+                                CIR.RATE,
+                                CIR.PORTSERIALNO1,
+                                CIR.X_PURPOSE,
+                                gettimeslot373(CIR.SLOT1, CIR.rate) SLOT1,
+                                CIR.PORTSERIALNO2,
+                                gettimeslot373(CIR.SLOT2, CIR.rate) SLOT2,
+                                CIR.USERNAME,
+                                CIR.RATE transrate,
+                                CIR.REMARK,
+                                '' islorduse
+                  from (select *
+                          from circuit t
+                         where t.circuitcode in
+                               (select distinct t.circuitcode
+                                  from circuit_cc t
+                                 where t.equipcode = #equipcode# and t.circuitcode  in (select b.circuitcode from business_circuit b ))) CIR) 
+                 
+		]]>	
+		</select>
+	<!-- 查看设备落地业务 -->
+	<select id="getGroundOperaByEquipcode" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+		select *
+		  from (select rownum no,
+		               circuitcode,
+		               rate,
+		               portserialno1,
+		               slot1,
+		               portserialno2,
+		               slot2,
+		               username,
+		               transrate,
+		               remark,
+		               x_purpose
+		          from (select distinct cir.circuitcode,
+		                                getxtxx(cir.rate) as rate,
+		                                getportlabellite(cir.portserialno1) portserialno1,
+		                                gettimeslot373(cir.slot1, getxtxx(cir.rate)) slot1,
+		                                getportlabellite(cir.portserialno2) portserialno2,
+		                                gettimeslot373(cir.slot2, getxtxx(cir.rate)) slot2,
+		                                cir.username username,
+		                                getxtxx(cir.rate) transrate,
+		                                cir.remark remark,
+		                                cir.x_purpose x_purpose
+		                  from circuit cir                
+		                 where getequipcodebyportid(cir.portserialno1) =
+		                       #equipcode#
+		                    or getequipcodebyportid(cir.portserialno2) =
+		                       #equipcode#))
+		 where no > #start#
+		   and no &lt;
+		= #end#
+               
+				
+    </select>	
+	<!-- 查看设备业务 -->
+	<select id="getCarryOpera_Flex" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+	<!--  
+		 select *
+		from (SELECT ROWNUM no, T.*
+		FROM (SELECT DISTINCT CIR.CIRCUITCODE,
+		CIR.RATE,
+		CIR.PORTSERIALNO1,
+		CIR.X_PURPOSE,
+		gettimeslot373(CIR.SLOT1, CIR.rate) SLOT1,
+		CIR.PORTSERIALNO2,
+		gettimeslot373(CIR.SLOT2, CIR.rate) SLOT2,
+		CIR.USERNAME,
+		CIR.RATE transrate,
+		CIR.REMARK,
+		'' islorduse
+		FROM CIRCUIT_CC C, CIRCUIT CIR
+		WHERE C.CIRCUITCODE = CIR.CIRCUITCODE(+)
+		AND C.EQUIPCODE = #equipcode#) T)
+		 where no > #start#
+		   and no &lt;= #end#
+		-->
+		select *
+			  from (SELECT ROWNUM no, T.*
+			          FROM (SELECT DISTINCT CIR.CIRCUITCODE,
+                                CIR.RATE,
+                                getequipnamebyportid(CIR.portserialno1)||getportlabelwithoutequipname(CIR.portserialno1) PORTSERIALNO1,
+                                decode(CIR.X_PURPOSE,null,'其它业务', CIR.X_PURPOSE) X_PURPOSE,
+                                gettimeslot373(CIR.SLOT1, CIR.rate) SLOT1,
+                                getequipnamebyportid(CIR.portserialno2)||getportlabelwithoutequipname(CIR.portserialno2) PORTSERIALNO2,
+                                gettimeslot373(CIR.SLOT2, CIR.rate) SLOT2,
+                                CIR.USERNAME,
+                                CIR.RATE transrate,
+                                CIR.REMARK,
+                                '' islorduse
+                  from (select *
+                          from circuit t
+                         where t.circuitcode in
+                               (select distinct t.circuitcode
+                                  from circuit_cc t
+                                 where t.equipcode = #equipcode# and t.circuitcode  in (select b.circuitcode from business_circuit b ))) CIR) T)
+			 where no > #start#
+			   and no &lt;= #end#
+    </select>
+     <!-- 查看局站落地业务按速率的分组 -->
+	<select id="getGroundOperaCountByStationCodeAndRate" resultClass="java.util.HashMap" parameterClass="String">
+		select count(distinct cir.circuitcode) num, cir.rate as rate
+		  from circuit cir
+		 where getstationnamebyportcode(cir.portcode1) =
+		       #stationcode#
+		    or getstationnamebyportcode(cir.portcode2) =
+		       #stationcode#
+		 group by cir.rate			      
+    </select>
+     <!-- 查看局站业务按速率的分组 -->
+	<select id="getOperaCountByStationCodeAndRate" resultClass="java.util.HashMap" parameterClass="String">
+		select count(distinct c.circuitcode) num, cir.rate as rate
+		  from cctmp c, circuit cir
+		 where (getstationnamebyportcode(c.aptp) = #stationcode# or
+		       getstationnamebyportcode(c.zptp) = #stationcode#)
+		   and c.circuitcode = cir.circuitcode
+		 group by cir.rate			  	   
+    </select>
+       <!-- 查看设备落地业务按速率的分组 -->
+	<select id="getGroundOperaCountByEquipCodeAndRate" resultClass="java.util.HashMap" parameterClass="String">
+		select count(distinct cir.circuitcode) num, getxtxx(cir.rate) as rate
+		  from circuit cir
+		 where getequipcodebyportid(cir.portserialno1) = #equipcode#
+		    or getequipcodebyportid(cir.portserialno2) = #equipcode#
+		 group by cir.rate
+    </select>
+    <!-- 查看设备业务按速率的分组 -->
+	<select id="getOperaCountByEquipCodeAndRate" resultClass="java.util.HashMap" parameterClass="String">
+		select count(distinct c.circuitcode) num, getxtxx(cir.rate) as rate
+		  from CIRCUIT_CC c, equiplogicport l1, equiplogicport l2, circuit cir
+		 where c.tp_id_a = l1.logicport
+		   and c.tp_id_z = l2.logicport
+		   and (l1.equipcode = #equipcode# or
+		       l2.equipcode = #equipcode#)
+		   and c.circuitcode = cir.circuitcode
+		 group by cir.rate	   
+    </select>
+     <!-- 查看端口落地业务按速率的分组 -->
+	<select id="getGroundOperaCountByPortAndRate" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[
+			select count(distinct cir.circuitcode) num, getxtxx(cir.rate) as rate
+			      from circuit cir
+			     where (cir.portserialno1 = #logicport# or
+			           cir.portserialno2 = #logicport#)       
+			     group by cir.rate   		
+		]]>
+    </select>   
+     <!-- 查看端口业务按速率的分组 -->
+	<select id="getOperaCountByPortAndRate" resultClass="java.util.HashMap" parameterClass="String">
+		select count(distinct c.circuitcode) num, getxtxx(cir.rate) as rate
+		  from circuit_cc c, circuit cir
+		 where (c.tp_id_a = #logicport# or
+		       c.tp_id_z = #logicport#)
+		   and c.circuitcode = cir.circuitcode
+		 group by cir.rate   
+    </select>  
+         <!-- 查看机盘落地业务按速率的分组 -->
+	<select id="getGroundOperaCountByPackAndRate" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	<![CDATA[
+			select count(distinct cir.circuitcode) num, getxtxx(cir.rate) as rate
+			  from equiplogicport l1, equiplogicport l2, circuit cir
+			 where cir.portserialno1 = l1.logicport
+			   and cir.portserialno2 = l2.logicport
+			   and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+			       l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+			       (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+			       l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+			 group by cir.rate	
+	]]>				
+    </select> 
+     <!-- 查看机盘业务按速率的分组 -->
+	<select id="getOperaCountByPackAndRate" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		select count(distinct c.circuitcode) num, getxtxx(cir.rate) as rate
+		  from circuit_cc c, equiplogicport l1, equiplogicport l2, circuit cir
+		 where c.tp_id_a = l1.logicport
+		   and c.tp_id_z = l2.logicport
+		   and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+		       l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+		       (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+		       l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+		   and c.circuitcode = cir.circuitcode
+		   group by cir.rate		
+    </select>
+       <!-- 查看局站落地业务按业务分类汇总信息 -->
+	<select id="getStationGroundOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+		select count(distinct cir.circuitcode) value, cir.x_purpose type
+		  from circuit cir
+		 where (getstationnamebyportcode(cir.portcode1) =#stationcode#
+		        or getstationnamebyportcode(cir.portcode2) =#stationcode#)
+		        and cir.x_purpose is not null
+		 group by cir.x_purpose
+
+
+		]]>			
+    </select>    
+    
+     <!-- 查看局站业务按业务分类汇总信息 -->
+	<select id="getStationCarryOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+	 	select count(distinct ct.circuitcode) value , c.x_purpose type
+		   from cctmp ct, circuit c
+		  where ct.circuitcode = c.circuitcode	   
+		    and (getstationnamebyportcode(ct.aptp) = #stationcode# or
+		        getstationnamebyportcode(ct.zptp) = #stationcode#)
+		    and c.x_purpose is not null
+		  group by c.x_purpose
+                 
+		]]>			
+    </select>
+    <!-- 查看局站落地业务按速率分类汇总信息 -->
+	<select id="getStationGroundOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+			select count(distinct cir.circuitcode) value, cir.rate rate
+			  from circuit cir
+			 where (getstationnamebyportcode(cir.portcode1) =#stationcode#
+			        or getstationnamebyportcode(cir.portcode2) =#stationcode#)
+			   and cir.rate is not null
+			 group by cir.rate
+
+		]]>			
+    </select>
+    <!-- 查看局站业务按速率分类汇总信息 -->
+	<select id="getStationCarryOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+		  select count(distinct ct.circuitcode) value, c.rate rate
+		   from cctmp ct, circuit c
+		  where ct.circuitcode = c.circuitcode
+		    and (getstationnamebyportcode(ct.aptp) = #stationcode# or
+		        getstationnamebyportcode(ct.zptp) = #stationcode#)
+		    and c.rate is not null
+		  group by c.rate  
+		]]>			
+    </select>
+    <!-- 查看设备落地业务按业务分类汇总信息 -->
+	<select id="getGroundOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+			select count(distinct cir.circuitcode) value, cir.username type
+			  from circuit cir
+			 where (getequipcodebyportid(cir.portserialno1) = #equipcode# or
+			       getequipcodebyportid(cir.portserialno2) = #equipcode#)
+			   and cir.username is not null
+			 group by cir.username      
+                 
+		]]>			
+    </select>    
+    
+    
+    <!-- 查看设备业务按业务分类汇总信息 -->
+	<select id="getCarryOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+       select count(distinct ct.circuitcode) value , c.username type
+	   from cctmp ct, circuit c, equiplogicport l1, equiplogicport l2
+	  where ct.circuitcode = c.circuitcode
+	    and ct.aptp = l1.logicport
+	    and ct.zptp = l2.logicport
+	    and (l1.equipcode = #equipcode# or
+	        l2.equipcode = #equipcode#)
+	    and c.username is not null
+	  group by c.username
+                 
+		]]>			
+    </select>
+    <!-- 查看设备落地业务按速率分类汇总信息 -->
+	<select id="getGroundOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+		select count(distinct cir.circuitcode) value, getxtxx(cir.rate) rate
+		  from circuit cir
+		 where (getequipcodebyportid(cir.portserialno1) = #equipcode# or
+		       getequipcodebyportid(cir.portserialno2) = #equipcode#)
+		   and cir.rate is not null
+		 group by cir.rate   
+		]]>			
+    </select>
+    <!-- 查看设备业务按速率分类汇总信息 -->
+	<select id="getCarryOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+      select count(distinct ct.circuitcode) value, getxtxx(c.rate) rate
+	  from cctmp ct, circuit c, equiplogicport l1, equiplogicport l2
+	 where ct.circuitcode = c.circuitcode
+	   and ct.aptp = l1.logicport
+	   and ct.zptp = l2.logicport
+	   and (l1.equipcode = #equipcode# or
+	       l2.equipcode = #equipcode#)
+	   and c.rate is not null
+	 group by c.rate      
+		]]>			
+    </select>
+    <!-- 查看机盘落地业务个数 -->
+      <select id="getGroundOperaCountByEquipPack" resultClass="int" parameterClass="java.util.HashMap">
+     <![CDATA[ 
+			 select count(distinct cir.circuitcode)
+			  from equiplogicport l1, equiplogicport l2, circuit cir
+			 where cir.portserialno1 = l1.logicport
+			   and cir.portserialno2 = l2.logicport
+			   and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+			       l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+			       (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+			       l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+		]]>			
+    </select>
+        <!-- 查看机盘业务个数-->
+      <select id="getCarryOperaCountByEquipPack" resultClass="int" parameterClass="java.util.HashMap">
+     
+     <!--select count(distinct c.circuitcode)
+		 from circuit_cc c, equiplogicport l1, equiplogicport l2, circuit cir
+		 where c.tp_id_a = l1.logicport
+		   and c.tp_id_z = l2.logicport
+		   and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+		       l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+		       (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+		       l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+		   and c.circuitcode = cir.circuitcode-->
+     <![CDATA[ 
+		select count(*)
+		from (select rownum no,
+		t.* from( SELECT DISTINCT CIR.CIRCUITCODE,
+		CIR.RATE,
+		CIR.PORTSERIALNO1,
+		gettimeslot373(CIR.SLOT1,
+		CIR.rate) SLOT1,
+		CIR.PORTSERIALNO2,
+		gettimeslot373(CIR.SLOT2,
+		CIR.rate) SLOT2,
+		CIR.USERNAME,
+		CIR.RATE transrate,
+		CIR.x_purpose,
+		'' islorduse
+		from circuit_cc     c,
+		equiplogicport l1,
+		equiplogicport l2,
+		CIRCUIT        CIR
+		where c.circuitcode = cir.circuitcode
+		and c.tp_id_a = l1.logicport
+		and c.tp_id_z = l2.logicport
+		and ((l1.equipcode = #equipcode# and
+			l1.frameserial = #frameserial# and
+			l1.slotserial = #slotserial# and
+			l1.packserial = #packserial#) or
+			(l2.equipcode = #equipcode# and
+			l2.frameserial = #frameserial# and
+			l2.slotserial = #slotserial# and
+			l2.packserial = #packserial#))
+		and c.circuitcode  in (select b.circuitcode from business_circuit b )
+		)    t)
+		]]>			
+    </select>
+    <!-- 查看机盘落地业务 -->
+	<select id="getGroundOperaByEquipPack" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+
+			select *
+			  from (select rownum no,
+			               circuitcode,
+			               rate,
+			               portserialno1,
+			               slot1,
+			               portserialno2,
+			               slot2,
+			               username,
+			               transrate,
+			               remark
+			          from (select distinct cir.circuitcode,
+			                                getxtxx(cir.rate) as rate,
+			                                getportlabellite(cir.portserialno1) portserialno1,
+			                                gettimeslot373(cir.slot1, getxtxx(cir.rate)) slot1,
+			                                getportlabellite(cir.portserialno2) portserialno2,
+			                                gettimeslot373(cir.slot2, getxtxx(cir.rate)) slot2,
+			                                cir.username username,
+			                                getxtxx(cir.rate) transrate,
+			                                cir.x_purpose remark
+			                  from equiplogicport l1, equiplogicport l2, circuit cir
+			                 where cir.portserialno1 = l1.logicport
+			                   and cir.portserialno2 = l2.logicport
+			                   and ((l1.equipcode = #equipcode# and
+			                       l1.frameserial = #frameserial# and
+			                       l1.slotserial = #slotserial# and
+			                       l1.packserial = #packserial#) or
+			                       (l2.equipcode = #equipcode# and
+			                       l2.frameserial = #frameserial# and
+			                       l2.slotserial = #slotserial# and
+			                       l2.packserial = #packserial#))))
+			 where no > #start#
+			   and no &lt;
+			= #end#
+	
+
+		
+				
+    </select>
+    <!-- 查看机盘业务 -->
+	<select id="getCarryOperaByEquipPack" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+	select *
+		from (select rownum no,
+		t.* from( SELECT DISTINCT CIR.CIRCUITCODE,
+		CIR.RATE,
+		getequipnamebyportid(CIR.portcode1)||getportlabelwithoutequipname(CIR.portcode1) PORTSERIALNO1,
+		gettimeslot373(CIR.SLOT1,
+		CIR.rate) SLOT1,
+		 getequipnamebyportid(CIR.portcode2)||getportlabelwithoutequipname(CIR.portcode2) PORTSERIALNO2,
+		gettimeslot373(CIR.SLOT2,
+		CIR.rate) SLOT2,
+		CIR.USERNAME,
+		CIR.RATE transrate,
+		CIR.x_purpose,
+		'' islorduse
+		from circuit_cc     c,
+		equiplogicport l1,
+		equiplogicport l2,
+		CIRCUIT        CIR
+		where c.circuitcode = cir.circuitcode
+		and c.tp_id_a = l1.logicport
+		and c.tp_id_z = l2.logicport
+		and ((l1.equipcode = #equipcode# and
+			l1.frameserial = #frameserial# and
+			l1.slotserial = #slotserial# and
+			l1.packserial = #packserial#) or
+			(l2.equipcode = #equipcode# and
+			l2.frameserial = #frameserial# and
+			l2.slotserial = #slotserial# and
+			l2.packserial = #packserial#))
+		and c.circuitcode  in (select b.circuitcode from business_circuit b )
+		)    t)
+	     where no > #start#
+	       and no &lt;= #end#
+	
+		
+				
+    </select>
+<!--机盘落地承载业务按业务类型进行分析    -->
+	<select id="getEquipPackGroundOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	 <![CDATA[ 
+			select count(distinct cir.circuitcode) value, cir.username type
+			  from circuit cir, equiplogicport l1, equiplogicport l2
+			 where cir.portserialno1 = l1.logicport
+			   and cir.portserialno2 = l2.logicport
+			   and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+			       l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+			       (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+			       l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+			   and cir.username is not null
+			 group by cir.username  
+             
+		]]>			
+    </select>    
+
+	<select id="getEquipPackCarryOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	 <![CDATA[ 
+      
+               select count(distinct ct.circuitcode) value, c.username type
+			   from circuit_cc ct, circuit c, equiplogicport l1, equiplogicport l2
+			  where ct.circuitcode = c.circuitcode
+			    and ct.tp_id_a = l1.logicport
+			    and ct.tp_id_z = l2.logicport
+			    and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+			        l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+			        (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+			        l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+			    and c.username is not null
+			  group by c.username   
+		]]>			
+    </select>
+<!--   -->
+	<select id="getEquipPackGroundOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	 <![CDATA[ 
+			select count(distinct cir.circuitcode) value, getxtxx(cir.rate) rate
+			  from circuit cir, equiplogicport l1, equiplogicport l2
+			 where cir.portserialno1 = l1.logicport
+			   and cir.portserialno2 = l2.logicport
+			   and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+			       l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+			       (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+			       l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+			   and cir.rate is not null
+			 group by cir.rate     
+		]]>			
+    </select>
+<!--   -->
+	<select id="getEquipPackCarryOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	 <![CDATA[ 
+      select count(distinct ct.circuitcode) value, getxtxx(c.rate) rate
+		   from circuit_cc ct, circuit c, equiplogicport l1, equiplogicport l2
+		  where ct.circuitcode = c.circuitcode
+		    and ct.tp_id_a = l1.logicport
+		    and ct.tp_id_z = l2.logicport
+		    and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+		        l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+		        (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+		        l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+		    and c.rate is not null
+		  group by c.rate
+		]]>			
+    </select>
+<!--获取端口的落地承载业务的个数-->
+    <select id="getGroundOperaCountByLogicPort" resultClass="int" parameterClass="String">
+     <![CDATA[ 
+			select count(distinct cir.circuitcode)
+			  from circuit cir
+			 where (cir.portserialno1 = #logicport# or
+			       cir.portserialno2 = #logicport#)		
+		]]>			
+    </select>
+    <!--获取端口的承载业务的个数-->
+    <select id="getCarryOperaCountByLogicPort" resultClass="int" parameterClass="String">
+     <!--select count(distinct c.circuitcode)
+		  from circuit_cc c
+		 where (c.tp_id_a = #logicport# or
+		       c.tp_id_z = #logicport#)-->
+     <![CDATA[ 
+		select count(*)
+  from (select rownum no,
+               circuitcode,
+               rate,
+               getequipnamebyportid(portserialno1) ||
+               getportlabelwithoutequipname(portserialno1) portserialno1,
+               slot1,
+               getequipnamebyportid(portserialno2) ||
+               getportlabelwithoutequipname(portserialno2) portserialno2,
+               slot2,
+               username,
+               getxtxx(t.rate) transrate,
+               X_PURPOSE,
+               '否' islorduse
+          from circuit t
+         where t.circuitcode in
+               (select distinct t.circuitcode
+                  from circuit_cc t
+                 where (t.tp_id_a = #logicport#
+                    or t.tp_id_z =#logicport#) and t.circuitcode  in (select b.circuitcode from business_circuit b )))
+		]]>			
+    </select>
+ <!--获取端口的落地承载业务-->
+<select id="getGroundOperaByLogicPort" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+
+		select *
+		  from (select rownum no,
+		               circuitcode,
+		               rate,
+		               portserialno1,
+		               slot1,
+		               portserialno2,
+		               slot2,
+		               username,
+		               transrate,
+		               remark
+		          from (select distinct cir.circuitcode,
+		                                getxtxx(cir.rate) as rate,
+		                                getportlabellite(cir.portserialno1) portserialno1,
+		                                gettimeslot373(cir.slot1, getxtxx(cir.rate)) slot1,
+		                                getportlabellite(cir.portserialno2) portserialno2,
+		                                gettimeslot373(cir.slot2, getxtxx(cir.rate)) slot2,
+		                                cir.username username,
+		                                getxtxx(cir.rate) transrate,
+		                                cir.remark remark
+		                  from circuit cir
+		                 where (cir.portserialno1 = #logicport# or
+		                       cir.portserialno2 = #logicport#)))
+		 where no > #start#
+		   and no &lt;
+		= #end#
+
+
+</select>
+<!--获取端口的承载业务-->
+<select id="getCarryOperaByLogicPort" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+	 
+<!--		select *-->
+<!--		  from (select rownum no,-->
+<!--		               circuitcode,-->
+<!--		               rate,-->
+<!--		               getequipnamebyportid(portserialno1)||getportlabelwithoutequipname(portserialno1) portserialno1,-->
+<!--		               slot1,-->
+<!--		               getequipnamebyportid(portserialno2)||getportlabelwithoutequipname(portserialno2) portserialno2,-->
+<!--		               slot2,-->
+<!--		               username,-->
+<!--		               transrate,-->
+<!--		               X_PURPOSE,-->
+<!--                   islorduse-->
+<!--		          from (select distinct mn.circuitcode,-->
+<!--		                                getxtxx(cir.rate) as rate,-->
+<!--		                                cir.portcode1 portserialno1,-->
+<!--		                                gettimeslot373(cir.slot1, getxtxx(cir.rate)) slot1,-->
+<!--		                                cir.portcode2 portserialno2,-->
+<!--		                                gettimeslot373(cir.slot2, getxtxx(cir.rate)) slot2,-->
+<!--		                                cir.username username,-->
+<!--		                                getxtxx(cir.rate) transrate,-->
+<!--		                                cir.X_PURPOSE,-->
+<!--                                    decode(getlordusecount(mn.label),null,'否',0,'否','是') islorduse-->
+<!--		                  from (select distinct m.*-->
+<!--                          from (select c.*, tp.label-->
+<!--                                  from circuit_cc c, en_topolink tp-->
+<!--                                 where c.tp_id_a = tp.aendptp-->
+<!--                                    or c.tp_id_z = tp.aendptp) m,-->
+<!--                               (select c.*, tp.label-->
+<!--                                  from circuit_cc c, en_topolink tp-->
+<!--                                 where c.tp_id_a = tp.zendptp-->
+<!--                                    or c.tp_id_z = tp.zendptp) n-->
+<!--                         where m.label = n.label-->
+<!--                           and m.circuitcode = n.circuitcode) mn, circuit cir-->
+<!--		                   where (mn.tp_id_a = #logicport# or-->
+<!--		                       mn.tp_id_z = #logicport#)-->
+<!--		                   and mn.circuitcode = cir.circuitcode-->
+<!--		                   ))-->
+<!--		 where no > #start#-->
+<!--		   and no &lt;= #end#-->
+		select *
+  from (select rownum no,
+               circuitcode,
+               rate,
+               getequipnamebyportid(portserialno1) ||
+               getportlabelwithoutequipname(portserialno1) portserialno1,
+               slot1,
+               getequipnamebyportid(portserialno2) ||
+               getportlabelwithoutequipname(portserialno2) portserialno2,
+               slot2,
+               username,
+               getxtxx(t.rate) transrate,
+               X_PURPOSE,
+               '否' islorduse
+          from circuit t
+         where t.circuitcode in
+               (select distinct t.circuitcode
+                  from circuit_cc t
+                 where (t.tp_id_a = #logicport#
+                    or t.tp_id_z = #logicport#) and t.circuitcode  in (select b.circuitcode from business_circuit b )))
+ where no > #start#
+   and no &lt;= #end#
+		
+    </select>
+      <!-- 查看端口落地承载业务按业务分类汇总信息 -->
+	<select id="getLogicportGroundOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+			select count(distinct cir.circuitcode) value, cir.username type
+			  from circuit cir
+			 where (cir.portserialno1 = #logicport# or
+			       cir.portserialno2 = #logicport#)
+			   and cir.username is not null
+			 group by cir.username       
+                 
+		]]>			
+    </select>
+    <!-- 查看端口承载业务按业务分类汇总信息 -->
+	<select id="getLogicportCarryOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+       select count(distinct ct.circuitcode) value, c.username type
+	   from circuit_cc ct, circuit c
+	  where ct.circuitcode = c.circuitcode
+	    and (ct.tp_id_a = #logicport# or
+	        ct.tp_id_z = #logicport#)
+	    and c.username is not null
+	  group by c.username
+                 
+		]]>			
+    </select>
+    <!-- 查看端口落地承载业务按速率分类汇总信息 -->
+	<select id="getLogicportGroundOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+		 select count(distinct cir.circuitcode) value, getxtxx(cir.rate) rate
+		  from circuit cir
+		 where (cir.portserialno1 = #logicport# or
+		       cir.portserialno2 = #logicport#)
+		   and cir.rate is not null
+		 group by cir.rate
+		]]>			
+    </select>
+    <!-- 查看端口承载业务按速率分类汇总信息 -->
+	<select id="getLogicportCarryOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+     	select count(distinct ct.circuitcode) value, getxtxx(c.rate) rate
+	  from circuit_cc ct, circuit c, equiplogicport l1, equiplogicport l2
+	 where ct.circuitcode = c.circuitcode
+	   and ct.tp_id_a = l1.logicport
+	   and ct.tp_id_z = l2.logicport
+	   and (ct.tp_id_a = #logicport# or
+	        ct.tp_id_z = #logicport#)
+	   and c.rate is not null
+	 group by c.rate
+		]]>			
+    </select>
+    <!-- 复用段落地业务的个数 -->
+    <select id="getGroundOperaCountByTopolink" resultClass="int" parameterClass="String">
+	<![CDATA[
+			select count(distinct m.circuitcode)
+			  from (select cir.circuitcode, e.label
+			          from circuit cir, en_topolink e
+			         where (e.aendptp = cir.portserialno1 or
+			               e.aendptp = cir.portserialno2)
+			           and e.label = #label#) m,
+			       (select cir.circuitcode, e.label
+			          from circuit cir, en_topolink e
+			         where (e.zendptp = cir.portserialno1 or
+			               e.zendptp =  cir.portserialno2)
+			           and e.label = #label#) n
+			 where m.circuitcode = n.circuitcode
+			   and m.label = n.label
+	
+	]]>
+
+    </select>   
+    <select id="getCarryOperaCountByTopolink" resultClass="int" parameterClass="String">
+		<!--  
+		select count(distinct c.circuitcode)
+		  from cctmp c
+		 where c.id in (select m.id
+		                  from (select c.id, c.circuitcode, e.label
+		                          from cctmp c, en_topolink e
+		                         where (e.aendptp = c.aptp or e.aendptp = c.zptp)
+		                           and e.label = #label#) m,
+		                       (select c.id, c.circuitcode, e.label
+		                          from cctmp c, en_topolink e
+		                         where (e.zendptp = c.aptp or e.zendptp = c.zptp)
+		                           and e.label = #label#) n
+		                 where m.circuitcode = n.circuitcode
+		                   and m.label = n.label)-->
+		    select count(*)
+      from (select rownum no,
+                   circuitcode,
+                   rate,
+                   portserialno1,
+                   slot1,
+                   portserialno2,
+                   slot2,
+                   username,
+                   transrate,
+                   x_purpose                 
+              from (select distinct mn.circuitcode,
+                                    decode(getxtxx(cir.rate), null, ' 0', getxtxx(cir.rate)) rate,
+                                    cir.portserialno1,
+                                    decode(cir.slot1,
+                                           null,
+                                           ' 0',
+                                           gettimeslot373(cir.slot1, getxtxx(cir.rate))) slot1,
+                                    cir.portserialno2,
+                                    decode(cir.slot2,
+                                           null,
+                                           ' 0',
+                                           gettimeslot373(cir.slot2, getxtxx(cir.rate))) slot2,
+                                    cir.username username,
+                                    getxtxx(cir.rate) transrate,
+                                    cir.x_purpose                                  
+                      from (select distinct m.*
+                          from (select c.*, tp.label
+                                  from CIRCUIT_CC c, en_topolink tp
+                                 where (c.tp_id_a = tp.aendptp
+                                    or c.tp_id_z = tp.aendptp)
+                                    and tp.label = #label#) m,
+                               (select c.*, tp.label
+                                  from CIRCUIT_CC c, en_topolink tp
+                                 where (c.tp_id_a = tp.zendptp
+                                    or c.tp_id_z = tp.zendptp)
+                                    and tp.label =#label#) n
+                         where m.label = n.label
+                           and m.circuitcode = n.circuitcode) mn, circuit cir
+                     where  mn.circuitcode = cir.circuitcode and mn.circuitcode  in (select b.circuitcode from business_circuit b )
+                       ))
+
+    </select>
+       <!--获取复用段的落地承载业务-->
+    <select id="getGroundOperaByTopoLink" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+
+			select *
+			  from (select rownum no,
+			               circuitcode,
+			               rate,
+			               portserialno1,
+			               slot1,
+			               portserialno2,
+			               slot2,
+			               username,
+			               transrate,
+			               remark
+			          from (select distinct cir.circuitcode,
+			                                decode(getxtxx(cir.rate),null,'0',getxtxx(cir.rate)) rate,
+			                                getportlabellite(cir.portserialno1) portserialno1,
+			                                decode(cir.slot1,null,'0',gettimeslot373(cir.slot1,getxtxx(cir.rate))) slot1,
+			                                getportlabellite(cir.portserialno2) portserialno2,
+			                                decode(cir.slot2,null,'0',gettimeslot373(cir.slot2,getxtxx(cir.rate))) slot2,
+			                                cir.username username,
+			                                getxtxx(cir.rate) transrate,
+			                                cir.remark remark
+			                  from circuit cir,
+			                       (select distinct m.circuitcode
+			                          from (select c.circuitcode, e.label
+			                                  from circuit c, en_topolink e
+			                                 where (e.aendptp = c.portserialno1 or e.aendptp = c.portserialno2)
+			                                   and e.label = #label#) m,
+			                               (select c.circuitcode, e.label
+			                                  from circuit c, en_topolink e
+			                                 where (e.zendptp = c.portserialno1 or e.zendptp = c.portserialno2)
+			                                   and e.label = #label#) n
+			                         where m.circuitcode = n.circuitcode
+			                           and m.label = n.label) z
+			                 where cir.circuitcode = z.circuitcode))
+			 where no > #start#
+			   and no &lt;
+			= #end#
+    
+
+
+
+    </select>
+    <!--获取复用段的承载业务-->
+    <select id="getCarryOperaByTopoLink" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+    <!--   
+    select *
+      from (select rownum no,
+                   circuitcode,
+                   rate,
+                   portserialno1,
+                   slot1,
+                   portserialno2,
+                   slot2,
+                   username,
+                   transrate,
+                   remark                 
+              from (select distinct mn.circuitcode,
+                                    decode(getxtxx(cir.rate), null, ' 0', getxtxx(cir.rate)) rate,
+                                    cir.portserialno1,
+                                    decode(cir.slot1,
+                                           null,
+                                           ' 0',
+                                           gettimeslot373(cir.slot1, getxtxx(cir.rate))) slot1,
+                                    cir.portserialno2,
+                                    decode(cir.slot2,
+                                           null,
+                                           ' 0',
+                                           gettimeslot373(cir.slot2, getxtxx(cir.rate))) slot2,
+                                    cir.username username,
+                                    getxtxx(cir.rate) transrate,
+                                    cir.remark remark                                   
+                      from (select distinct m.*
+                          from (select c.*, tp.label
+                                  from cctmp c, en_topolink tp
+                                 where (c.aptp = tp.aendptp
+                                    or c.zptp = tp.zendptp)
+                                    and tp.label = #label#) m,
+                               (select c.*, tp.label
+                                  from cctmp c, en_topolink tp
+                                 where (c.aptp = tp.zendptp
+                                    or c.zptp = tp.zendptp)
+                                    and tp.label = #label#) n
+                         where m.label = n.label
+                           and m.circuitcode = n.circuitcode) mn, circuit cir
+                     where  mn.circuitcode = cir.circuitcode
+                       ))
+     where no > #start#
+       and no &lt;= #end#-->
+       select *
+      from (select rownum no,
+                   circuitcode,
+                   rate,
+                   getequipnamebyportid(portserialno1)||getportlabelwithoutequipname(portserialno1) portserialno1,
+                   slot1,
+                   getequipnamebyportid(portserialno2)||getportlabelwithoutequipname(portserialno2) portserialno2,
+                   slot2,
+                   username,
+                   transrate,
+                   x_purpose                 
+              from (select distinct mn.circuitcode,
+                                    decode(getxtxx(cir.rate), null, ' 0', getxtxx(cir.rate)) rate,
+                                    cir.portserialno1,
+                                    decode(cir.slot1,
+                                           null,
+                                           ' 0',
+                                           gettimeslot373(cir.slot1, getxtxx(cir.rate))) slot1,
+                                    cir.portserialno2,
+                                    decode(cir.slot2,
+                                           null,
+                                           ' 0',
+                                           gettimeslot373(cir.slot2, getxtxx(cir.rate))) slot2,
+                                    cir.username username,
+                                    getxtxx(cir.rate) transrate,
+                                    cir.x_purpose                                  
+                      from (select distinct m.*
+                          from (select c.*, tp.label
+                                  from CIRCUIT_CC c, en_topolink tp
+                                 where (c.tp_id_a = tp.aendptp
+                                    or c.tp_id_z = tp.aendptp)
+                                    and tp.label = #label#) m,
+                               (select c.*, tp.label
+                                  from CIRCUIT_CC c, en_topolink tp
+                                 where (c.tp_id_a = tp.zendptp
+                                    or c.tp_id_z = tp.zendptp)
+                                    and tp.label =#label#) n
+                         where m.label = n.label
+                           and m.circuitcode = n.circuitcode) mn, circuit cir
+                     where  mn.circuitcode = cir.circuitcode and mn.circuitcode  in (select b.circuitcode from business_circuit b )
+                       ))
+    where no > #start#
+       and no &lt;= #end#
+    </select>
+    <!-- 查看复用段落地承载业务按速率分类汇总信息 -->
+    <select id="getGroundOperaCountByTopolinkAndRate" resultClass="java.util.HashMap" parameterClass="String">
+	<![CDATA[
+	
+		select count(distinct m.circuitcode) num,
+		       decode(getxtxx(m.rate), null, ' 0', getxtxx(m.rate)) rate
+		  from (select c.circuitcode, e.label, c.rate
+		          from circuit c, en_topolink e
+		         where (e.aendptp = c.portserialno1 or e.aendptp = c.portserialno2)
+		           and e.label = #label#) m,
+		       (select c.circuitcode, e.label, c.rate
+		          from circuit c, en_topolink e
+		         where (e.zendptp = c.portserialno1 or e.zendptp = c.portserialno2)
+		           and e.label = #label#) n
+		 where m.circuitcode = n.circuitcode
+		   and m.label = n.label
+		 group by m.rate
+	
+	]]>
+    </select>
+ <!-- 查看复用段承载业务按速率分类汇总信息 -->
+    <select id="getOperaCountByTopolinkAndRate" resultClass="java.util.HashMap" parameterClass="String">
+		select count(distinct c.circuitcode) num,
+		       decode(getxtxx(cir.rate), null, ' 0', getxtxx(cir.rate)) rate
+		  from CIRCUIT_CC c, circuit cir
+		 where c.id in
+		       (select m.id
+		          from (select c.id, c.circuitcode, e.label
+		                  from CIRCUIT_CC c, en_topolink e
+		                 where (e.aendptp = c.tp_id_a or e.aendptp = c.tp_id_z)
+		                   and e.label =#label#) m,
+		               (select c.id, c.circuitcode, e.label
+		                  from CIRCUIT_CC c, en_topolink e
+		                 where (e.zendptp = c.tp_id_a or e.zendptp = c.tp_id_z)
+		                   and e.label =#label#) n
+		         where m.circuitcode = n.circuitcode
+		           and m.label = n.label)
+		   and c.circuitcode = cir.circuitcode
+		 group by cir.rate
+    </select>
+      <!-- 查看复用段落地承载业务按业务分类汇总信息 -->
+	<select id="getTopolinkGroundOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+			select count(distinct m.circuitcode), m.username type
+			  from (select cir.circuitcode, cir.username, e.label
+			          from circuit cir, en_topolink e
+			         where (e.aendptp = cir.portserialno1 or
+			               e.aendptp = cir.portserialno2)
+			           and e.label = #label#) m,
+			       (select cir.circuitcode, cir.username, e.label
+			          from circuit cir, en_topolink e
+			         where (e.zendptp = cir.portserialno1 or
+			               e.zendptp = cir.portserialno2)
+			           and e.label = #label#) n
+			 where m.circuitcode = n.circuitcode
+			      and m.label = n.label
+				  and m.username is not null
+				 group by m.username
+                 
+		]]>			
+    </select>
+    <!-- 查看复用段承载业务按业务分类汇总信息 -->
+	<select id="getTopolinkCarryOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+      select count(distinct a.circuitcode) value, b.username type
+	  from (select m.id, m.circuitcode, m.label
+	          from (select c.id, c.circuitcode, e.label
+	                  from cctmp c, en_topolink e
+	                 where (e.aendptp = c.aptp or e.aendptp = c.zptp)
+	                   and e.label = #label#) m,
+	               (select c.id, c.circuitcode, e.label
+	                  from cctmp c, en_topolink e
+	                 where (e.zendptp = c.aptp or e.zendptp = c.zptp)
+	                   and e.label = #label#) n
+	         where m.circuitcode = n.circuitcode
+	           and m.label = n.label) a,
+	       circuit b
+	 where a.circuitcode = b.circuitcode
+	 and b.username is not null
+	 group by b.username
+                 
+		]]>			
+    </select>
+   <!-- 查看复用段落地承载业务按速率分类汇总信息 -->
+	<select id="getTopolinkGroundOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+			select count(distinct m.circuitcode) value, getxtxx(m.rate) rate
+			  from (select cir.circuitcode, cir.rate, e.label
+			          from circuit cir, en_topolink e
+			         where (e.aendptp = cir.portserialno1 or
+			               e.aendptp = cir.portserialno2)
+			           and e.label = #label#) m,
+			       (select cir.circuitcode, cir.rate, e.label
+			          from circuit cir, en_topolink e
+			         where (e.zendptp = cir.portserialno1 or
+			               e.zendptp = cir.portserialno2)
+			           and e.label = #label#) n
+			 where m.circuitcode = n.circuitcode
+			   and m.label = n.label
+			   and m.rate is not null
+			 group by m.rate			
+		]]>			
+    </select>
+    <!-- 查看复用段承载业务按速率分类汇总信息 -->
+	<select id="getTopolinkCarryOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+     select count(distinct a.circuitcode) value, getxtxx(b.rate) rate
+	  from (select m.id, m.circuitcode, m.label
+	          from (select c.id, c.circuitcode, e.label
+	                  from cctmp c, en_topolink e
+	                 where (e.aendptp = c.aptp or e.aendptp = c.zptp)
+	                   and e.label = #label#) m,
+	               (select c.id, c.circuitcode, e.label
+	                  from cctmp c, en_topolink e
+	                 where (e.zendptp = c.aptp or e.zendptp = c.zptp)
+	                   and e.label = #label#) n
+	         where m.circuitcode = n.circuitcode
+	           and m.label = n.label) a,
+	       circuit b
+	 where a.circuitcode = b.circuitcode
+	   and b.rate is not null
+	 group by b.rate
+     
+		]]>			
+    </select>
+        <!-- 获取光缆段中光纤的端口信息 -->
+	<select id="getPortsByOcable" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+		select f.aendeqport,
+		       decode(getfiberendport(f.aendodfport, f.fibercode),null,' ',getfiberendport(f.aendodfport, f.fibercode)) aendodfport,
+		       f.zendeqport,
+		       decode(getfiberendport(f.zendodfport, f.fibercode),null,' ',getfiberendport(f.zendodfport, f.fibercode)) zendodfport
+		  from en_fiber f
+		where f.ocablecode = #ocablecode#
+		 order by f.fibercode               
+		]]>			
+    </select>
+    <select id="getCarryOperaCountByTwoPort" resultClass="int" parameterClass="java.util.HashMap">
+	
+		select count(distinct c.circuitcode)
+		  from cctmp c
+		 where (c.aptp = '$aendport$' and c.zptp = '$zendport$')
+		    or (c.aptp = 'zendport' and c.zptp = '$aendport$')
+			
+
+    </select>
+<!--获取光纤的落地业务个数    -->
+    <select id="getGroundOperaCountByTwoPort" resultClass="int" parameterClass="java.util.HashMap">
+	
+		select count(distinct c.circuitcode)
+		          from circuit c
+		         where (c.portserialno1 = '$aendport$' and c.portserialno2 = '$zendport$')
+		            or (c.portserialno1 = '$zendport$' and c.portserialno2 = '$aendport$') 			
+			
+
+    </select>
+     <!--获取光纤的承载业务-->
+    <select id="getCarrayOperaByTwoPort" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+    select *
+      from (select rownum no,
+                   circuitcode,
+                   rate,
+                   portserialno1,
+                   slot1,
+                   portserialno2,
+                   slot2,
+                   username,
+                   transrate,
+                   remark
+              from (select distinct c.circuitcode,
+                                    decode(getxtxx(cir.rate), null, ' 0', getxtxx(cir.rate)) rate,
+                                    getportlabellite(cir.portserialno1) portserialno1,
+                                    decode(cir.slot1,
+                                           null,
+                                           ' 0',
+                                           gettimeslot373(cir.slot1, getxtxx(cir.rate))) slot1,
+                                    getportlabellite(cir.portserialno2) portserialno2,
+                                    decode(cir.slot2,
+                                           null,
+                                           ' 0',
+                                           gettimeslot373(cir.slot2, getxtxx(cir.rate))) slot2,
+                                    cir.username username,
+                                    getxtxx(cir.rate) transrate,
+                                    cir.remark remark
+                      from cctmp c, circuit cir
+                     where ((c.aptp='$aendport$' and c.zptp='$zendport$') or 
+                     (c.aptp='$zendport$' and c.zptp='$aendport$'))
+                       and c.circuitcode = cir.circuitcode
+                       ))
+     where no > #start#
+       and no &lt;= #end#     
+
+
+    </select>
+         <!--获取光纤的落地承载业务-->
+    <select id="getGroundOperaByTwoPort" resultClass="carryOpera.model.CarryOperaModel" parameterClass="java.util.HashMap">
+		select *
+		  from (select rownum no,
+		               circuitcode,
+		               rate,
+		               portserialno1,
+		               slot1,
+		               portserialno2,
+		               slot2,
+		               username,
+		               transrate,
+		               remark
+		          from (select distinct cir.circuitcode,
+		                                decode(getxtxx(cir.rate),
+		                                       null,
+		                                       ' 0',
+		                                       getxtxx(cir.rate)) rate,
+		                                getportlabellite(cir.portserialno1) portserialno1,
+		                                decode(cir.slot1,
+		                                       null,
+		                                       ' 0',
+		                                       gettimeslot373(cir.slot1,
+		                                                      getxtxx(cir.rate))) slot1,
+		                                getportlabellite(cir.portserialno2) portserialno2,
+		                                decode(cir.slot2,
+		                                       null,
+		                                       ' 0',
+		                                       gettimeslot373(cir.slot2,
+		                                                      getxtxx(cir.rate))) slot2,
+		                                cir.username username,
+		                                getxtxx(cir.rate) transrate,
+		                                cir.remark remark
+		                  from circuit cir
+		                 where ((cir.portserialno1 = '$aendport$' and
+		                       cir.portserialno2 = '$zendport$') or
+		                       (cir.portserialno2 = '$zendport$' and
+		                       cir.portserialno1 = '$aendport$'))))
+		 where no > #start#
+		   and no &lt;
+		= #end#
+    
+
+
+    </select>
+    <select id="getOperaCountByPortsAndRate" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		select count(distinct c.circuitcode) num,
+		       decode(getxtxx(cir.rate), null, ' 0', getxtxx(cir.rate)) rate
+		  from cctmp c, circuit cir
+		 where ((c.aptp = '$aendport$' and c.zptp = '$zendport$') or
+		       (c.aptp = '$zendport$' and c.zptp = '$aendport$'))
+		   and c.circuitcode = cir.circuitcode
+		 group by cir.rate
+    </select>
+    <select id="getGroundOperaCountByPortsAndRate" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		select count(distinct cir.circuitcode) num,
+		       decode(getxtxx(cir.rate), null, ' 0', getxtxx(cir.rate)) rate
+		  from circuit cir
+		 where ((cir.portserialno1 = '$aendport$' and
+		       cir.portserialno2 = '$zendport$') or
+		       (cir.portserialno1 = '$zendport$' and
+		       cir.portserialno2 = '$aendport$'))
+		 group by cir.rate
+    </select>
+    <!--查看设备按设备类型分类汇总信息 -->
+    <select id="getDeviceSummaryByType" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+             select count(distinct eq.equipcode) value, getxtxx(eq.equiptype) equiptype
+             from equipment eq 
+             where stationcode='$stationcode$'
+             group by eq.equiptype 
+                 
+		]]>			
+    </select>
+    
+    <!-- 查看局站业务按业务分类汇总信息 -->
+	<select id="getFiberCarryOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	 <![CDATA[ 
+		select count(distinct ct.circuitcode) value, c.username type
+		  from cctmp ct, circuit c
+		 where ct.circuitcode = c.circuitcode
+		   and ((ct.aptp = #aendport# and ct.zptp = #zendport#) or
+		       (ct.aptp = #zendport# and ct.zptp = #aendport#))
+		   and c.username is not null
+		 group by c.username	 
+                 
+		]]>			
+    </select>
+    
+	<select id="getFiberGroundOperaSummaryByType" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	 <![CDATA[ 
+	 select count(distinct cir.circuitcode) value, cir.username type
+		  from circuit cir
+		 where ((cir.portserialno1 = '$aendport$' and cir.portserialno2 = '$zendport$') or
+		       (cir.portserialno1 = '$zendport$' and cir.portserialno2 ='$aendport$'))
+		   and cir.username is not null
+		 group by cir.username
+		]]>			
+    </select>
+    <!-- 查看局站业务按速率分类汇总信息 -->
+	<select id="getFiberCarryOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	 <![CDATA[ 
+		select count(distinct ct.circuitcode) value, c.rate rate
+		  from cctmp ct, circuit c
+		 where ct.circuitcode = c.circuitcode
+		   and ((ct.aptp = #aendport# and ct.zptp = #zendport#) or
+		       (ct.zptp = #aendport# and ct.aptp = #zendport#))
+		   and c.rate is not null
+		 group by c.rate		
+		]]>			
+    </select>
+	<select id="getFiberGroundOperaSummaryByRate" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+	 <![CDATA[ 
+		select count(distinct c.circuitcode) value, getxtxx(c.rate) rate
+		  from circuit c
+		 where ((c.portserialno1 ='$aendport$' and c.portserialno2 = '$zendport$') or
+		       (c.portserialno2 = '$aendport$' and c.portserialno1 = '$zendport$'))
+		   and c.rate is not null
+		 group by c.rate			
+		]]>			
+    </select>
+    <select id="getCarryOperaByLogicPortAndSlot" parameterClass="map" resultClass="carryOpera.model.CarryOperaModel">
+    	select *
+			  from (select rownum no,
+			               circuitcode,
+			               rate,
+			               portserialno1,
+			               slot1,
+			               portserialno2,
+			               slot2,
+			               username,
+			               transrate,
+			               X_PURPOSE,
+			               islorduse
+			          from (select distinct mn.circuitcode,
+			                                getxtxx(cir.rate) as rate,
+			                                cir.portserialno1,
+			                                gettimeslot373(cir.slot1, getxtxx(cir.rate)) slot1,
+			                                cir.portserialno2,
+			                                gettimeslot373(cir.slot2, getxtxx(cir.rate)) slot2,
+			                                cir.username username,
+			                                getxtxx(cir.rate) transrate,
+			                                cir.X_PURPOSE,
+			                                decode(getlordusecount(mn.label),
+			                                       null,
+			                                       '否',
+			                                       0,
+			                                       '否',
+			                                       '是') islorduse
+			                  from (select distinct m.*
+			                          from (select c.*, tp.label
+			                                  from circuit_cc c, en_topolink tp
+			                                 where c.tp_id_a = tp.aendptp
+			                                    or c.tp_id_z = tp.zendptp) m,
+			                               (select c.*, tp.label
+			                                  from circuit_cc c, en_topolink tp
+			                                 where c.tp_id_a = tp.zendptp
+			                                    or c.tp_id_z = tp.zendptp) n
+			                         where m.label = n.label
+			                           and m.circuitcode = n.circuitcode) mn,
+			                       circuit cir
+			                 where ((mn.tp_id_a = #portcode# and mn.ts_a=#slotcode# ) or
+			                      ( mn.tp_id_z = #portcode# and mn.ts_z=#slotcode# ))
+			                   and mn.circuitcode = cir.circuitcode))
+			 where no > #start#
+			   and no &lt;= #end#
+    </select>
+    <select id="getCarryOperaCountByLogicPortAndSlot" parameterClass="map" resultClass="int">
+    	select count(*) from (
+    		select distinct mn.circuitcode,
+                                getxtxx(cir.rate) as rate,
+                                cir.portserialno1,
+                                gettimeslot373(cir.slot1, getxtxx(cir.rate)) slot1,
+                                cir.portserialno2,
+                                gettimeslot373(cir.slot2, getxtxx(cir.rate)) slot2,
+                                cir.username username,
+                                getxtxx(cir.rate) transrate,
+                                cir.X_PURPOSE,
+                                decode(getlordusecount(mn.label),
+                                       null,
+                                       '否',
+                                       0,
+                                       '否',
+                                       '是') islorduse
+                  from (select distinct m.*
+                          from (select c.*, tp.label
+                                  from circuit_cc c, en_topolink tp
+                                 where c.tp_id_a = tp.aendptp
+                                    or c.tp_id_z = tp.zendptp) m,
+                               (select c.*, tp.label
+                                  from circuit_cc c, en_topolink tp
+                                 where c.tp_id_a = tp.zendptp
+                                    or c.tp_id_z = tp.zendptp) n
+                         where m.label = n.label
+                           and m.circuitcode = n.circuitcode) mn,
+                       circuit cir
+                 where ((mn.tp_id_a = #portcode# and mn.ts_a=#slotcode# ) or
+			            ( mn.tp_id_z = #portcode# and mn.ts_z=#slotcode# ))
+                   and mn.circuitcode = cir.circuitcode
+    	)
+    </select>
+    
+    <select id="getOperaCountByPortAndRateAndSlot" parameterClass="map" resultClass="java.util.HashMap">
+    	select count(distinct c.circuitcode) num, getxtxx(cir.rate) as rate
+		  from circuit_cc c, circuit cir
+		 where ((c.tp_id_a = #portcode# and c.ts_a=#slotcode#) or
+		       (c.tp_id_z = #portcode# and c.ts_z=#slotcode# ))
+		   and c.circuitcode = cir.circuitcode
+		 group by cir.rate 
+    </select>
+    
+    </sqlMap>

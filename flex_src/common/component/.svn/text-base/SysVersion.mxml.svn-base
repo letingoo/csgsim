@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="306" height="148"
+				backgroundImage="assets/images/trip_bg.png" backgroundSize="100%">
+	<mx:Script>
+		<![CDATA[
+			import common.other.SuperPanelControl.nl.wv.extenders.panel.PanelWindow;
+			
+			import mx.managers.PopUpManager;			
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="56" y="19" text="南方电网通信网自愈能力仿真系统" width="220" fontWeight="bold" fontSize="13"/>
+	<mx:Label x="59" y="47" text="版本 V1.0" width="79"/>
+	<mx:Label x="59" y="73" text="更新日期:2014年04月04日" width="162"/>
+	<mx:Label x="59" y="99" text="开发者:北京市天元网络技术股份有限公司" width="228" visible="false"/>	
+</mx:Canvas>

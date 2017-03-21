@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="devicepanel">
+<typeAlias alias="CarryOperaModel" type="devicepanel.model.CarryOperaModel"/>
+<typeAlias alias="DevicePortStatsModel" type="devicepanel.model.DevicePortStatsModel"/>
+<typeAlias alias="PortUseStatsModel" type="devicepanel.model.PortUseStatsModel"/>
+<typeAlias alias="PackInfoModel" type="devicepanel.model.PackInfoModel"/>
+    <resultMap id="CarryOperaMap" class="CarryOperaModel">
+        <result column="carryoperaid" property="carryoperaid" />
+        <result column="circuitcode" property="circuitcode" />  
+        <result column="rate" property="rate" /> 
+        <result column="portserialno1" property="portserialno1" /> 
+        <result column="slot1" property="slot1" /> 
+        <result column="portserialno2" property="portserialno2" /> 
+		<result column="slot2" property="slot2" /> 
+		   
+    </resultMap>
+    <resultMap id="DevicePortStatsMap" class="DevicePortStatsModel">
+        <result column="logicport" property="logicport" />
+        <result column="x_capability" property="x_capability" />  
+        <result column="allvc4" property="allvc4" /> 
+        <result column="usrvc4" property="usrvc4" /> 
+        <result column="usrvc12" property="usrvc12" /> 
+        <result column="freevc4" property="freevc4" /> 
+		<result column="rate" property="rate" />   
+    </resultMap>
+    <resultMap id="PortUseStatsMap" class="PortUseStatsModel">
+        <result column="portnum" property="portnum" />
+        <result column="portusenum" property="portusenum" />  
+        <result column="rate" property="rate"/>
+    </resultMap>
+    <!--  
+    <resultMap id="PackInfoMap" class="PackInfoModel">
+    	<result column="equipname" property="equipname"/>
+    	<result column="frameserial" property="frameserial"/>
+    	<result column="slotserial" property="slotserial"/>
+    	<result column="packmodel" property="packmodel"/>
+    	<result column="packserial" property="packserial"/>
+    	<result column="updatedate" property="updatedate"/>
+    	<result column="remark" property="remark"/>
+    	<result column="updateperson" property="updateperson"/>
+    </resultMap>
+    -->
+    <select id="getTransSystem" resultClass="java.util.HashMap">
+		<![CDATA[
+			select t.systemcode ,t.sysname from transsystem t where t.systemcode not in ('虚拟系统', '京沪微波', '宜宁微波', '载波', 'PCM网络', '华东本地/光', '京汉/微波') order by t.sysname
+		 ]]> 
+	</select>
+	<select id="getDeviceBySystemcode" resultClass="java.util.HashMap" parameterClass="String">
+		<![CDATA[
+			select e.equipcode,e.S_SBMC equipname,e.x_vendor,e.x_model from re_sys_equip r,equipment e 
+			where r.equipcode=e.equipcode and r.systemcode='$systemcode$' order by e.S_SBMC
+		]]>
+	</select>
+	<select id="getDeviceModel" resultClass="String" parameterClass="String">
+		<![CDATA[
+			select x_vendor||','||x_model from equipment where equipcode='$equipcode$'
+		]]>
+	</select>
+	<select id="getCard" resultClass="java.util.HashMap" parameterClass="map">
+
+		<![CDATA[
+
+select count(t.portserial) as num,
+       t.equipcode || ',' || t.frameserial || ',' || t.slotserial || ',' ||
+       t.packserial as packcode,
+       t.frameserial,
+       t.slotserial,
+       t.packserial,
+       p.s_packname,
+       '' as packlogo
+  from equiplogicport t,equippack p,equipslot e
+ where p.equipcode = '$equipcode$'
+   and p.equipcode = t.equipcode(+)
+   and e.equipcode = t.equipcode
+   and e.frameserial=t.frameserial
+   and e.slotserial=t.slotserial
+   and e.slotderection=#flag#
+   and p.frameserial = t.frameserial(+)
+   and p.slotserial = t.slotserial(+)
+   and p.packserial = t.packserial(+)
+   and t.sync_status <> 'ZT03'
+   and p.s_packname is not null
+ group by t.equipcode,
+          t.frameserial,
+          t.slotserial,
+          t.packserial,
+          p.s_packname,
+          packlogo
+					
+					
+	union 
+
+
+select 0 as num,
+       p.equipcode || ',' || p.frameserial || ',' || p.slotserial || ',' ||
+       p.packserial as packcode,
+       p.frameserial,
+       p.slotserial,
+       p.packserial,
+       p.s_packname,
+       ep.packlogo
+  from equippack p,equipment em,equippack_model ep,equipslot e
+ where p.equipcode = '$equipcode$'
+	 and p.equipcode = em.equipcode
+	 and e.equipcode = p.equipcode
+     and e.frameserial=p.frameserial
+     and e.slotserial=p.slotserial
+     and e.slotderection=#flag#
+	 and em.x_vendor = ep.equipfactory
+	 and em.x_model = ep.equipmodel
+	 and ep.packmodel = p.packmodel
+	 and p.s_packname is not null
+ group by p.equipcode,
+          p.frameserial,
+          p.slotserial,
+          p.packserial,
+          p.s_packname,
+          ep.packlogo
+		
+		]]>
+<!-- ep.packlogo='0' -->
+	</select>
+	<select id="getCarryOperaFlex" resultMap="CarryOperaMap" parameterClass="java.util.HashMap">
+		<![CDATA[
+			      select '1' as carryoperaid,
+			       c.circuitcode,
+			       decode(c.rate, null, ' ', getxtxx(c.rate)) rate,
+			       c.portserialno1 portserialno1,
+			       gettimeslot373(c.slot1, getxtxx(c.rate)) slot1,
+			       c.portserialno2 portserialno2,
+			       gettimeslot373(c.slot2, getxtxx(c.rate)) slot2
+			  from circuit c,circuit_cc cc
+			 where c.circuitcode = cc.circuitcode 
+			 AND cc.equipcode = #equipcode#
+			 order by circuitcode
+    	]]>
+    </select>
+<!--    <select id="getCarryOperaSizeFlex" resultClass="int">-->
+<!--		<![CDATA[-->
+<!--			    select count(v.channelcode) from view_channel v where channelcode in-->
+<!--			    	(select channelcode from channelroute where equip=lpad('$equipcode$',20,0) and circuitcode like '%GWXT%') -->
+<!--		 ]]> -->
+<!--	</select>-->
+	<select id="getStatisInfoFlex" resultMap="DevicePortStatsMap" parameterClass="java.util.HashMap">
+		<![CDATA[
+			select  decode(logicport,null,' ',logicport) logicport, 
+    			decode(x_capability,null,' ',x_capability) x_capability, 
+    			decode(allvc4,null,' ',allvc4) allvc4, 
+    			decode(usrvc4,null,' ',usrvc4) usrvc4,
+    			decode(usrvc12,null,' ',usrvc12) usrvc12,
+    			decode(freevc4,null,' ',freevc4) freevc4,
+				decode(rate,null,' ',rate) rate
+  			from view_usedts where equipcode='$equipcode$' order by logicport
+    	]]>
+    </select>
+    <select id="getStatisPieFlex" resultMap="PortUseStatsMap" parameterClass="java.util.HashMap">
+		<!--
+			select getall2mportnum(equipcode) as portnum,
+			getall2mportnum(equipcode) - getfree2mportnum(equipcode) as portusenum
+  			from equipment where equipcode = '$equipcode$'
+    	-->
+    	<![CDATA[
+    		select portnum,portusenum,m.xtxx as rate from (
+			select count(*) as portnum,x.xtxx from equiplogicport p,xtbm x
+ 			where x.xtbm=p.x_capability and equipcode='$equipcode$' and p.y_porttype='ZY03070403' group by x.xtxx) m,
+ 			(select count(*) as portusenum,xtxx from equiplogicport a,xtbm b
+      		where a.x_capability=b.xtbm and equipcode='$equipcode$' and y_porttype='ZY03070403'  and logicport
+  			not in
+    		(select aptp from cc  where pid='$equipcode$' 
+   			 union
+    		select zptp from cc  where pid='$equipcode$' ) group by b.xtxx) n
+    		where m.xtxx=n.xtxx(+)
+    	]]>
+    </select>
+    <select id="getPackInfo" resultClass="devicepanel.model.PackInfoModel" parameterClass="java.util.HashMap">
+		<![CDATA[
+			select nvl(a.s_sbmc,' ') equipname,
+    		nvl(b.frameserial,' ') frameserial,
+    		nvl(b.slotserial,' ') slotserial,
+    		nvl(b.packmodel,' ') packmodel,
+    		nvl(b.packserial,' ') packserial,
+	   	   b.sn as packsn,
+	       b.software_version,
+	       b.hardware_version,
+			decode(to_char(b.updatedate, 'yyyy-mm-dd'),null,' ',to_char(b.updatedate, 'yyyy-mm-dd')) as updatedate,
+			nvl(b.remark,' ') remark,
+			nvl(b.updateperson,' ') updateperson
+			from equipment a,equippack b
+			where a.equipcode=b.equipcode
+      		and b.equipcode ='$equipcode$' 
+      		and b.frameserial='$frameserial$' 
+      		and b.slotserial='$slotserial$' 
+      		and b.packserial='$packserial$'
+		]]>
+	</select>
+	<select id="getSlotInfo" resultClass="devicepanel.model.SlotInfoModel" parameterClass="java.util.HashMap">
+		<![CDATA[
+		 select c.circuitcode, 
+	       c.rate,
+	       getportlabel(c.aptp) portserialno1,
+	       gettimeslot373(c.aslot,c.rate) slot1,
+	       getportlabel(c.zptp) portserialno2,
+	       gettimeslot373(c.zslot,c.rate) slot2,
+	       cir.username username,
+		   x.xtxx transrate
+	 	 from cctmp c,equiplogicport l1,equiplogicport l2, circuit cir, xtbm x
+		where
+		 c.aptp=l1.logicport
+		 and c.zptp=l2.logicport  
+		 and (
+	      ( l1.equipcode= #equipcode# and l1.frameserial=#frameserial# and l1.slotserial=#slotserial# and l1.packserial=#packserial#)
+	       or
+		    (l2.equipcode = #equipcode# and l2.frameserial=#frameserial# and l2.slotserial=#slotserial# and l2.packserial=#packserial#)
+	       )
+		 and c.circuitcode = cir.circuitcode
+		 and cir.rate = x.xtbm
+		]]>
+	</select>
+	<select id="getCarryOperaByPack" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		<![CDATA[
+			select distinct c.circuitcode,
+			                c.rate,
+			                getportlabellite(cir.portserialno1) portserialno1,
+			                gettimeslot373(cir.slot1, c.rate) slot1,
+			                getportlabellite(cir.portserialno2) portserialno2,
+			                gettimeslot373(cir.slot2, c.rate) slot2,
+			                cir.username username,
+			                x.xtxx transrate,
+			                cir.remark remark
+			  from cctmp c, equiplogicport l1, equiplogicport l2, circuit cir, xtbm x
+			 where c.aptp = l1.logicport
+			   and c.zptp = l2.logicport
+			   and ((l1.equipcode = #equipcode# and l1.frameserial = #frameserial# and
+			       l1.slotserial = #slotserial# and l1.packserial = #packserial#) or
+			       (l2.equipcode = #equipcode# and l2.frameserial = #frameserial# and
+			       l2.slotserial = #slotserial# and l2.packserial = #packserial#))
+			   and c.circuitcode = cir.circuitcode
+			   and cir.rate = x.xtbm
+		]]>
+	</select>
+    <update id="updateEquipPack" parameterClass="java.util.Map">
+    	<![CDATA[	
+			update equippack 
+			set 
+            frameserial= '$frameserial$',
+            slotserial='$slotserial$',
+            packserial='$packserial$',
+            packmodel='$packmodel$',                  
+            updatedate=to_date('$updatedate$','YYYY-MM-DD'),
+            remark='$remark$',
+            updateperson='$updateperson$',
+            packsn='$packsn$',
+            software_version='$software_version$',
+            hardware_version='$hardware_version$'
+            where equipcode='$gb_equipcode$'
+                  and frameserial= '$gb_frameserial$'
+                  and slotserial='$gb_slotserial$'
+                  and packserial='$gb_packserial$'
+    	 ]]>
+	</update>
+	<select id="getModelList" resultClass="java.util.HashMap">
+		<![CDATA[
+			select  x.xtxx,e.x_vendor,e.model_name from equip_panel_model e,xtbm x where x.xtbm=e.x_vendor order by x_vendor, model_name
+		]]>
+	</select>
+	<select id="getModelByName" resultClass="String" parameterClass="java.util.HashMap">
+		<![CDATA[
+			select model_context from equip_panel_model where x_vendor='vendor' and model_name='$model_name$'
+		]]>
+	</select>
+	<insert id="addModel" parameterClass="java.util.Map">
+		<![CDATA[
+			insert into equip_panel_model(x_vendor,model_name,model_context)
+			values('$vendor$','$model_name$','$model_context$')
+		]]>
+	</insert>
+	<update id="updateModel" parameterClass="java.util.Map">
+		<![CDATA[
+			update equip_panel_model
+			set model_context='$model_context$'
+			where x_vendor='$vendor$' and model_name='$model_name$'
+		]]>
+	</update>
+	<select id="getModelCountByName" resultClass="Integer" parameterClass="java.util.HashMap">
+		<![CDATA[
+			select count(model_name) from equip_panel_model where x_vendor='$vendor$' and model_name='$model_name$'
+		]]>
+	</select>
+	<delete id="delModelByName" parameterClass="java.util.HashMap">
+		<![CDATA[
+			delete from equip_panel_model where x_vendor='$vendor$' and model_name='$model_name$'
+		]]>
+	</delete>
+	<select id="getEquipTypeByEquipCode" resultClass="String" parameterClass="String">
+		<![CDATA[
+			select distinct e.packmodel from equippack_portnum e where e.x_model = '$equipModel$'
+		]]>
+	</select>
+	<select id="getVendors" resultClass="java.util.HashMap">
+		<![CDATA[
+			select xtbm,xtxx from xtbm where xtbm like 'ZY08__'
+		]]>
+	</select>
+	<select id="getFrameserialByEquipCode" resultClass="String" parameterClass="java.util.Map">
+		<![CDATA[
+			select e.frameserial from equipslot e where e.equipcode='$equipCode$' and e.slotserial='$slotserial$' 
+		]]>
+	</select>
+	<insert id="addPack" parameterClass="PackInfoModel">
+		<![CDATA[
+ insert into equippack  (equipcode,
+								    frameserial,
+								    slotserial,
+								    packserial,
+								    s_packname,
+								    isreplace,
+								    packmodel,
+								    switchstatus,
+								    remark,
+								    updateperson,
+								    updatedate,
+								    packsn,
+								    software_version,
+								    hardware_version,id,resid) values ('$equipname$','$frameserial$','$slotserial$','$packserial$','$packmodel$','SYN',
+								    					'$packmodel$','default','$remark$','$updateperson$',to_date('$updatedate$','YYYY-MM-DD'),
+                              '$packsn$','$software_version$','$hardware_version$',METAR_UTL.gen_board_code(),(select max(t.resid) + 1 from equippack t))
+		]]>
+	</insert>
+	<select id="getEquipPackAlarm" resultClass='java.util.HashMap' parameterClass="java.util.HashMap">
+		
+			select p.belongequip||','||p.belongframe||','||p.belongslot||','||p.belongpack as packcode,p.alarmlevel,p.alarmcount 
+			from v_alarm_for_equippannel_pack p where p.belongequip=#equipcode# 
+			<isNotEmpty prepend="AND" property="alarmman">
+				( p.alarmman is null or p.alarmman =#alarmman#)
+			</isNotEmpty>
+			order by p.belongequip,p.belongframe,p.belongslot,p.belongpack,alarmlevel
+	</select>
+	<select id="getNextPort1" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		<![CDATA[
+			 select  packserial||'盘'||portserial||'端口' port,NVL(getCircuitNextPort(logicport),'无') nextport
+			 from equiplogicport 
+			 where equipcode=#equipcode# and frameserial=#frameserial# and slotserial=#slotserial# and packserial=#packserial#
+			 order by to_number(substr(portserial, instr(portserial ,'-',-1,1)+1)),portserial
+		]]>
+	</select>
+	<select id="getNextPort2" resultClass="java.util.HashMap" parameterClass="java.util.HashMap">
+		<![CDATA[
+			 select  packserial||'盘'||portserial||'端口' port,NVL(getCircuitNextPort2(logicport),'无') nextport
+			 from equiplogicport 
+			 where equipcode=#equipcode# and frameserial=#frameserial# and slotserial=#slotserial# and packserial=#packserial#
+			 order by to_number(substr(portserial, instr(portserial ,'-',-1,1)+1)),portserial
+		]]>
+	</select>
+	<select id="getPackInfoByVendorModel" resultClass="PackInfoModel" parameterClass="java.util.HashMap">
+    	<![CDATA[
+    		select distinct x_vendor,
+                e.x_model,
+                e.packmodel,
+                e.portnum,
+                e.x_capability
+		  	from equippack_portnum e
+		 	where x_vendor = '$vendor$' and x_model='$equipmodel$' and packmodel='$packmodel$'
+		]]>	
+    </select>
+    
+    <insert id="addLogicPort">
+    	<![CDATA[
+    	insert into EquipLogicPort(equipcode,frameserial,slotserial,packserial,portserial, isbind,y_porttype,x_capability,status,connport,updatedate,updateperson,remark,sync_status,logicport)
+			 values('$equipcode$',
+			        '$frameserial$',
+			        '$slotserial$',
+			        '$packserial$',
+			        '$portserial$',
+			        '否',
+			        '$y_porttype$',
+			        '$x_capability$',
+			        '$status$',
+			        '$connport$',			        
+			        to_date('$updatedate$','YYYY-MM-DD hh:mi:ss'),
+			        '$updateperson$',
+			        '$remark$',
+			        'ZT00',
+			        lpad(en_logicport_seq.nextval,20,0))
+				
+    	]]>
+    </insert>
+    <select id="getSlotDirectionByIds" parameterClass="map" resultClass="string">
+    	select decode(t.slotderection,null,0,t.slotderection)
+	  from equipslot t
+	 where t.equipcode = #equipcode#
+	   and t.frameserial = #frameserial#
+	   and t.slotserial =#slotserial#
+    </select>
+    
+</sqlMap>
+ 

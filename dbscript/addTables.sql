@@ -1,0 +1,11 @@
+@".\tables\droptable.sql"
+@".\tables\V_MNT_REPAIR_FROM_MIS.tab"
+@".\tables\MNT_ALARM_WATCH_CONFIG.tab"
+@".\tables\mnt_subject.tab"
+@".\tables\mnt_subject_datasource.tab"
+@".\tables\mnt_subject_resource_graph.tab"
+@".\tables\mnt_subjectdisplayconfig.tab"
+@".\tables\mnt_sugject_resource_totalgrid.tab"
+@".\tables\V_MNT_DEALALARMMETHOD_TMP.tab"
+@".\tables\MODULE_STATUS_CHANGE.tab"
+

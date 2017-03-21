@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" minWidth="955" minHeight="600" width="400" height="300" title="附件列表信息"
+				creationComplete="App(event)"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				fontSize="13">
+
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			public var form_id:String = "";
+			public var sub_form_id:String = "";//441
+			public var XMLData:XML;	
+
+			protected function App(event:FlexEvent):void
+			{
+				var obj:RemoteObject = new RemoteObject("businessDispatch");
+					obj.endpoint = ModelLocator.END_POINT;
+					obj.showBusyCursor=true;
+					obj.getAttach(form_id,sub_form_id);
+					obj.addEventListener(ResultEvent.RESULT,lookVa);
+			}
+			private function lookVa(e:ResultEvent):void{
+				XMLData = new XML(e.result.toString());
+				var orgData:ArrayCollection = new ArrayCollection();
+				for each(var arrxml:XML in XMLData.children()){
+					orgData.addItem(arrxml);
+				}
+				look.dataProvider=orgData;
+				look.invalidateList();
+			}
+			protected function look_doubleClickHandler(event:MouseEvent):void
+			{
+				
+				var tmisContextPath:String;
+				tmisContextPath = ModelLocator.getURL();
+				tmisContextPath = tmisContextPath.split("\/")[2];
+				if(tmisContextPath=="10.155.1.13:20002"){//10.155.1.13  10.155.1.13:20002
+					tmisContextPath = "10.155.1.5";
+				}else{
+					tmisContextPath= "10.1.48.65";
+				}
+				tmisContextPath= 'http://'+tmisContextPath+':8082/jianxiu';
+			//	window.open(tmisContextPath +"/gdtmis/fangshi/fileUpload/downloaddiaodufangshi.jsp?file="+view.getRecord(node).data.encodeFilePath+"&fileName="+view.getRecord(node).data.encodeName, '_blank','dependent');
+				navigateToURL(new URLRequest(tmisContextPath + "/gdtmis/fangshi/fileUpload/downloaddiaodufangshi.jsp?file=" + look.selectedItem.@encodeFilePath + "&fileName="+look.selectedItem.@encodeName));
+			}
+
+
+			
+
+		]]>
+	</mx:Script>
+
+	
+	<mx:VBox x="0" y="0" width="100%" height="100%">
+		<mx:Label width="100%" height="20" text="双击可下载附件到本地">
+			
+		</mx:Label>
+		<mx:DataGrid id="look" width="100%" height="100%" fontFamily="中易宋体" fontWeight="normal" doubleClickEnabled="true" doubleClick="look_doubleClickHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn headerText="文件名" dataField="@name"/>
+				<mx:DataGridColumn headerText="文件路径" dataField="@filePath" fontFamily="Verdana" fontSize="13"/>
+			</mx:columns>
+		</mx:DataGrid>
+		
+	</mx:VBox>
+</mx:TitleWindow>

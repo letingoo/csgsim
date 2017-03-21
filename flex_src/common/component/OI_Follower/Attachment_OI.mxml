@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ProgressBar xmlns:mx="http://www.adobe.com/2006/mxml"
+				mode="manual" labelPlacement="center" borderColor="#273243" trackColors="#5E79A2"
+				label="" color="0xFFFFFF" width="80" height="15">
+	<mx:Script>
+		<![CDATA[
+			public function setValue(allvc4:String,usrvc4:String,usrvc12:String,rate:String):void{
+				//this.label=rate;
+				var all:int=parseInt(allvc4)*63;
+				var vc4:int=parseInt(usrvc4)*63;
+				var vc12:int=parseInt(usrvc12);
+				this.setProgress(vc4+vc12,all);
+				this.label=rate;
+			}
+		]]>
+	</mx:Script>
+</mx:ProgressBar>

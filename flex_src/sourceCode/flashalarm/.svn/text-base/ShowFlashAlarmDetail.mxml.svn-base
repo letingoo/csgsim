@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--频闪-->
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" 
+		  width="680" height="458"
+		  fontSize="12"
+		  initialize="inital()"
+		  horizontalScrollPolicy="off" verticalScrollPolicy="off" 
+		  xmlns:utiltools="sourceCode.ui.utiltools.*"
+		  borderThickness="1" borderThicknessLeft="0" borderThicknessRight="0" 
+		  borderThicknessBottom="0" borderThicknessTop="0" headerHeight="0"
+		  creationComplete="createCompelete()" >
+	<mx:Style>
+		.searchBtn {
+			upSkin:        Embed('assets/images/rootalarm/flashAlarm/searchdefault.png');
+			overSkin:      Embed('assets/images/rootalarm/flashAlarm/searchmouseover.png');
+			downSkin:      Embed('assets/images/rootalarm/flashAlarm/searchmousedown.png');
+			disabledSkin:  Embed('assets/images/rootalarm/flashAlarm/searchdefault.png');
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			import common.other.SuperPanelControl.nl.wv.extenders.panel.PanelWindow;
+			
+			import flash.sampler.NewObjectSample;
+			
+			import mx.charts.CategoryAxis;
+			import mx.charts.ChartItem;
+			import mx.charts.HitData;
+			import mx.charts.chartClasses.IAxis;
+			import mx.charts.series.items.ColumnSeriesItem;
+			import mx.charts.series.items.HLOCSeriesItem;
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.formatters.DateFormatter;
+			import mx.formatters.Formatter;
+			import mx.graphics.IFill;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import twaver.core.util.l.l;
+			[Bindable]
+			public  var alarmNumber:String="";
+			//根告警消息订阅
+			private var param:ArrayCollection=new ArrayCollection();
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+//			private var consumers:Object;
+			private function inital():void{
+				//开始订阅消息
+//				DealAlarmUtil.initMessage();
+//				consumers = new Object();
+//				subscriberRealFlashAlarm("realTimeFlashAlarm");
+				var pw:TitleWindow=new TitleWindow();
+				pw =this.parent as TitleWindow;
+				pw.addEventListener(CloseEvent.CLOSE,function(E:CloseEvent):void{
+					//Alert.show("进入关闭事件！！");
+//					toHttp("N");
+//					unsubscribe("realTimeFlashAlarm");
+				})
+				
+			}
+			/**
+			 * 退订消息
+			 */
+//			public function unsubscribe(subtopic:String):void
+//			{
+//				if (consumers[subtopic])
+//				{
+//					var consumer:Consumer = consumers[subtopic];
+//					
+//					consumer.removeEventListener(MessageEvent.MESSAGE, handleRealFlashAlarm);
+//					
+//					if (consumer.subscribed)
+//					{
+//						consumer.unsubscribe();
+//					}
+//					consumer.channelSet.disconnectAll();
+//					consumers[subtopic] = null;
+//				}
+//			}
+			
+//			private function subscriberRealFlashAlarm(subtopic:String):void{				
+//				var consumer:Consumer =new Consumer();				
+//				var channelSet:ChannelSet = new ChannelSet();   
+//				channelSet.addChannel(DealAlarmUtil.streamingAMF);   
+//				channelSet.addChannel(DealAlarmUtil.pollingAMF);
+//				consumer.destination = DealAlarmUtil.sdestination; 
+//				consumer.channelSet = channelSet;
+//				consumer.subtopic = subtopic;
+//				//Alert.show("消息开始接收");
+//				consumer.addEventListener(MessageEvent.MESSAGE,handleRealFlashAlarm);
+//				consumer.addEventListener(MessageFaultEvent.FAULT,faultHandlerMsg);
+//				consumer.subscribe();
+//				consumers[subtopic] = consumer;
+//				
+//			}
+//			private function handleRealFlashAlarm(msg:MessageEvent):void{
+//				//Alert.show("消息接受到了")
+//				if(msg.message.body==null && msg.message.body==""){
+//					//Alert.show('接到的消息为空'); return;
+//				}
+//				var ts:ArrayCollection = msg.message.body as ArrayCollection;
+//				if(ts!=null){ 
+//					//Alert.show(ts[0].ALARMDATETIME+"");
+//					myChart.dataProvider=ts;
+//				}				
+//			}
+			private function faultHandlerMsg(event:MessageFaultEvent):void{
+				Alert.okLabel = "确  定";
+				Alert.show(event.faultString,"消息处理失败！！",4,this,null,iconClass);			
+			}
+			private function createCompelete():void {
+				//Alert.show("alarmNumber="+alarmNumber);
+				var date:Date=new Date();				
+				//Alert.show("date="+date);
+				endDate.selectedDate=date;
+				endDate.text=dateformat.format(date);
+				date.month=date.month-3;
+				//Alert.show("更改后date="+date);
+				//Alert.show("startTime.theDate.selectedDate="+startTime.get_selDate());
+				startDate.selectedDate=date;
+				startDate.text=dateformat.format(date);
+				//Alert.show("startTime.theDate.selectedDate="+startTime.get_selDate());
+				//	Alert.show("更改成功！！");
+				
+				if(alarmNumber!=""){
+					//Alert.show("进入远程调用");
+					//获得远程控制对象
+					var rtobj:RemoteObject = new RemoteObject("FlashAlarmDwr");
+					//指出Flex 在编译时就指定远程的端点
+					rtobj.endpoint = ModelLocator.END_POINT;
+					//显示忙光标？？？
+					rtobj.showBusyCursor = true;
+					// 执行查询命令	
+					rtobj.findFlashAlarmByAlarmNumber(alarmNumber);
+					//派发事件
+					rtobj.addEventListener(ResultEvent.RESULT, getFlashAlarmData);
+					rtobj.addEventListener(FaultEvent.FAULT, fault);
+					
+					//Alert.show("远程调用成功！！");
+				}else{
+					Alert.show("没有获得alarmid","提示信息",4,this,null,iconClass);
+				}	
+				//获取频闪统计信息
+				findAlarmCountAndDate();
+			}
+			
+			private function fault(event:FaultEvent):void{
+				Alert.show(event.fault.toString());
+			}
+			
+			private function getFlashAlarmData(event:ResultEvent):void{
+				//Alert.show("开始进入回调函数！！");
+				if(event.result == null){
+					Alert.show('没有数据！',"提示信息",4,this,null,iconClass); return;
+				}
+				var ts:ArrayCollection = event.result as ArrayCollection;
+				for each(var a :Object in ts){
+					flashcount.text=a.FLASHCOUNT;
+					alarmObjDesc.text=a.ALARMOBJDESC;
+					belongEquip.text=a.EQUIPNAME;
+					alarmDesc.text=a.ALARMDESC;
+					lastStartTime.text=a.LASTSTARTTIME;
+					objClasszh.text=a.OBJCLASSZH;
+					circuitCount.text=a.CIRCUITCOUNT;
+					vendorzh.text=a.VENDORZH;
+					belongSystem.text=a.BELONGTRANSYS;
+					
+				}			
+			}
+			//获得频闪统计数据
+			private function findAlarmCountAndDate():void{					
+				//var starttime=IntegrateDate(DateField.stringToDate(startDate.text,"YYYY-MM-DD"),startTime.Time);
+				var starttime:String=startDate.text;
+				//Alert.show("starttime="+starttime);
+				//var endtime=IntegrateDate(DateField.stringToDate(endDate.text,"YYYY-MM-DD"),endTime.Time);
+				var endtime:String=endDate.text;
+				//Alert.show("endtime="+endtime);
+				if(alarmNumber!=""){
+					//Alert.show("进入远程调用");
+					//获得远程控制对象
+					var rtobj:RemoteObject = new RemoteObject("FlashAlarmDwr");
+					//指出Flex 在编译时就指定远程的端点
+					rtobj.endpoint = ModelLocator.END_POINT;
+					//显示忙光标？？？
+					rtobj.showBusyCursor = true;
+					// 执行查询命令	
+					rtobj.findAlarmCountByAlarmNumberAndDate(alarmNumber,starttime,endtime);
+					//派发事件
+					rtobj.addEventListener(ResultEvent.RESULT, getFlashAlarmStatistics);
+					rtobj.addEventListener(FaultEvent.FAULT, fault);
+					
+					//Alert.show("远程调用成功！！");
+				}else{
+					Alert.show("没有获得alarmid","提示信息",4,this,null,iconClass);
+				}	
+			}
+			private function getFlashAlarmStatistics(event:ResultEvent):void{
+				//Alert.show("开始进入数据统计回调函数！！");
+				if(event.result == null){
+					Alert.show('没有数据',"提示信息",4,this,null,iconClass); return;
+				}
+				var ts:ArrayCollection=new ArrayCollection();
+				ts = event.result as ArrayCollection;
+				if(ts!=null){
+					lineChart.dataProvider=ts;
+					
+				}		
+			}
+			private function IntegrateDate(date1:Date,date2:Date):String{				
+				date1.hours=date2.hours;
+				date1.minutes=date2.minutes;
+				//Alert.show("进入日期时间整合！！");
+				return datetimeformat.format(date1);			
+			}
+			private function startTimetoLabel(currentDate:Date):String {
+				return dateformat.format(startDate.selectedDate);				
+			}
+			private function endTimetoLabel(currentDate:Date):String {
+				return dateformat.format(endDate.selectedDate);
+			}
+			private function labelchange():void{
+				//频闪统计界面
+				if(tn.selectedIndex==0){
+					stime.visible=false;
+					etime.visible=false;
+					findAlarmCountAndDate();
+				}
+				//频闪实时分析界面
+				if(tn.selectedIndex==1){			
+					//stime.visible=true;
+					//etime.visible=true;
+					//findRealtimeFlashAlarmAnalysis();					
+					findRealFlashAlarmData();
+//					toHttp("Y");
+				}			 
+			}
+			private function findRealtimeFlashAlarmAnalysis():void{			
+				var starttime:String=IntegrateDate(DateField.stringToDate(startDate.text,"YYYY-MM-DD"),startTime.Time);
+				//Alert.show("starttime="+starttime);
+				var endtime:String=IntegrateDate(DateField.stringToDate(endDate.text,"YYYY-MM-DD"),endTime.Time);
+				//Alert.show("endtime="+endtime);    
+				//获得远程控制对象
+				var rtobj:RemoteObject = new RemoteObject("FlashAlarmDwr");
+				//指出Flex 在编译时就指定远程的端点
+				rtobj.endpoint = ModelLocator.END_POINT;
+				//显示忙光标？？？
+				rtobj.showBusyCursor = true;
+				// 执行查询命令	
+				rtobj.findRealtimeFlashAnalysisByAlarmNumber(alarmNumber,starttime,endtime);
+				//派发事件
+				rtobj.addEventListener(ResultEvent.RESULT, getRealtimeFlashAnalysisData);
+				rtobj.addEventListener(FaultEvent.FAULT, fault);
+			}
+			private function findRealFlashAlarmData():void{			  
+				//获得远程控制对象
+				var rtobj:RemoteObject = new RemoteObject("FlashAlarmDwr");
+				//指出Flex 在编译时就指定远程的端点
+				rtobj.endpoint = ModelLocator.END_POINT;
+				//显示忙光标？？？
+				rtobj.showBusyCursor = true;
+				// 执行查询命令	
+				rtobj.findRealFlashAlarmByAlarmNumber(alarmNumber);
+				//派发事件
+				rtobj.addEventListener(ResultEvent.RESULT, getRealtimeFlashAnalysisData);
+				rtobj.addEventListener(FaultEvent.FAULT, fault);
+			}
+			
+			
+			private function getRealtimeFlashAnalysisData(event:ResultEvent):void{
+				//Alert.show("开始进入数据统计回调函数！！");
+				if(event.result == null){
+					Alert.show('没有数据',"提示信息",4,this,null,iconClass); return;
+				}
+				var ts:ArrayCollection = event.result as ArrayCollection;
+				if(ts!=null){					
+					myChart.dataProvider=ts;
+				}		
+			}
+			private function Histogram_dataTipFunction(item:HitData):String{
+				var colu:ColumnSeriesItem=item.chartItem as ColumnSeriesItem;
+				if(colu.item.ALARMSTATUS==1){
+					return "<b>" + colu.item.ALARMDATETIME + "<br />频闪告警发生！</b>";
+				}
+				if(colu.item.ALARMSTATUS==-1){
+					return "<b>" + colu.item.ALARMDATETIME + "<br />频闪告警清除！</b>";
+				}
+				return "";
+			}
+			private function linearAxis_labelFunc(item:Object, prevValue:Object, axis:IAxis):String {  
+				if(item.valueOf()==-1){
+					
+					return "清除"
+				}
+				if(item.valueOf()==1){
+					return "发生"
+				}
+				return "";   
+			} 
+			private function myFillFunction(element:ChartItem, index:Number):IFill {
+				var item:ColumnSeriesItem = ColumnSeriesItem(element);
+				var c:SolidColor = new SolidColor(0xFF0000);
+				var goal:Number = item.yNumber;
+				if (goal >=0) {
+					return c; 
+				} else if (goal < 0) {
+					c.color =  0x00CC00;
+					//c.alpha = 1;
+				}
+				return c;
+			}
+			private function categoryAxis_labelFunc(item:Object, prevValue:Object, axis:CategoryAxis, categoryItem:Object):String {     
+				var dateFormatter:DateFormatter=new DateFormatter();
+				dateFormatter.formatString="JJ:NN:SS";
+				var curDate:Date;              
+				var showDateStr:String="";  
+				//Alert.show("item.valueOf()="+ item.valueOf());
+				curDate=DateFormatter.parseDateString(item.toString());  
+				//Alert.show("curDate="+curDate.toString());
+				showDateStr=dateFormatter.format(curDate);
+				return "<b>"+showDateStr+"<b/>";         
+			} 
+			private function toHttp(isStart:String):void
+			{
+				//Alert.show("开始发送http请求！！");
+				Security.loadPolicyFile(ModelLocator.getURL()+"/WEB-INF/flex/crossdomain.xml");
+				var params:URLVariables = new URLVariables();
+				httpService.url=DealAlarmUtil.getUrl()+"/adaptivemsg/ReceiveRealTimeFlashAlarmData";
+				httpService.method="post";
+				params.alarmNo=alarmNumber;
+				params.isStart=isStart;
+				httpService.send(params);
+				
+			}
+			public function onGetResultHandler(event:ResultEvent):void
+			{
+				//				Alert.show("发送成功:" + event.result.toString());
+			}
+			
+			public function onFalutHandler(event:FaultEvent):void
+			{
+				Alert.show("向后台发送消息失败!","提示信息",4,this,null,iconClass);
+			}
+			private function titleWindow_close(evt:CloseEvent):void {
+				Alert.show("进入关闭方法！！！","提示信息",4,this,null,iconClass);
+				
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="httpService"  useProxy="false" resultFormat="text" 
+					fault="onFalutHandler(event)" result="onGetResultHandler(event)"/>
+	<mx:Stroke id="chartAxisStroke" color="0x666666" weight="3"/>
+	<mx:Stroke id="chartAxisStrokeThick" caps="round" color="0x666666" weight="3" />    
+	<mx:Stroke id="yline" caps="round" color="0xFFFFFF" weight="0" />    
+	<mx:DateFormatter id="dateformat" formatString="YYYY-MM-DD"/>
+	<mx:DateFormatter id="datetimeformat" formatString="YYYY-MM-DD JJ:NN:SS"/>	
+	<mx:VBox width="100%" paddingLeft="8"  height="97%" verticalScrollPolicy="off" horizontalScrollPolicy="off" >
+		<mx:HBox width="100%" horizontalAlign="right" verticalAlign="bottom">
+			<mx:Spacer width="100%"/>
+			<mx:HBox backgroundImage="@Embed(source='assets/images/rootalarm/flashAlarm/Switch_barslec_bg.png')" backgroundSize="100%" >
+				<mx:Label  text="频闪次数:"  color="#B51E23" fontWeight="bold"/>
+				<mx:Label id="flashcount" text="" color="#B51E23" fontWeight="bold"/>				
+			</mx:HBox>	
+			<mx:Spacer width="25"/>
+		</mx:HBox>
+		<mx:HBox width="100%" paddingTop="0">
+			<mx:Image source="assets/images/rootalarm/flashAlarm/alert-red.png" />
+			<mx:Label  text="告警描述"   fontWeight="bold"/>
+			<mx:Image source="assets/images/rootalarm/flashAlarm/rootalarm_line.png" />		
+		</mx:HBox>		
+		<mx:Grid paddingLeft="35" width="100%" verticalScrollPolicy="off" horizontalScrollPolicy="off" borderColor="#F7F4E2" borderStyle="solid">
+			<mx:GridRow width="100%">
+				<mx:GridItem width="50%">
+					<mx:Label text="告警对象:" />
+					<mx:Label id="alarmObjDesc" />						
+				</mx:GridItem>
+				<mx:GridItem width="50%">
+					<mx:Label text="告警设备:" />
+					<mx:Label id="belongEquip" />					
+				</mx:GridItem>
+			</mx:GridRow>
+			<mx:GridRow width="100%">
+				<mx:GridItem width="50%">
+					<mx:Label text="告警描述:"/>
+					<mx:Label id="alarmDesc" text="" />
+				</mx:GridItem>
+				<mx:GridItem width="50%">
+					<mx:Label text="告警时间:" />
+					<mx:Label id="lastStartTime" text="" />
+				</mx:GridItem>
+			</mx:GridRow>
+			<mx:GridRow width="100%">
+				<mx:GridItem width="50%">
+					<mx:Label text="对象类型:" />
+					<mx:Label id="objClasszh" text="" />
+				</mx:GridItem>
+				<mx:GridItem width="50%">
+					<mx:Label text="影响电路:" />
+					<mx:Label id="circuitCount" text="" />
+				</mx:GridItem>
+			</mx:GridRow>
+			<mx:GridRow width="100%">
+				<mx:GridItem width="50%">
+					<mx:Label text="所属厂家:" />
+					<mx:Label id="vendorzh" text="" fontSize="14"/>
+				</mx:GridItem>
+				<mx:GridItem width="50%">
+					<mx:Label text="所属系统:" />
+					<mx:Label id="belongSystem" text="" />
+				</mx:GridItem>
+			</mx:GridRow>					
+		</mx:Grid>
+		<mx:HBox width="100%">
+			<mx:Image source="assets/images/rootalarm/flashAlarm/Strobe.png"/>
+			<mx:Label text="频闪分析"   fontWeight="bold"/>
+			<mx:Image source="assets/images/rootalarm/flashAlarm/rootalarm_line.png" />		
+		</mx:HBox>
+		<mx:Grid paddingLeft="35" width="95%"  verticalScrollPolicy="off" horizontalScrollPolicy="off">
+			<mx:GridRow width="100%">
+				<mx:GridItem width="35%">
+					<mx:HBox >
+						<mx:Label text="起始时间:" />						
+						<mx:DateField width="100" height="23" dayNames="[日,一,二,三,四,五,六]" 
+									  monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]" 
+									  labelFunction="startTimetoLabel" id="startDate" yearNavigationEnabled="true" />
+						<mx:VBox   id="stime" >
+							<utiltools:TimeInput id="startTime" visible="false" />
+						</mx:VBox>
+						
+						
+					</mx:HBox>
+				</mx:GridItem>
+				<mx:GridItem width="35%">
+					<mx:HBox>
+						<mx:Label text="终止时间:" />
+						<mx:DateField width="100" height="23" dayNames="[日,一,二,三,四,五,六]" 
+									  monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]" 
+									  labelFunction="endTimetoLabel"  id="endDate" yearNavigationEnabled="true" />	
+						<mx:VBox   id="etime" >
+							<utiltools:TimeInput id="endTime" visible="false"/>
+						</mx:VBox>
+						
+					</mx:HBox>
+				</mx:GridItem>
+				<mx:GridItem width="30%">					
+					<mx:Button width="61" height="23" id="search"  styleName="searchBtn"							 
+							   click="labelchange()"/>	
+				</mx:GridItem>				
+			</mx:GridRow>
+		</mx:Grid>
+		
+		<mx:TabNavigator id="tn" width="95%" 						  
+						 paddingTop="5"  height="100%" paddingLeft="10" change="labelchange()" > 
+			<mx:VBox id="vb1" label="频闪统计分析" horizontalScrollPolicy="off" verticalScrollPolicy="off" height="100%" > 
+				<mx:LineChart id="lineChart" 
+							  showDataTips="true"  
+							  width="100%" 
+							  height="100%"> 
+					
+					<!-- background elements --> 
+					<mx:backgroundElements> 
+						<mx:GridLines direction="horizontal" 
+									  horizontalTickAligned="false" 
+									  verticalTickAligned="false"> 
+							<mx:horizontalFill> 
+								<mx:SolidColor color="haloBlue" alpha="0.2" /> 
+							</mx:horizontalFill> 
+							<mx:horizontalAlternateFill> 
+								<mx:SolidColor color="haloSilver" alpha="0.2" /> 
+							</mx:horizontalAlternateFill> 
+							<mx:verticalFill> 
+								<mx:SolidColor color="haloBlue" alpha="0.2" /> 
+							</mx:verticalFill> 
+							<mx:verticalAlternateFill> 
+								<mx:SolidColor color="haloSilver" alpha="0" /> 
+							</mx:verticalAlternateFill> 
+						</mx:GridLines> 
+					</mx:backgroundElements> 
+					
+					<!-- vertical axis --> 
+					<mx:verticalAxis> 
+						<mx:LinearAxis baseAtZero="false" 				 
+									   /> 
+					</mx:verticalAxis> 
+					
+					<!-- horizontal axis --> 
+					<mx:horizontalAxis> 
+						<mx:CategoryAxis id="ca" 
+										 categoryField="ALARMTIME" 
+										 /> 
+					</mx:horizontalAxis> 
+					
+					<!-- horizontal axis renderer --> 
+					<mx:horizontalAxisRenderers> 
+						<mx:AxisRenderer axis="{ca}" canDropLabels="true" /> 
+					</mx:horizontalAxisRenderers> 
+					
+					<!-- series --> 
+					<mx:series> 
+						<mx:LineSeries yField="ALARMCOUNT" displayName="频闪告警总数" /> 
+					</mx:series> 
+					
+					<!-- series filters --> 
+					<mx:seriesFilters> 
+						<mx:Array /> 
+					</mx:seriesFilters> 
+				</mx:LineChart>  
+			</mx:VBox> 
+			<mx:VBox id="vb2" label="频闪实时分析" height="100%"> 
+				
+				<mx:ColumnChart id="myChart" 
+								showDataTips="true"
+								dataTipFunction="Histogram_dataTipFunction"
+								height="100%" width="100%"
+								>
+					<mx:horizontalAxis>
+						<mx:CategoryAxis 
+							id="chartXAxis" categoryField="ALARMDATETIME" labelFunction="categoryAxis_labelFunc"/>
+					</mx:horizontalAxis>
+					<mx:horizontalAxisRenderers>
+						<!-- 定制横坐标 -->
+						<mx:AxisRenderer axis="{chartXAxis}" axisStroke="{chartAxisStroke}" canDropLabels="true" color="#000000" tickStroke="{chartAxisStroke}" />
+					</mx:horizontalAxisRenderers>
+					<mx:verticalAxis>
+						<mx:LinearAxis id="chartYAxis" minimum="-2" maximum="2"  labelFunction="linearAxis_labelFunc"/>
+					</mx:verticalAxis>
+					<mx:verticalAxisRenderers>
+						<!-- 定制纵坐标 -->
+						<mx:AxisRenderer axis="{chartYAxis}" fontSize="12" axisStroke="{chartAxisStrokeThick}" color="#000000" canDropLabels="true" tickStroke="{yline}" />
+					</mx:verticalAxisRenderers>
+					<mx:series>
+						<mx:ColumnSeries id="flashAlarmStatus" 
+										 xField="ALARMDATETIME" 
+										 yField="ALARMSTATUS" 
+										 fillFunction="myFillFunction" 
+										 displayName="时间"
+										 >
+						</mx:ColumnSeries>
+					</mx:series>
+				</mx:ColumnChart>
+			</mx:VBox> 	
+		</mx:TabNavigator> 	
+	</mx:VBox>
+</mx:Panel>

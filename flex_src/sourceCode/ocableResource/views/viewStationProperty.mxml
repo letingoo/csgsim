@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" 
+	width="530" 
+	height="342" 
+	showCloseButton="true" 
+	close="closeHandler()" 
+	backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+	backgroundSize="100%">
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.other.blogagic.util.mapNode;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import org.flexunit.runner.Result;
+			
+		
+			[Bindable] public var node:mapNode;
+			
+//			public var stationCode:String;
+//			public var province:String;
+//			public var property:String;
+//			public var stationtype:String;
+			
+			public var days:Array = new Array("日", "一", "二", "三", "四", "五","六");
+			public var monthNames:Array = new Array("一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月");			
+			
+			protected function closeHandler():void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	 
+	    <mx:Label text="局站名称" x="37" y="28" fontSize="12"/>
+	    <mx:Label text="局站类型" x="37" y="88" fontSize="12"/>
+	    <mx:Label text="局站电压等级" x="37" y="58" fontSize="12"/>
+	   <!-- <mx:Label text="所属大区" x="42" y="120" fontSize="12"/>-->
+		<mx:Label text="所属省份" x="37" y="144" fontSize="12"/>
+	    <mx:Label text="维护单位" x="37" y="116" fontSize="12"/>
+		<mx:Label text="详细地址" x="277" y="88" fontSize="12"/>
+		<mx:Label text="通信地址" x="37" y="172" fontSize="12"/>
+	    <mx:Label text="经度" x="37" y="244" fontSize="12"/>
+	  <!--  <mx:Label text="传真" x="42" y="311" fontSize="12"/>-->
+	
+	    <mx:Label text="建站时间" x="277" y="144" fontSize="12"/>
+		<!--<mx:Label text="供电情况" x="284" y="30" fontSize="12"/>-->
+		<mx:Label text="产权单位" x="279" y="28" fontSize="12"/>
+		<!--<mx:Label text="占地面积" x="284" y="90" fontSize="12"/>-->
+		<mx:Label text="监控情况" x="279" y="58" fontSize="12"/>
+	    <mx:Label text="联系电话" x="277" y="116" fontSize="12"/>
+	    <mx:Label text="备注" x="279" y="172" fontSize="12"/>
+		<mx:Label text="纬度" x="279" y="244" fontSize="12"/>
+		<!--<mx:Label text="更新人" x="284" y="311" fontSize="12"/>
+		<mx:Label text="更新时间" x="282" y="350" fontSize="12"/>-->
+	
+	    <mx:TextInput id="STATIONNAME" width="135" x="122" y="28" editable="false"/>
+	    <mx:TextInput id="X_STATIONTYPE" width="135" x="122" y="88" editable="false"/> 
+	    <mx:TextInput id="VOLT" width="135" x="122" y="58" editable="false"/> 
+	    <mx:TextInput id="PROVINCE" editable="false" width="135" x="122" y="144"/>
+		<!--<mx:TextInput id="DOMAINNAME" width="135" x="127" y="120" editable="false"/>-->
+	    <mx:TextInput id="MAINTAINUNIT" width="135" x="122" y="116" editable="false"/>
+	    <mx:TextInput id="DETAILADDR" width="135" x="338" y="88" editable="false"/>
+		<mx:TextArea id="ADDRESS" width="135" x="122" y="173" editable="false" height="63"/>
+	    <mx:TextInput id="LNG" width="135" x="122" y="244" editable="false"/>
+	    <!-- <mx:TextInput id="FAX" width="135" x="127" y="311" editable="false"/>-->
+	    <mx:TextInput id="FOUNDDATE" width="135" x="338" y="144" editable="false"/>
+	    <!--<mx:TextInput id="POWERCONDITION" width="135" x="343" y="30" editable="false"/>-->
+		<mx:TextInput id="PROPERTY" width="135" x="338" y="28" editable="false"/>
+		<!--<mx:TextInput id="AREA" width="135" x="343" y="90" editable="false"/>-->
+		<mx:TextInput id="CONDITION" width="135" x="338" y="58" editable="false"/>
+	    <mx:TextInput id="TEL" width="135" x="338" y="116" editable="false"/>
+	    <mx:TextInput id="REMARK" width="135" x="338" y="172" editable="false" height="64"/>
+		<mx:TextInput id="LAT" width="135" x="338" y="244" editable="false"/>
+		<!--<mx:TextInput id="updateperson" width="135" x="343" y="311" editable="false"/>
+		<mx:TextInput id="updatedate" width="135" x="343" y="350" editable="false"/>-->
+</mx:TitleWindow>

@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/csgsim/!svn/ver/1/dbscript/views/hand
+END
+v_rootalarm_select.vw
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/csgsim/!svn/ver/1/dbscript/views/hand/v_rootalarm_select.vw
+END
+v_alarminfonew.vw
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/csgsim/!svn/ver/1/dbscript/views/hand/v_alarminfonew.vw
+END
+v_mnt_modelstatus.vw
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/csgsim/!svn/ver/1/dbscript/views/hand/v_mnt_modelstatus.vw
+END
+v_expert_alarmrelateport.vw
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/csgsim/!svn/ver/1/dbscript/views/hand/v_expert_alarmrelateport.vw
+END
+v_mnt_modelcurrentstatus.vw
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/csgsim/!svn/ver/1/dbscript/views/hand/v_mnt_modelcurrentstatus.vw
+END
+v_mnt_powerline_circuittotal.vw
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/csgsim/!svn/ver/1/dbscript/views/hand/v_mnt_powerline_circuittotal.vw
+END
+v_rootalarm_all.vw
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/csgsim/!svn/ver/1/dbscript/views/hand/v_rootalarm_all.vw
+END
+v_mnt_circuit_requestmethod.vw
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/csgsim/!svn/ver/1/dbscript/views/hand/v_mnt_circuit_requestmethod.vw
+END

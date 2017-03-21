@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="permissionControl">
+ <select id="getPermissionListByUserIdAndModelName" resultClass="java.util.HashMap" parameterClass="Map">
+	select oper_id, oper_name
+    from sec_operation_res
+    where parent_id = (select oper_id from sec_operation_res where oper_name = #modelName#)
+         and oper_id in
+         (select oper_id
+          from sec_role_oper
+         where role_id in
+               (select role_id from sec_role_user where user_id = #userId#))
+	</select>
+	
+	 <select id="getPermissionControlByUserDepartAndConfigDepartAndResouseDept" resultClass="java.util.HashMap" parameterClass="Map" remapResults="true">
+		    select * from $tablename$ where $property$ in (select user_dept from view_useralldept where user_id='$userId$') and $key$ = '$value$'
+	</select>
+</sqlMap>

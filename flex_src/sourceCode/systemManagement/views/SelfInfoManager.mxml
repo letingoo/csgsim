@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+			   width="100%" height="100%"  
+			   xmlns:comp="sourceCode.systemManagement.views.comp.*" 
+			   creationComplete="init()" xmlns:component="common.component.*"
+			   backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+			   backgroundSize="100%" verticalGap="0">  
+	<mx:RemoteObject id="selInfoMgr" destination="userManager" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}" 
+					 result="getSelInfos(event)" 
+					 fault="faultCallBack(event)"/>
+	<mx:Script source="../actionscript/SelfInfoManager.as"/>
+	<component:ControlBar id="controlBar" width="100%" height="38" modelName="个人信息" imgName="userself"/>
+	<mx:HBox id="selInfoedit" width="100%" height="100%">
+		<mx:VBox width="50%" height="100%" verticalGap="10">
+			<mx:Spacer height="10"/>
+			<mx:HBox width="100%">
+				<mx:Label text="用户名:" width="23%" textAlign="right"/>  
+				<mx:TextInput id="user_id" width="70%" text="{user_Model.user_id}" editable="false"/>  
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="登录密码:" width="23%" textAlign="right"/>
+				<mx:TextInput id="user_pwd" width="70%" displayAsPassword="true" text="{user_Model.user_pwd}"/> 
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="生日:" height="21" width="23%" textAlign="right"/>
+				<mx:DateField yearNavigationEnabled="true" dayNames="['日','一','二','三','四','五','六']" 
+							  monthNames="['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']"
+							  fontSize="12" width="70%" id="birthday" text="{user_Model.birthday}" showToday="true" formatString="YYYY-MM-DD" />
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="职位:" width="23%" textAlign="right"/>  
+				<mx:TextInput id="user_post" width="70%" text="{user_Model.user_post}"/>  
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="固定电话:" width="23%" textAlign="right"/>  
+				<mx:TextInput id="telephone" width="70%" text="{user_Model.telephone}"/>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="Email:" width="23%" textAlign="right"/>  
+				<mx:TextInput id="email" width="70%" text="{user_Model.email}"/>  
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox width="50%" height="100%" verticalGap="10">
+			<mx:Spacer height="10"/>
+			<mx:HBox width="100%">
+				<mx:Label text="真实姓名:" width="20%" textAlign="right"/>  
+				<mx:TextInput id="user_name" width="70%" text="{user_Model.user_name}"/>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:RadioButtonGroup id="user_sex" selectedValue="{user_Model.user_sex}"/>
+				<mx:Label text="性别:" height="21" width="20%" textAlign="right"/>
+				<mx:RadioButton label="男" value="M" groupName="user_sex" selected="true" id="male"/>
+				<mx:RadioButton label="女" value="F" groupName="user_sex" id="female"/>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="所属单位:" height="21" width="20%" textAlign="right"/>  
+				<mx:TextInput id="user_dept" width="70%"  text="{user_Model.user_dept}"  click="dbClickDept(event)" editable="false" />
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="学历:" height="21" width="20%" textAlign="right"/>  
+				<mx:TextInput id="education" width="70%"  text="{user_Model.education}" />
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="移动电话:" height="21"  width="20%" textAlign="right"/>  
+				<mx:TextInput id="mobile" width="70%"  text="{user_Model.mobile}" />
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="通讯地址:" height="21" width="20%" textAlign="right"/>  
+				<mx:TextInput id="address" width="70%"  text="{user_Model.address}" />
+			</mx:HBox>
+		</mx:VBox>
+	</mx:HBox>
+	<mx:HBox  id="buttomhbox" height="60"
+			  width="100%" verticalAlign="middle" horizontalAlign="center" 
+			  backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+		<mx:Button label="保存" click="user_save()" styleName="loginprimary"/>
+		<mx:Spacer width="10"/>
+		<mx:Button label="关闭" styleName="loginsecondary" click="{close()}"/> 
+	</mx:HBox>
+</mx:VBox>  

@@ -1,0 +1,579 @@
+// ActionScript file
+import common.actionscript.ModelLocator;
+import common.actionscript.MyPopupManager;
+import common.actionscript.Registry;
+
+import flash.events.MouseEvent;
+
+import mx.collections.ArrayCollection;
+import mx.controls.Alert;
+import mx.core.Application;
+import mx.events.CloseEvent;
+import mx.events.DataGridEvent;
+import mx.events.FlexEvent;
+import mx.events.ItemClickEvent;
+import mx.formatters.DateFormatter;
+import mx.managers.PopUpManager;
+import mx.rpc.events.FaultEvent;
+import mx.rpc.events.ResultEvent;
+import mx.rpc.remoting.mxml.RemoteObject;
+import mx.utils.ObjectProxy;
+
+import org.flexunit.runner.Result;
+
+import sourceCode.autoGrid.view.ShowProperty;
+import sourceCode.resManager.resNode.Events.OcablesSearchEvent;
+import sourceCode.resManager.resNode.Titles.OcablesSearch;
+import sourceCode.resManager.resNode.model.Ocable;
+import sourceCode.resManager.resNode.views.enStationTree;
+import sourceCode.systemManagement.model.PermissionControlModel;
+import sourceCode.tableResurces.Events.ToopEvent;
+import sourceCode.tableResurces.model.ResultModel;
+import sourceCode.tableResurces.views.DataImportFirstStep;
+import sourceCode.tableResurces.views.FileExportFirstStep;
+
+import twaver.DemoUtils;
+import twaver.SequenceItemRenderer;
+
+private var pageIndex:int=0;
+private var pageSize:int=50;
+private var datanumbers:int;
+
+private var indexRenderer:Class = SequenceItemRenderer;
+public var e2Oracle:DataImportFirstStep = new DataImportFirstStep();
+
+[Bindable] public var propertyList:XMLList;
+[Bindable] public var xmlProvince:XMLList;
+[Bindable] public var xmlStationA:XMLList;
+[Bindable] public var xmlStationZ:XMLList;
+[Bindable] public var xmlOcablemodel:XMLList;
+//传输系统列表
+[Bindable] public var sys_nameLst:XMLList; 
+private var ocableModel:Ocable = new Ocable();
+private var dir:Boolean = true; //排序方式   true 升序 ，false 降序
+private var sortName:String =""; //当前排序的列名
+private var isEdit:Boolean = false;
+private var isAdd:Boolean = false;
+private var isDelete:Boolean = false;
+private var isSearch:Boolean = true;
+private var isExport:Boolean = false;
+private var isImport:Boolean = false
+public var modelName:String = "光缆";
+
+private function preinitialize():void{
+	if(ModelLocator.permissionList!=null&&ModelLocator.permissionList.length>0){
+		isAdd = false;
+		isEdit = false;
+		isDelete = false;
+		isSearch = true;
+		isImport = false;
+		isExport = false;
+		for(var i:int=0;i<ModelLocator.permissionList.length;i++){
+			var model:PermissionControlModel = ModelLocator.permissionList[i];
+			if(model.oper_name!=null&&model.oper_name=="添加操作"){
+				isAdd = true;
+			}
+			if(model.oper_name!=null&&model.oper_name=="修改操作"){
+				isEdit = true;
+			}
+			if(model.oper_name!=null&&model.oper_name=="删除操作"){
+				isDelete = true;
+			}
+			if(model.oper_name!=null&&model.oper_name=="导出操作"){
+				isExport = true;
+			}
+			if(model.oper_name!=null&&model.oper_name=="导入操作"){
+				isImport = true;
+			}
+		}
+	}
+}
+protected function init():void
+{
+	serverPagingBar.dataGrid=dg;
+	serverPagingBar.pagingFunction=pagingFunction;
+	serverPagingBar.addEventListener("returnALL",showAllDataHandler);
+	getOcables("0",pageSize.toString());
+	getProvince();
+	getProperty();
+	getStationA();
+	getStationZ();
+	getOcableModel();
+	addContextMenu();
+}
+
+private function addContextMenu():void
+{
+	var contextMenu:ContextMenu=new ContextMenu();
+	dg.contextMenu=contextMenu;
+	dg.contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT,function(e:ContextMenuEvent):void{
+		var item1:ContextMenuItem = new ContextMenuItem("添 加", true);
+		item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler);
+		var item4:ContextMenuItem = new ContextMenuItem("查 询", true);
+		item4.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler);
+		item1.visible = isAdd;
+		item4.visible = isSearch;
+		if (dg.selectedItems.length> 0) {
+			dg.selectedItem=dg.selectedItems[0];
+		}
+		//定制右键菜单
+		var flexVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLEX_SDK_VERSION, false, false);
+		var playerVersion:ContextMenuItem = new ContextMenuItem(DemoUtils.FLASH_PLAYER_VERSION, false, false);
+		
+		if(dg.selectedItems.length==0){//选中元素个数
+			dg.contextMenu.hideBuiltInItems();
+			dg.contextMenu.customItems = [item1,item4];
+		}
+		else{
+			
+			var item2:ContextMenuItem = new ContextMenuItem("修 改");
+			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler);
+			var item3:ContextMenuItem = new ContextMenuItem("删 除", true);
+			item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, itemSelectHandler);
+			item2.visible = isEdit;
+			item3.visible = isDelete;
+			dg.contextMenu.hideBuiltInItems();
+			dg.contextMenu.customItems = [item1,item2,item3,item4];
+		}
+	})
+}
+
+private function itemSelectHandler(e:ContextMenuEvent):void{
+	switch(e.target.caption){
+		case "添 加":
+			toolbar_toolEventAddHandler(new ToopEvent("toolEventAdd"));
+			break;
+		case "修 改":
+			toolbar_toolEventEditHandler(new ToopEvent("toolEventEdit"));
+			break;
+		case "删 除":
+			toolbar_toolEventDeleteHandler(new ToopEvent("toolEventDelete"));
+			break;
+		case "查 询":
+			toolbar_toolEventSearchHandler(new ToopEvent("toolEventSearch"));
+			break;
+		default:
+			break;
+	}
+}
+
+private function showAllDataHandler(event:Event):void{
+	getOcables("0",serverPagingBar.totalRecord.toString());
+}
+
+/**
+ * 
+ * 获取光缆信息
+ * 
+ * */
+private function getOcables(start:String,end:String):void{
+	var roOcables:RemoteObject=new RemoteObject("resNodeDwr");
+	ocableModel.start = start;
+	ocableModel.end = end ;
+	roOcables.addEventListener(ResultEvent.RESULT,resultOcablesHandler);
+	Application.application.faultEventHandler(roOcables);
+	roOcables.endpoint = ModelLocator.END_POINT;
+	roOcables.showBusyCursor = true;
+	roOcables.getOcables(ocableModel);
+}
+
+public function resultOcablesHandler(event:ResultEvent):void{
+	var result:ResultModel=event.result as ResultModel;
+	this.datanumbers = result.totalCount;
+	onResult(result);
+}
+
+
+private function getProperty():void{
+	var rtobj12:RemoteObject = new RemoteObject("resNodeDwr");
+	rtobj12.endpoint = ModelLocator.END_POINT;
+	rtobj12.showBusyCursor = true;
+	rtobj12.getFromXTBM('XZ0701__');//根据系统编码查询对应信息(维护供电局 单位)
+	rtobj12.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+		propertyList = new XMLList(e.result)
+	})
+	Application.application.faultEventHandler(rtobj12);
+}
+
+private function getProvince():void{
+	var rtobj12:RemoteObject = new RemoteObject("resNodeDwr");
+	rtobj12.endpoint = ModelLocator.END_POINT;
+	rtobj12.showBusyCursor = true;
+	rtobj12.getFromXTBM('XZ01__');//根据系统编码查询对应信息(所属地区)
+	rtobj12.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+		xmlProvince = new XMLList(e.result)
+	})
+	Application.application.faultEventHandler(rtobj12);
+}
+
+private function getOcableModel():void{
+	var rtobj12:RemoteObject = new RemoteObject("resNodeDwr");
+	rtobj12.endpoint = ModelLocator.END_POINT;
+	rtobj12.showBusyCursor = true;
+	rtobj12.getFromXTBM('ZY1304__');//根据系统编码查询对应信息(光缆类型)
+	rtobj12.addEventListener(ResultEvent.RESULT, function(e:ResultEvent):void{
+		xmlOcablemodel = new XMLList(e.result)
+	})
+	Application.application.faultEventHandler(rtobj12);
+}
+
+/**
+ * 
+ * 获取站点A
+ * 
+ * */
+private function getStationA():void{
+	var re:RemoteObject=new RemoteObject("resNodeDwr");
+	re.endpoint = ModelLocator.END_POINT;
+	re.showBusyCursor = true;
+	re.addEventListener(ResultEvent.RESULT,resultStationAHandler);
+	Application.application.faultEventHandler(re);
+	re.getStationXml(); 
+	
+}
+
+public function resultStationAHandler(event:ResultEvent):void{
+	xmlStationA = new XMLList(event.result);
+}
+/**
+ * 
+ * 获取站点Z
+ * 
+ * */
+private function getStationZ():void{
+	var re:RemoteObject=new RemoteObject("resNodeDwr");
+	re.endpoint = ModelLocator.END_POINT;
+	re.showBusyCursor = true;
+	re.addEventListener(ResultEvent.RESULT,resultStationZHandler);
+	Application.application.faultEventHandler(re);
+	re.getStationXml(); 
+	
+}
+
+public function resultStationZHandler(event:ResultEvent):void{
+	xmlStationZ = new XMLList(event.result);
+}
+
+
+private function pagingFunction(pageIndex:int,pageSize:int):void{
+	this.pageSize=pageSize;
+	getOcables((pageIndex*pageSize).toString(),(pageIndex*pageSize+pageSize).toString());
+}
+
+public function onResult(result:ResultModel):void 
+{	
+	serverPagingBar.orgData=result.orderList;
+	serverPagingBar.totalRecord=result.totalCount;
+	serverPagingBar.dataBind(true);					
+}
+
+private function RefreshOcables(event:Event):void{
+	getOcables("0",pageSize.toString());
+}
+
+
+/**
+ * 
+ * 添加
+ * 
+ * */
+protected function toolbar_toolEventAddHandler(event:Event):void
+{
+	var property:ShowProperty = new ShowProperty();
+	property.title = "光缆添加";
+	property.paraValue = null;
+	property.tablename = "VIEW_EN_OCABLE_PROPERTY";
+	property.key = "OCABLECODE";
+	PopUpManager.addPopUp(property, this, true);
+	PopUpManager.centerPopUp(property);		
+	property.addEventListener("savePropertyComplete",function (event:Event):void{
+		PopUpManager.removePopUp(property);
+		
+		//更新标准命名
+		var ocableCode:String = property.insertKey;
+		if(null != ocableCode && "" != ocableCode){
+			var rmObj:RemoteObject = new RemoteObject("resNodeDwr");
+			rmObj.endpoint = ModelLocator.END_POINT;
+			rmObj.showBusyCursor = false;
+			rmObj.updateOcableNameStd(ocableCode);
+			rmObj.addEventListener(ResultEvent.RESULT,function(event:ResultEvent):void{
+				RefreshOcables(event);
+			});
+		}
+		
+		RefreshOcables(event);});	
+	property.addEventListener("initFinished",function (event:Event):void{
+		(property.getElementById("STATION_A_NAME",property.propertyList) as mx.controls.TextInput).addEventListener(MouseEvent.CLICK,function(event:Object):void{
+			var stations:enStationTree=new enStationTree();
+			stations.page_parent=property;
+			stations.textId="STATION_A_NAME";
+			PopUpManager.addPopUp(stations, property, true);
+			PopUpManager.centerPopUp(stations);  
+		});
+		(property.getElementById("STATION_Z_NAME",property.propertyList) as mx.controls.TextInput).addEventListener(MouseEvent.CLICK,function(event:Object):void{
+			var stations:enStationTree=new enStationTree();
+			stations.page_parent=property;
+			stations.textId="STATION_Z_NAME";
+			PopUpManager.addPopUp(stations, property, true);
+			PopUpManager.centerPopUp(stations);  
+		});
+		
+		(property.getElementById("UPDATEPERSON",property.propertyList) as mx.controls.TextInput).enabled = false;
+		(property.getElementById("A_AREA",property.propertyList) as mx.controls.TextInput).enabled = false;
+		(property.getElementById("Z_AREA",property.propertyList) as mx.controls.TextInput).enabled = false;
+		(property.getElementById("UPDATEPERSON",property.propertyList) as mx.controls.TextInput).text = parentApplication.curUserName;
+		//		(property.getElementById("UPDATEDATE",property.propertyList) as mx.controls.TextInput).enabled = false;
+		(property.getElementById("UPDATEDATE",property.propertyList) as mx.controls.TextInput).text = getNowTime();
+	});
+}
+
+/**
+ * 
+ * 修改
+ * 
+ * */
+protected function toolbar_toolEventEditHandler(event:Event):void
+{
+	if(dg.selectedItem != null){
+		var property:ShowProperty = new ShowProperty();
+		property.title = "光缆修改";
+		property.paraValue = dg.selectedItem.ocablecode;
+		property.tablename = "VIEW_EN_OCABLE_PROPERTY";
+		property.key = "OCABLECODE";
+		
+		PopUpManager.addPopUp(property, this, true);
+		PopUpManager.centerPopUp(property);		
+		property.addEventListener("savePropertyComplete",function (event:Event):void{
+			PopUpManager.removePopUp(property);
+			
+			
+			//更新标准命名
+			var ocableCode:String = (property.getElementById("OCABLECODE",property.propertyList) as mx.controls.TextInput).text ;
+			if(null != ocableCode && "" != ocableCode){
+				var rmObj:RemoteObject = new RemoteObject("resNodeDwr");
+				rmObj.endpoint = ModelLocator.END_POINT;
+				rmObj.showBusyCursor = false;
+				rmObj.updateOcableNameStd(ocableCode);
+				rmObj.addEventListener(ResultEvent.RESULT,function(event:ResultEvent):void{
+					RefreshOcables(event);
+				});
+			}
+			
+			RefreshOcables(event);});
+		
+		property.addEventListener("initFinished",function (event:Event):void{
+			
+			(property.getElementById("STATION_A_NAME",property.propertyList) as mx.controls.TextInput).addEventListener(MouseEvent.CLICK,function(event:Object):void{
+				var stations:enStationTree=new enStationTree();
+				stations.page_parent=property;
+				stations.textId="STATION_A_NAME";
+				PopUpManager.addPopUp(stations, property, true);
+				PopUpManager.centerPopUp(stations);  
+			});
+			(property.getElementById("STATION_Z_NAME",property.propertyList) as mx.controls.TextInput).addEventListener(MouseEvent.CLICK,function(event:Object):void{
+				var stations:enStationTree=new enStationTree();
+				stations.page_parent=property;
+				stations.textId="STATION_Z_NAME";
+				PopUpManager.addPopUp(stations, property, true);
+				PopUpManager.centerPopUp(stations);  
+			});
+			
+			(property.getElementById("UPDATEPERSON",property.propertyList) as mx.controls.TextInput).enabled = false;
+			(property.getElementById("UPDATEPERSON",property.propertyList) as mx.controls.TextInput).text = parentApplication.curUserName;
+//			(property.getElementById("UPDATEDATE",property.propertyList) as mx.controls.TextInput).enabled = false;
+			(property.getElementById("UPDATEDATE",property.propertyList) as mx.controls.TextInput).text = getNowTime();
+		});
+	}else{
+		Alert.show("请先选中一条记录！","提示");
+	}
+}
+
+/**
+ * 
+ * 删除
+ * 
+ * */
+protected function toolbar_toolEventDeleteHandler(event:Event):void{
+	if(dg.selectedItem != null){
+		ModelLocator.showConfimMessage("您确认要删除吗?",this,delconfirmHandler);
+		
+	}else{
+		ModelLocator.showErrorMessage("请先选中一条记录!",this);
+	}
+}
+
+
+
+private function delconfirmHandler(event:CloseEvent):void {
+	if (event.detail == Alert.YES) {
+		var remoteObject:RemoteObject=new RemoteObject("resNodeDwr");
+		remoteObject.endpoint = ModelLocator.END_POINT;
+		remoteObject.showBusyCursor = true;
+		remoteObject.delOcable(dg.selectedItem);
+		remoteObject.addEventListener(ResultEvent.RESULT,delOcablesResult);
+		Application.application.faultEventHandler(remoteObject);
+	}
+}
+
+public function delOcablesResult(event:ResultEvent):void{
+	if(event.result.toString()=="success")
+	{
+		ModelLocator.showSuccessMessage("删除成功!",this);
+		this.getOcables("0",pageSize.toString());
+	}else
+	{
+		ModelLocator.showErrorMessage("删除失败!",this);
+	}
+}
+
+/**
+ * 
+ * 查询
+ * 
+ * */
+protected function toolbar_toolEventSearchHandler(event:Event):void
+{
+	var ocablesSearch:OcablesSearch = new OcablesSearch();
+	PopUpManager.addPopUp(ocablesSearch,Application.application as DisplayObject,true);
+	PopUpManager.centerPopUp(ocablesSearch);
+	
+	ocablesSearch.cmbOcableModel.dataProvider = xmlOcablemodel.children();
+	ocablesSearch.cmbOcableModel.selectedIndex = -1;
+	
+	ocablesSearch.a_area.dataProvider = xmlProvince.children();
+	ocablesSearch.a_area.selectedIndex = -1;
+	
+	ocablesSearch.z_area.dataProvider = xmlProvince.children();
+	ocablesSearch.z_area.selectedIndex = -1;
+	
+	ocablesSearch.cmbProperty.dataProvider = propertyList.children();
+	ocablesSearch.cmbProperty.selectedIndex = -1;
+	
+
+	 
+	ocablesSearch.addEventListener("ocablesSearchEvent",ocablesSearchHandler);
+	ocablesSearch.title = "查询";
+}
+
+
+protected function ocablesSearchHandler(event:OcablesSearchEvent):void{
+	ocableModel = event.model;
+	ocableModel.start="0";
+	ocableModel.dir="asc";
+	ocableModel.end=pageSize.toString();
+	serverPagingBar.navigateButtonClick("firstPage");
+	
+}
+
+/**
+ * 
+ * 导入
+ * 
+ * */
+protected function toolbar_toolEventImpExcelHandler(event:Event):void
+{
+	MyPopupManager.addPopUp(e2Oracle,true);
+	e2Oracle.setTemplateType("光缆");
+}
+
+/**
+ * 
+ * 导出
+ * 
+ * */
+protected function toolbar_toolEventEmpExcelHandler(event:Event):void
+{
+	var fefs:FileExportFirstStep = new FileExportFirstStep();
+	var model:Ocable = new Ocable();
+	fefs.dataNumber = this.datanumbers;
+	fefs.exportTypes = "光缆";
+	fefs.titles = new Array("序号","光缆名称",  "光缆类型","电压等级", "光缆长度", "建设时间", "维护单位", "建设方式","A站名称","A站地市","Z站名称","Z站地市","纤芯数目");
+	fefs.labels = "光缆信息列表";
+	model = ocableModel;
+	model.start="0";
+	model.end = this.datanumbers.toString();
+	fefs.model = model;
+	MyPopupManager.addPopUp(fefs, true);
+}
+
+/**
+ * 
+ * 添加快捷方式
+ * 
+ * */
+protected function toolbar_toolEventAddShortcutHandler(event:Event):void
+{
+	parentApplication.addShorcut('光缆','ocable');
+}
+
+/**
+ * 
+ * 删除快捷方式
+ * 
+ * */
+protected function toolbar_toolEventDelShortcutHandler(event:Event):void
+{
+	parentApplication.delShortcut('光缆');
+}
+/**
+ * 点击列头对查询的所有结果进行排序  
+ * */
+protected function dg_headerReleaseHandler(event:DataGridEvent):void
+{
+	var dg:DataGrid = DataGrid(event.currentTarget);
+	var dgm:DataGridColumn = dg.columns[event.columnIndex];
+	var columnName:String=dgm.dataField;
+	event.stopImmediatePropagation(); //阻止其自身的排序
+	ocableModel.sort = columnName;
+	ocableModel.start="0";
+	ocableModel.end=pageSize.toString();
+	if(sortName == columnName){
+		if(dir){
+			ocableModel.dir="asc";
+			dir=false;
+		}else{
+			ocableModel.dir="desc";
+			dir=true;
+		}
+	}else{
+		sortName=columnName;
+		dir = false;
+		ocableModel.dir="asc";
+	}
+	serverPagingBar.navigateButtonClick("firstPage");
+}
+/**
+ * 获取当前时间
+ */
+protected function getNowTime():String{
+	var dateFormatter:DateFormatter = new DateFormatter();
+	dateFormatter.formatString = "YYYY-MM-DD JJ:NN:SS";
+	var nowDate:String= dateFormatter.format(new Date());
+	return nowDate;
+}
+/**
+ * 
+ * 获取传输系统列表
+ * 
+ * */
+private function getSysNameLst():void{
+	var re:RemoteObject=new RemoteObject("resNetDwr");
+	re.endpoint = ModelLocator.END_POINT;
+	re.showBusyCursor = true;
+	re.addEventListener(ResultEvent.RESULT,resultSDHStateHandler);
+	Application.application.faultEventHandler(re);
+	re.getSysNameLst(); 
+	
+}
+
+public function resultSDHStateHandler(event:ResultEvent):void{
+	sys_nameLst = new XMLList(event.result);
+}
+		//双击光缆 进入对应的光纤数据
+		protected function dg_doubleClickHandler(event:MouseEvent):void
+		{
+			// TODO Auto-generated method stub
+			var ocablecode:String=dg.selectedItem.ocablecode;
+			Registry.register("ocablecode", ocablecode);
+			Application.application.openModel("光纤", false);
+		}

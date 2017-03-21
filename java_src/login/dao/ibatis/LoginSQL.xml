@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="login">
+    <select id="getShortCutByUserName" resultClass="login.model.ShortCut" parameterClass="String">
+    	<![CDATA[
+    		 select user_id userName, shortcut_name shortcutName, shortcut_ID shortcutID, o.shortcuticon shortcuticon
+		    from user_shortcuts s, sec_operation_res o
+		   where s.shortcut_id = o.oper_id
+		     and (user_id = '$username$' or oper_id=99999)
+		     order by s.update_time
+		]]>	
+    </select>
+    <select id="getShortCutByUserName1111" resultClass="login.model.ShortCut" parameterClass="String">
+    	<![CDATA[
+    		 select user_id userName, shortcut_name shortcutName, shortcut_ID shortcutID, o.shortcuticon shortcuticon
+		    from user_shortcuts s, sec_operation_res o
+		   where s.shortcut_id = o.oper_id
+		     and user_id = '$username$'
+		     order by s.update_time
+		]]>	
+    </select>
+    <select id="getRootStartMenu" resultClass="login.model.StartMenu" >
+      select oper_id,
+       oper_name,
+       parent_id,
+       oper_desc,
+       ischilden,
+       menuicon,
+       oper_index
+	  from sec_operation_res 
+	 where parent_id = 0
+	 order by oper_index
+    </select>
+    <select id="getChildMenuByParentID" resultClass="login.model.StartMenu" parameterClass="int">
+    select distinct c.oper_id,
+                c.oper_name,
+                c.parent_id,
+                c.oper_desc,
+                c.ischilden,
+                c.menuicon,
+                oper_index
+	  from sec_operation_res c
+	 where c.parent_id = #parentID# 
+	 order by oper_index
+    </select>
+    
+    <select id="getRootStartMenu_rep" resultClass="login.model.StartMenu" >
+      select oper_id,
+       oper_name,
+       parent_id,
+       oper_desc,
+       ischilden,
+       menuicon,
+       oper_index
+	  from sec_operation_test
+	 where parent_id = 0
+	 order by oper_index
+    </select>
+    <select id="getChildMenuByParentID_rep" resultClass="login.model.StartMenu" parameterClass="int">
+    select distinct c.oper_id,
+                c.oper_name,
+                c.parent_id,
+                c.oper_desc,
+                c.ischilden,
+                c.menuicon,
+                oper_index
+	  from sec_operation_test c
+	 where c.parent_id = #parentID# 
+	 order by oper_index
+    </select>
+    
+    
+    
+    <select id="getOperByUser" resultClass="Integer" parameterClass="String">
+    select distinct c.oper_id
+	  from sec_role_user a, sec_role_oper b, sec_operation_res c
+	 where a.role_id = b.role_id
+	   and b.oper_id = c.oper_id
+	   and c.ischilden is null
+	   and a.user_id = #userName#
+    
+    </select>
+    
+     <select id="getOperByUser_rep" resultClass="Integer" parameterClass="String">
+    select distinct c.oper_id
+	  from sec_role_user a, sec_role_oper b, sec_operation_test c
+	 where a.role_id = b.role_id
+	   and b.oper_id = c.oper_id
+	   and c.ischilden is null
+	   and a.user_id = #userName#
+    </select>
+    <select id="selectLogin" resultClass="sysManager.user.model.UserModel" parameterClass="sysManager.user.model.UserModel">
+        <![CDATA[
+           select t.username as  user_id,t.truename as user_name,t.userpassword as user_pwd  from sec_userinfo t where t.username='$user_name$' and t.userpassword='$user_pwd$' 
+        ]]> 
+    </select>
+	<insert id="insertUserShortcut" parameterClass="java.util.Map">
+   		<![CDATA[
+   			insert into User_Shortcuts values('$userName$','$shortcutName$','$shortcutID$',to_char(sysdate,'yyyy-mm-dd hh24:mi:ss'))
+   		]]>	
+    </insert>
+    <delete id="deleteUserShortcut" parameterClass="java.util.Map">    		
+		<![CDATA[	
+			delete from User_Shortcuts where user_id='$user_id$' and shortcut_name='$shortcut_name$' 
+		]]>
+    </delete>
+    <delete id="deleteShortcut" parameterClass="String">    		
+		<![CDATA[	
+			delete from User_Shortcuts where shortcut_name='$name$' 
+		]]>
+    </delete>
+    <select id="isSystemManager" resultClass="sysManager.user.model.UserModel" parameterClass="String">
+    	<![CDATA[
+    		select * from sec_userinfo u, sec_role_res rr, sec_role_user ru where u.username = ru.user_id
+		     and rr.role_id = ru.role_id
+		     and rr.role_id = 222
+		     and u.username = '$username$';
+    	]]> 
+    </select>
+    
+    <select id="getVersionByIdNameRestrict" resultClass="login.model.VersionModel" parameterClass="java.util.Map">
+    	select * from (
+    	select rownum no,vid,vname,vdesc,fill_time,fill_man_id,fill_man,from_vid,from_vname from $username$version v where 
+		v.vid!='csg_simulate'
+    	<isNotEmpty  prepend="and" property="vid">
+    		vid like '%$vid$%'
+    	</isNotEmpty>
+    	<isNotEmpty prepend="and" property="vname">
+    		<![CDATA[
+    		vname like '%$vname$%'
+    		]]> 
+    	</isNotEmpty>
+    	<isNotNull prepend="and" property="vdesc">
+    	<![CDATA[
+    		vdesc like '%$vdesc$%'
+    		]]> 
+    	</isNotNull>
+    	<isNotNull prepend="and" property="fill_time">
+    		<![CDATA[
+    		fill_time like '%$fill_time$%'
+    		]]> 
+    	</isNotNull>
+    	<isNotNull prepend="and" property="fill_man">
+    		fill_man=#fill_man#
+    	</isNotNull>
+    	
+    	<isNotNull prepend="and" property="fill_man_id">
+    		fill_man_id=#fill_man_id#
+    	</isNotNull>
+    	<isNotNull prepend="and" property="from_vid">
+    		from_vid=#from_vid#
+    	</isNotNull>
+    	<isNotNull prepend="and" property="from_vname">
+    		from_vname=#from_vname#
+    	</isNotNull>
+    	<isNotEmpty prepend="AND" property="end">
+				( rownum &lt;= #end# )
+			</isNotEmpty>
+			order by vcode
+			)
+		<isNotNull prepend="" property="start">
+			where no > #start# and no &lt;=#end#
+		</isNotNull>
+			
+    </select>
+    
+    <select id="getVersionByIdName" resultClass="login.model.VersionModel" parameterClass="java.util.Map">
+    	select * from (
+    	select rownum no,vid,vname,vdesc,fill_time,fill_man_id,fill_man,from_vid,from_vname from $username$version v where 1=1
+    	<isNotEmpty  prepend="and" property="vid">
+    		vid like '%$vid$%'
+    	</isNotEmpty>
+    	<isNotEmpty prepend="and" property="vname">
+    		<![CDATA[
+    		vname like '%$vname$%'
+    		]]> 
+    	</isNotEmpty>
+    	<isNotNull prepend="and" property="vdesc">
+    	<![CDATA[
+    		vdesc like '%$vdesc$%'
+    		]]> 
+    	</isNotNull>
+    	<isNotNull prepend="and" property="fill_time">
+    		<![CDATA[
+    		fill_time like '%$fill_time$%'
+    		]]> 
+    	</isNotNull>
+    	<isNotNull prepend="and" property="fill_man">
+    		fill_man=#fill_man#
+    	</isNotNull>
+    	
+    	<isNotNull prepend="and" property="fill_man_id">
+    		fill_man_id=#fill_man_id#
+    	</isNotNull>
+    	<isNotNull prepend="and" property="from_vid">
+    		from_vid=#from_vid#
+    	</isNotNull>
+    	<isNotNull prepend="and" property="from_vname">
+    		from_vname=#from_vname#
+    	</isNotNull>
+    	<isNotEmpty prepend="AND" property="end">
+				( rownum &lt;= #end# )
+			</isNotEmpty>
+			order by vcode
+			)
+		<isNotNull prepend="" property="start">
+			where no > #start# and no &lt;=#end#
+		</isNotNull>
+			
+    </select>
+    <delete id="delVersion" parameterClass="String">
+    	delete from version where vid=#vid#
+    </delete>
+    
+    <select id="getVersionXtbm" resultClass="login.model.VersionModel" parameterClass="java.util.Map">
+    	select xtbm vid,xtxx vname,vtype vdesc,remark fill_time from version_xtbm 
+    	where 1=1
+    	<isNotNull prepend="and" property="vtype">
+    		vtype=#vtype#
+    	</isNotNull>
+    	<isNotNull prepend="and" property="xtbm">
+    		xtbm=#xtbm#
+    	</isNotNull>
+    	<isNotNull prepend="and" property="xtxx">
+    		xtxx=#xtxx#
+    	</isNotNull>
+    	order by xtbm
+    </select>
+    <update id="updateLoginVersionByUser" parameterClass="sysManager.user.model.UserModel">
+    	update sec_userinfo t set t.version=#version# where  t.username='$user_name$' 
+    </update>
+    <select id="getCurrVersionByUser" parameterClass="String" resultClass="String">
+    	select version from sec_userinfo where username=#userid#
+    </select>
+    <select id="getVXtbms" resultClass="login.model.VersionModel" parameterClass="java.lang.String">
+    	select xtbm,xtxx,vtype,remark,oper_id,parent_id  from  version_xtbm
+        where parent_id=#value# order by oper_id         
+    </select>
+    <insert id="insertVXtbm" parameterClass="login.model.VersionModel">
+    	insert into version_xtbm(oper_id,xtbm,xtxx,vtype,remark,parent_id)values(sysmgr.nextval,#xtbm#,#xtxx#,#vtype#,#remark#,#parent_id#)
+    </insert>
+    <update id="updateVXtbmByOperId" parameterClass="login.model.VersionModel">
+        update version_xtbm set xtbm = #xtbm# 
+        <isNotNull property="xtxx" prepend=",">
+        	 xtxx = #xtxx# 
+        </isNotNull>
+        <isNotNull property="vtype" prepend=",">
+        	 vtype = #vtype# 
+        </isNotNull>
+         <isNotNull property="remark" prepend=",">
+        	 remark = #remark# 
+        </isNotNull>
+        where oper_id=#oper_id#
+    </update>
+     <delete id="delVersionXtbm" parameterClass="String">
+    	delete from version_xtbm where oper_id=#oper_id#
+    </delete>
+    
+    <select id="getVersionModelList" resultClass="login.model.VersionModel" parameterClass="login.model.VersionModel">
+    	select * from (
+    	select rownum no,vid,vname,vdesc,fill_time,fill_man_id,fill_man,from_vid,from_vname from version v where 1=1
+    	<isNotEmpty  prepend="and" property="vid">
+    		vid=#vid#
+    	</isNotEmpty>
+    	<isNotEmpty prepend="and" property="vname">
+    		<![CDATA[
+    		vname like '%$vname$%'
+    		]]> 
+    	</isNotEmpty>
+    	<isNotNull prepend="and" property="vdesc">
+    	<![CDATA[
+    		vdesc like '%$vdesc$%'
+    		]]> 
+    	</isNotNull>
+    	
+    	<isNotNull prepend="and" property="from_vid">
+    		from_vid=#from_vid#
+    	</isNotNull>
+    	<isNotNull prepend="and" property="from_vname">
+    		from_vname=#from_vname#
+    	</isNotNull>
+    	<isNotEmpty prepend="AND" property="end">
+				( rownum &lt;= #end# )
+			</isNotEmpty>
+			order by vcode
+			)
+		<isNotNull prepend="" property="start">
+			where no > #start# and no &lt;=#end#
+		</isNotNull>
+			
+    </select>
+    
+    <select id="getVersionUserByID" parameterClass="string" resultClass="string">
+    	select t.xtxx from version_xtbm t where t.vtype='数据库版本' and t.xtbm=#user#
+    </select>
+
+</sqlMap>

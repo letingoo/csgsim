@@ -1,0 +1,9 @@
+drop table V_MNT_REPAIR_FROM_MIS;
+drop table MNT_ALARM_WATCH_CONFIG;
+drop table mnt_subject;
+drop table mnt_subject_datasource;
+drop table mnt_subject_resource_graph;
+drop table mnt_subjectdisplayconfig;
+drop table mnt_sugject_resource_totalgrid;
+drop table MODULE_STATUS_CHANGE;
+drop table V_MNT_DEALALARMMETHOD_TMP;

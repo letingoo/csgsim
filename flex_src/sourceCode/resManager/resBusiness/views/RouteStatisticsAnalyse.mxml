@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 xmlns:views="sourceCode.tableResurces.views.*" 
+		 xmlns:component="common.component.*"
+		 creationComplete="init();initEvent();"
+		 verticalGap="0">
+
+	
+	<component:ControlBar width="100%" height="38" modelName="路由统计分析" imgName="businessRess"  />
+	<mx:HBox width="100%" height="30" verticalAlign="top" >
+		<mx:HBox width="20%">
+			<mx:Button id="MakePic" label="绘制业务分布图" width="150" height="30" click="PaintPic();"/>  			
+		</mx:HBox>
+		<mx:HBox width="20%">
+			<mx:Label text="所属系统" height="25"/>
+			<mx:ComboBox id="com_sys" height="25"  width="200"  change="com_rate_changeHandler(event)"/>
+		</mx:HBox>
+		<mx:HBox width="20%">
+			<mx:Label text="电路带宽" height="25"/>
+			<mx:ComboBox id="com_rate"  height="25" change="com_rate_changeHandler(event)">
+				<mx:dataProvider>
+					<mx:Array>
+						<mx:String>全部</mx:String>
+						<mx:String>2M</mx:String>
+						<mx:String>34M</mx:String>
+						<mx:String>144M</mx:String>
+						<mx:String>155M</mx:String>
+						<mx:String>622M</mx:String>
+						<mx:String>2.5G</mx:String>
+						<mx:String>10G</mx:String>
+						<mx:String>其它</mx:String>
+					</mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+			<mx:Label text="承载业务个数" width="80" />
+			<mx:ComboBox id="num"  dataProvider="{numInfo}"  change="com_rate_changeHandler(event)"/>
+		</mx:HBox>
+	</mx:HBox>	
+	<mx:VBox id="graph_area" width="85%" height="80%">	
+		<mx:Panel title="业务分布图" width="100%" height="100%" fontSize="12">  				 
+			<mx:ColumnChart id="myChart" showDataTips="true" width="100%" height="100%">  
+				<mx:horizontalAxis>  
+					<mx:CategoryAxis displayName="承载业务数(单位:个)" title="承载业务数" dataProvider="{DataCollection}"  
+									 categoryField="group"/>  
+				</mx:horizontalAxis>  
+				<mx:verticalAxis>  
+					<!--设定左边Y轴坐标的数值范围 -->  
+					<mx:LinearAxis title="链路数量(单位:条)" displayName="链路数量" autoAdjust="true" />  
+				</mx:verticalAxis>  
+				<mx:series>  
+					<mx:ColumnSeries id="cs1" dataProvider="{DataCollection}"  
+									 xField="group" yField="num"  
+									 displayName="链路数量">
+						<mx:fill>
+							<mx:RadialGradient>
+								<mx:entries>
+									<mx:GradientEntry  color="#A1AECF"  />
+									<mx:GradientEntry color="#87CEEB" ratio="0"/>
+								</mx:entries>
+							</mx:RadialGradient>
+						</mx:fill>
+					</mx:ColumnSeries>
+				</mx:series>   			
+			</mx:ColumnChart>  
+		</mx:Panel>
+	</mx:VBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.resManager.resBusiness.actionscript.BusiToCircu;
+			
+			private static var gap:int=50;//此变量用来控制业务数间隔，根据系统内业务数目的多少相应地适当更改其数值		
+			private static var Max:int;	
+			[Bindable]
+			private var Business_Group:Array=new Array();  
+			[Bindable]
+			private var Circuit_Num:Array=new Array();
+			[Bindable]    
+			private var DataCollection:ArrayCollection=new ArrayCollection();
+			[Bindable] public var xmlSystemCode:XMLList;
+			
+			[Bindable]
+			private var numInfo:ArrayCollection = new ArrayCollection(
+				[{label:"1",data:1},
+				{label:"5",data:5},
+				{label:"10",data:10},
+				{label:"15",data:15},
+				{label:"20",data:20},
+				{label:"25",data:25},
+				{label:"30",data:30},
+				{label:"35",data:35},
+				{label:"40",data:40},
+				{label:"50",data:50}
+				]);
+			
+			public function initEvent():void{
+				//获取传输系统列表
+				var re:RemoteObject=new RemoteObject("resNetDwr");
+				re.endpoint = ModelLocator.END_POINT;
+				re.showBusyCursor = true;
+				re.addEventListener(ResultEvent.RESULT,resultSystemCodeHandler);
+				re.getTranssystem();
+			}
+			public function resultSystemCodeHandler(event:ResultEvent):void{
+				xmlSystemCode = new XMLList(event.result);
+				com_sys.dropdown.dataProvider=xmlSystemCode;
+				com_sys.dataProvider=xmlSystemCode;
+				com_sys.labelField="@label";
+				com_sys.text="";
+				com_sys.selectedIndex=-1;
+			}
+			
+			public var timer:Timer = new Timer(1000);
+			public  function timerStart():void{ 
+				timer.addEventListener(TimerEvent.TIMER,onTimer); 
+				function onTimer(event:TimerEvent):void{
+					if(BusiToCircu.flag==1){
+						
+						PaintPic();	
+						if(Business_Group.length>1){
+							timer.stop();
+						}
+					}
+				}
+				timer.start()
+			}
+			private function init():void{
+				BusiToCircu.circuit.rate=(com_rate.text=="全部"?"":com_rate.text);
+				BusiToCircu.circuit.systemcode = com_sys.selectedItem==null?"":com_sys.selectedItem.@id;//所属传输系统
+				BusiToCircu.init()
+				timerStart();
+			}
+			private function get_Business_Group():Array{
+				var business_group:Array=new Array();				
+				var business_length:int=BusiToCircu.CircuitToBusiness.length-1;
+				if(business_length<=gap)
+					business_group[0]="0"+"-"+business_length.toString();
+				else{
+					business_group[0]="0"+"-"+gap.toString();
+					for(var i:int=gap+1,j:int=1;i+(gap-1)<business_length;i+=gap,j++)
+						business_group[j]=i.toString()+"-"+(i+(gap-1)).toString();
+					business_group[j]=i.toString()+"-"+business_length.toString();
+				}
+				return business_group;
+			}
+			private function get_Circuit_Num():Array{
+				Max=(BusiToCircu.CircuitToBusiness.length-1)/gap;
+				var circuit_num:Array=new Array();
+				circuit_num[0]=BusiToCircu.CircuitToBusiness[0];
+				var business_length:int=BusiToCircu.CircuitToBusiness.length-1;
+				if(business_length<=gap)
+				{
+					for(var n:int=1;n<BusiToCircu.CircuitToBusiness.length;n++)
+					circuit_num[0]+=BusiToCircu.CircuitToBusiness[n];
+				}
+				else
+				{	
+					if((BusiToCircu.CircuitToBusiness.length-1)%gap>0)
+					{
+						for(var ii:int=1;ii<=Max;ii++)
+							circuit_num[ii]=0;
+					}
+					else
+					{
+						for(var iii:int=1;iii<Max;iii++)
+							circuit_num[iii]=0;
+					}
+					for(var jj:int=0;jj<Max;jj++)
+						for(var k:int=1;k<=gap;k++)
+							circuit_num[jj]+=BusiToCircu.CircuitToBusiness[gap*jj+k];							
+					if((BusiToCircu.CircuitToBusiness.length-1)%gap>0)
+					{
+						for(var kk:int=gap*Max+1;kk<BusiToCircu.CircuitToBusiness.length;kk++)
+							circuit_num[Max]+=BusiToCircu.CircuitToBusiness[kk];	
+					}
+				}
+				return circuit_num;
+			}
+			private function get_DataCollection(business_group:Array,circuit_num:Array):ArrayCollection{	
+				var datacollection:ArrayCollection=new ArrayCollection();				
+				for(var m:int=0;m<business_group.length;m++){
+					var dataob:Object=new Object();	
+					dataob.group=business_group[m];
+					dataob.num=circuit_num[m];
+					datacollection.addItem(dataob);
+				}					
+				return datacollection;
+			}
+			public function PaintPic():void{
+//				Alert.show("------------");
+				gap=int(num.selectedItem.label);
+				// Alert.show("------------"+gap);
+				//Alert.show(BusiToCircu.CircuitToBusiness.toString(),"显示BusiToCircu中的源数据");//注意该操作无法在init()函数中显示出来
+				Business_Group=get_Business_Group();
+				//Alert.show(Business_Group.toString()+"Business_Group");
+				Circuit_Num=get_Circuit_Num();
+//				Alert.show(Circuit_Num.toString()+"Circuit_Num");
+				DataCollection=get_DataCollection(Business_Group,Circuit_Num);
+				
+			}
+			protected function com_rate_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub 选项发生改变时  进行查询
+				init();
+			}
+			
+		]]>
+	</mx:Script>
+</mx:VBox>

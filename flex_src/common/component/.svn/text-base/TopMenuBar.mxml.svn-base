@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="90">
+	<mx:VBox x="0" y="0" width="100%" height="100%">
+		<mx:HBox width="100%" height="41" backgroundImage="@Embed(source='assets/images/system_titlebg2.png')" backgroundSize="100%" horizontalGap="0" verticalAlign="bottom">
+			<mx:Image source="assets/images/system_title2.png"/>
+			<mx:Spacer width="100%" height="30"/>
+			<!--<mx:Button styleName="desktopalarm" width="110" height="31" click="alarmInfoClickHandler(event)"/>-->
+			<!--		<mx:Button id="systemTrip" styleName="desktopresources" width="120" height="31" click="systemTripClickHandler(event)"/>  -->
+			<mx:Spacer height="30" width="295"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:HBox id="hbox" width="315" height="74" right="0" top="0" horizontalGap="0" backgroundImage="@Embed(source='assets/images/deskbtn_bg.png')" verticalAlign="bottom" paddingBottom="7" paddingLeft="11">
+		<mx:Button id="btnSex" width="54" height="54" toolTip="当前用户:{Application.application.curUser}"
+				   click="userClickHandler(event)"/>
+	</mx:HBox>
+	<mx:HBox width="272" height="74" right="0" top="0" horizontalGap="2" verticalAlign="bottom" paddingBottom="7" horizontalAlign="right" paddingRight="12">
+		<mx:Button id="btnScreen" styleName="fullscreen" width="210" height="54" click="fullScreen(event)"/>
+<!--	<mx:Button styleName="exit" width="36" height="54" click="exitClickHandler(event)"/>-->
+		<mx:Button styleName="logout" width="36" height="54" click="logoutClickHandler(event)"/>
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.MyPopupManager;
+			
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			
+			import sourceCode.resourcesChanges.views.SystemInfoList;
+			
+			private function alarmInfoClickHandler(event:MouseEvent):void{
+				var alarmSetting:AlarmSetting = new AlarmSetting();
+				MyPopupManager.addPopUp(alarmSetting);
+			}
+			
+			private function userClickHandler(event:MouseEvent):void
+			{
+				Application.application.openModel("个人信息",false);
+			}
+			
+			private function logoutClickHandler(event:MouseEvent):void
+			{
+				Application.application.exitSystem();
+			}
+			
+			private function exitClickHandler(event:MouseEvent):void{
+				Alert.show("确定要退出本系统吗?","提示",Alert.YES|Alert.NO,Application.application.workspace,closeHandler);
+			}
+			
+			private function closeHandler(event:CloseEvent):void{
+				if(event.detail == Alert.YES){
+					ExternalInterface.call("closedisplay");	
+				}
+			}
+			
+			public  function fullScreen(event:MouseEvent):void{
+//				ExternalInterface.call("fullScreen");
+				if(stage.displayState == StageDisplayState.NORMAL){
+					stage.displayState = StageDisplayState.FULL_SCREEN;
+					btnScreen.styleName = "exitfullscreen";
+				}else{
+					stage.displayState = StageDisplayState.NORMAL;
+					btnScreen.styleName = "fullscreen";
+				}
+				
+			}
+			
+			private function systemTripClickHandler(event:MouseEvent):void{
+				var systemList:SystemInfoList = new SystemInfoList();
+				MyPopupManager.addPopUp(systemList);
+			}
+
+		]]>
+	</mx:Script>
+</mx:Canvas>

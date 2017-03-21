@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--告警管理-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 xmlns:ui="com.metarnet.alarmmgr.AlarmManagerGrid"
+		 creationComplete="init();" 
+		 width="100%" height="100%"
+		 xmlns:views1="sourceCode.common.views.*" xmlns:base="base.*" xmlns:component="common.component.*" 
+		 >
+	<mx:Script source="../actionscript/ClearedAlarmManager.as" />
+
+	
+	<mx:ArrayCollection id="ack">
+		<mx:Object ackzh="请选择" ack="2"/>
+		<mx:Object ackzh="已确认" ack="1"/>
+		<mx:Object ackzh="未确认" ack="0"/>
+	</mx:ArrayCollection>
+	
+	<mx:ArrayCollection id="alarmtype">
+		<mx:Object talarmtype="请选择" alarmtype=""/>
+		<mx:Object talarmtype="演习" alarmtype="演习"/>
+		<mx:Object talarmtype="故障" alarmtype="故障"/>
+		<mx:Object talarmtype="割接" alarmtype="割接"/>
+		<mx:Object talarmtype="接口" alarmtype="接口"/>
+	</mx:ArrayCollection>
+	
+	<mx:ArrayCollection id="rootalarm">
+		<mx:Object rootzh="请选择" root="2"/>
+		<mx:Object rootzh="根告警" root="1"/>
+		<mx:Object rootzh="非根告警" root="0"/>
+	</mx:ArrayCollection>
+	
+	<mx:ArrayCollection id="isCleared">
+		<mx:Object clearzh="请选择" clear="2"/>
+		<mx:Object clearzh="已清除" clear="1"/>
+		<mx:Object clearzh="未清除" clear="0"/>
+	</mx:ArrayCollection>
+	
+	<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+	
+	<mx:VBox x="0" y="0" width="100%" height="100%" horizontalGap="0" verticalGap="0">
+		<mx:HBox id="query" width="100%" height="5%" backgroundImage="@Embed(source='assets/images/iconbar_bg.png')" backgroundSize="100%" verticalAlign="middle">
+			<mx:Image source="assets/images/iconbar_left.png" scaleContent="false"/>
+			<mx:Button click="getAlarmsByAlarmLevel('warning')" height="20" width="140"  buttonMode="true" useHandCursor="true" label="提示告警:{warningcount}" fontFamily="Arial" fontSize="12" color="#000000" textAlign="center" cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#00FFFF, #00FFFF, #00FFFF, #00FFFF]"/>
+			<mx:Button click="getAlarmsByAlarmLevel('minor')" height="20" width="140"  buttonMode="true" useHandCursor="true" label="次要告警:{minorcount}" fontFamily="Arial" fontSize="12" color="#000000" textAlign="center" cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#FFFF00, #FFFF00, #FFFF00, #FFFF00]"/>
+			<mx:Button click="getAlarmsByAlarmLevel('major')"  height="20" width="140"  buttonMode="true" useHandCursor="true" label="主要告警:{majorcount}" fontFamily="Arial" fontSize="12" color="#FFFFFF" textAlign="center" cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#FFBF00, #FFBF00, #FFBF00, #FFBF00]"/>
+			<mx:Button click="getAlarmsByAlarmLevel('critical')" height="20" width="140"  buttonMode="true" useHandCursor="true" label="紧急告警:{criticalcount}" fontFamily="Arial" fontSize="12" color="#FFFFFF" textAlign="center" cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#FF0000, #FF0000, #FF0000, #FF0000]"/>
+			<mx:Button click="getAlarmsByAlarmLevel('总计');" height="20" width="100"  buttonMode="true" useHandCursor="true" label="总计:{sum}" fontFamily="Arial" fontSize="12" color="#FFFFFF" textAlign="center" cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#2f4f4f, #2f4f4f, #2f4f4f, #2f4f4f]"/>
+			
+			<mx:Spacer width="100%"/>
+			<!--<mx:LinkButton label="获取当前告警" styleName="iconbar" icon="@Embed(source='assets/images/mntsubject/mntsubjectmenu/gengaojing.png')" click="getWebSelectAlarms('1');buttonCur_clickHandler(event)"/>-->
+			<mx:LinkButton label="导出"  styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_export.png')" click="button1_clickHandler(event)"/>
+			
+		</mx:HBox>
+		<mx:Canvas width="100%" height="100%" >
+			<mx:VBox width="100%" height="100%" right="20" left="0">
+				<mx:DataGrid id="dg" horizontalScrollPolicy="auto" headerHeight="25" width="100%"  styleName="alarm" height="95%" textAlign="right" verticalAlign="middle" click="dg_clickHandler(event)" allowMultipleSelection="true">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="50" textAlign="center"/>
+						<mx:DataGridColumn headerText="告警编号" dataField="alarmnumber" width="50" textAlign="left" visible="false" />
+						<mx:DataGridColumn headerText="告警级别" dataField="alarmlevelname" width="80" textAlign="left" itemRenderer="sourceCode.alarmmgr.actionscript.AlarmlevelcolorItemRender"/>
+						<mx:DataGridColumn headerText="发生时间" dataField="firststarttime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警来源" dataField="alarmType" width="80" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警对象" dataField="alarmobjdesc" width="200" textAlign="left"/>	
+						<mx:DataGridColumn headerText="告警名称" dataField="alarmdesc" width="140" textAlign="left"/>
+						<mx:DataGridColumn headerText="承载业务" dataField="carrycircuit" width="200" textAlign="left" visible="false"/>
+						<mx:DataGridColumn headerText="所属厂家" dataField="vendorzh" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属系统" dataField="belongtransys" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属局站" dataField="belongstation" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="所属区域" dataField="area" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="频闪次数" dataField="flashcount" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="告警原因" dataField="isworkcase" width="200" textAlign="left"/>	
+						<mx:DataGridColumn headerText="故障单号" dataField="isbugno" width="100" textAlign="left" visible="false"/>
+						<mx:DataGridColumn headerText="运维单位" dataField="unit" width="100" textAlign="left"/>
+						<mx:DataGridColumn headerText="恢复时间" dataField="endtime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认时间" dataField="acktime" width="150" textAlign="left"/>
+						<mx:DataGridColumn headerText="确认人" dataField="ackperson" width="100" textAlign="left"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<component:pagetoolbar paddingLeft="5"  width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{dg}" pagingFunction="pagingFunction"/>
+			</mx:VBox>
+
+			<mx:Accordion id="acc"  height="540" styleName="myAccordion" width="300" paddingBottom="0" paddingTop="0" right="40" top="0">
+				<mx:VBox label="告警查询" id="queryCvs" width="100%" height="100%" borderStyle="solid" borderColor="#CCDDEE"  paddingTop="5">
+					<mx:HRule strokeColor="0x2f4f4f" width="100%" />	
+					<mx:HBox id="t1">
+						<mx:Label id="tt1" text="告警名称:" paddingLeft="10"  width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="alarmDesc"/>
+					</mx:HBox>	
+					<mx:HBox id="t2">
+						<mx:Label id="tt2" text="告警对象:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="alarmObj"  x="95" y="41"/>
+					</mx:HBox>	
+					<mx:HBox id="t3">
+						<mx:Label id="tt3" text="所属厂家:" paddingLeft="10" x="0" y="70" width="100" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="transdev" x="95" y="68"/>
+					</mx:HBox>	
+					<mx:HBox id="t4">
+						<mx:Label id="tt4" text="所属传输网:" paddingLeft="10" x="0" y="97" width="100" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="transys" x="95" y="95"/>
+					</mx:HBox>	
+					<mx:HBox id="t5">
+						<mx:Label id="tt5" text="告警级别:" width="100" paddingLeft="10" x="0" y="124" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="talarmlevel" selectedIndex="0"  x="95" y="122"/>
+					</mx:HBox>	
+					<mx:HBox id="t6">
+						<mx:Label id="tt6" text="告警来源:"  paddingLeft="10" x="0" y="153" width="100" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="talarmType" labelField="talarmtype"  x="95" y="149"/>
+					</mx:HBox>
+					<mx:HBox id="t7">
+						<mx:Label id="tt7" text="是否确认:" width="100" paddingLeft="10" x="0" y="178" textAlign="right"/>
+						<mx:ComboBox styleName="combox" width="150" id="isAck" labelField="ackzh" selectedIndex="2" x="95" y="176"/>
+					</mx:HBox>
+					<mx:HBox id="t9">
+						<mx:Label id="tt9" text="发生时间大于:" paddingLeft="0" x="-13" y="205" width="100" textAlign="right"/>
+						<mx:DateField styleName="combox" id="starttime" width="150" dayNames="[日,一,二,三,四,五,六]" monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]"  formatString="YYYY-MM-DD" x="95" y="203"/>
+					</mx:HBox>
+					<mx:HBox id="t10">
+						<mx:Label id="tt10" text="发生时间小于:" paddingLeft="0" x="-13" y="232" width="100" textAlign="right"/>
+						<mx:DateField styleName="combox" id="endtime" width="150" dayNames="[日,一,二,三,四,五,六]" monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]"  formatString="YYYY-MM-DD" x="95" y="230"/>
+					</mx:HBox>	
+					<mx:HBox id="t12">
+						<mx:Label id="tt12" text="所属局站:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="belongstation"  x="95" y="41"/>
+					</mx:HBox>
+					<mx:HBox id="t14">
+						<mx:Label id="tt14" text="所属区域:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="area"  x="95" y="41"/>
+					</mx:HBox>
+					<mx:HBox id="t15">
+						<mx:Label id="tt15" text="频闪次数:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="flashcount"  x="95" y="41"/>
+					</mx:HBox>
+					<mx:HBox id="t16">
+						<mx:Label id="tt16" text="确认时间:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+						<mx:DateField styleName="combox" id="confirmTime" width="150" dayNames="[日,一,二,三,四,五,六]" monthNames="[一月,二月,三月,四月,五月,六月,七月,八月,九月,十月, 十一月,十二月]"  formatString="YYYY-MM-DD" x="95" y="203"/>
+					</mx:HBox>
+					<mx:HBox id="t17">
+						<mx:Label id="tt17" text="确认人:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="ackperson1"  x="95" y="41"/>
+					</mx:HBox>
+					<mx:HBox id="t18">
+						<mx:Label id="tt18" text="告警原因:"  paddingLeft="10" x="0" y="43" width="100" textAlign="right"/>
+						<mx:TextInput styleName="combox" width="150" id="isworkcase"  x="95" y="41"/>
+					</mx:HBox>
+					<mx:HBox horizontalAlign="center" width="100%">
+						<mx:Button label="查询" height="24" click="getSelectAlarms('','')">
+							<mx:icon>@Embed(source='/assets/images/rootalarm/search.png')</mx:icon>
+						</mx:Button>
+						<mx:Button label="重置" height="24" width="70" click="reset()"/>
+					</mx:HBox>
+				</mx:VBox>
+			</mx:Accordion>
+			<base:VButtonBar id="vb" visible="true" Vdata="{ac}" accordion="{acc}" width="20"  paddingBottom="0" paddingTop="0" right="0" top="0"/>
+		</mx:Canvas>
+	</mx:VBox>
+</mx:VBox>

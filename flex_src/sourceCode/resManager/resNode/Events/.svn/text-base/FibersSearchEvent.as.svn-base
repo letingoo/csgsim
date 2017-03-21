@@ -1,0 +1,18 @@
+package sourceCode.resManager.resNode.Events
+{
+	import flash.events.Event;
+	
+	import sourceCode.resManager.resNode.model.Fiber;
+	
+	
+	public class FibersSearchEvent extends Event
+	{
+		public var model:Fiber; 
+		
+		public function FibersSearchEvent(type:String,model:Fiber)
+		{
+			super(type);
+			this.model = model;
+		}
+	}
+}

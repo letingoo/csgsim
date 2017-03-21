@@ -1,0 +1,208 @@
+﻿<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				    showCloseButton="true" close="close()" title="关联业务" creationComplete="init()" width="750" height="428"  layout="horizontal" xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">   
+
+   <mx:Style>
+	   .textinput{
+		   paddingTop : 5;
+		   border-style:none;
+	   }
+	   .banner{
+		   color : #000000;
+	   }
+	   .singleButton{
+		   cornerRadius : 10;
+	   }
+	   .gradientCanvas{
+		   backgroundGradientColors : #CFCFCF, #A8A8A8;
+		   backgroundGradientAlphas : 1, 1;
+		   backgroundGradientRotation : 90;
+	   }
+	   GridItem.griditem
+	   {
+		   borderThickness: 1;
+		   borderStyle: solid;
+		   borderSides: bottom,right;
+		   horizontalAlign: left;
+		   verticalAlign: middle;
+		   borderColor: #D5E1FD;
+		   fontFamily: Arial;
+		   fontSize: 12;
+		   paddingLeft: 3;
+	   }
+	   GridItem.griditemlabel
+	   {
+		   borderThickness: 1;
+		   borderStyle: solid;
+		   borderSides: bottom,right;
+		   horizontalAlign: right;
+		   verticalAlign: middle;
+		   borderColor: #D5E1FD;
+		   backgroundColor: #ecf2fe;
+		   fontFamily: Arial;
+		   fontWeight: bold;
+		   fontSize: 12;
+		   paddingRight: 3;
+		   backgroundImage: Embed(source='assets/images/gridlabelbg.png');
+		   backgroundSize: "100%";
+	   }
+	   TextInput.intable
+	   {
+		   fontFamily: Arial;
+		   fontSize: 12;
+		   paddingTop: 2;
+		   paddingBottom: 2;
+		   paddingRight: 2;
+		   paddingLeft: 2;
+		   borderStyle: none;
+	   }
+	   TextInput.intable
+	   {
+		   fontFamily: Arial;
+		   fontSize: 12;
+		   paddingTop: 2;
+		   paddingBottom: 2;
+		   paddingRight: 2;
+		   paddingLeft: 2;
+		   borderStyle: none;
+	   }
+	   TextInput.intable1
+	   {
+		   fontFamily: Arial;
+		   fontSize: 12;
+		   paddingTop: 2;
+		   paddingBottom: 2;
+		   paddingRight: 2;
+		   paddingLeft: 2;
+		   borderStyle: none;
+		   color:red;
+	   }
+	   ComboBox.intableComBox
+	   {
+		   cornerRadius: 0;
+		   borderColor: #cccccc;
+		   fillColors: #ffffff, #ffffff, #ffffff, #ffffff;
+		   letterSpacing: 0;
+	   }
+	   TextInput.blacknormal1 {
+		   color: #000000;
+		   fontFamily: Arial;
+		   backgroundColor: #FDF8DB;
+		   fontSize: 12;
+		   fontWeight: normal;
+		   borderStyle: none;
+		   paddingTop: 2;
+		   paddingBottom: 2;
+		   paddingRight: 2;
+		   paddingLeft: 2;
+	   }
+	   Grid.gridout
+	   {
+		   borderStyle: solid;
+		   borderThickness: 1;
+		   borderSides: top,left;
+		   horizontalGap: 0;
+		   verticalGap: 0;
+		   borderColor: #d5e1fd;
+	   }
+   </mx:Style>
+	<mx:Script source="../actionscript/relatecircuit.as"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:HBox width="100%"
+				 height="80%">
+			
+			<mx:Form width="100%" height="100%">
+				<!--编号自动生成-->
+				<mx:FormItem label="电路编号:" required="true" enabled="{Renabled}">
+					<mx:TextInput id="requestid" width="220" />
+				</mx:FormItem>
+				
+				<mx:FormItem  label="申请单位" >
+					<mx:TextInput id="requestCom" width="220"/>
+				</mx:FormItem>
+				
+				<mx:FormItem  label="制作日期:" >
+					<mx:DateField yearNavigationEnabled="true" 
+								  dayNames="{ModelLocator.days}" 
+								  monthNames="{ModelLocator.monthNames}"
+								  id="createTime"  width="100%" styleName="intable"  height="30" formatString="YYYY-MM-DD"/>
+				</mx:FormItem>
+				
+				<mx:FormItem  label="业务类型" required="true">
+					<mx:ComboBox id="userName" styleName="intableComBox"  labelField="@label" dataProvider="{XMLData_UserName.children()}" width="220"  />
+				</mx:FormItem>
+				
+				<mx:FormItem label="业务等级"  >
+					<mx:NumericStepper id="circuitLevel" width="220"  styleName="intable" height="30" value="1" minimum="1" maximum="4"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="备注">
+					<mx:TextInput id="remark"  verticalCenter="middle" width="220"    height="30"/>
+				</mx:FormItem>
+				<mx:FormItem label="审核人" visible="false">
+					<mx:TextInput id="check_personOfRequestFinish" width="220"   height="30" />
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+			<mx:Form width="100%" height="100%">
+				
+				<mx:FormItem label="业务名称:" required="true">
+					<mx:TextInput id="circuitName" width="220"/>
+				</mx:FormItem>
+				<mx:FormItem  label="使用单位" required="true">
+					<mx:ComboBox id="userCom"  width="220" styleName="intableComBox"   labelField="@label" dataProvider="{XMLData_Department.children()}"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="开通时间" required="true">
+					<mx:DateField yearNavigationEnabled="true" 
+								  dayNames="{ModelLocator.days}" 
+								  monthNames="{ModelLocator.monthNames}"
+								  id="useTime" width="100%" showToday="true" selectedDate="{new Date()}" styleName="intable"  height="30" formatString="YYYY-MM-DD"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="接口类型" >
+					<mx:ComboBox id="interfaceType" width="220"  styleName="intableComBox"   labelField="@label" dataProvider="{XMLData_InterfaceType.children()}" />
+				</mx:FormItem>
+				
+				<mx:FormItem label="速率" required="true">
+					<mx:ComboBox id="rate"  styleName="intableComBox"  labelField="@label" dataProvider="{XMLData_Rate.children()}"  width="220"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="校核人" visible="false">
+					<mx:TextInput id="response_person" width="220"   height="30"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="制图人" visible="false">
+					<mx:TextInput id="leaser" width="220"   height="30"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+		</mx:HBox>
+		
+		<mx:HBox width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			
+			<mx:Button id="btn"
+					   label="保存"
+					   width="80"
+					   styleName="loginprimary"
+					   click="save()"
+					   />							
+			<mx:Spacer width="10"/>
+			<mx:Button label="关闭"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="close()"/>
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+	
+	
+</mx:TitleWindow>  

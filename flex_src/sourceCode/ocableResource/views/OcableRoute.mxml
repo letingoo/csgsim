@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 width="100%"
+		 height="100%"
+		 xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+		 fontFamily="宋体"
+		 fontSize="12"
+		 creationComplete="init()">
+	<mx:Style>
+		.dataGrid{
+		headerColors: #ECF2FE, #ECF2FE;
+		horizontalGridLines: false;
+		verticalGridLineColor: #dadada;
+		borderColor: #b7babc;
+		fontFamily: Arial;
+		fontSize: 12;
+		headerStyleName:"";
+		
+		}
+		
+		.title
+		{
+		backgroundImage: Embed(source="assets/images/sysGraph/titlebg.png");
+		backgroundSize: "100%";
+		fontFamily: Arial;
+		fontSize: 16;
+		fontWeight: bold;
+		}
+		.sat
+		{
+		borderStyle: solid;
+		borderThickness: 1;
+		borderSides: top,bottom;
+		backgroundColor: #FDF8DB;
+		verticalAlign: middle;
+		horizontalAlign: left;
+		paddingLeft: 10;
+		paddingRight: 10;
+		borderColor: #F4E173;
+		}
+		.info
+		{
+		borderStyle: solid;
+		borderThickness: 1;
+		borderSides: bottom,top;
+		backgroundColor: #F8F8F8;
+		verticalAlign: middle;
+		horizontalAlign: left;
+		paddingLeft: 10;
+		paddingRight: 10;
+		borderColor: #C5C5C5;
+		}
+		
+		.page
+		{
+		backgroundColor: #FFFFFF;
+		paddingBottom: 40;
+		paddingTop: 30;
+		paddingLeft: 20;
+		paddingRight: 20;
+		shadowDistance: 3;
+		shadowDirection: right;
+		dropShadowEnabled: true;
+		dropShadowColor: #000000;
+		}
+	</mx:Style>
+
+	<mx:Script source="../actionscript/OcableRoute.as"/>
+	<mx:RemoteObject id="roocablerouteinfo"
+					 destination="ocableRoute"
+					 endpoint="{ModelLocator.END_POINT}"
+					 result="rooocableinfo_resultHandler(event)"
+					 showBusyCursor="true"/>
+	<mx:RemoteObject id="ro"
+					 destination="ocableRoute"
+					 endpoint="{ModelLocator.END_POINT}"
+					 showBusyCursor="true"/>
+	<mx:VBox x="0"
+			 y="0"
+			 width="100%"
+			 height="100%"
+			 verticalGap="0">
+		<mx:HBox width="100%"
+				 backgroundImage="assets/images/sysGraph/iconbar_bg.png"
+				 backgroundSize="100%"
+				 verticalAlign="middle"
+				 height="38"
+				 horizontalGap="0"
+				 paddingLeft="5"
+				 paddingRight="5">
+			<mx:LinkButton label="保存"
+						   styleName="iconbar"
+						   icon="{DemoImages.save02}" click="linkbutton2_clickHandler(event)" />
+			<mx:LinkButton label="导出"
+						   styleName="iconbar"
+						   icon="{DemoImages.excel}" click="linkbutton1_clickHandler(event)"/>
+			<mx:Spacer height="38"
+					   width="100%"/>
+		</mx:HBox>
+		<mx:HBox backgroundImage="@Embed(source='assets/images/sysGraph/maintabbg.png')"
+				 backgroundSize="100%"
+				 width="100%"
+				 height="100%"
+				 paddingTop="5">
+			<mx:VBox width="100%"
+					 height="100%"
+					 verticalGap="0">
+				<mx:VBox width="100%"
+						 height="100%"
+						 verticalGap="5"
+						 paddingBottom="5">
+					<mx:HBox width="100%"
+							 height="45"
+							 styleName="title"
+							 horizontalAlign="center"
+							 verticalAlign="middle">
+						<mx:Label id="RoutMapLabel"
+								  text=""/>
+					</mx:HBox>
+					<mx:VBox width="100%"
+							 height="100%"
+							 paddingLeft="5"
+							 paddingRight="5">
+						<mx:HBox width="100%"
+								 height="35"
+								 styleName="info"
+								 verticalAlign="middle">
+							<mx:Image source="assets/images/sysGraph/icon_startstation.png"/>
+							<mx:Text text="起始站点：&#xa;"
+									 styleName="blackbold"/>
+							<mx:Text id="start"
+									 text=""
+									 styleName="blackbold"/>
+							<mx:Image source="assets/images/sysGraph/icon_endstation.png"/>
+							<mx:Text text="终止站点：&#xa;"
+									 styleName="blackbold"/>
+							<mx:Text id="end"
+									 text=""
+									 styleName="blackbold"/>
+							<mx:Spacer width="100%"
+									   height="20"/>
+							<mx:Image source="assets/images/sysGraph/icon_T.png"/>
+							<mx:Text text="T接点"
+									 styleName="blacknormal"/>
+							<mx:Image source="assets/images/sysGraph/icon_port_trans.png"/>
+							<mx:Text text="传输端口"
+									 styleName="blacknormal"/>
+							<mx:Image source="assets/images/sysGraph/icon_port_odf.png"/>
+							<mx:Text text="ODF端口"
+									 styleName="blacknormal"/>
+							<mx:Image source="assets/images/sysGraph/icon_port_zjgx.png"/>
+							<mx:Text text="站间光纤"
+									 styleName="blacknormal"/>
+							<mx:Image source="assets/images/sysGraph/icon_port_znwx.png"/>
+							<mx:Text text="站内尾纤&#xa;"
+									 styleName="blacknormal"/>
+						</mx:HBox>
+						<servasoftware:Network id="network"
+											   width="100%"
+											   height="100%"
+											   backgroundColor="0xFFFFFF"
+											   toolTipFunction="dataTipFunction"/>
+					</mx:VBox>
+				</mx:VBox>
+			</mx:VBox>
+		</mx:HBox>
+	</mx:VBox>
+</mx:VBox>

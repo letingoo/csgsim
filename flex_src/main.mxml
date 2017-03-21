@@ -1,0 +1,1566 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:popup="views.powermgr.sysManager.popup.*" 
+				xmlns:systemManagement="sourceCode.systemManagement.*"
+				layout="absolute" width="100%" height="100%" 
+				paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" 
+				xmlns:SuperPanelControl="common.other.SuperPanelControl.*"
+				pageTitle="电力通信网络综合仿真与业务质量评价系统"
+				xmlns:views="sourceCode.login.views.*"
+				xmlns:component="common.component.*"
+				historyManagementEnabled="false"
+				preloader="common.actionscript.CustomPreloader"
+				creationComplete="initApp()"
+				mouseDown="appMouseDownHandler(event)"
+				addedToStage="stage.addEventListener(KeyboardEvent.KEY_DOWN, appKeyDownHandler)" >
+	<component:TopMenuBar id="topMenuBar" width="100%"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0" id="vbView">
+		<mx:Spacer height="70"/>
+		<mx:HBox id="workspace" width="100%" height="100%" paddingLeft="20" paddingTop="20">
+		</mx:HBox>
+		<mx:HBox id="hbBottom" width="100%" verticalAlign="middle" tabEnabled="false"
+				 bottom="0" left="0" right="0" height="30" 
+				 backgroundImage="assets/images/taskbar/black/tbr.png" backgroundSize="100%">
+			<mx:Button id="btnStart"
+					   height="28"
+					   cornerRadius="10"
+					   styleName="startBtn"
+					   tabEnabled="false"
+					   focusEnabled="false"
+					   enabled="false"
+					   mouseUp="showMenu();"/>
+			<SuperPanelControl:WindowContainer id="windowContainer"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:RemoteObject id="subMessage" destination="RemoteMessage"  endpoint="{ModelLocator.END_POINT}" 
+					 result="subMessage_resultHandler(event)"/> 
+	<mx:RemoteObject id="roStartMenu" destination="login" endpoint="{ModelLocator.END_POINT}"
+					 result="getStartMenuResultHandler(event)" fault="faultHandler(event)"/>
+	<mx:RemoteObject id="roShortcut" destination="login" endpoint="{ModelLocator.END_POINT}"
+					 result="getShortcutResultHandler(event)" fault="faultHandler(event)"/>
+	<mx:RemoteObject id="roOnline" destination="userManager" endpoint="{ModelLocator.END_POINT}"
+					 result="getOnlineUserHandler(event)" fault="faultHandler(event)"/>
+	<mx:Style source="assets/css/main.css"/>
+	<mx:XML source="twaver/license.xml" id="licenseXML"/>
+	<mx:Script>
+		<![CDATA[ 
+			import com.adobe.serialization.json.JSON;
+			import com.adobe.utils.ArrayUtil;
+			
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			import common.component.CustomPopup;
+			import common.component.DataLoading;
+			import common.component.Loading;
+			import common.component.PopupMenu;
+			import common.component.Shortcut;
+			import common.component.SysVersion;
+			import common.component.myAlert.AlertTip;
+			import common.component.quxiantu;
+			import common.component.tltb;
+			import common.other.SuperPanelControl.nl.PanelIcon;
+			import common.other.SuperPanelControl.nl.wv.extenders.panel.PanelWindow;
+			import common.other.blogagic.util.TimeNew;
+			
+			import flash.net.navigateToURL;
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.Spacer;
+			import mx.core.FlexLoader;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.MenuEvent;
+			import mx.formatters.DateFormatter;
+			import mx.managers.BrowserManager;
+			import mx.managers.PopUpManager;
+			import mx.managers.SystemManager;
+			import mx.messaging.Channel;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.messaging.messages.AsyncMessage;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.ArrayUtil;
+			import mx.utils.URLUtil;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.PressureLevel.views.PressureLevel;
+			import sourceCode.SecureAnalysis.views.SecureAnalysis;
+			import sourceCode.alarmmgr.views.AlarmManager;
+			import sourceCode.alarmmgr.views.ClearedAlarmManager;
+			import sourceCode.alarmmgr.views.CutFaultAlarmManager;
+			import sourceCode.autoGrid.view.AutoGrid;
+			import sourceCode.businessAnalysis.views.BusinessReliabilityAnalysis;
+			import sourceCode.businessAnalysis.views.ReliabilityAnalysis;
+			import sourceCode.channelRoute.views.OpticalRoute;
+			import sourceCode.channelRoute.views.channelroute;
+			import sourceCode.channelRoute.views.retrust;
+			import sourceCode.channelRoute.views.tandemcircuit;
+			import sourceCode.channelRoute.views.trust;
+			import sourceCode.equipGraph.views.devicepanel;
+			import sourceCode.faultSimulation.views.AlarmTransmitManager;
+			import sourceCode.faultSimulation.views.ClassicFaultManager;
+			import sourceCode.faultSimulation.views.EventIntervention;
+			import sourceCode.faultSimulation.views.EventIntervention1;
+			import sourceCode.faultSimulation.views.EventMaintainProdure;
+			import sourceCode.faultSimulation.views.FaultTypeManager;
+			import sourceCode.faultSimulation.views.InterposeLogManager;
+			import sourceCode.faultSimulation.views.InterventionAlarmConfig;
+			import sourceCode.faultSimulation.views.InterventionConfig;
+			import sourceCode.faultSimulation.views.InterventionStdMaintaneProc;
+			import sourceCode.faultSimulation.views.OperateList;
+			import sourceCode.faultSimulation.views.SceneMonitor;
+			import sourceCode.indexEvaluation.views.BusinessSuport;
+			import sourceCode.indexEvaluation.views.DataImportTitle;
+			import sourceCode.indexEvaluation.views.MaintainQuality;
+			import sourceCode.indexEvaluation.views.OperationQuality;
+			import sourceCode.indexEvaluation.views.QualityEvaluation;
+			import sourceCode.ocableResource.views.ocableResource;
+			import sourceCode.packGraph.views.EquipPack;
+			import sourceCode.resManager.resBusiness.titles.ResourceSync;
+			import sourceCode.resManager.resBusiness.views.BusinessResources;
+			import sourceCode.resManager.resBusiness.views.CircuitBusinessRelation;
+			import sourceCode.resManager.resBusiness.views.CircuitChannel;
+			import sourceCode.resManager.resBusiness.views.CircuitResources;
+			import sourceCode.resManager.resBusiness.views.RouteStatisticsAnalyse;
+			import sourceCode.resManager.resBusiness.views.SyncLogManager;
+			import sourceCode.resManager.resBusiness.views.UnusedBusinessResourceClear;
+			import sourceCode.resManager.resNet.views.CcConnectAndConfig;
+			import sourceCode.resManager.resNet.views.CcConnectResources;
+			import sourceCode.resManager.resNet.views.EquipmentPanel;
+			import sourceCode.resManager.resNet.views.LogicPortPanel;
+			import sourceCode.resManager.resNet.views.TopoLinkPanelNew;
+			import sourceCode.resManager.resNode.views.FibersPanelNew;
+			import sourceCode.resManager.resNode.views.FramePanelNew;
+			import sourceCode.resManager.resNode.views.FrameSlotPanel;
+			import sourceCode.resManager.resNode.views.OcablesPanelNew;
+			import sourceCode.resManager.resNode.views.PackPanelNew;
+			import sourceCode.resManager.resNode.views.StationPanelNew;
+			import sourceCode.rootalarm.views.RealRootAlarm;
+			import sourceCode.rootalarm.views.RootAlarmMgr;
+			import sourceCode.slotGraph.views.slotGraph;
+			import sourceCode.sysGraph.actionscript.Shared;
+			import sourceCode.sysGraph.views.SysOrgMap;
+			import sourceCode.sysGraph.views.SysOrgMapL1;
+			import sourceCode.sysGraph.views.SysOrgMapRoute;
+			import sourceCode.sysGraph.views.configEquipSlot;
+			import sourceCode.systemManagement.model.PermissionControlModel;
+			import sourceCode.systemManagement.model.TimerTaskModel;
+			import sourceCode.systemManagement.model.UserModel;
+			import sourceCode.systemManagement.views.BugTracing;
+			import sourceCode.systemManagement.views.FunctionManager;
+			import sourceCode.systemManagement.views.ResourceSearchView;
+			import sourceCode.systemManagement.views.RoleManager;
+			import sourceCode.systemManagement.views.SelfInfoManager;
+			import sourceCode.systemManagement.views.SysLogManager;
+			import sourceCode.systemManagement.views.TaskConfiguration;
+			import sourceCode.systemManagement.views.UserManager;
+			import sourceCode.systemManagement.views.UserOnline;
+			import sourceCode.systemManagement.views.VersionPanelNew;
+			import sourceCode.systemManagement.views.VersionXtbmManager;
+			import sourceCode.systemManagement.views.comp.addUser;
+			import sourceCode.systemManagement.views.timertask.AddTimerTask;
+			import sourceCode.systemManagement.views.timertask.SynchronizationTask;
+			import sourceCode.tableResurces.views.ChannelRoute;
+			import sourceCode.topolink.views.topolink;
+			import sourceCode.topolink.views.topolink1;
+
+			
+			private var consumer:Consumer = new Consumer(); 
+			public var sysOrgMapS:SecureAnalysis;
+
+			import twaver.*;
+			private var auto:AutoGrid;
+			private var point:Point = new Point();  
+			private var arrLoading:Array = new Array();
+			private var customPopup:CustomPopup;
+			public var sysmap:PanelWindow;//网络拓扑图添加
+			public var dataLoading:DataLoading;
+			public var isShow:Boolean = false;
+			public var funcXML:XML;
+			public var versionXtbmXML:XML;
+			public var acShortcuts:ArrayCollection;
+			public var loading:Loading = new Loading();
+			public var popMenu:PopupMenu = new PopupMenu();
+			public var acOnlineUser:ArrayCollection = new ArrayCollection();
+			public var circuit:CircuitResources;
+			public var cbRelation:CircuitBusinessRelation;
+			public var business:BusinessResources;
+			public var logicPortPanel:LogicPortPanel;
+			public var topoLink:TopoLinkPanelNew;
+			public var channelRoute:channelroute;
+			public var slotView:configEquipSlot;
+			public var sysOrgMap:SysOrgMap = new SysOrgMap();
+			public var slotgraph:slotGraph = new slotGraph();
+			public var eventInterven:EventIntervention = new EventIntervention();
+			public var eventInterven1:EventIntervention1 = new EventIntervention1();
+			public var eventConfig:InterventionConfig = new InterventionConfig();
+			public var classicFault:ClassicFaultManager = new ClassicFaultManager();
+			public var alarmConfig:InterventionAlarmConfig = new InterventionAlarmConfig();
+			public var standardMaintain:InterventionStdMaintaneProc = new InterventionStdMaintaneProc();
+			public var maintainProc:EventMaintainProdure = new EventMaintainProdure();
+			public var interposeLog:InterposeLogManager = new InterposeLogManager();
+			public var operateModel:OperateList = new OperateList();
+			public var sceneMonitor:SceneMonitor = new SceneMonitor();
+			public var alarmTransmit:AlarmTransmitManager=new AlarmTransmitManager();
+			public var alarmmanger:AlarmManager;
+			public var clearedAlarmManager:ClearedAlarmManager;
+			public var routeStatisticsAnalyse:RouteStatisticsAnalyse;
+			public var unusedBusinessResourceClear:UnusedBusinessResourceClear;
+			public var faultTypeManager:FaultTypeManager;
+			public var cutFaultAlarm:CutFaultAlarmManager;
+			public var resourceSync:ResourceSync;
+			public var syncLog:SyncLogManager;
+			public var gentip:RealRootAlarm;
+			public var dataimp:DataImportTitle = new DataImportTitle();
+			
+			public var businessSuport:BusinessSuport = new BusinessSuport();
+			public var circuitChannel:CircuitChannel = new CircuitChannel();
+			public var operationQuality:OperationQuality = new OperationQuality();
+			public var maintainQuality:MaintainQuality = new MaintainQuality();
+			public var qualityEval:QualityEvaluation = new QualityEvaluation();
+			public var busReliabilityAnalysis:BusinessReliabilityAnalysis = new BusinessReliabilityAnalysis();
+			public var pressure_level:PressureLevel;
+			public var equipPack:EquipPack;
+			public var device:devicepanel;
+			public var busAnaly:ReliabilityAnalysis;
+			public var top:topolink;
+			public var top1:topolink1;
+			public var tus:trust;
+			public var retus:retrust;
+			public var sysOrgMapR:SysOrgMapRoute;
+		
+			
+			[Bindable]public var isEdit:Boolean = false;			
+			
+			public var isWinOpen:String="NO";
+			
+			public var isWinOpenAlarm:String="NO";//当前根告警是否打开
+			
+			public var FocusOpen:Boolean = false;
+			[Bindable]public var curUser:String;
+			[Bindable]public var curUserName:String;
+			[Bindable]public var curUserEnable:Boolean;
+			[Bindable]public var startXMLList:XMLList;
+			//每个VBox要添加的图表数量
+			private var shortcutCount:int;
+			//总的要添加的VBox
+			private var totalVBox:int = 0;
+			//总的图表数
+			private var totalCount:int;
+			//图标之间的间距
+			private var verticalGap:Number = 20;
+			private var createdWindows:Number = 0;
+			private var minimizedWindows:Number = 0;
+			[Bindable]public var cm:ContextMenu;
+			
+			private var RealTypeNo:Boolean = false;
+			public var showSysGraphAlarm:Boolean=false;//告警是否呈现
+			
+			public static var consumer:Consumer = new Consumer();  
+			public static var sdestination:String = "monitor";
+			public static var smsgUrl:String;
+			public static var streamingAMF:StreamingAMFChannel;
+			public static var pollingAMF:AMFChannel;
+			
+			public function initApp():void{
+				Alert.yesLabel = "是";
+				Alert.noLabel = "否";
+				Alert.okLabel = "确定";
+				StyleManager.getStyleDeclaration("ToolTip").setStyle("fontSize","12");//设置整个系统tooltip的字体样式
+				twaver.Utils.validateLicense(this.licenseXML);
+				
+				cm = new ContextMenu();
+				var itemRefresh:ContextMenuItem = new ContextMenuItem("刷新");
+				itemRefresh.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,shortcutsRefresh);
+				cm.hideBuiltInItems();
+				cm.customItems = [itemRefresh];
+				this.contextMenu = cm;
+				
+				var roUserInfo:RemoteObject = new RemoteObject("userManager");
+				roUserInfo.endpoint = ModelLocator.END_POINT;
+				faultEventHandler(roUserInfo);
+				roUserInfo.addEventListener(ResultEvent.RESULT,getUserInfo);
+				roUserInfo.getOnlineUserByUserId();	
+				
+			}
+			
+			public var arr:ArrayCollection;
+			private function QueryAlarm(event:ResultEvent):void{
+				
+			}
+			
+			public function DealFault(event:FaultEvent):void 
+			{
+				Alert.show(event.fault.toString());
+			}		
+			
+			
+			private function appKeyDownHandler(event:KeyboardEvent):void{
+				if(event.keyCode == 27){
+					showMenu();
+				}
+			}
+			public static function getUrl():String{
+				var url:String = Application.application.url;
+				var port:int = URLUtil.getPort(url);
+				var protocol:String = URLUtil.getProtocol(url);
+				var serverName:String = URLUtil.getServerName(url);
+				var parms:Array = url.split("/");
+				
+				var prjName:String = parms[3];
+				
+				return protocol+"://"+serverName+":"+port+"/"+prjName+"/";
+				
+			}
+			
+			public static function initMessage():void{
+				if(streamingAMF==null){
+					smsgUrl = getUrl();
+					streamingAMF = new StreamingAMFChannel(smsgUrl+"my-streaming-amf",smsgUrl+"messagebroker/streamingamf");   
+					pollingAMF = new AMFChannel(smsgUrl+"my-polling-amf", smsgUrl+"messagebroker/amfpolling");  
+				}
+			}
+			
+			public  function timerStart():void{ 
+				initMessage();
+				//准备开始订阅消息  
+				var channelSet:ChannelSet = new ChannelSet();   
+				channelSet.addChannel(streamingAMF);   
+				channelSet.addChannel(pollingAMF);
+				consumer.destination = sdestination; 
+				consumer.channelSet = channelSet;
+				consumer.subtopic = "tick";
+				
+				consumer.addEventListener(MessageEvent.MESSAGE,messageHandler);
+				consumer.subscribe();				
+				
+			}
+			//告警定时器
+			public var timer:Timer = new Timer(600000*60*5);
+			public function alarmTimer():void{
+				timer.addEventListener(TimerEvent.TIMER,onTimer); 
+				function onTimer(event:TimerEvent):void{
+					var format:DateFormatter = new DateFormatter();
+					format.formatString = "YYYY-MM-DD JJ:NN:SS";
+					// Alert.show("执行时间："+ format.format(new Date()));		
+					var rtobj:RemoteObject=new RemoteObject("AlarmManagerComboboxDwr");
+					rtobj.endpoint= ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.queryAlarmWebService("0"); 
+					rtobj.addEventListener(ResultEvent.RESULT, QueryAlarm2); 
+				}
+				timer.start();
+			}
+			private function QueryAlarm2(event:ResultEvent):void{
+				
+			}
+			
+			public function stopMesaage():void  
+			{  
+				subMessage.stopSendMessage("stop");  
+				
+			}  
+			public function messageHandler(event:MessageEvent):void{
+				var isAlarm:String="1";
+				var isAlarmMans:String ="";
+				var alarmMans:String="";
+				var alarmType:String="";
+				isAlarmMans = event.message.body as String;
+				isAlarm = isAlarmMans.split(";;")[0];
+				alarmMans = isAlarmMans.split(";;")[1];
+				if(isAlarmMans.split(";;")!=null&&isAlarmMans.split(";;").length>2){
+					alarmType = isAlarmMans.split(";;")[2];
+				}
+				var alarmArray:Array=alarmMans.split(",")	
+				
+				//Alert.show("消息接收成功");
+				stopMesaage();
+				RealTypeNo = true;
+				if(this.isWinOpenAlarm=="NO"){
+					if(isAlarm=="1"){
+						for(var i:int=0;i<alarmArray.length;i++){
+						
+							if(alarmArray[i]==curUser){
+								if(alarmType=="割接"){
+									this.openModel('割接告警查询',false);
+								}else{
+									this.openModel('告警查询',false);
+								}
+								
+							}
+						}
+					}
+				}
+			}
+			private function getUserInfo(event:ResultEvent):void{
+				var user:UserModel = (UserModel)(event.result);
+				//				curUser = "root";
+				if(user){
+					curUser = user.user_id;
+					curUserName = user.user_name;
+					curUserEnable = user.enable;
+					Registry.register("curUserEnable", curUserEnable);
+					if(user.user_sex == "M")
+						topMenuBar.btnSex.styleName = "maleuser";
+					else
+						topMenuBar.btnSex.styleName = "femaleuser";
+					roStartMenu.getStartMenu(curUser);
+					roShortcut.getShortCutByName(curUser);
+					roOnline.getOnlineUser(); 
+					
+					//为调度值班员直接进入监视主界面
+					var objrefresh:RemoteObject = new RemoteObject("userManager");
+					objrefresh.endpoint = ModelLocator.END_POINT;
+					objrefresh.addEventListener(ResultEvent.RESULT,refreshRoleInfos);
+					objrefresh.getroles(curUser);
+					alarmTimer();
+					timerStart();
+					//更改电路主备路由字段
+//					modifyCircuitInfo();
+				}else{
+					navigateToURL(new URLRequest(ModelLocator.getURL()+"index.html"),"_parent");
+				}
+			}
+			
+//			private function modifyCircuitInfo():void{
+//				var remoteObject:RemoteObject=new RemoteObject("faultSimulation");
+//				remoteObject.endpoint = ModelLocator.END_POINT;
+//				remoteObject.showBusyCursor = true;
+//				remoteObject.addEventListener(ResultEvent.RESULT,modifyCircuitInfoHandler);
+//				remoteObject.modifyCircuitInfo();
+//			}
+//			private function modifyCircuitInfoHandler(result:ResultEvent):void{
+//				
+//			}
+			
+			private function refreshRoleInfos(event:ResultEvent):void{
+				var rolename:String = event.result as String;
+				if(rolename.indexOf("调度值班员")!=-1){
+					this.openModel("监视主界面",false); 
+				}
+			}			
+			
+			protected function getStartMenuResultHandler(event:ResultEvent):void{
+				var xml:XMLList = new XMLList(event.result);
+				for(var i:int = 0; i < xml.children().length(); i++){
+					if(curUser != "root"){
+						if(xml.children()[i].@oper_name == "功能管理" || xml.children()[i].@oper_name == "角色管理"){
+							delete xml.children()[i];
+							i--;
+						}
+						if(xml.children()[i].@oper_name == "角色管理"){
+							delete xml.children()[i];
+							i--;
+						}
+					}
+					if(xml.children()[i].@oper_name == "数据更改"){
+						isEdit = true;
+						delete xml.children()[i];
+					}
+				}
+				this.btnStart.enabled = true;
+				startXMLList = xml;
+				
+			}
+			
+			protected function getShortcutResultHandler(event:ResultEvent):void{
+				acShortcuts = ArrayCollection(event.result);			
+				addDesktopShorcut();
+			}
+			
+			private function getOnlineUserHandler(event:ResultEvent):void{
+				var ac:ArrayCollection = ArrayCollection(event.result);
+				acOnlineUser = ac;
+				
+			}
+			
+			protected function faultHandler(event:FaultEvent):void
+			{
+				Alert.show("请联系系统管理员！","提示！");
+			}
+			
+			private function shortcutsRefresh(event:ContextMenuEvent):void{
+				addDesktopShorcut();
+			}
+			
+			public function error(event:MessageFaultEvent):void{
+				Alert.show(event.faultDetail,event.faultCode);   
+			}
+			
+			public function showMenu():void{
+				if(!isShow){
+					this.setFocus();
+					isShow = true;
+					PopUpManager.addPopUp(popMenu,this);
+					PopUpManager.centerPopUp(popMenu);
+					point.x = btnStart.x;  
+					point.y = btnStart.y;                  
+					point = btnStart.localToGlobal(point);
+					popMenu.x = point.x;
+					popMenu.y = point.y - popMenu.height;
+					popMenu.showMenu(point);
+				}else{
+					isShow = false;
+					popMenu.hideMenu();
+					PopUpManager.removePopUp(popMenu);
+				}
+				
+			}
+			
+			public function appMouseDownHandler(event:MouseEvent):void{
+				if(!(event.target is Button && Button(event.target).id == "btnStart")){	
+					if(isShow){
+						isShow = false;
+						PopUpManager.removePopUp(popMenu);
+					}
+				}
+			}
+			
+			private function testRO(event:ResultEvent):void{
+				Alert.show(event.result.toString());
+			}
+			
+			[Bindable]
+			[Embed(source="assets/images/startmenu/modemgr.png")]  
+			public var modemanagerIcon:Class;
+			
+			private var pnl:PanelWindow;
+			public function addPanel(pTitle:String,panelUI:UIComponent,width:int=0,height:int=0,icon:Class=null,isModel:Boolean = false,enableResize:Boolean=true):PanelWindow{
+				pnl = new PanelWindow();
+				this.createdWindows += 1;
+				pnl.showControls = true;
+				pnl.enableResize = enableResize;
+				pnl.showMinAndMaxButtions = !isModel;
+				pnl.title = pTitle;
+				pnl.titleIcon = icon;
+				pnl.windowContainer = windowContainer;
+				width == 0 ? pnl.width = workspace.width : pnl.width = width;
+				height == 0 ? pnl.height = workspace.height+70 : pnl.height = height;
+				if(pnl && panelUI){
+					pnl.addChild(panelUI);
+					PopUpManager.addPopUp(pnl,workspace,isModel);
+					PopUpManager.centerPopUp(pnl);
+					if(width == 0 && height == 0){
+						pnl.y = 0;
+					}
+				}
+				return pnl;
+			}
+			
+			public function addDesktopShorcut():void{
+				var vbox:VBox;
+				var shortcut:Shortcut;
+				var index:int;
+				workspace.removeAllChildren();
+				totalCount = acShortcuts.length;
+				if(stage.displayState == StageDisplayState.NORMAL)
+					shortcutCount = Math.floor(((workspace.height - (verticalGap * 2)) / 100)) - 1;
+				else
+					shortcutCount = Math.floor(((workspace.height - (verticalGap * 5)) / 100)) - 1;
+				totalVBox = Math.ceil(totalCount / shortcutCount);
+				for(var j:int = 0; j < totalVBox; j++){
+					vbox = new VBox();
+					vbox.width = 105;
+					vbox.setStyle("verticalGap",verticalGap);
+					vbox.height = workspace.height - 30;
+					workspace.addChild(vbox);
+				}
+//				acShortcuts.source.sortOn("shortcutName");//按名称升序排列//去掉，后台查询进行了插入时间的排序
+				for(var i:int= 0 ; i < acShortcuts.length; i++){
+					shortcut = new Shortcut();
+					shortcut.title = acShortcuts[i].shortcutName;
+					shortcut.source = acShortcuts[i].shortcuticon;
+					if(index <= totalVBox){
+						if(VBox(workspace.getChildAt(index)).getChildren().length < shortcutCount){
+							VBox(workspace.getChildAt(index)).addChild(shortcut);
+						}else{
+							index ++;
+							VBox(workspace.getChildAt(index)).addChild(shortcut);
+						}
+					}
+				}
+				
+			}
+			
+			public function addShorcut(title:String,iconSource:String):void{	
+				if(!checkShortcut(title)){
+					var shortcutID:String = findShortcutID(title);
+					var roShortcut:RemoteObject = new RemoteObject("login");
+					roShortcut.showBusyCursor = true;
+					roShortcut.endpoint = ModelLocator.END_POINT;
+					roShortcut.addEventListener(ResultEvent.RESULT,function(event:ResultEvent):void{
+						addShortcutHandler(event,title,iconSource)
+					});
+					roShortcut.insertShortcut(curUser,shortcutID,title);
+				}else{
+					Alert.show("快捷方式已存在, 无需再创建!","提示");
+				}
+			}
+			
+			private function addShortcutHandler(event:Event,title:String,iconSource:String):void{
+				var length:int = workspace.getChildren().length;
+				var shortcut:Shortcut = new Shortcut();
+				var vbox:VBox;
+				shortcut.title = title;
+				shortcut.source = "assets/images/shortcuts/st_"+iconSource+".png";
+				acShortcuts.addItem({shortcutName:shortcut.title,shortcuticon:shortcut.source});
+				if(length > 0){
+					if(VBox(workspace.getChildAt(length - 1)).getChildren().length < shortcutCount){
+						VBox(workspace.getChildAt(length - 1)).addChild(shortcut);
+					}else{
+						vbox = new VBox();
+						vbox.width = 105;
+						vbox.setStyle("verticalGap",verticalGap);
+						vbox.addChild(shortcut);
+						workspace.addChild(vbox);
+					}
+				}else{
+					vbox = new VBox();
+					vbox.width = 105;
+					vbox.setStyle("verticalGap",verticalGap);
+					vbox.addChild(shortcut);
+					workspace.addChild(vbox);
+				}
+				Alert.show("已为此模块添加快捷方式!","提示");
+			}
+			
+			public function checkShortcut(title:String):Boolean{
+				for(var i:int = 0; i < acShortcuts.length; i ++){
+					if(title == acShortcuts[i].shortcutName){
+						return true;
+					}
+				}
+				return false;
+			}
+			
+			public function findShortcutID(title:String):String{
+				return forEachShortcut(this.startXMLList.children(),title);
+			}
+			/**
+			 * 根据名称查找id
+			 */
+			private function forEachShortcut(xmlList:XMLList,title:String):String
+			{
+				//				Alert.show(xmlList.toXMLString());
+				var oper_id:String="";
+				for(var i:int = 0; i < xmlList.length(); i++)
+				{
+					if(xmlList[i].@oper_name == title){
+						oper_id= xmlList[i].@oper_id;
+						break;
+					}
+					if(xmlList[i].children().length() > 0)
+					{
+						oper_id= forEachShortcut(xmlList[i].children(),title);
+						if(oper_id!="")
+						{
+							break;
+						}	
+					}
+				}
+				return oper_id;
+			}
+			
+			public function delShortcut(title:String):void{
+				var roShortcut:RemoteObject = new RemoteObject("login");
+				roShortcut.showBusyCursor = true;
+				roShortcut.endpoint = ModelLocator.END_POINT;
+				roShortcut.addEventListener(ResultEvent.RESULT,function(event:ResultEvent):void{delShortcutHandler(event,title)});
+				roShortcut.addEventListener(FaultEvent.FAULT,faultHandler);
+				roShortcut.delShortcut(curUser,title);
+			}
+			
+			private function delShortcutHandler(event:Event,title:String):void{
+				for(var i:int = 0; i < acShortcuts.length; i ++){
+					if(title == acShortcuts[i].shortcutName){
+						acShortcuts.removeItemAt(i);
+					}
+				}
+				Alert.show("已取消此快捷方式!","提示");
+				addDesktopShorcut();
+			}
+			
+			public function exitSystem():void{
+				this.setUserState();
+			}
+			
+			private function setUserState():void{
+				var roUser:RemoteObject = new RemoteObject("userManager");
+				roUser.showBusyCursor = true;
+				roUser.endpoint = ModelLocator.END_POINT;
+				roUser.addEventListener(ResultEvent.RESULT,resetUserStateHandler);
+				roUser.addEventListener(FaultEvent.FAULT,faultHandler);
+				roUser.userLayout(curUser,"0");
+			}
+			
+			private function resetUserStateHandler(event:ResultEvent):void{
+				isShow = true;
+				showMenu();
+				navigateToURL(new URLRequest(ModelLocator.getURL()+"index.html"),"_parent");
+			}
+			
+			private function closeAllModel():void{
+				showMenu();
+				for each(var comp:PanelIcon in windowContainer.mWindowContainer.getChildren()){
+					windowContainer.closeWindow(comp);
+					comp.pnl.parent.removeChild(comp.pnl);
+				}
+			}
+			
+			public function showDesptop():void{
+				showMenu();
+				for each(var comp:PanelIcon in windowContainer.mWindowContainer.getChildren()){
+					if(!comp.pnl.isMinimized){
+						comp.pnl.minimizeClickHandler(new MouseEvent(''));
+						comp.pnl.isMinimized = true;
+					}
+				}
+			}
+			
+			private function resetValue():void{
+				acOnlineUser.removeAll();
+				acShortcuts.removeAll();
+				startXMLList = null;
+				funcXML = null;
+				versionXtbmXML=null;
+				curUser = "";
+			}
+			
+			
+			public var userManager:UserManager;
+			public var roleMananger:RoleManager;
+			public var funcManager:FunctionManager;
+			public var selfInfoManager:SelfInfoManager;
+			public var sysLog:SysLogManager;
+			public var versionManager:VersionPanelNew;
+			public var vXtbmManager:VersionXtbmManager;
+			
+			//			public var bugtrace:BugTracing;
+			public var userOnLine:UserOnline;
+			
+			
+			public function openModel(modelName:String,isShowMenu:Boolean,obj:Object=null):void{
+				var rt:RemoteObject = new RemoteObject("permissionControl");
+				var str:String = modelName;
+				if(modelName=="方式信息"){
+					str = "电路路由图";
+				}else if(modelName=="机盘管理视图"){
+					str="设备面板图";
+				}
+				if(modelName=="机盘管理视图"){
+					str = "设备面板图";
+				}
+				ModelLocator.permissionControlList(str,rt);
+				rt.addEventListener(ResultEvent.RESULT,function(event:ResultEvent):void{
+					var array:Array = event.result as Array;
+					ModelLocator.permissionList = new Array();
+					ModelLocator.permissionList = array;
+					openModelReal(modelName,isShowMenu,obj,array);
+				});
+			}
+			
+			private function openModelReal(modelName,isShowMenu:Boolean,obj:Object,array:Array):void{
+				var url:String = "";
+				
+				var reporturl:String=ModelLocator.getURL();
+				if(modelName != ""){
+					if(isShowMenu) showMenu();
+					if(modelName == "角色管理"){
+						if(isOpen(modelName)){
+							roleMananger = new RoleManager();
+							addPanel(modelName,roleMananger,0,0,popMenu.roleIcon);
+						}else{
+							PanelWindow(roleMananger.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "功能管理"){
+						if(isOpen(modelName)){
+							funcManager = new FunctionManager();
+							addPanel(modelName,funcManager,350,500,popMenu.operIcon);
+						}else{
+							PanelWindow(funcManager.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "用户管理"){
+						if(isOpen(modelName)){
+							userManager = new UserManager();
+							addPanel(modelName,userManager,0,0,popMenu.userIcon);
+						}else{
+							PanelWindow(userManager.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "个人信息"){
+						if(isOpen(modelName)){
+							selfInfoManager = new SelfInfoManager();
+							addPanel(modelName,selfInfoManager,620,360,popMenu.userselfIcon);
+						}else{
+							PanelWindow(selfInfoManager.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "系统日志"){
+						if(isOpen(modelName)){
+							sysLog = new SysLogManager();
+							addPanel(modelName,sysLog,0,0,popMenu.syslogIcon);
+						}else{
+							PanelWindow(sysLog.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "任务配置"){
+						if(isOpen(modelName)){
+							var task:TaskConfiguration = new TaskConfiguration();
+							addPanel(modelName,task,0,0,popMenu.taskIcon);
+						}else{
+							PanelWindow(task.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="安全事件量化分析"){
+						if(isOpen(modelName))
+						{
+							sysOrgMapS = new SecureAnalysis();
+							addPanel(modelName,sysOrgMapS,0,0,popMenu.networksIcon);
+						}
+						else
+						{
+							PanelWindow(sysOrgMapS.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "在线用户"){
+						if(isOpen(modelName)){
+							roOnline.getOnlineUser();
+							userOnLine = new UserOnline();
+							addPanel(modelName,userOnLine,800,520,popMenu.userOnline);
+							if(acOnlineUser.length != userOnLine.userContent.getChildren().length)
+								userOnLine.init();
+						}else{
+							PanelWindow(userOnLine.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "用户信息配置"){
+						showMenu();
+						var itemEdit:addUser = obj as addUser;
+						if(isOpen(modelName)){
+							addPanel(modelName,itemEdit,720,595);
+						}else{
+							PanelWindow(itemEdit.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "系统信息" ){
+						var sysVersion:SysVersion = new SysVersion();
+						if(isOpen(modelName))
+							addPanel(modelName,sysVersion,310,180,null,true);
+						else
+							PanelWindow(sysVersion.parent).panelIcon.iconClickHandler(modelName);
+					}else if(modelName == "系统帮助"){
+						var docUrl:String =  ModelLocator.getURL() + "twaverImages/doc/Documentation_index_1.html";
+						var request:URLRequest = new URLRequest(docUrl);  
+						navigateToURL(request,"_blank");
+					}else if(modelName == "站点"){
+						if(isOpen(modelName)){
+							var station:StationPanelNew = new StationPanelNew();
+							addPanel(modelName,station,0,0,popMenu.stationIcon);
+						}else{
+							PanelWindow(station.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="单业务多路由同设备同链路分析"){//路由统计分析
+						if(isOpen(modelName))
+						{
+							tus = new trust();
+							addPanel(modelName,tus,0,0,popMenu.networksIcon);
+						}
+						else
+						{
+							PanelWindow(tus.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="多业务多路由同设备同链路分析"){//路由统计分析
+						if(isOpen(modelName))
+						{
+							retus = new retrust();
+							addPanel(modelName,retus,0,0,popMenu.networksIcon);
+						}
+						else
+						{
+							PanelWindow(retus.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "光缆"){
+						if(isOpen(modelName)){
+							var oacble:OcablesPanelNew = new OcablesPanelNew();
+							addPanel(modelName,oacble,0,0,popMenu.ocableIcon);
+						}else{
+							PanelWindow(oacble.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+//					else if(modelName == "调度数据网可靠性分析"){
+//						if(isOpen(modelName)){
+//							var oacble1:OcableAnalysis = new OcableAnalysis();
+//							addPanel(modelName,oacble1,0,0,popMenu.ocableIcon);
+//						}else{
+//							PanelWindow(oacble1.parent).panelIcon.iconClickHandler(modelName);
+//						}
+//					}
+					else if(modelName == "光纤"){
+						if(isOpen(modelName)){
+							var fiber:FibersPanelNew = new FibersPanelNew();
+							addPanel(modelName,fiber,0,0,popMenu.ressIcon);
+						}else{
+							PanelWindow(fiber.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "电路业务关系"){
+						if(isOpen(modelName)){
+							cbRelation = new CircuitBusinessRelation();
+							addPanel(modelName,cbRelation,0,0,popMenu.modecircuitIcon);
+						}else{
+							PanelWindow(cbRelation.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="电路"){
+						if(isOpen(modelName))
+						{
+							circuit=new CircuitResources();
+							addPanel(modelName,circuit,0,0,popMenu.circuitrouteIcon);
+						}
+						else
+						{
+							PanelWindow(circuit.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="通道"){
+						if(isOpen(modelName))
+						{
+							circuitChannel=new CircuitChannel();
+							addPanel(modelName,circuitChannel,0,0,popMenu.circuitrouteIcon);
+						}
+						else
+						{
+							PanelWindow(circuitChannel.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="业务"){
+						auto = new AutoGrid();
+						if(isOpen(modelName)){
+							auto.title = modelName;
+							auto.modelName = modelName;
+							auto.shortIconSource = "businessRess";
+							auto.importType = '业务信息列表';
+							auto.tablename = 'VIEW_BUSINESS';
+							addPanel(modelName,auto,0,0,popMenu.businessIcon);
+						}else{
+							auto.key = "BUSINESS_ID";
+							auto.title = modelName;
+							auto.modelName = modelName;
+							auto.importType = '业务信息列表';
+							auto.tablename = 'VIEW_BUSINESS';
+							PanelWindow(auto.parent).panelIcon.iconClickHandler(modelName);
+						}
+						//						if(isOpen(modelName))
+						//						{
+						//							business=new BusinessResources();
+						//							addPanel(modelName,business,0,0,popMenu.circuitrouteIcon);
+						//						}
+						//						else
+						//						{
+						//							PanelWindow(business.parent).panelIcon.iconClickHandler(modelName); 
+						//						}
+					}else if(modelName=="交叉连接"){
+						if(isOpen(modelName))
+						{
+							var ccConnect:CcConnectAndConfig=new CcConnectAndConfig();
+							addPanel(modelName,ccConnect,0,0,popMenu.eachoperatopoIcon);
+						}
+						else
+						{
+							PanelWindow(ccConnect.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="配置交叉"){
+						var slotView:configEquipSlot = obj as configEquipSlot;
+						if(isOpen(modelName))
+							addPanel(modelName,slotView,950,535);
+						else
+							PanelWindow(slotView.parent).panelIcon.iconClickHandler(modelName);
+						
+						//						if(isOpen(modelName))
+						//						{
+						//							var slotView:configEquipSlot=new configEquipSlot();
+						//							addPanel(modelName,slotView,0,0,popMenu.cablewiringIcon);
+						//						}
+						//						else
+						//						{
+						//							PanelWindow(slotView.parent).panelIcon.iconClickHandler(modelName);
+						//						}	
+					}else if(modelName == "机盘"){
+						if(isOpen(modelName)){
+							var packPanel:PackPanelNew = new PackPanelNew();
+							addPanel(modelName,packPanel,0,0,popMenu.equippackIcon);
+						}else{
+							PanelWindow(packPanel.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "设备"){
+						if(isOpen(modelName)){
+							var equipment:EquipmentPanel = new EquipmentPanel();
+							this.addPanel(modelName,equipment,0,0,popMenu.equipmentIcon);
+						}else{
+							PanelWindow(equipment.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+						
+					else if(modelName == "机框"){
+						if(isOpen(modelName)){
+							var equipFrame:FramePanelNew = new FramePanelNew();
+							this.addPanel(modelName,equipFrame,0,0,popMenu.frameIcon);
+						}else{
+							PanelWindow(equipFrame.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					else if(modelName == "机槽"){
+						if(isOpen(modelName)){
+							var frameSlot:FrameSlotPanel = new FrameSlotPanel();
+							this.addPanel(modelName,frameSlot,0,0,popMenu.slotIcon);
+						}else{
+							PanelWindow(frameSlot.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "逻辑端口"){
+						if(isOpen(modelName)){
+							logicPortPanel = new sourceCode.resManager.resNet.views.LogicPortPanel();
+							addPanel(modelName,logicPortPanel,0,0,popMenu.portIcon);
+						}else{
+							PanelWindow(logicPortPanel.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName == "复用段"){
+						if(isOpen(modelName)){
+							topoLink = new sourceCode.resManager.resNet.views.TopoLinkPanelNew();
+							addPanel(modelName,topoLink,0,0,popMenu.stationIcon);
+						}else{
+							PanelWindow(topoLink.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="光缆拓扑图"){
+						var ocable:ocableResource = new ocableResource();
+						if(isOpen(modelName)){
+							ocable.modelName = "光缆拓扑图";
+							ocable.province = "地区";
+							ocable.setoperDesc="XZ01";
+							addPanel("光缆拓扑图",ocable,0,0,popMenu.ocablewiringIcon);
+						}else{
+							PanelWindow(ocable.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					else if(modelName == "设备面板图"){
+						if(isOpen(modelName)){
+							device = new devicepanel();
+							addPanel(modelName,device,0,0,popMenu.devicepanelIcon);
+							device.init();
+						}else{
+							PanelWindow(device.parent).panelIcon.iconClickHandler(modelName);
+							device.initParameter();
+						}
+					}
+					else if(modelName == "机盘管理视图"){
+						if(isOpen(modelName)){//表示没有打开
+							equipPack = new EquipPack();
+							addPanel(modelName,equipPack,0,0,popMenu.equippackmodelIcon);
+							equipPack.initApp();
+						}else{
+							PanelWindow(equipPack.parent).panelIcon.iconClickHandler(modelName);							
+							if(equipPack.tabPanel.getChildren().length>0)
+								equipPack.tabPanel.removeAllChildren();
+							equipPack.initApp();
+						}
+					}
+					else  if(modelName == "方式信息"){
+						if(channelRoute == null) channelRoute = new channelroute();
+						if(isOpen(modelName)){
+							channelRoute = new channelroute();
+							addPanel(modelName,channelRoute,0,0,popMenu.circuitrouteIcon);
+						}else{
+							PanelWindow(channelRoute.parent).panelIcon.iconClickHandler(modelName);
+							channelRoute.init();
+						}
+					}
+					else  if(modelName == "串接电路"){
+						showMenu();
+						var tandem:tandemcircuit = obj as tandemcircuit;
+						if(isOpen(modelName))
+							addPanel(modelName,tandem,950,535,popMenu.circuitrouteIcon);
+						else
+							PanelWindow(tandem.parent).panelIcon.iconClickHandler(modelName);
+					}
+					else  if(modelName == "光路路由"){
+						showMenu();
+						var tandem1:OpticalRoute = obj as OpticalRoute;
+						if(isOpen(modelName))
+							addPanel(modelName,tandem1,950,535,popMenu.circuitrouteIcon);
+						else
+							PanelWindow(tandem1.parent).panelIcon.iconClickHandler(modelName);
+					}
+					else if(modelName == "网络拓扑图" || modelName == "一次线路检修伴随的通信网检修风险分析"|| modelName == "通信例行检修的风险分析"|| modelName == "电力通信紧急检修（抢修）的风险分析"|| modelName == "系统拓扑图"||modelName=="网络分析"||modelName=="仿真拓扑图"||modelName=="割接拓扑图"){
+						if(isOpen(modelName)){
+							sysOrgMap = new SysOrgMap();
+							sysOrgMap.showSysGraphAlarm=showSysGraphAlarm;
+							sysmap = addPanel(modelName,sysOrgMap,0,0,popMenu.sysorgmapIcon);
+							showSysGraphAlarm=false;
+						}else{
+							if(Shared.mark_flag!=0)
+							//	sysOrgMap.mark_red();
+							PanelWindow(sysOrgMap.parent).panelIcon.iconClickHandler(modelName);
+							if(Shared.import_flag!=1)
+								Alert.show("请先导入调度数据网数据");
+						}
+						
+					}
+					else if(modelName == "VC3利用率分析"){
+						if(isOpen(modelName)){
+							sysOrgMap = new SysOrgMap();
+							sysOrgMap.showSysGraphAlarm=showSysGraphAlarm;
+							sysmap = addPanel(modelName,sysOrgMap,0,0,popMenu.sysorgmapIcon);
+							showSysGraphAlarm=false;
+						}else{
+							PanelWindow(sysOrgMap.parent).panelIcon.iconClickHandler(modelName);
+						}
+						
+					}else if(modelName == "VC4利用率分析"){
+						if(isOpen(modelName)){
+							sysOrgMap = new SysOrgMap();
+							sysOrgMap.showSysGraphAlarm=showSysGraphAlarm;
+							sysmap = addPanel(modelName,sysOrgMap,0,0,popMenu.sysorgmapIcon);
+							showSysGraphAlarm=false;
+						}else{
+							PanelWindow(sysOrgMap.parent).panelIcon.iconClickHandler(modelName);
+						}
+						
+					}else if(modelName == "VC12利用率分析"){
+						if(isOpen(modelName)){
+							sysOrgMap = new SysOrgMap();
+							sysOrgMap.showSysGraphAlarm=showSysGraphAlarm;
+							sysmap = addPanel(modelName,sysOrgMap,0,0,popMenu.sysorgmapIcon);
+							showSysGraphAlarm=false;
+						}else{
+							PanelWindow(sysOrgMap.parent).panelIcon.iconClickHandler(modelName);
+						}
+						
+					}else if(modelName == "电路路由图"){
+						if(isOpen(modelName)){
+							channelRoute = new channelroute();
+							addPanel(modelName,channelRoute,0,0,popMenu.nettopoIcon);
+						}else{
+							PanelWindow(channelRoute.parent).panelIcon.iconClickHandler(modelName);
+						}
+						
+					}else if(modelName == "业务可靠性分析"){
+						if(isOpen(modelName)){
+							busAnaly = new ReliabilityAnalysis();
+							addPanel(modelName,busAnaly,0,0,popMenu.taskIcon);
+						}else{
+							PanelWindow(busAnaly.parent).panelIcon.iconClickHandler(modelName);
+						}
+						
+					}
+					else if(modelName=="单业务可靠性分析"){
+						if(isOpen(modelName))
+						{
+							busReliabilityAnalysis = new BusinessReliabilityAnalysis();
+							addPanel(modelName,busReliabilityAnalysis,0,0,popMenu.networksIcon);
+						}
+						else
+						{
+							PanelWindow(busReliabilityAnalysis.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					else if(modelName=="通道压力分析"){//路由统计分析
+						if(isOpen(modelName))
+						{     
+							top=new topolink();
+							addPanel(modelName,top,0,0,popMenu.networksIcon); 
+						}
+						else
+						{
+							PanelWindow(faultTypeManager.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					else if(modelName=="通道压力及安全预警分析"){//路由统计分析
+						if(isOpen(modelName))
+						{   
+							top1=new topolink1();
+							addPanel(modelName,top1,0,0,popMenu.networksIcon); 
+						}
+						else
+						{
+							PanelWindow(faultTypeManager.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					else if(modelName=="业务路由可靠性分析"){//路由统计分析
+						if(isOpen(modelName))
+						{
+							sysOrgMapR= new SysOrgMapRoute();
+							addPanel(modelName,sysOrgMapR,0,0,popMenu.networksIcon);
+						}
+						else
+						{
+							PanelWindow(sysOrgMapR.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					else if(modelName == "时隙分布图"){
+						if(slotgraph == null) slotgraph = new slotGraph();
+						if(isOpen(modelName)){
+							addPanel(modelName,slotgraph,0,0,popMenu.timeslotIcon);
+							slotgraph.initApp();
+							if(slotgraph.tabtest.getChildren().length > 0)
+								slotgraph.tabtest.removeAllChildren();
+						}else{
+							PanelWindow(slotgraph.parent).panelIcon.iconClickHandler(modelName);
+							slotgraph.initParameter();
+							
+						}
+					}else if(modelName == "资源版本管理"){
+						
+						if(isOpen(modelName)){
+							versionManager = new VersionPanelNew();
+							addPanel(modelName,versionManager,0,0,popMenu.userIcon);
+						}else{
+							PanelWindow(versionManager.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+//				
+					else if(modelName == "演习科目管理"){
+						if(isOpen(modelName)){
+							eventInterven = new EventIntervention();
+							eventInterven.modelName=modelName;//标记为什么科目管理
+//							if(modelName == "演习科目管理"){
+								eventInterven.showVisible=true;
+//							}
+							addPanel(modelName,eventInterven,0,0,popMenu.alarmexperienceIcon);
+						}else{
+							PanelWindow(eventInterven.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName=="故障科目查询"||modelName=="割接科目查询"){
+						if(isOpen(modelName)){
+							eventInterven1 = new EventIntervention1();
+							eventInterven1.modelName=modelName;//标记为什么科目管理
+							if(modelName == "割接科目查询"){
+								eventInterven1.isshow=false;
+							}
+							addPanel(modelName,eventInterven1,0,0,popMenu.alarmexperienceIcon);
+						}else{
+							PanelWindow(eventInterven1.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName == "典型故障案例"){
+						if(isOpen(modelName)){
+							classicFault = new ClassicFaultManager();
+							addPanel(modelName,classicFault,350,500,popMenu.nowalarmIcon);
+						}else{
+							PanelWindow(classicFault.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}	
+					else if(modelName == "科目配置管理"){
+						if(isOpen(modelName)){
+							eventConfig = new InterventionConfig();
+							addPanel(modelName,eventConfig,0,0,popMenu.nowalarmIcon);
+						}else{
+							PanelWindow(eventConfig.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName == "告警现象配置"){
+						if(isOpen(modelName)){
+							alarmConfig = new InterventionAlarmConfig();
+							addPanel(modelName,alarmConfig,0,0,popMenu.nowalarmIcon);
+						}else{
+							PanelWindow(alarmConfig.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}else if(modelName == "版本字典管理"){
+						if(isOpen(modelName)){
+							vXtbmManager = new VersionXtbmManager();
+							addPanel(modelName,vXtbmManager,350,500,popMenu.operIcon);
+						}else{
+							PanelWindow(vXtbmManager.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					
+					else if(modelName == "标准处理过程"){
+						if(isOpen(modelName)){
+							standardMaintain = new InterventionStdMaintaneProc();
+							addPanel(modelName,standardMaintain,0,0,popMenu.nowalarmIcon);
+						}else{
+							PanelWindow(standardMaintain.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName == "处理方法管理"){
+						if(isOpen(modelName)){
+							maintainProc = new EventMaintainProdure();
+							addPanel(modelName,maintainProc,0,0,popMenu.alarmInfoHistoryIcon);
+						}else{
+							PanelWindow(maintainProc.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName == "仿真日志管理"){
+						if(isOpen(modelName)){
+							interposeLog = new InterposeLogManager();
+							addPanel(modelName,interposeLog,0,0,popMenu.syslogIcon);
+						}else{
+							PanelWindow(interposeLog.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName == "操作记录维护"){
+						if(isOpen(modelName)){
+							operateModel = new OperateList();
+							addPanel(modelName,operateModel,0,0,popMenu.alarmInfoHistoryIcon);
+						}else{
+							PanelWindow(operateModel.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName == "演习监控"){
+						if(isOpen(modelName)){
+							sceneMonitor = new SceneMonitor();
+							addPanel(modelName,sceneMonitor,0,0,popMenu.alarmInfoHistoryIcon);
+							sceneMonitor.init();
+						}else{
+							PanelWindow(sceneMonitor.parent).panelIcon.iconClickHandler(modelName);
+							sceneMonitor.initParameter();
+						}
+					}
+					else if(modelName == "告警查询"){
+						if(isOpen(modelName)){
+						
+							alarmmanger  = new AlarmManager ();
+			
+							addPanel(modelName,alarmmanger,0,0,alarmmanger.AlarmIcon);
+						}else{
+					
+							alarmmanger.init();
+							alarmmanger.initEvent();//liqinming
+							PanelWindow(alarmmanger.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}else if(modelName == "历史告警查询"){
+						if(isOpen(modelName)){
+							clearedAlarmManager  = new ClearedAlarmManager ();
+							addPanel(modelName,clearedAlarmManager,0,0,clearedAlarmManager.ClearedAlarmIcon);
+						}else{
+							clearedAlarmManager.init();
+							PanelWindow(clearedAlarmManager.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}else if(modelName == "告警传递管理"){
+						
+						if(isOpen(modelName)){
+							alarmTransmit = new AlarmTransmitManager();
+							addPanel(modelName,alarmTransmit,350,500,popMenu.operIcon);
+						}else{
+							PanelWindow(alarmTransmit.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="路由统计分析"){//路由统计分析
+						if(isOpen(modelName))
+						{
+							routeStatisticsAnalyse = new RouteStatisticsAnalyse();
+							addPanel(modelName,routeStatisticsAnalyse,0,0,popMenu.networksIcon);
+						}
+						else
+						{
+							PanelWindow(routeStatisticsAnalyse.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="资源碎片整理"){//资源碎片整理
+						if(isOpen(modelName))
+						{
+							unusedBusinessResourceClear = new UnusedBusinessResourceClear();
+							addPanel(modelName,unusedBusinessResourceClear,0,0,popMenu.circuitrouteIcon);
+						}
+						else
+						{
+							PanelWindow(unusedBusinessResourceClear.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}else if(modelName=="故障类型管理"){//故障类型管理
+						if(isOpen(modelName))
+						{
+							faultTypeManager = new FaultTypeManager();
+							addPanel(modelName,faultTypeManager,350,500,popMenu.circuitrouteIcon);
+						}
+						else
+						{
+							PanelWindow(faultTypeManager.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					else if(modelName == "割接告警查询"){
+						if(isOpen(modelName)){
+							cutFaultAlarm  = new CutFaultAlarmManager();
+							addPanel(modelName,cutFaultAlarm,0,0,cutFaultAlarm.AlarmIcon);
+						}else{
+							cutFaultAlarm.init();
+							PanelWindow(cutFaultAlarm.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName=="基础数据录入"){
+						if(isOpen(modelName)){
+							dataimp  = new DataImportTitle();
+							addPanel(modelName,dataimp,400,350,popMenu.circuitrouteIcon);
+						}else{
+							PanelWindow(dataimp.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName=="业务支撑度"){//自愈仿真指标评价--业务支撑度
+						navigateToURL(new URLRequest("businessSuport.jsp"),null);
+//						if(isOpen(modelName))
+//						{
+//							businessSuport = new BusinessSuport();
+//							addPanel(modelName,businessSuport,0,0,popMenu.circuitrouteIcon);
+//							businessSuport.init();
+//						}
+//						else
+//						{
+//							PanelWindow(businessSuport.parent).panelIcon.iconClickHandler(modelName);
+//							businessSuport.init();
+//						}
+					}
+					else if(modelName=="通信网络运行质量"){//自愈仿真指标评价--通信网络运行质量
+						navigateToURL(new URLRequest("operationQuality.jsp"),null);
+//						if(isOpen(modelName))
+//						{
+//							operationQuality = new OperationQuality();
+//							addPanel(modelName,operationQuality,0,0,popMenu.circuitrouteIcon);
+//							operationQuality.init();
+//						}
+//						else
+//						{
+//							PanelWindow(operationQuality.parent).panelIcon.iconClickHandler(modelName);
+//							operationQuality.init();
+//						}
+					}
+					else if(modelName=="通信网络运维质量"){//自愈仿真指标评价--通信网络运维质量
+						navigateToURL(new URLRequest("maintainQuality.jsp"),null);
+//						if(isOpen(modelName))
+//						{
+//							maintainQuality = new MaintainQuality();
+//							addPanel(modelName,maintainQuality,0,0,popMenu.circuitrouteIcon);
+//							maintainQuality.init();
+//						}
+//						else
+//						{
+//							PanelWindow(maintainQuality.parent).panelIcon.iconClickHandler(modelName);
+//							maintainQuality.init();
+//						}
+					}
+					else if(modelName=="自愈指标月度曲线图"){
+						var tb:tltb = new tltb();
+						if(isOpen(modelName))
+						{
+							addPanel(modelName,tb,0,0,popMenu.circuitrouteIcon);
+//							tb.init();
+						}
+						else
+						{
+							PanelWindow(tb.parent).panelIcon.iconClickHandler(modelName);
+//							tb.init();
+						}
+					}
+					else if(modelName=="自愈评估曲线图"){
+						var quxian:quxiantu = new quxiantu();
+						if(isOpen(modelName))
+						{
+							addPanel(modelName,quxian,0,0,popMenu.circuitrouteIcon);
+						}
+						else
+						{
+							PanelWindow(quxian.parent).panelIcon.iconClickHandler(modelName);
+						}
+					}
+					else if(modelName=="根告警分析"){
+						if(isOpen(modelName)){
+							if(isWinOpen=="YES"){
+							}else if(isWinOpen=="NO"){
+								gentip = new RealRootAlarm();
+								PopUpManager.addPopUp(gentip,this,false);
+								PopUpManager.centerPopUp(gentip);
+								gentip.updateAlarm(this.arr);
+							}
+						}else
+							PanelWindow(gentip).panelIcon.iconClickHandler(modelName);
+					}
+					else if(modelName=="电力通信网自愈评估"){//电力通信网风险评估指标
+//						if(isOpen(modelName))
+//						{
+//							qualityEval = new QualityEvaluation();
+//							addPanel(modelName,qualityEval,0,0,popMenu.circuitrouteIcon);
+//							qualityEval.init();
+							navigateToURL(new URLRequest("show.jsp"),null);
+//						}
+//						else
+//						{
+//							PanelWindow(qualityEval.parent).panelIcon.iconClickHandler(modelName);
+//							qualityEval.init();
+//						}
+					}
+					else if(modelName == "资源同步"){
+						if(isOpen(modelName)){
+							resourceSync  = new ResourceSync();
+							addPanel(modelName,resourceSync,0,0,popMenu.circuitrouteIcon);
+						}else{
+							PanelWindow(resourceSync.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName == "同步日志"){
+						if(isOpen(modelName)){
+							syncLog  = new SyncLogManager();
+							addPanel(modelName,syncLog,0,0,popMenu.circuitrouteIcon);
+						}else{
+							PanelWindow(syncLog.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+					else if(modelName == "复用段压力及安全预警分析"){
+						if(isOpen(modelName)){
+							pressure_level  = new PressureLevel();
+							addPanel(modelName,pressure_level,0,0,popMenu.circuitrouteIcon);
+						}else{
+							PanelWindow(pressure_level.parent).panelIcon.iconClickHandler(modelName);
+							
+						}
+					}
+				}
+			}
+			
+			
+			public function isOpen(modelName:String):Boolean{
+				for(var i:int = 0; i < windowContainer.mWindowContainer.getChildren().length; i++){
+					if(modelName == PanelIcon(windowContainer.mWindowContainer.getChildren()[i]).label){
+						return false;
+						break;
+					}
+				}
+				return true;
+			}
+			public function closeModel(modelName:String):void{
+				for(var i:int = 0; i < windowContainer.mWindowContainer.getChildren().length; i++){
+					
+					var comp:PanelIcon  = PanelIcon(windowContainer.mWindowContainer.getChildren()[i])
+					if(modelName == PanelIcon(windowContainer.mWindowContainer.getChildren()[i]).label){
+						windowContainer.closeWindow(comp);
+						comp.pnl.parent.removeChild(comp.pnl);
+						break;
+					}
+				}
+			}
+			
+			private var remoteobject:RemoteObject;
+			public function faultEventHandler(remoteobject:RemoteObject):void{
+				this.remoteobject = remoteobject;
+				this.remoteobject.addEventListener(FaultEvent.FAULT,getFaultHandler);
+			}
+			
+			public function getFaultHandler(event:FaultEvent):void{
+				this.remoteobject.removeEventListener(FaultEvent.FAULT,getFaultHandler);
+				//				Alert.show("系统出现异常，请刷新页面；\n如仍不能解决问题，请联系系统管理员！","提示！");
+			}
+			protected function subMessage_resultHandler(event:ResultEvent):void  
+			{} 
+		]]>  
+	</mx:Script>
+</mx:Application>    

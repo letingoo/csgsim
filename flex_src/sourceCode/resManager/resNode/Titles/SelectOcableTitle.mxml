@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*" 
+				title="选择光缆段"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="init()"
+				width="240" height="300" fontSize="13">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.resManager.resNet.titles.TopoLinkSearch;
+			[Bindable]
+			public var page_parent:Object;//和父页面传递的类
+			[Bindable]
+			public var textId:String;
+			
+			[Bindable]
+			public var child_systemcode:String="";//从父页面传过来的系统code
+			public var child_vendor:String="";//从父页面传过来的供应商code；为机框等页面准备的
+			private var eqsearch:String="";//模糊查询的条件
+			public var myCallBack:Function;//定义的方法变量
+			public var mainApp:Object = null;
+			//初始化
+			private function init():void{
+				var rt:RemoteObject=new RemoteObject("resNodeDwr");
+				rt.endpoint=ModelLocator.END_POINT;
+				rt.showBusyCursor=true;
+				rt.addEventListener(ResultEvent.RESULT,eqsearchHandler);
+				Application.application.faultEventHandler(rt);
+				rt.getOcablesearch(eqsearch);
+			}
+			//查询之后的处理函数
+			private function eqsearchHandler(event:ResultEvent):void{
+				var eqsearch:XMLList= new XMLList(event.result);
+				eqsearchlist.dataProvider=eqsearch;
+			}
+			//模糊查询
+			private function searchText_clickHandler(event:Event):void{
+				eqsearch=searchText.txt.text;
+				var rt:RemoteObject=new RemoteObject("resNodeDwr");
+				rt.endpoint=ModelLocator.END_POINT;
+				rt.showBusyCursor=true;
+				rt.addEventListener(ResultEvent.RESULT,eqsearchHandler);
+				Application.application.faultEventHandler(rt);
+				rt.getOcablesearch(eqsearch);
+				
+			}
+			//双击list列表的处理函数
+			private function doubleclickHandler(event:MouseEvent):void{
+				this.close();	
+				(page_parent.getElementById("OCABLECODE",page_parent.propertyList) as mx.controls.TextInput).text= eqsearchlist.selectedItem.@id;
+				(page_parent.getElementById("OCABLENAME",page_parent.propertyList) as mx.controls.TextInput).text= eqsearchlist.selectedItem.@label;
+//				var obj:Object=new Object;
+//				obj.id=eqsearchlist.selectedItem.@id;
+//				obj.name = eqsearchlist.selectedItem.@label;
+//				myCallBack.call(mainApp,obj);
+				//查找所属AZ端站点
+				var ocablecode:String = eqsearchlist.selectedItem.@id;
+				getAportAndZportByOcablecode(ocablecode);
+				getFiberSerialByOcablecode(ocablecode);
+			}
+			
+			private function getFiberSerialByOcablecode(ocablecode:String):void{
+				var rt:RemoteObject=new RemoteObject("resNodeDwr");
+				rt.endpoint=ModelLocator.END_POINT;
+				rt.showBusyCursor=true;
+				rt.addEventListener(ResultEvent.RESULT,getFiberSerialByOcablecodeHandler);
+				rt.getFiberSerialByOcablecode(ocablecode);
+			}
+			
+			private function getAportAndZportByOcablecode(ocablecode:String):void{
+				var rt:RemoteObject=new RemoteObject("resNodeDwr");
+				rt.endpoint=ModelLocator.END_POINT;
+				rt.showBusyCursor=true;
+				rt.addEventListener(ResultEvent.RESULT,getAportAndZportByOcablecodeHandler);
+				rt.getAportAndZportByOcablecode(ocablecode);
+			}
+			private function getAportAndZportByOcablecodeHandler(event:ResultEvent):void{
+				if(event.result!=null){
+					var arr:Array = event.result.toString().split(";");
+					(page_parent.getElementById("ASTAIONCODE",page_parent.propertyList) as mx.controls.TextInput).text=arr[0];
+					(page_parent.getElementById("ZSTAIONCODE",page_parent.propertyList) as mx.controls.TextInput).text=arr[1];
+					
+				}
+			}
+			
+			private function getFiberSerialByOcablecodeHandler(event:ResultEvent):void{
+				if(event.result!=null){
+					(page_parent.getElementById("FIBERSERIAL",page_parent.propertyList) as mx.controls.TextInput).text=event.result.toString();
+					
+				}
+			}
+			//关闭窗体
+			private function close():void{
+				PopUpManager.removePopUp(this);
+				
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<component:SearchTextInput id="searchText" height="35" width="100%" clickButton="searchText_clickHandler(event)" />
+		<mx:List id="eqsearchlist" labelField="@label" width="100%" height="100%" doubleClickEnabled="true" doubleClick="doubleclickHandler(event)"/>
+	</mx:VBox>
+	
+	
+</mx:TitleWindow>

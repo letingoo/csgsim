@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 creationComplete="init()"
+		 xmlns:views="sourceCode.tableResurces.views.*" 
+		 xmlns:component="common.component.*"
+		 verticalGap="0">
+	<!--	<component:ControlBar width="100%" height="38" modelName="通道压力和安全预警分析" imgName="businessRess"  />-->
+	<mx:HBox>
+		<!--	<mx:Label text="所属系统" height="25"/>-->
+		<mx:ComboBox id="com_sys" dataProvider="{arr_cb}"  change="com_rate_changeHandler(event)"/>
+		<mx:Button id="MakePic" label="通道分析"  click=" PaintPic(event)"/>
+		<mx:Button id="shuaxin" label="刷新"  click="Shuaxin(event);"/>
+		<!--<mx:Button id="shuaxinda" label="导出"  click="Shuaxinda(event);"/>-->
+	</mx:HBox>	
+	<mx:VBox id="graph_area" width="100%" height="100%"
+			 paddingBottom="0" 
+			 paddingLeft="0" paddingRight="0" paddingTop="0"  
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off">	
+		<mx:HBox width="100%" height="100%" verticalAlign="top" >
+			
+			<mx:Panel title="通道分布柱状图" width="548" height="100%" fontSize="12">  	
+	<!--			<mx:Legend width="523" direction="horizontal" horizontalGap="8"  height="28">-->
+		<!--			<mx:HBox width="512">						
+						<mx:Label   id="s1"  width="287"  height="20"/>
+						<mx:LegendItem label="Ⅰ级" fontWeight="bold" >
+							<mx:fill>
+								<mx:SolidColor color="0xEE0000"/>
+							</mx:fill>
+						</mx:LegendItem>   
+						<mx:LegendItem label="Ⅱ级" fontWeight="bold" >
+							<mx:fill>
+								<mx:SolidColor color="0xEE7600"/>
+							</mx:fill>
+						</mx:LegendItem>   
+						<mx:LegendItem label="Ⅲ级" fontWeight="bold" >
+							<mx:fill>
+								<mx:SolidColor color="0xEEEE00"/>
+							</mx:fill>
+						</mx:LegendItem>   
+						<mx:LegendItem label="Ⅳ级" fontWeight="bold" >
+							<mx:fill>
+								<mx:SolidColor color="0x71C671"/>
+							</mx:fill>
+						</mx:LegendItem>   
+		
+					</mx:HBox>-->
+		<!--		</mx:Legend>-->
+				<!--<mx:Legend dataProvider="{equipInfo}" height="317" width="0"/>  柱状图右上角显示的内容-->
+				<mx:ColumnChart id="myChart"  dataProvider="{equipInfo}" showDataTips="true" width="100%" height="100%" itemRollOverColor="haloSilver" itemClick="chartChange(event)">  
+					<mx:horizontalAxis>  
+						<mx:CategoryAxis displayName="通道数量" title="通道数量(单位:条)" dataProvider="{equipInfo}"  
+										 categoryField="LEVEL"/>  
+					</mx:horizontalAxis>  
+					<mx:verticalAxis>  
+						<!--设定左边Y轴坐标的数值范围 -->  
+						<mx:LinearAxis title="承载业务数量(单位:个)" 
+									   displayName="承载业务数量" 
+									   autoAdjust="true" />  
+						<!--		<mx:LinearAxis title="通道数量(单位:条)" 
+						displayName="通道数量" 
+						minimum="0"
+						maximum="6"
+						autoAdjust="true" />  -->
+					</mx:verticalAxis>  
+					<mx:series>  
+						<mx:ColumnSeries id="cs1" dataProvider="{equipInfo}"  
+										 xField="LEVEL" yField="SUM" 										
+										 displayName="坐标信息">
+							<!--fillFunction="myFillFunction"-->
+							<mx:fill>
+								<mx:RadialGradient>
+									<mx:entries>
+										<mx:GradientEntry  color="#A1AECF"  />
+										<mx:GradientEntry color="#87CEEB" ratio="0"/>
+									</mx:entries>
+								</mx:RadialGradient>
+							</mx:fill>
+						</mx:ColumnSeries>
+					</mx:series>   			
+				</mx:ColumnChart>  
+				
+			</mx:Panel>
+			
+			<mx:Panel title="通道分布情况" width="100%" height="100%" fontSize="12" >  
+				<mx:DataGrid   id="dgEquip"  width="100%" height="100%" visible="true" dataProvider="{equipInfojs}"  doubleClick="itemListClickHander(event)" doubleClickEnabled="true">
+					<mx:columns>
+					<mx:DataGridColumn headerText="序号" dataField="SerialNum" editable="false" labelFunction="lfRowNum" width="10" />
+					<!--<mx:DataGridColumn headerText="复用段 id" dataField="label" width="30" wordWrap="true" editable="true"/>-->
+						<mx:DataGridColumn headerText="通道名称 " dataField="labelname" width="30" wordWrap="true" editable="true"/>
+					<mx:DataGridColumn headerText="通道速率 " dataField="rate" width="15"/>
+				<mx:DataGridColumn headerText="承载业务个数" dataField="sum" width="15"/>
+					<!--	<mx:DataGridColumn headerText="承载关键业务个数" dataField="major" width="15"/>
+						<mx:DataGridColumn headerText="通道压力指数" dataField="result" width="15"/>-->
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:Panel>
+		</mx:HBox >
+	</mx:VBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.component.PopupMenu;
+			
+			import mx.charts.ChartItem;
+			import mx.charts.events.ChartItemEvent;
+			import mx.charts.series.items.ColumnSeriesItem;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.List;
+			import mx.events.DropdownEvent;
+			import mx.events.ListEvent;
+			import mx.graphics.IFill;
+			import mx.graphics.SolidColor;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.resManager.resBusiness.actionscript.BusiToCircu;
+			import sourceCode.sysGraph.views.SysOrgMapL;
+			import sourceCode.topolink.views.DetailTopo;
+			import sourceCode.topolink.views.InterposeSearchTitle;
+			import sourceCode.topolink.views.InterposeSearchTitles;
+			
+			private var interpose:sourceCode.topolink.views.InterposeSearchTitle;
+			private var interposes:sourceCode.topolink.views.InterposeSearchTitles;
+			private var detailroute:sourceCode.topolink.views.DetailTopo;	
+			public var popMenu:PopupMenu = new PopupMenu();
+			public var sysOrgMap:SysOrgMapL;	
+			private var mi:main;
+			
+			[Bindable]
+			private var arr_cb:ArrayCollection=new ArrayCollection([
+				{label:'--所属系统--'},
+				{label:'华为'}
+			]);
+			
+			[Bindable]
+			private var equipInfo:ArrayCollection = new ArrayCollection();	
+			[Bindable]
+			private var equipInfoj:ArrayCollection = new ArrayCollection();	
+			[Bindable]
+			private var equipInfojs:ArrayCollection = new ArrayCollection();	
+			
+			private var xt:String = "";
+			private var dk:String= "";
+			private var cl:String = "";
+			private var b:int =0;
+			var ss:int =0;
+			
+			public static var ses:String;
+			protected function com_rate_changeHandler(event:ListEvent):void
+			{   
+				xt =  com_sys.selectedLabel.toString();
+			} 
+							
+		    public var modelName:String="复用段压力分析";
+		    public static var  chch:Boolean=false;			
+			private function chartChange(event:ChartItemEvent):void{
+			     chch=true;			
+/* 				mi=this.parentApplication as main;			
+				sysOrgMap = new SysOrgMapL();		
+				mi.addPanel(modelName,sysOrgMap,0,0,popMenu.userIcon);	 */
+			}
+			
+			protected function Shuaxin(event:MouseEvent):void
+			{   
+				com_sys.selectedIndex=0;
+//				com_rate.selectedIndex=0;
+//				num.selectedIndex=0;
+				equipInfo.removeAll();
+				equipInfojs.removeAll();
+				equipInfoj.removeAll();
+			} 
+			private var myFileReference:FileReference;
+			protected function PaintPic(event:MouseEvent):void
+			{  
+				ss = InterposeSearchTitle.mx//mxml传值需要定义成静态变量
+				if(xt=='华为')
+				{
+					  	var ro:RemoteObject = new RemoteObject("topolink");
+						ro.endpoint = ModelLocator.END_POINT;
+						ro.showBusyCursor = true;
+						ro.addEventListener(ResultEvent.RESULT,ResultGetDevInfo);
+						ro.Fylevel();					
+				}
+
+			
+			} 
+			
+			/* 通道风险分析 */
+			private function ResultGetDevInfo(event:ResultEvent):void
+			{   var a:int=1;
+				equipInfo=event.result as ArrayCollection;	
+		 		if(equipInfo.length>0)
+				{
+				var roj:RemoteObject = new RemoteObject("topolink");
+				roj.endpoint = ModelLocator.END_POINT;
+				roj.showBusyCursor = true;
+				roj.addEventListener(ResultEvent.RESULT,ResultGetDevInfojs);
+				roj.detail(a);
+				} 
+				
+			}
+			
+			private function ResultGetDevInfojs(event:ResultEvent):void
+			{
+				equipInfojs=event.result as ArrayCollection;	
+				
+			}
+			
+			private function lfRowNum(oItem:Object,iCol:int):String    
+			{   
+				var iIndex:int = dgEquip.dataProvider.getItemIndex(oItem) + 1; 				
+				return String(iIndex);     
+			} 
+			
+			protected function itemListClickHander(event:MouseEvent):void
+			{   
+				ses=dgEquip.selectedItem.label.toString();		
+				detailroute = new DetailTopo();
+				//interpose.title = "通道预警门限值";
+				MyPopupManager.addPopUp(detailroute,true);
+			}
+			public function init():void
+			{   
+				
+				
+			}	
+			
+			private function myFillFunction(element:ChartItem, index:Number):IFill {
+				//var c1:SolidColor = new SolidColor(0x8B008B);
+				//var c2:SolidColor = new SolidColor(0xA020F0);
+				var c3:SolidColor = new SolidColor(0xEE0000);
+				var c4:SolidColor = new SolidColor(0xEE7600);
+				var c5:SolidColor = new SolidColor(0xEEEE00);
+				var c6:SolidColor = new SolidColor(0x71C671);
+			  /*   #71C671   绿色  6级
+				#EEEE00   黄色  5级
+				#EE7600   橙色   4级
+				#EE0000    红色   3级
+				#A020F0    紫色   2级
+				#8B008B    黑紫色   1级 */
+				var item:ColumnSeriesItem = ColumnSeriesItem(element);
+				//var profit:Number = Number(item.yValue);     
+				var profit:String = String(item.xValue);   
+				
+				if (profit=="Ⅰ级") {
+					return c3;
+				} 
+				if (profit=="Ⅱ级") {
+					return c4;
+				}
+				if (profit=="Ⅲ级") {
+					return c5;
+				}
+				if (profit=="Ⅳ级") {
+					return c6;
+				}
+			/* 	if (profit=="Ⅴ级") {
+					return c5;
+				} */
+			/* 	else {
+					return c6;
+				}  */
+				return c6;
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

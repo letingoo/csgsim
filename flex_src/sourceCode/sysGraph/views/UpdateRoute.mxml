@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" 
+				fontFamily="宋体" 
+				fontSize="12" 
+				showCloseButton="true" 
+				width="960" 
+				height="640"
+				close="{MyPopupManager.removePopUp(this)}" 
+				 title="选路"
+				>
+	
+
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import flash.events.MouseEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.DataGridEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.formatters.DateFormatter;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.ObjectProxy;
+			
+			import sourceCode.sysGraph.model.FindNewRoute;
+			
+			public var foundroute:FindNewRoute;
+			private var  flag=0;
+			[Bindable]
+			public var dataArr:ArrayCollection;
+			//xf调试用
+			[Bindable]
+			public var comb:ArrayCollection=new ArrayCollection([
+				{label:"路由1",value:0},{label:"路由2",value:1},{label:"路由1,路由2",value:2},{label:"路由2,路由1",value:3}
+				
+			]);
+			[Bindable]
+			public var dataArrr:ArrayCollection=new ArrayCollection([
+				{busId:"10001",mainRoute:"地点1-地点3-地点13",backupRoute:"地点1-地点3-地点4-地点13"},
+				{busId:"10002",mainRoute:"地点2-地点3-地点4-地点6-地点12-地点13",backupRoute:"地点1-地点3-地点12-地点13"}
+			]);
+			public function updateClickHandler():void
+			{
+				ModelLocator.showConfimMessage("您确认要更新吗?",this,updateConfirmHandler);
+			}
+			public function closeClickHandler()
+			{
+				MyPopupManager.removePopUp(this);
+			}
+			
+			private function updateConfirmHandler(event:CloseEvent)
+			{
+				if (event.detail == Alert.YES)
+				{
+					//xf foundroute.updateRouteHandler();
+					MyPopupManager.removePopUp(this);
+				}
+
+			}
+			public function setFlag_0():void
+			{
+				this.flag=0;
+				this.dataArrr=new ArrayCollection([
+					{busId:"10001",mainRoute:"地点1-地点3-地点4-地点13",backupRoute:"地点1-地点3-地点13"},
+					{busId:"10002",mainRoute:"地点1-地点3-地点12-地点13",backupRoute:"地点2-地点3-地点4-地点6-地点12-地点13"}
+				]);
+			}
+			private function setFlag_1():void
+			{
+				this.flag=1;
+				this.dataArrr=new ArrayCollection([
+					{busId:"10001",mainRoute:"地点1-地点3-地点2-地点13",backupRoute:"地点1-地点3-地点4-地点13"},
+					{busId:"10002",mainRoute:"地点2-地点3-地点6-地点13",backupRoute:"地点1-地点3-地点12-地点13"}
+				]);
+			}
+			public function getFlag():int
+			{
+				return this.flag;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingTop="0" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		horizontalAlign="center" verticalGap="0">
+		<mx:Grid 			id ="selectRoute" 
+							width="100%" 
+							height="43"  label="寻路策略" top="10%" textAlign="left" verticalAlign="bottom"
+							backgroundImage="@Embed(source='assets/images/poptitle.png')"
+							backgroundSize="100%">
+			<mx:GridRow height="100%" verticalAlign="bottom" textAlign="right">
+				
+				<mx:GridItem verticalAlign="bottom">
+					
+					<mx:Label width="100" height="32" text=" 选路策略" 
+							 fontSize="17" textAlign="center"   fontStyle="normal" fontWeight="normal" textDecoration="none"/> 
+					<mx:RadioButton width="100" height="42" label="最短路径" fontSize="15" textAlign="center" click="setFlag_0()" selected="true"/>
+					<mx:RadioButton width="100" height="42" label="负载均衡"   fontSize="15" textAlign="center" click="setFlag_1()"/>
+				</mx:GridItem>
+				
+			</mx:GridRow>
+		</mx:Grid>
+
+		<mx:DataGrid  		
+			id ="newroute" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true"
+			dataProvider="{this.dataArrr}">
+			<mx:columns>
+				<mx:DataGridColumn headerText="业务ID" dataField="busId"  width="108"/>
+				<mx:DataGridColumn headerText="路由1" dataField="mainRoute" width="352"/>
+				<mx:DataGridColumn headerText="路由2" dataField="backupRoute" width="352"/>
+				<mx:DataGridColumn headerText="选择" dataField="combo" width="54">
+					<mx:itemRenderer>
+						<mx:Component>
+							<mx:ComboBox selectedIndex="0" >
+								<mx:dataProvider>
+									<mx:String >路由1</mx:String>
+									<mx:String>路由2</mx:String>
+								</mx:dataProvider>
+								
+							</mx:ComboBox>
+							
+						</mx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+		
+		<mx:HBox 
+			width="100%" verticalAlign="middle" backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" 
+			backgroundSize="100%"
+			horizontalAlign="center" height="12%">
+			
+			<mx:Button label="确认" styleName="loginprimary" 
+					   width="80" click="updateClickHandler()"/>
+			
+			<mx:Spacer width="64"/>
+			
+			<mx:Button label="关闭" 
+					   width="80" styleName="loginsecondary" 
+					   click="closeClickHandler()"/>	
+		</mx:HBox>	
+	</mx:VBox>
+</mx:TitleWindow>

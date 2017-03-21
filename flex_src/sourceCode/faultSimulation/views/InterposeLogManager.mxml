@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="init()" 
+		   xmlns:component="common.component.*">
+	<mx:RemoteObject id="con_logMgr" destination="faultSimulation" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}" requestTimeout="300" 
+					 result="getLogInfos(event)"/>	
+	<mx:Style source="assets/css/userStyle.css"/>
+	<mx:Script source="../actionscript/InterposeLogManager.as"/>
+		<mx:HBox width="100%" height="100%" >
+			<mx:VBox height="100%" width="100%" backgroundColor="#effcfe" >
+				<component:ControlBar id="controlBar" width="100%" height="38" modelName="仿真日志管理" imgName="interposelog"
+									  showExportExcelButton="true" controlExportExcel="export_excel()"/>
+				<mx:DataGrid id="sysLog" dataProvider="{acLogInfos.logList}" width="100%" height="95%">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" dataField="no" width="50"/>
+						<mx:DataGridColumn id="logid" headerText="事件ID" dataField="logid" width="80"/>
+						<mx:DataGridColumn id="eventname" headerText="事件名称" dataField="eventname" width="80"/>
+						<mx:DataGridColumn id="logtype" headerText="事件类型" dataField="logtype" width="60"/>
+						<mx:DataGridColumn id="logtime" headerText="事件发出时间" dataField="logtime" width="150"/>
+						<mx:DataGridColumn id="sourceobj" headerText="事件发出对象" dataField="sourceobj" width="220"/>
+						<mx:DataGridColumn id="accessobj" headerText="事件接受对象" dataField="accessobj" width="220"/>
+						<mx:DataGridColumn id="eventtype" headerText="仿真代理" dataField="eventtype" width="180"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<mx:HBox width="100%" height="5%" verticalAlign="middle" backgroundColor="#CCDDEE">
+					<component:pagetoolbar id="serverPagingBar1" width="100%" height="10%" />
+				</mx:HBox>
+			</mx:VBox>
+			<mx:Canvas id="queryCavas" height="100%" width="300" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+				<mx:VBox id="queryVbox" width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off" visible="true" >
+					<mx:Panel styleName="secondaryPanel" width="100%" height="100%" title="查询" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+							<mx:Canvas id="user_select" width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+								<mx:Label styleName="label" text="事件ID:" width="110" textAlign="right" x="6" y="26" />
+								<mx:TextInput id="log_id"  width="122" x="130" y="25" />
+								<mx:Label styleName="label" text="事件类型:" width="110" textAlign="right" x="6" y="60"/>
+								<mx:ComboBox id="log_type" width="122" y="58" x="130" dataProvider="{selectedCollection}"/>				
+								<mx:Label styleName="label" text="事件名称:" width="110" textAlign="right" x="6" y="95" />
+								<mx:TextInput id="event_name"  width="122" x="130" y="94"/>				
+								<mx:Label styleName="label" text="事件发出对象:" width="110" textAlign="right"  x="6" y="132" />
+								<mx:TextInput id="source_obj" width="122" y="130" x="130"/>	
+								<mx:Label styleName="label" text="事件接受对象:" width="110" textAlign="right"  x="6" y="166" />
+								<mx:TextInput id="access_obj" width="122" y="165" x="130"/>
+								<mx:Label styleName="label" text="事件发出时间:" width="110" textAlign="right" x="6" y="200" />
+								<mx:DateField id="log_time" yearNavigationEnabled="true" dayNames="['日','一','二','三','四','五','六']" 
+									  monthNames="['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']"
+									  fontSize="12" width="122"  y="200" x="130" showToday="true" formatString="YYYY-MM-DD"/>
+								<mx:Label styleName="label" text="仿真代理:" width="110" textAlign="right"  x="6" y="234" />
+								<mx:TextInput id="event_type" width="122" y="234" x="130"/>
+								<mx:Button label="查询" width="56" id="userSelect" x="74" y="268" height="21" click="selected()"/>
+								<mx:Button label="重置" width="56" id="allReset" x="146" y="268" click="Reset()" height="21"/>
+							</mx:Canvas>
+					</mx:Panel>
+				</mx:VBox>
+				<mx:Button id="change" icon="{PointIcon}" click="changeState()" width="16" height="15" top="8" right="11" />
+			</mx:Canvas>
+		</mx:HBox>
+</mx:VBox>

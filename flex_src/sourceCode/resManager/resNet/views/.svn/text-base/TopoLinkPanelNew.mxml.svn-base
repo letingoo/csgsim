@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 width="100%" 
+		 height="100%" 
+		 creationComplete="init()" 
+		 preinitialize="preinitialize()"
+		 xmlns:views="sourceCode.tableResurces.views.*" xmlns:component="common.component.*">
+	<mx:Script source="../actionscript/TopoLinkPanelNew.as" />
+	
+	<mx:VBox 
+		width="100%" 
+		height="100%" 
+		paddingBottom="0" 
+		paddingLeft="0" 
+		paddingRight="0" 
+		paddingTop="0" 
+		verticalScrollPolicy="off" 
+		horizontalScrollPolicy="off">
+		
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="复用段" imgName="topolink"
+							  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="{isSearch}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}"
+							  controlAdd="toolbar_toolEventAddHandler(event)" controlEdit="toolbar_toolEventEditHandler(event)" 
+							  controlDel="toolbar_toolEventDeleteHandler(event)" controlSearch="toolbar_toolEventSearchHandler(event)"
+							  controlExportExcel="toolbar_toolEventEmpExcelHandler(event)" controlImport="toolbar_toolEventImpExcelHandler(event)"/>
+		<mx:DataGrid 
+			id ="dg" 
+			width="100%" 
+			height="100%" 
+			editable="false" 
+			horizontalScrollPolicy="auto" 
+			doubleClickEnabled="true" 
+			headerRelease="dg_headerReleaseHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn headerText="序号" dataField="no" width="50"  sortable="false"/>
+				<mx:DataGridColumn headerText="A端设备" dataField="equipname_a" width="135"/>
+				<mx:DataGridColumn headerText="Z端设备" dataField="equipname_z" width="135"/>
+				<mx:DataGridColumn headerText="A端传输系统" dataField="a_systemcode" width="135"/>
+				<mx:DataGridColumn headerText="Z端传输系统" dataField="z_systemcode" width="135"/>
+				<mx:DataGridColumn headerText="速率" dataField="linerate"  width="135"/>
+				<mx:DataGridColumn headerText="A端端口" dataField="aendptp"  width="250"/>
+				<mx:DataGridColumn headerText="Z端端口" dataField="zendptp"  width="250"/>
+				<mx:DataGridColumn headerText="长度" dataField="linelength"  width="135"/>
+				<mx:DataGridColumn headerText="更新时间" dataField="updatedate"  width="170"/>
+				<mx:DataGridColumn headerText="备注" dataField="remark"  width="250"/>
+			</mx:columns>
+			
+		</mx:DataGrid>
+		
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>
+		
+	</mx:VBox>
+	
+	
+</mx:VBox>

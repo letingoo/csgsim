@@ -1,0 +1,83 @@
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model
+END
+SQLHelper.java
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/SQLHelper.java
+END
+ChannelEquipment.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/ChannelEquipment.java
+END
+ChannelRouteContent.java
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/ChannelRouteContent.java
+END
+Circuit.java
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/Circuit.java
+END
+ChildModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/ChildModel.java
+END
+StringUtil.java
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/StringUtil.java
+END
+PositionModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/PositionModel.java
+END
+ChannelLink.java
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/ChannelLink.java
+END
+CCTmpModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/CCTmpModel.java
+END
+ChannelRouteModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/ChannelRouteModel.java
+END
+ChannelRouteDetailModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/ChannelRouteDetailModel.java
+END
+ChannelPort.java
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/ChannelPort.java
+END
+CircuitroutModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/csgsim/!svn/ver/1/java_src/channelroute/model/CircuitroutModel.java
+END

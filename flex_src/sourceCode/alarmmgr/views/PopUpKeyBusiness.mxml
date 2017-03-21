@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--查看电路信息-->
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				creationComplete="init();"
+				width="800" 
+				height="500" 
+				layout="absolute"
+				showCloseButton="true" title="影响电路信息" styleName="popwindow"
+				close="PopUpManager.removePopUp(this)" xmlns:actionscript="sourceCode.subject.main.actionscript.*"
+				xmlns:views1="sourceCode.common.views.*"
+				>
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.alarmmgr.actionscript.SequenceItemRenderer;
+			import sourceCode.rootalarm.model.PoUpKeyBussinessModel;
+			import sourceCode.tableResurces.views.FileExportFirstStep;
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			[Bindable]
+			public var circuitname :String= null;
+			private var count:int;
+			[Bindable]
+			public var isacked :String= null;
+			[Bindable]
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			public var alarmnumber:String="";
+			public var popupkeybussiness:PoUpKeyBussinessModel = new PoUpKeyBussinessModel();
+			
+			private var param:ArrayCollection =new ArrayCollection();
+			
+			private var indexRenderer:Class = SequenceItemRenderer;  
+			
+			private function init():void{
+				pagingFunction(0,50);
+			}
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void {
+				start = (pageIndex * pageSize+1).toString();
+				end = ((pageIndex * pageSize) + pageSize).toString();
+				popupkeybussiness.alarmnumber=alarmnumber;
+				popupkeybussiness.start=start;
+				popupkeybussiness.end=end;
+				var rtobj:RemoteObject=new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint= ModelLocator.END_POINT;
+				rtobj.showBusyCursor=true;
+				//rtobj.getKeyBusiness(alarmnumber,circuitname,isacked,start,end);        //表格加载数据
+				rtobj.getAffectCircuit(popupkeybussiness); 
+				rtobj.addEventListener(ResultEvent.RESULT,loadData);
+			}
+			
+			private function loadData(event:ResultEvent):void{
+			
+				param.removeAll();
+				var alarmInfos:ArrayCollection=event.result.list as ArrayCollection;
+				if(event.result.list==null || event.result.list==""){
+					Alert.show("此告警没有影响电路信息","提示信息",4,this,null,iconClass);
+					
+				}
+				for each(var a:Object in alarmInfos){
+					param.addItem({alarmlevelname:a.ALARMLEVELNAME,circuitcode:a.CIRCUITCODE,username:a.USERNAME,usetime:df.format(a.USETIME),
+						circuittype:a.CIRCUITTYPE,rate:a.RATE,portserialno1:a.PORTSERIALNO1,portserialno2:a.PORTSERIALNO2});
+				}
+				
+				dg.dataProvider=param;
+				pagingToolBarforAlarmExp.orgData =param;
+				count =int(event.result.count);
+				pagingToolBarforAlarmExp.totalRecord = count;
+				pagingToolBarforAlarmExp.dataBind(true);	
+			}
+			
+			
+			public function linkRelationUI(obj:Object,selectedItem:String):void{
+				var rootSele:String = obj.circuitcode;
+				if(selectedItem == "circuitcode"){  
+					//Alert.show(rootSele);
+					Registry.register("para_circuitype",obj.circuittype);//add by sjt
+					Registry.register("para_circuitcode", rootSele);//para_circuitcode sjt change 20130315
+					Application.application.openModel("方式信息", false);
+
+				} 
+			}
+			
+
+			protected function dg_itemClickHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(dg.columns[event.columnIndex].dataField.toString()=="电路编号"){
+					var s:String=param.getItemAt(event.rowIndex)[dg.columns[event.columnIndex].dataField.toString()].toString();
+					Alert.show(s);
+				}else{}
+				
+			}
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				var fefs:FileExportFirstStep = new FileExportFirstStep();
+				var model:PoUpKeyBussinessModel = new PoUpKeyBussinessModel()
+				fefs.dataNumber = this.count;
+				fefs.exportTypes = "查看影响电路";
+				fefs.titles = new Array("电路编号", "电路用途","电路类型","开通时间", "速率", "A端端口", "Z端端口");
+				fefs.labels = "影响电路信息列表";
+				model = popupkeybussiness;
+				model.start="0";
+				model.end = this.count.toString();
+				fefs.model = model;
+				MyPopupManager.addPopUp(fefs, true);
+			}
+
+		]]>
+	</mx:Script>
+	<mx:DateFormatter id="df" formatString="YYYY-MM-DD"/><!-- JJ:NN:SS-->
+	
+	<mx:VBox x="0" y="0" width="100%" height="443" verticalGap="0">
+		<mx:HBox width="100%" height="70" backgroundImage="@Embed(source='assets/images/alarminfo_banner.png')" backgroundSize="100%" verticalAlign="middle">
+			<mx:Image x="0" y="0" source="assets/images/title_gen_yewu.png"/>
+		</mx:HBox>
+		<mx:HBox width="100%" backgroundImage="assets/images/iconbar_bg.png" backgroundSize="100%" verticalAlign="middle" height="35">
+			<mx:LinkButton label="导出" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_export.png')" click="linkbutton1_clickHandler(event)"/>
+			<mx:LinkButton label="打印" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_print.png')" visible="false"/>
+		</mx:HBox>
+		<mx:VBox width="100%" height="100%">
+			<mx:DataGrid id="dg"  width="100%" height="95%" textAlign="center" verticalAlign="middle" headerHeight="25"  styleName="alarm">
+				<mx:columns>
+					<mx:DataGridColumn headerText="告警级别" dataField="alarmlevelname" visible="false" itemRenderer="sourceCode.alarmmgr.actionscript.AlarmlevelcolorItemRender"/>
+					<mx:DataGridColumn headerText="序号" itemRenderer="{new ClassFactory(indexRenderer)}" width="40"/>
+					
+					<mx:DataGridColumn headerText="电路编号" dataField="circuitcode" width="75" >
+						<mx:itemRenderer>
+							<mx:Component>
+								<actionscript:RollOverItemRenderer  click="outerDocument.linkRelationUI(data,'circuitcode')"/>
+							</mx:Component>
+						</mx:itemRenderer>	
+					</mx:DataGridColumn>
+					
+					<mx:DataGridColumn headerText="电路用途" dataField="username" showDataTips="true"/>		
+					<mx:DataGridColumn headerText="电路类型" dataField="circuittype"/>
+					<mx:DataGridColumn headerText="开通时间" dataField="usetime" />
+					<mx:DataGridColumn headerText="速率" dataField="rate" width="60"/>
+					<mx:DataGridColumn headerText="A端端口" dataField="portserialno1" showDataTips="true"/>
+					<mx:DataGridColumn headerText="Z端端口" dataField="portserialno2" showDataTips="true"/>
+				</mx:columns>
+			</mx:DataGrid>
+		<views1:pagetoolbar width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{dg}" pagingFunction="pagingFunction">
+		</views1:pagetoolbar>
+		</mx:VBox>
+	</mx:VBox>
+</mx:TitleWindow>

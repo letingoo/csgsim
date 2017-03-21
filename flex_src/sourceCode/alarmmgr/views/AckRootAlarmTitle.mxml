@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				title="告警信息编辑窗口"
+				showCloseButton="true"
+				close="closeTitle()"
+				creationComplete="init(event)"
+				layout="absolute" width="600" height="400">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.alarmmgr.actionscript.AlarmAffirmModel;
+			import sourceCode.rootalarm.model.AckRootAlarmModel;
+			import sourceCode.rootalarm.myAlert.AlertCanvas;
+			import sourceCode.rootalarm.myAlert.AlertTip;
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			private var paramCause:ArrayCollection= new ArrayCollection();
+			private var paramResult:ArrayCollection= new ArrayCollection();
+			public var alarmnumber = "";
+			public var isackedzh = "";
+			public var dealresult = "";
+			public var isworkcase = "";
+			public var ackcontent = "";
+			
+			protected function closeTitle():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+
+			protected function init(event:FlexEvent):void
+			{
+				if(ackcontent!=""){
+					alarmContent.text=ackcontent;
+				}
+				getalarmCauseData();
+				getalarmDealWithData("ALD03__");
+			}
+
+			private function getalarmCauseData():void{
+				
+				var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getCauseData();
+				rtobj.addEventListener(ResultEvent.RESULT, setalarmCauseData);
+			}
+			private function setalarmCauseData(event:ResultEvent):void{
+				paramCause.removeAll();
+				var alarmCauseValue:ArrayCollection= new ArrayCollection();
+				alarmCauseValue=event.result as ArrayCollection;
+				paramCause.addItem({label:"----请选择----",code:""});
+				for each(var a:Object in alarmCauseValue){
+					paramCause.addItem({label:a.XTXX,code:a.XTBM});
+				}
+				
+				alarmCause.dataProvider=paramCause;
+				for(var i:int=0;i<ArrayCollection(alarmCause.dataProvider).length;i++){
+					var c:Object=ArrayCollection(alarmCause.dataProvider).getItemAt(i);
+					if(c.label==isworkcase){
+						alarmCause.selectedIndex=i;
+					}
+						
+				}
+//				if(iscleared=="1"){
+//					alarmDealWith.enabled=false;
+//					alarmDealWith.selectedIndex=1;
+//				}else{
+//					alarmDealWith.enabled=true;
+//				}
+			}
+			private function getalarmDealWithData(dealwith:String):void{
+				
+				
+				var rtobj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getDealWithData(dealwith);
+				rtobj.addEventListener(ResultEvent.RESULT, setalarmDealWithData);
+				rtobj.addEventListener(FaultEvent.FAULT, fault);
+			}
+			
+			private function fault(event:FaultEvent):void{
+			}
+			private function setalarmDealWithData(event:ResultEvent):void{
+				paramResult.removeAll();
+				var dealResult:ArrayCollection= new ArrayCollection();
+				dealResult=event.result as ArrayCollection;
+				
+				paramResult.addItem({label:"----请选择----",code:""});
+				
+				for each(var a:Object in dealResult){
+					paramResult.addItem({label:a.XTXX,code:a.XTBM});
+				}
+				
+				alarmDealWith.dataProvider=paramResult;
+				for(var i:int=0;i<ArrayCollection(alarmDealWith.dataProvider).length;i++){
+					var c:Object=ArrayCollection(alarmDealWith.dataProvider).getItemAt(i);
+					if(c.label==dealresult){
+						alarmDealWith.selectedIndex=i;
+					}
+					
+				}
+				
+			}
+
+			protected function submit_clickHandler(event:MouseEvent):void
+			{
+				if(alarmContent.text==null||trim(alarmContent.text)==""){
+					Alert.show("告警确认内容不能为空！","温馨提示");
+				}else if(alarmCause.selectedIndex==0){
+					Alert.show("请选择告警原因！","温馨提示");
+				}else if(alarmDealWith.selectedIndex==0){
+					Alert.show("请选择处理方式！","温馨提示");
+				}else{
+					var ackModel:AlarmAffirmModel = new AlarmAffirmModel();
+					ackModel.alarmnumber = alarmnumber;
+					ackModel.ackperson= parentApplication.curUserName;
+					ackModel.dealresult = alarmDealWith.selectedItem.label;
+					ackModel.isworkcase= alarmCause.selectedItem.label;
+					ackModel.ackcontent= alarmContent.text;
+					ackModel.triggeredhour = triggeredHour.text;
+					ackModel.isackedzh = isackedzh;
+					if(Continue.selected){
+						ackModel.isfilter = "1";
+					}else{
+						ackModel.isfilter = "0";
+					}
+					var rtobj:RemoteObject=new RemoteObject("RealRootAlarmDwr");
+					rtobj.endpoint= ModelLocator.END_POINT;
+					rtobj.showBusyCursor=true;
+					rtobj.ackRootAlarmNew_(ackModel);
+					rtobj.addEventListener(ResultEvent.RESULT,getResult);
+					
+					if( alarmDealWith.selectedItem.label=="转故障流程处理"){
+						var ack:AckRootAlarmModel = new AckRootAlarmModel();
+						ack.alarmnumber  =alarmnumber;
+						var ac:ArrayCollection = new ArrayCollection();
+						ac.addItem(ack);
+						toFault(ac);
+					}
+				}
+			}
+			var alert:AlertCanvas;
+			private function toFault(ac:ArrayCollection):void{
+				alert = AlertTip.show(this.height-28,this.width,"正在转处理流程中，请稍后……", 
+					100,false,{style:"AlertTip"},null,true);
+				var obj:RemoteObject = new RemoteObject("RealRootAlarmDwr");
+				obj.endpoint = ModelLocator.END_POINT;
+				obj.showBusyCursor = true;
+				obj.toFaultHandler(ac,"");
+				obj.addEventListener(ResultEvent.RESULT,toFaultHandlerResult);	
+			}
+			private function getResult(event:ResultEvent):void{
+				if(event.result==null){
+					Alert.show('error',"提示信息",4,this,null,iconClass);return;
+				}else if(event.result=="成功"){
+					this.dispatchEvent(new Event("ackrootEvent"));
+//					Alert.show('确认根告警成功',"提示信息",4,this,null,iconClass);
+					closeTitle();
+				}else{
+					//					Alert.show('确认根告警失败',"提示信息",4,this,null,iconClass);
+				}
+			}
+			private function toFaultHandlerResult(e:ResultEvent):void{
+				if(e.result.toString()=="ok"){
+					//					Alert.show("转处理流程成功","温馨提示");
+					//					AlertCanvas(alert).visible_ = false;
+					alert.msg = "转处理流程成功";
+					alert.visible  = false;
+				}else{
+					Alert.show("转处理流程失败，请联系管理员！","温馨提示");
+					alert.visible  = false;
+				}
+			}
+
+			//去除左边空格    
+			public static function leftTrim(s:String):String{        
+				var i:Number=0;       
+				while(s.charCodeAt(i)==32 || s.charCodeAt(i)==13 || s.charCodeAt(i)==10 || s.charCodeAt(i)==9){        
+					i++;       
+				}        
+				return s.substring(i,s.length);       
+			}     
+			//去除右边空格    
+			public static function rightTrim(s:String):String{        
+				var i:Number=s.length-1;       
+				while(s.charCodeAt(i)==32 || s.charCodeAt(i)==13 || s.charCodeAt(i)==10 ||s.charCodeAt(i)==9){        
+					i--;       
+				}        
+				return s.substring(0,i+1);       
+			}    
+			//去除空格    
+			public static function trim(s:String):String{    
+				return leftTrim(rightTrim(s));       
+				
+			}    
+
+		]]>
+	</mx:Script>
+<mx:VBox width="100%" height="100%">
+	<mx:VBox width="100%" height="30%" borderStyle="solid" paddingLeft="10" paddingRight="10"  paddingBottom="10">
+		<mx:Label text="告警确认内容:"/>
+		<mx:TextArea id="alarmContent" width="100%" height="100%"/>
+	</mx:VBox>
+	<mx:VBox width="100%" height="20%" borderStyle="solid" paddingLeft="10" paddingRight="10"  paddingBottom="10">
+		<mx:Label text="告警原因:"/>
+		<mx:HBox>
+			<mx:Label text="该告警为"/>
+			<mx:ComboBox  id="alarmCause" width="180"/>
+			<mx:Label text="原因引起。"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:VBox width="100%" height="15%" borderStyle="solid" paddingLeft="10" paddingRight="10"  paddingBottom="10">
+		<mx:Label text="处理方式"/>
+		<mx:ComboBox id="alarmDealWith"  width="188"/>
+	</mx:VBox>
+	<mx:VBox width="100%" height="15%" borderStyle="solid" verticalAlign="middle" paddingLeft="10" paddingRight="10"  paddingBottom="10">
+		<mx:HBox>
+			<mx:Label text="在"/>
+			<mx:TextInput id="triggeredHour" text="12" restrict="0-9"/>
+			<mx:Label text="小时内再次上报告警压缩为频闪告警。"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:VBox width="100%" height="20%" borderStyle="solid" verticalAlign="middle" paddingLeft="10" paddingRight="10"  paddingBottom="10">
+		<mx:HBox width="100%" height="100%" verticalAlign="middle" paddingLeft="10" paddingRight="10"  paddingBottom="10">
+			<mx:CheckBox label="继续实时监控" id="Continue" />
+			<mx:HBox width="100%" horizontalAlign="right">
+				<mx:Button id="submit" label="确认" click="submit_clickHandler(event)"/>
+				<mx:Button id="cancle" label="取消" click="closeTitle()"/>	
+			</mx:HBox>
+		</mx:HBox>
+	</mx:VBox>
+</mx:VBox>
+	<mx:Validator source="{alarmContent}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{alarmCause}" property="text" requiredFieldError="该项不能未选择"/>
+	<mx:Validator source="{alarmDealWith}" property="text" requiredFieldError="该项不能未选择"/>
+</mx:TitleWindow>

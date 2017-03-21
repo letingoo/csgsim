@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 creationComplete="init()"
+		 xmlns:views="sourceCode.tableResurces.views.*" 
+		 xmlns:component="common.component.*"
+		 verticalGap="0">
+	<mx:Script source="../actionscript/UnusedBusinessResourceClear.as" />
+	<mx:HBox>
+		<mx:Button id="delUnused" label="碎片整理" click="deleteUnusedCC()"/> 
+		<mx:Text id="showCount"/>
+		<mx:Button id="delSeleted" label="删除当前选中交叉" click="toolbar_toolEventDeleteHandler(event)"/>
+	</mx:HBox>
+	
+	<!--<component:pagetoolbar width="100%"/>-->
+	<mx:VBox id="h" width="100%" height="100%" paddingBottom="0" 
+			 paddingLeft="0" paddingRight="0" paddingTop="0" 
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		
+		<mx:DataGrid id ="dg" 
+					 width="100%" 
+					 height="100%" 
+					 editable="false" 
+					 horizontalScrollPolicy="auto" 
+					 doubleClickEnabled="true"
+					 headerRelease="dg_headerReleaseHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn headerText="序号" width="50" dataField="no" sortable="false" />
+				<mx:DataGridColumn headerText="交叉编码" dataField="id" width="200" visible="false"/>
+				<mx:DataGridColumn headerText="所属设备" dataField="pid" width="200"/>
+				<mx:DataGridColumn headerText="速率" dataField="rate" width="100"/>
+				<mx:DataGridColumn headerText="连接方向" dataField="direction" width="80"/>
+				<mx:DataGridColumn headerText="A端端口" dataField="aptp" width="120"/>
+				<mx:DataGridColumn headerText="A端时隙" dataField="aslot" width="80"/>
+				<mx:DataGridColumn headerText="Z端端口" dataField="zptp" width="120"/>
+				<mx:DataGridColumn headerText="Z端时隙" dataField="zslot" width="80"/>
+				<mx:DataGridColumn headerText="更新人" dataField="updateperson" width="80"/>
+				<mx:DataGridColumn headerText="配置方式" dataField="isdefault" width="100"/>
+				<mx:DataGridColumn headerText="更新时间" dataField="updatedate" width="100"/>
+				
+			</mx:columns> 
+		</mx:DataGrid>
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>
+	</mx:VBox>
+</mx:VBox>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" initialize="canvas1_initializeHandler(event)" borderStyle="solid" borderColor="#B7BABC" themeColor="#009DFF">
+	<mx:Form width="100%"
+			 height="100%">
+	<mx:FormItem label="所属模块"
+				 required="true">
+		<mx:ComboBox id="module" editable="false" width="192" labelField="VALUE"></mx:ComboBox>
+	</mx:FormItem>
+	<mx:FormItem label="问题描述" required="true">
+		<mx:TextArea  id="discrip"  width="192" height="49"/>
+	</mx:FormItem>
+	<mx:FormItem label="问题修改人" required="true">
+		<mx:ComboBox id="per"  width="192"  labelField="VALUE"></mx:ComboBox>
+	</mx:FormItem>
+	<mx:FormItem label="问题状态" required="true">
+		<mx:ComboBox id="st"  editable="false" width="192" labelField="VALUE"></mx:ComboBox>
+	</mx:FormItem>
+	<mx:FormItem label="问题提出人" required="true">
+		<mx:ComboBox id="pop"  editable="false" width="192" labelField="VALUE"></mx:ComboBox>
+	</mx:FormItem>
+	<mx:FormItem label="问题提出时间" required="true">
+		<mx:DateField id="poptime"  width="192" formatString="YYYY-MM-DD" dayNames="{this.days}" monthNames="{this.monthNames}"/>
+	</mx:FormItem>
+	<!--<mx:FormItem label="问题指导人" visible="false">
+		<mx:ComboBox id="hel"  editable="false" width="192"  labelField="VALUE" visible="false"></mx:ComboBox>
+	</mx:FormItem>-->
+	<mx:FormItem label="解决方法描述">
+		<mx:TextArea id="method"  width="192" height="48"/>
+	</mx:FormItem>
+	<mx:FormItem label="解决备注信息">
+		<mx:TextArea id="remark"   width="192" height="45"/>
+	</mx:FormItem>
+	<mx:FormItem label="问题属性" required="true">
+		<mx:ComboBox id="problemProperty"  width="192" editable="false">
+			<mx:ArrayCollection>
+				<mx:String>请选择..</mx:String>
+				<mx:String>BUG</mx:String>
+				<mx:String>新增功能</mx:String>
+			</mx:ArrayCollection>
+		</mx:ComboBox>
+	</mx:FormItem>
+	<mx:FormItem label="问题要求完成时间" required="true">
+		<mx:DateField id="deadLineTime"  width="192" formatString="YYYY-MM-DD" dayNames="{this.days}" monthNames="{this.monthNames}"/>
+	</mx:FormItem>
+	<mx:FormItem label="问题实际完成时间">
+		<mx:DateField id="actFinishTime"  width="192" formatString="YYYY-MM-DD" dayNames="{this.days}" monthNames="{this.monthNames}"/>
+	</mx:FormItem>
+	</mx:Form>
+	<mx:Button id="btn" x="103" y="430" width="65" click="btn_clickHandler(event)"/>
+	<mx:Spacer width="20"/>
+	<mx:Button id = "reset" x="176" y="430" label="重置" width="65" click="reset_Btn_clickHandler(event)"/>
+	<mx:Script source="../actionscript/Navigators.as"/>
+</mx:Canvas>

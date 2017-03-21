@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--根告警处理流向统计-->
+
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml"
+		  xmlns:cellrender="sourceCode.subject.main.actionscript.*"
+		  xmlns:ns1="sourceCode.subject.main.actionscript.chart.*"
+		  creationComplete="init()"
+		  borderThickness="1" borderThicknessBottom="2"  borderThicknessLeft="2"
+		  borderThicknessRight="2" borderThicknessTop="2"
+		  headerHeight="0"  backgroundAlpha="1" borderColor="#157baa" isPopUp="true"
+		  >
+	<mx:Style>
+		.DataGrid1 {
+			alternatingItemColors: #ffffff, #eef4ff;
+			verticalGridLineColor: #d3e9ff;
+			borderColor: #d3e9ff;
+			headerBackgroundSkin: Embed(source="assets/images/mntsubject/theme_formbg.png");
+			horizontalGridLines: false;
+			verticalGridLineColor: #dadada;
+			fontFamily: Arial;
+			fontSize: 12;
+			headerStyleName: "mydataGridHeaderStyle1";
+		}
+		.mydataGridHeaderStyle1 {
+			fontFamily: Arial;
+			fontWeight: normal;
+			fontSize: 12;
+			fontStyle: normal;
+			textDecoration: none;
+			textAlign: center;
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import com.events.FCEvent;
+			
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.alarmmgr.views.AlarmManager;
+			import sourceCode.rootalarm.views.RootAlarmFlowMgr;
+			import sourceCode.subject.main.actionscript.*;
+			
+			
+			private var rootAlarmWin:TitleWindow;
+			private var alarmWin:TitleWindow;
+			//private var manageralarm:manageralarmwin=new manageralarmwin();
+			[Bindable]
+			public var tableFlag:int=0;
+			private var getPieDate:RemoteObject;
+			public var ts:ArrayCollection = new ArrayCollection(); 
+			[Embed(source="assets/images/rootalarm/alarm_message.png")]
+			public var Icon:Class; 
+			public var param:ArrayCollection= new ArrayCollection();
+			public var param1:ArrayCollection = new ArrayCollection();
+			public var param2:ArrayCollection = new ArrayCollection();
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			
+			public function init(){
+				dg.dataProvider = param;
+				pagingFunction();
+			}
+			private function change_1(e:FCEvent):void
+			{
+				var obj:Object=new Object();
+				var transSys:String=param2[e.param];
+				obj.DEALRESULTZH=param2[e.param];
+				linkRelationUI(obj,'ackedalarmcount');
+			}
+			private function subscriberAlarmDealMethod(subtopic:String):void{				
+				var consumer:Consumer =new Consumer();				
+				var channelSet:ChannelSet = new ChannelSet();   
+				channelSet.addChannel(DealAlarmUtil.streamingAMF);   
+				channelSet.addChannel(DealAlarmUtil.pollingAMF);
+				consumer.destination = DealAlarmUtil.sdestination; 
+				consumer.channelSet = channelSet;
+				consumer.subtopic = subtopic;
+				consumer.addEventListener(MessageEvent.MESSAGE,handleAlarmDealMethod);
+				consumer.addEventListener(MessageFaultEvent.FAULT,faultHandlerMsg);
+				consumer.subscribe();
+			}
+			private function handleAlarmDealMethod(msg:MessageEvent):void{
+				if(msg.message.body==null && msg.message.body==""){
+					Alert.show('接到的消息为空',"提示信息",4,this,null,iconClass); return;
+				}
+				dg.dataProvider=null;
+				var alarmDealMethodAC:ArrayCollection = msg.message.body as ArrayCollection;
+				dg.dataProvider = alarmDealMethodAC;
+				drawGraphic(alarmDealMethodAC);
+				
+			}
+			private function faultHandlerMsg(event:MessageFaultEvent):void{
+			}
+			
+			public function linkRelationUI(obj:Object,alarmGrade:String):void{
+				rootAlarmWin =new TitleWindow();
+				rootAlarmWin.layout="absolute";
+				rootAlarmWin.x=0;
+				rootAlarmWin.y=0;
+				rootAlarmWin.width=Capabilities.screenResolutionX;
+				rootAlarmWin.height=Capabilities.screenResolutionY-200;
+				rootAlarmWin.horizontalScrollPolicy="off";
+				rootAlarmWin.verticalScrollPolicy="off";
+				rootAlarmWin.styleName="popwindow";
+				rootAlarmWin.showCloseButton="true";
+				rootAlarmWin.title="告警处理流向信息";
+				rootAlarmWin.titleIcon=Icon;
+				var ram:RootAlarmFlowMgr = new RootAlarmFlowMgr();
+				//				ram.alarmdealmethod = obj.DEALRESULT;
+				//				ram.alarmmethod = obj.DEALRESULT;
+				//			    ram.currentGrid = "ackedrootalarm";
+				ram.sysaname=obj.DEALRESULTZH;
+				rootAlarmWin.addEventListener(CloseEvent.CLOSE,titlewinclose);
+				rootAlarmWin.addChild(ram);
+				PopUpManager.addPopUp(rootAlarmWin,main(Application.application),true);
+				PopUpManager.centerPopUp(rootAlarmWin);
+				
+			}
+			private function titlewinclose(evt:CloseEvent):void{
+				PopUpManager.removePopUp(rootAlarmWin);
+			}
+			
+			private function load(event:ResultEvent):void{
+				param=event.result as ArrayCollection;
+				dg.dataProvider=param;
+				
+			}
+			
+			private function pagingFunction():void {
+				
+				var rtobj:RemoteObject = new RemoteObject("RootAlarmFlowDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getRootAlarmFlow();
+				rtobj.addEventListener(ResultEvent.RESULT, load);
+			}
+			protected function liebiao_clickHandler(event:MouseEvent):void
+			{
+				tableFlag=0;
+				aaa.visible=false;
+				aaa.includeInLayout=false;
+				dg.visible=true;
+				dg.includeInLayout=true;
+			}
+			public function createPie():void{
+				tableFlag=1;
+				getPieDate=new RemoteObject("subject");
+				getPieDate.endpoint = ModelLocator.END_POINT;
+				getPieDate.addEventListener(ResultEvent.RESULT,getPieDateCallback);
+				getPieDate.addEventListener(FaultEvent.FAULT,faultHandler);
+				getPieDate.getPieData();
+			}
+			private function getPieDateCallback(event:ResultEvent):void{
+				getPieDate.removeEventListener(ResultEvent.RESULT,getPieDateCallback);
+				getPieDate.removeEventListener(FaultEvent.FAULT,faultHandler);
+				var pieArrayCollection:ArrayCollection=event.result as ArrayCollection;
+				drawGraphic(pieArrayCollection);
+			}
+			
+			private function drawGraphic(pieArrayCollection:ArrayCollection):void{
+				param2.removeAll();
+				param1.removeAll();
+				for(var i:int=0;i<pieArrayCollection.length;i++){
+				    param2.addItem(pieArrayCollection[i].DEALRESULTZH);	
+					param1.addItem({label:pieArrayCollection[i].DEALRESULTZH,value:pieArrayCollection[i].ACKEDALARMCOUNT,link:'S-'+i});
+				}
+				if(tableFlag==1){
+					dg.visible=false;
+					dg.includeInLayout=false;
+					aaa.visible=true;
+					aaa.includeInLayout=true;
+					aaa.width=this.width-10;
+					aaa.height=this.height-40;
+				}
+//				aaa.FCDataXML=xmlData;
+				aaa.FCData(param1);
+				aaa.setStyle("pieRadius",70);
+				aaa.FCFolder="FusionCharts";
+				aaa.FCRender();
+				aaa.addEventListener("FCClickEvent",change_1);
+			}
+			private function faultHandler(evt:FaultEvent):void{
+				Alert.show(evt.fault.toString(),"提示信息",4,this,null,iconClass);
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0"  backgroundColor="#FFFFFF">
+		<mx:HBox width="100%" height="10%" verticalAlign="middle" verticalGap="0" horizontalGap="0" backgroundColor="#FFFFFF" backgroundImage="@Embed(source='assets/images/mntsubject/themeheader.png')" backgroundSize="100%">
+			<mx:HBox width="30%" horizontalAlign="left" verticalAlign="middle" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerbg.png')" backgroundSize="100%">
+				<mx:Label text="根告警处理流向统计" horizontalCenter="" color="#FFFFFF" textAlign="center"/>
+			</mx:HBox>
+			<mx:HBox  width="15%" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerrightbg.png')" backgroundSize="100%">
+				<mx:Label width="100%" height="100%"/>
+			</mx:HBox>
+			<mx:HBox horizontalAlign="right" verticalAlign="middle" width="70%" height="100%" >
+				<mx:LinkButton icon="@Embed(source='assets/images/mntsubject/Form.png')" click="liebiao_clickHandler(event)"/>
+				<mx:LinkButton icon="@Embed(source='assets/images/mntsubject/Columnar.png')" click="createPie()"/>
+			</mx:HBox>
+		</mx:HBox>	
+		<!-- 以上banner 条部分-->
+		<mx:HBox width="100%" height="90%" verticalAlign="middle" horizontalAlign="center">
+			<mx:DataGrid id="dg"  sortableColumns="false"   horizontalScrollPolicy="off"  wordWrap="true"  styleName="DataGrid1"
+						 width="100%"  height="100%" rowHeight="30" textAlign="center">
+				<mx:columns>
+					<mx:DataGridColumn headerText="处理方式" textAlign="left" dataField="DEALRESULTZH"  />
+					<mx:DataGridColumn headerText="已确认当前根告警数"   dataField="ACKEDALARMCOUNT"  >
+						<mx:itemRenderer>
+							<mx:Component>
+								<cellrender:RollOverItemRenderer alarmGrade="ackedalarmcount" click="outerDocument.linkRelationUI(data,'ackedalarmcount')"/>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+					
+					<mx:DataGridColumn headerText="占确认根告警百分比" dataField="SCALE" >
+						
+					</mx:DataGridColumn>
+					
+				</mx:columns>
+			</mx:DataGrid>
+			<ns1:FusionCharts id="aaa" FCFolder="FusionCharts"  FCChartType="Pie3D"  visible="false" includeInLayout="false"  />
+		</mx:HBox>
+	</mx:VBox>				
+</mx:Panel>

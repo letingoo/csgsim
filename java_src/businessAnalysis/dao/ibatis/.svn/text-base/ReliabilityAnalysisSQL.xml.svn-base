@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="ReliabilityAnalysisSQL">
+
+	<parameterMap id="usefulMap" class="java.util.HashMap">
+		<parameter property="equip" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="equipcodestrs" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="linkstrs" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="res1" jdbcType="INTEGER" mode="OUT"/>
+		<parameter property="res" jdbcType="INTEGER"  mode="OUT"/>
+	</parameterMap>
+
+	<parameterMap id="usefulMapNew" class="java.util.HashMap">
+		<parameter property="linkid" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="equiplststr" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="equiplststr2" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="res1" jdbcType="INTEGER" mode="OUT"/>
+		<parameter property="res" jdbcType="INTEGER"  mode="OUT"/>
+	</parameterMap>
+	<parameterMap id="usefulMapTemp" class="java.util.HashMap">
+		<parameter property="equiplststr" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="equiplststr2" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="linklststr" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="res1" jdbcType="INTEGER" mode="OUT"/>
+		<parameter property="res" jdbcType="INTEGER"  mode="OUT"/>
+	</parameterMap>
+	
+	<parameterMap id="circuitMap" class="java.util.HashMap">
+		<parameter property="equipcode1" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="equipcode2" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="equipcode3" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="res1" jdbcType="INTEGER" mode="OUT"/>
+		<parameter property="res" jdbcType="INTEGER"  mode="OUT"/>
+	</parameterMap>
+	
+	<parameterMap id="callMap" class="java.util.HashMap">
+		<parameter property="equipid" jdbcType="VARCHAR"  mode="IN"/>
+		<parameter property="failnum" jdbcType="INTEGER" mode="OUT"/>
+		<parameter property="renum" jdbcType="INTEGER"  mode="OUT"/>
+	</parameterMap>
+
+	<select id="getAllBus" resultClass="java.util.HashMap">
+		select business_id,business_name,business_useunit,business_type,business_state,
+		version_id,business_opendate from view_business_for_dg
+	</select>
+	
+	<select id="getAllBusByEquipcode" resultClass="java.util.HashMap" parameterClass="map">
+		select v.business_id,
+       v.business_name,
+       v.business_useunit,
+       v.business_type,
+       v.business_state,
+       v.version_id,
+       v.business_opendate
+  from view_business_for_dg v,business_circuit b
+ where b.business_id =v.business_id 
+ 	<isNotEmpty prepend="and" property="lst">
+ 		b.circuitcode in 
+		<iterate property="lst" open="(" close=")" conjunction=",">
+			#lst[]#
+		</iterate>
+ 	</isNotEmpty>
+	</select>
+	
+	<select id="getCircuitCodeInfo" parameterClass="String" resultClass="String">
+		select circuitcode from business_circuit where business_id = #business_id#
+	</select>
+	
+	<select id="getCircuitPathInfo" parameterClass="String" resultClass="java.util.HashMap">
+		select circuitcode,path,remark from circuit where circuitcode = #circuitcode#
+	</select>
+	<select id="getA_PortcodeByCircuitcode" parameterClass="string" resultClass="string">
+		select t.portcode1||';'||t.rate||';'||t.slot1 from circuit t where t.circuitcode=#circuitcode#
+	</select>
+	
+	 <select id="getRouteTest"  resultClass="String" parameterClass="String">
+    	select ci.circuit_id,
+                ci.equip_name,
+                ci.equip_id,
+                ci.port_name,
+                ci.port_id,
+                ci.is_optical,
+                ci.port_rate,
+                ci.serial,
+                ci.slot_id,
+                ci.pa,
+                ci.pb,
+                ci.version,
+                ci.link_id,
+                decode(cn.cnt,null,0,cn.cnt) groupno
+                from 
+				(select distinct m.circuit_id,
+                m.equip_name,
+                m.equip_id,
+                m.port_name,
+                m.port_id,
+                m.is_optical,
+                m.port_rate,
+                m.serial,
+                m.slot_id,
+                m.pa,
+                m.pb,
+                m.version,
+                s.label link_id
+				  from (select t.circuitcode circuit_id,
+				               e.s_sbmc equip_name,
+				               t.equipcode equip_id,
+				               t.tp_id_a port_name,
+				               t.tp_id_a port_id,
+				               1 is_optical,
+				               t.real_rate port_rate,
+				               t.id serial,
+				               t.real_ts_a slot_id,
+				               t.ccid link_id,
+				               '' pa,
+				               '' pb,
+				               1 version
+				          from circuit_cc t, equipment e
+				         where t.equipcode = e.equipcode
+				           and e.system_name = #tranSys#
+				        union 
+				        select t.circuitcode circuit_id,
+				               e.s_sbmc equip_name,
+				               t.equipcode equip_id,
+				               t.tp_id_z port_name,
+				               t.tp_id_z port_id,
+				               1 is_optical,
+				               t.real_rate port_rate,
+				               t.id serial,
+				               t.real_ts_z slot_id,
+				               t.ccid link_id,
+				               '' pa,
+				               '' pb,
+				               1 version
+				          from circuit_cc t, equipment e
+				         where t.equipcode = e.equipcode) m,
+				       en_topolink s,
+				       cc c
+				 where ((s.aendptp = c.aptp or s.zendptp = c.aptp) or
+				       (s.aendptp = c.zptp or s.zendptp = c.zptp))
+				   and c.id = m.link_id
+				   and m.circuit_id in (select distinct c.circuitcode business_id
+				                          from circuit        c,
+				                               equiplogicport l1,
+				                               equipment      e1,
+				                               equiplogicport l2,
+				                               equipment      e2
+				                         where c.portcode1 = l1.logicport
+				                           and e1.equipcode = l1.equipcode
+				                           and c.portcode2 = l2.logicport
+				                           and e2.equipcode = l2.equipcode
+				                           and c.sync_status != 'ZT03'
+				                        	and c.circuitcode = #id#
+				                        )
+				 order by CIRCUIT_ID, SERIAL) ci,circuit_equipment_cnt cn
+				 where ci.circuit_id=cn.circuitcode(+)
+				 and ci.equip_id=cn.equipcode(+)
+				 and ci.circuitcode = #id#
+  				order by GROUPNO, SERIAL
+  	</select>
+  	<select id="getAllBusinessIDByEquip" parameterClass="string" resultClass="string">
+  		select distinct t.circuitcode from circuit_cc t where t.equipcode=#equipId#
+  	</select>
+  	
+  	<select id="getAllBusinessIDByEquipLst" parameterClass="map" resultClass="string">
+  		select distinct t.circuitcode from circuit_cc t where t.equipcode in
+  		<iterate property="equiplst" open="(" close=")" conjunction=",">
+			#equiplst[]#
+		</iterate>
+  	</select>
+  	
+  	<select id="getEquip_Circuit_CNTLst" parameterClass="map" resultClass="string">
+  		select t.cnt from circuit_equipment_cnt t where t.circuitcode=#circuitcode# 
+  		and t.equipcode in
+  		<iterate property="equipcodelst" open="(" close=")" conjunction=",">
+			#equipcodelst[]#
+		</iterate>
+  	</select>
+  	
+  	<select id="getEquip_Circuit_CNT" parameterClass="map" resultClass="string">
+  		select t.cnt from circuit_equipment_cnt t where t.circuitcode=#circuitcode# and t.equipcode=#equipcode#
+  	</select>
+  	
+  	<select id="getAllBusinessIDByEquipAndLinkLst" parameterClass="map" resultClass="string">
+  		select distinct circuit_id
+  from (select m.circuit_id
+          from getcircuitroutelist m
+         where m.equip_id =#equipcode# 
+         <isNotEmpty prepend="OR" property="linklst">
+         	m.link_id in 
+	         <iterate property="linklst" open="(" close=")" conjunction=",">
+				#linklst[]#
+			</iterate>
+         </isNotEmpty>
+		)
+  		
+  	</select>
+  	
+  	<select id="getAllBusinessIDByEquipLstAndLinkLst" parameterClass="map" resultClass="string">
+  		select distinct circuit_id
+  from (select m.circuit_id
+          from getcircuitroutelist m
+         <dynamic prepend="where">
+         	<isNotEmpty prepend="and" property="linklst">
+         	 m.link_id in
+         	 <iterate property="linklst" open="(" close=")" conjunction=",">
+				#linklst[]#
+			</iterate> 
+			<isNotEmpty property="equiplst">
+				or
+			</isNotEmpty >
+         </isNotEmpty>
+         <isNotEmpty property="equiplst">
+         	m.equip_id in
+         		<iterate property="equiplst" open="(" close=")" conjunction=",">
+					#equiplst[]#
+				</iterate>
+         </isNotEmpty>
+        
+         </dynamic> )
+  	</select>
+  	
+  	<select id="getAllBusinessIDByEquipLstAndLink" parameterClass="map" resultClass="string">
+  		select distinct circuit_id
+  from (select m.circuit_id
+          from getcircuitroutelist m
+         where m.link_id=#linkId#
+         <isNotEmpty prepend="OR" property="equiplst">
+         	m.equip_id in 
+	         <iterate property="equiplst" open="(" close=")" conjunction=",">
+				#equiplst[]#
+			</iterate>
+         </isNotEmpty>
+          )
+  	</select>
+  	
+  	<select id="getEquipcodesByLinkID" parameterClass="string" resultClass="string">
+  		select t.equip_a||'='||t.equip_z from en_topolink t where t.label=#linkid#
+  	</select>
+  	
+  	<procedure id="getbusinessfailandrecover" parameterMap="usefulMap" >
+  		call getbusinessfailandrecover(?,?,?,?,?)
+  	</procedure>
+  	
+  	<procedure id="getbusinessfailandrecovernew" parameterMap="usefulMapNew">
+  		call getbusinessfailandrecovernew(?,?,?,?,?)
+  	</procedure>
+  	<procedure id="getbusinessfailandrecovertemp" parameterMap="usefulMapTemp">
+  		call getbusinessfailandrecovertemp(?,?,?,?,?)
+  	</procedure>
+  	<procedure id="getcircuitccfailandrecover" parameterMap="circuitMap">
+  		call getcircuitccfailandrecover(?,?,?,?,?)
+  	</procedure>
+  	<procedure id="getfailandrecoverbyids" parameterMap="callMap">
+  		call getfailandrecoverbyids(?,?,?)
+  	</procedure>
+  	
+  	<select id="getBusinessRouteInfo" parameterClass="map" resultClass="resManager.resBusiness.model.Circuit">
+  		select c.remark, c.path,c.circuitcode
+  from circuit c
+ where c.circuitcode in (select distinct c.circuitcode
+                           from circuit_cc c
+                          where c.equipcode in 
+                          <iterate property="equiplst" open="(" close=")" conjunction=",">
+								#equiplst[]#
+							</iterate>)
+  	</select>
+  	
+  	<select id="getCircuitRouteInfoNew" parameterClass="map" resultClass="resManager.resBusiness.model.Circuit">
+  		select c.circuitcode,c.path,c.remark from circuit c where c.circuitcode in (
+			select distinct c1.circuitcode
+			  from circuit_cc c1, circuit_cc c2
+			 where c1.circuitcode = c2.circuitcode
+			   and c1.equipcode = #equipcode1#
+			   and c2.equipcode = #equipcode2#
+			 and c1.circuitcode in (select b.circuitcode from business_circuit b))
+  	</select>
+  	
+  	<select id="getCircuitRouteInfoBy2Link" parameterClass="map" resultClass="resManager.resBusiness.model.Circuit">
+  		select c.path,c.remark,c.circuitcode
+  from circuit c
+ where c.circuitcode in
+       (select distinct c1.circuitcode
+          from circuit_cc c1, circuit_cc c2
+         where c1.circuitcode = c2.circuitcode
+           and (c1.equipcode = #equipcode1# and
+               c2.equipcode = #equipcode2# or
+               c1.equipcode = #equipcode3# and
+               c2.equipcode = #equipcode4#)
+           and c1.circuitcode in (select b.circuitcode from business_circuit b))
+  		
+  	</select>
+  	
+  	<select id="getCircuitRouteInfoBy3Link" parameterClass="map" resultClass="resManager.resBusiness.model.Circuit">
+  		select c.path,c.remark,c.circuitcode
+  from circuit c
+ where c.circuitcode in
+       (select distinct c1.circuitcode
+          from circuit_cc c1, circuit_cc c2
+         where c1.circuitcode = c2.circuitcode
+           and (c1.equipcode = #equipcode1# and
+               c2.equipcode = #equipcode2# or
+               c1.equipcode = #equipcode3# and
+               c2.equipcode = #equipcode4# or
+               c1.equipcode = #equipcode5# and
+               c2.equipcode = #equipcode6#)
+           and c1.circuitcode in (select b.circuitcode from business_circuit b))
+  	</select>
+  	
+  	<select id="getCircuitRouteInfoByNodeAndLink" parameterClass="map" resultClass="resManager.resBusiness.model.Circuit">
+  		select c.path,c.remark,c.circuitcode
+		  from circuit c
+		 where c.circuitcode in
+		       (select distinct c1.circuitcode
+		          from circuit_cc c1, circuit_cc c2
+		         where c1.circuitcode = c2.circuitcode
+		           and (c1.equipcode = #equipcode1# and
+		               c2.equipcode = #equipcode1# or
+		               c1.equipcode = #equipcode2# and
+		               c2.equipcode = #equipcode3# )
+		           and c1.circuitcode in (select b.circuitcode from business_circuit b))
+  	</select>
+  	
+  	<select id="getCircuitRouteInfoBy2NodeAndLink" parameterClass="map" resultClass="resManager.resBusiness.model.Circuit">
+  		select c.path,c.remark,c.circuitcode
+		  from circuit c
+		 where c.circuitcode in
+		       (select distinct c1.circuitcode
+		          from circuit_cc c1, circuit_cc c2
+		         where c1.circuitcode = c2.circuitcode
+		           and (c1.equipcode = #equipcode1# and
+		               c2.equipcode = #equipcode1# or
+		               c1.equipcode = #equipcode2# and
+		               c2.equipcode = #equipcode2# or
+		               c1.equipcode = #equipcode3# and
+		               c2.equipcode = #equipcode4# )
+	               and c1.circuitcode in (select b.circuitcode from business_circuit b))
+  	</select>
+  	
+  	<select id="getCircuitRouteInfoByNodeAnd2Link" parameterClass="map" resultClass="resManager.resBusiness.model.Circuit">
+  		select c.path,c.remark,c.circuitcode
+		  from circuit c
+		 where c.circuitcode in
+		       (select distinct c1.circuitcode
+		          from circuit_cc c1, circuit_cc c2
+		         where c1.circuitcode = c2.circuitcode
+		           and (c1.equipcode = #equipcode1# and
+		               c2.equipcode = #equipcode1# or
+		               c1.equipcode = #equipcode2# and
+		               c2.equipcode = #equipcode3# or
+		               c1.equipcode = #equipcode5# and
+		               c2.equipcode = #equipcode4# )
+	               and c1.circuitcode in (select b.circuitcode from business_circuit b))
+  	</select>
+  	
+  	<select id="getCircuitcodeByEquipCode" parameterClass="map" resultClass="string">
+  		select distinct t.circuitcode
+	  from circuit_cc t
+	 where t.equipcode in 
+		<iterate property="equiplst" open="(" close=")" conjunction=",">
+			#equiplst[]#
+		</iterate>
+   and t.circuitcode in (select b.circuitcode from business_circuit b)
+  	</select>
+  	
+</sqlMap>

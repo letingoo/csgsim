@@ -1,0 +1,49 @@
+create table MNT_SUBJECT_RESOURCE_GRAPH
+(
+  BRANCHID        VARCHAR2(20) not null,
+  RSCODE          VARCHAR2(20) not null,
+  BRANCHDESC      VARCHAR2(10),
+  GRAPHTYPE       VARCHAR2(10) not null,
+  TITLE           VARCHAR2(10),
+  XTITLE          VARCHAR2(10),
+  YTITLE          VARCHAR2(10),
+  ISDISPLAYLEGEND VARCHAR2(10),
+  DSCODE          VARCHAR2(10),
+  SERIALNO        VARCHAR2(10),
+  ISDEFAULT       VARCHAR2(10),
+  UPDATEPERSON    VARCHAR2(10),
+  UPDATEDATE      VARCHAR2(10),
+  REMARK          VARCHAR2(10)
+)
+;
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.BRANCHID
+  is '主题子项ID';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.RSCODE
+  is '主题ID';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.BRANCHDESC
+  is '主题项描述';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.GRAPHTYPE
+  is '主题类型';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.TITLE
+  is '主题子项标题';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.XTITLE
+  is 'X轴标题';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.YTITLE
+  is 'Y轴标题';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.ISDISPLAYLEGEND
+  is '是否显示图例';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.DSCODE
+  is '所属数据源ID';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.SERIALNO
+  is '显示序号';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.ISDEFAULT
+  is '是否默认显示';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.UPDATEPERSON
+  is '更新人';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.UPDATEDATE
+  is '更新日期';
+comment on column MNT_SUBJECT_RESOURCE_GRAPH.REMARK
+  is '备注';
+alter table MNT_SUBJECT_RESOURCE_GRAPH
+  add primary key (BRANCHID);
+

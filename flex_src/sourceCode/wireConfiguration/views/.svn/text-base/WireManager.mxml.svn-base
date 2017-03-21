@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" fontSize="12"    
+		 width="100%"
+		 height="100%"
+		 xmlns:common="twaver.common.*"	
+		 xmlns:code="http://code.google.com/p/flexlib/" 
+		 xmlns:custom="common.component.*"
+		 xmlns:tw="http://www.servasoftware.com/2009/twaver/flex">
+	<mx:Script source="../actionscript/WireManager.as"/>
+	<mx:RemoteObject  destination="wireConfiguration"  showBusyCursor="true" id="wiremgr" endpoint="{ModelLocator.END_POINT}" >
+	</mx:RemoteObject>	
+	<mx:HDividedBox id="hd" width="100%" height="100%" backgroundColor="0xCCCCCC" >
+		<mx:VBox width="20%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:Tree id="treeWire" dataProvider="{folderCollection}" itemRenderer="twaver.PermissionsTreeItemRendererV2"				
+					 labelField="@name"
+					 width="100%" 
+					 height="100%" 
+					 defaultLeafIcon="{null}" 
+					 borderStyle="none"
+					 showRoot="true"
+					 click="treeCheck(event)"
+					 itemClick="tree_itemClick(event)"/>			
+		</mx:VBox>
+		<code:SuperTabNavigator id="tabPanel" tabClose="deleteTab(event)"   width="80%"  height="100%">
+		</code:SuperTabNavigator> 	
+	</mx:HDividedBox>   	
+</mx:VBox>

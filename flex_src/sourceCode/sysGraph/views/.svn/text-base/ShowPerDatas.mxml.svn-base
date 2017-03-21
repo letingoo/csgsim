@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 	
+				xmlns:cellrender="sourceCode.subject.main.actionscript.*" 
+				xmlns:views1="sourceCode.common.views.*"
+				layout="absolute" width="700" height="450"
+				 creationComplete="init(event)" title="端口信息" showCloseButton="true" close="titlewindow1_closeHandler(event)">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import org.flexunit.runner.Result;
+			
+			import sourceCode.businessDispatch.model.ResultModel;
+	
+			public var equipcode:String="";
+			public var equipframe:String="";
+			public var equippack:String="";
+			[Bindable]
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			
+			protected function init(event:FlexEvent):void
+			{
+				pagingFunction(0,50);
+			}
+			private function showdatas(e:ResultEvent):void{
+				if(e.result){
+					var result:ResultModel = e.result as ResultModel;
+					gd.dataProvider = result.orderList;
+					pagingToolBarforAlarmExp.orgData =result.orderList;
+					var count:int =int(result.totalCount);
+					pagingToolBarforAlarmExp.totalRecord = count;
+					pagingToolBarforAlarmExp.dataBind(true);
+				}
+				addContextMenu();
+				
+			}
+			private function addContextMenu():void{
+				var port:ContextMenuItem = new ContextMenuItem("端口性能分析");
+				port.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,OpenHandler);
+				var menu:ContextMenu = new ContextMenu();
+				menu.hideBuiltInItems();
+				menu.customItems=[port];
+				gd.contextMenu = menu;
+			}
+			private function OpenHandler(e:ContextMenuEvent):void{
+				var PT:PerformanceTrend = new PerformanceTrend();
+				PopUpManager.addPopUp(PT,this,true);
+				PopUpManager.centerPopUp(PT);
+			}
+
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			public function linkRelationUI(obj:Object):void{
+				var PT:PerformanceTrend = new PerformanceTrend();
+//				PT.logicport='00000000000000103536'; 
+				PT.logicport=gd.selectedItem.portcode;
+				PopUpManager.addPopUp(PT,this.parent,true);
+				PopUpManager.centerPopUp(PT);
+			}
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void {
+				
+				start = (pageIndex * pageSize+1).toString();
+				end = ((pageIndex * pageSize) + pageSize).toString();
+				var sys:RemoteObject = new RemoteObject("fiberWire");
+				sys.endpoint=ModelLocator.END_POINT;
+				sys.showBusyCursor = true;
+				if(equipcode!=""&&equippack==""){
+					sys.getPortsByEquipcode(equipcode,start,end);
+				}else if(equipcode==""&&equippack!=""){
+					sys.getPortsByEquipcode(equippack,start,end);
+				}
+				sys.addEventListener(ResultEvent.RESULT,showdatas);
+			}
+
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" verticalGap="0">
+		<mx:DataGrid width="100%" height="100%" id="gd" verticalAlign="middle" textAlign="center" >
+			<mx:columns>
+				<mx:DataGridColumn headerText="序号" dataField="no" width="30"  />
+				<mx:DataGridColumn headerText="设备" dataField="equipname" width="150" />
+				<mx:DataGridColumn headerText="端口" dataField="port" width="150" />
+				<mx:DataGridColumn headerText="速率" dataField="rate" width="100" />
+				<mx:DataGridColumn headerText="操作" dataField="oper" width="70" >
+					<mx:itemRenderer>
+						<mx:Component>
+							<cellrender:RollOverItemRenderer alarmGrade="oper" click="outerDocument.linkRelationUI(data)"/>
+						</mx:Component>
+					</mx:itemRenderer>	
+					</mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+		<views1:pagetoolbar width="100%" height="5%" id="pagingToolBarforAlarmExp" dataGrid="{gd}" pagingFunction="pagingFunction"/>
+	</mx:VBox>
+</mx:TitleWindow>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TextArea xmlns:mx="http://www.adobe.com/2006/mxml"
+			 editable="false" borderThickness="0" backgroundAlpha="0" paddingTop="5" textAlign="center" width="70" height="40" bottom="0" fontSize="12"  fontFamily="宋体">
+</mx:TextArea>

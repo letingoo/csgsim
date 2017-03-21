@@ -1,0 +1,73 @@
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				creationComplete="init()" 
+				paddingLeft="0" 
+				width="920" 
+				height="500"  
+				paddingRight="0" 
+				paddingTop="0" 
+				paddingBottom="0" 
+				xmlns:demo="demo.*" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" 
+				xmlns:common="demo.common.*" xmlns:local="*" 
+				xmlns:code="http://code.google.com/p/flexlib/">   
+	<mx:Style>
+		.textinput{
+			paddingTop : 5;
+			border-style:none;
+		}
+		.banner{
+			color : #000000;
+		}
+		.singleButton{
+			cornerRadius : 10;
+		}
+		.gradientCanvas{
+			backgroundGradientColors : #CFCFCF, #A8A8A8;
+			backgroundGradientAlphas : 1, 1;
+			backgroundGradientRotation : 90;
+		}
+	</mx:Style>
+
+	<mx:Script>
+		<![CDATA[
+			protected function circuit_iamges_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+		]]>
+	</mx:Script>
+
+	<mx:Script source="../actionscript/tandemcircuit1.as"/>
+	<mx:TabNavigator width="100%" height="100%" id="tabOpera" creationPolicy="all">
+		<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" label="路由图" >
+				<mx:VBox width="100%" id='channelbox' height="100%" label="路由图">
+					<mx:HBox id="toolbar" width="100%" horizontalGap="0" />
+					<servasoftware:Network  id="channelPic" label="路由图" width="900"  height="436" backgroundColor="#EEEEEE">
+						<!--918 435-->
+					</servasoftware:Network>
+					
+						<!--<mx:Image id="circuit_iamges" autoLoad="true" />	-->
+					
+				</mx:VBox>
+		</mx:VBox>
+		<mx:HBox id="tabcircuit" width="100%" height="100%" backgroundColor="white" label="路由信息">
+			<mx:VBox width="100%" id="tabgrid" height="100%" verticalGap="0">
+				<mx:DataGrid id="operadatagrid" horizontalScrollPolicy="auto" width="100%" height="100%" horizontalCenter="16"
+							 verticalCenter="-152" editable="false" wordWrap="true">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号" dataField="NO" width="60" textAlign="center"/>
+						<mx:DataGridColumn headerText="设备" dataField="EQUIP" width="120"/>
+						<mx:DataGridColumn headerText="时隙" dataField="SLOT" width="180"/>
+						<mx:DataGridColumn headerText="端口" dataField="PORT" width="180" visible="true"/>	
+						<mx:DataGridColumn headerText="端口类型" dataField="PORTTYPE" width="100"/>
+						<mx:DataGridColumn headerText="端口id" dataField="PORTID" width="120"/>
+						<mx:DataGridColumn headerText="对端端口" dataField="CNPORT"  width="120"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+			
+		</mx:HBox>					
+	</mx:TabNavigator>
+</mx:VBox>  

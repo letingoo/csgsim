@@ -1,0 +1,191 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				    showCloseButton="true" close="close()" title="时隙" label="时隙选择树" creationComplete="init();initEvent();" width="400" height="400"  layout="horizontal" xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import flexunit.utils.ArrayList;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+
+			
+			import sourceCode.channelRoute.model.Circuit;
+			import sourceCode.packGraph.views.checkedEquipPack;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			public var rate:String;
+		    private var XMLData:XMLList=new XMLList('<folder state="0" label="选择时隙" id="root" isBranch="true" disabled="true" leaf="false" tree="root" ></folder>');
+			private var selectedNode:XML; 
+			private var curIndex:int;
+			private var catalogsid:String;
+			private var type:String;
+			private var labeltext:String;
+			private var tree_node:String;
+			public var equipment:selectEquipment;
+			public var e_link:Link;
+			public var port_a:String;
+			public var port_z:String;
+			private function init():void
+			{
+			
+				//slottreeRemote.getSlot(port_a,port_z,rate,"root");
+			
+				
+			}
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);  
+			}
+			private function resultHandler(event:ResultEvent):void {
+				XMLData = new XMLList(event.result.toString());
+				stree.dataProvider = XMLData;
+			}
+			
+			// 错误处理
+			public function DealFault(event:FaultEvent):void {
+				Alert.show(event.fault.toString());
+				trace(event.fault);
+			}
+			private function tree_itemClick(evt:ListEvent):void {
+				
+				var item:Object = Tree(evt.currentTarget).selectedItem;
+				if (stree.dataDescriptor.isBranch(item)) {
+					
+					stree.expandItem(item, !stree.isItemOpen(item), true);
+				}
+				
+			}
+			private function treeChange():void{ 		
+				
+				
+				stree.selectedIndex = curIndex;
+				selectedNode = stree.selectedItem as XML;
+				//if(selectNode.)
+				if(selectedNode!=null&&selectedNode.@leaf==false&&(selectedNode.children()==null||selectedNode.children().length()==0))
+				{
+					if(selectedNode.@timeslotStatus=="占用=未打散" && selectedNode.@isBranch=="false"){
+						Alert.show("该时隙已被占用","温馨提示");
+					}else{
+					catalogsid = selectedNode.attribute("id"); 
+					type=selectedNode.attribute("tree");
+					labeltext=selectedNode.attribute("label");
+					dispatchEvent(new Event(EventNames.CATALOGROW));
+					}
+//					CustomEvent.dispatcher.dispatchEvent(new CustomEvent(EventNames.CATALOGROW,catalogsid,type,labeltext));
+				}
+				
+			}
+			private function treeChange1():void{ 		
+				stree.selectedIndex = curIndex;
+				selectedNode = stree.selectedItem as XML;
+				if(selectedNode!=null&&selectedNode.@leaf==false&&(selectedNode.children()==null||selectedNode.children().length()==0))
+				{
+					if(selectedNode.@timeslotStatus=="占用=未打散" && selectedNode.@isBranch=="false"){
+						Alert.show("该时隙已被占用","温馨提示");
+					}else{
+						catalogsid = selectedNode.attribute("id"); 
+						type=selectedNode.attribute("tree");
+						labeltext=selectedNode.attribute("label");
+						dispatchEvent(new Event(EventNames.CATALOGROW));	
+					}
+					
+				}
+			}
+			private function initEvent():void{  
+//				CustomEvent.dispatcher.addEventListener(EventNames.CATALOGROW,function(e:CustomEvent):void{gettree(e,type,labeltext)}); 
+				addEventListener(EventNames.CATALOGROW,gettree);
+			}	
+			private function gettree(e:Event):void{  
+				removeEventListener(EventNames.CATALOGROW,gettree);
+//				catalogsid = e.data as String; 
+				var stTreeRO:RemoteObject = new RemoteObject("businessDispatch");
+				stTreeRO.endpoint = ModelLocator.END_POINT;
+				stTreeRO.showBusyCursor =true;
+//				stTreeRO.getRoot(port_a+"#"+port_z,rate);//added by sjt 2011-3-31
+				stTreeRO.getSlot(port_a,port_z,rate,catalogsid);//显示出全时隙
+				//stTreeRO.getSlotPort(equipcode,label,rate,'',catalogsid,type);
+				stTreeRO.addEventListener(ResultEvent.RESULT,getNextTreeNode);
+				stTreeRO.addEventListener(FaultEvent.FAULT,DealFault);
+			}  
+			private function getNextTreeNode(e:ResultEvent):void{
+				var str:String = e.result as String;  
+//				Alert.show(str);
+				if(str!=null&&str!="")
+				{  
+					var child:XMLList= new XMLList(str);
+					if(selectedNode!=null&&(selectedNode.children()==null||selectedNode.children().length()==0))
+					{ 									 
+						selectedNode.appendChild(child);
+						
+						stree.callLater(openTreeNode,[selectedNode]);
+						
+					}
+					
+				}
+				addEventListener(EventNames.CATALOGROW,gettree);
+//				CustomEvent.dispatcher.addEventListener(EventNames.CATALOGROW,function(e:CustomEvent):void{gettree(e,type,labeltext)});
+			}
+			private function openTreeNode(xml:XML):void{
+				if(stree.isItemOpen(xml))
+					stree.expandItem(xml,false);
+				stree.expandItem(xml,true);
+			}
+			private function selectPort(e:Event){
+				var node:XML = stree.selectedItem as XML;
+				if(node.@leaf=='true'&&node.@label.toString().indexOf('(占用)')==-1){
+			    e_link.name=node.@label;
+				//e_link.setStyle(Styles.LABEL_POSITION,Consts.POSITION_CENTER);
+				e_link.setClient("tsrate",node.@tsrate);
+				e_link.setClient("timeslot",node.@timeslot);
+				this.close();
+				}else{
+					Alert.show("该时隙已被占用","温馨提示");
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:RemoteObject id="slottreeRemote" destination="businessDispatch" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" fault="DealFault(event)" result="resultHandler(event)">
+	</mx:RemoteObject>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0"  backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+			 backgroundSize="100%">
+			<mx:Tree id="stree" width="100%" height="100%" labelField="@label" 
+					 dataProvider="{XMLData}" 
+					 backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+					 backgroundSize="100%"
+					 dragEnabled="true" 
+					 doubleClickEnabled="true"
+					 doubleClick="selectPort(event)"
+					 change="treeChange()" 
+					 itemClick="tree_itemClick(event)" 
+					 itemOpen="treeChange1()"
+					 itemRollOver="curIndex = event.rowIndex"
+					 >
+			</mx:Tree>
+	</mx:VBox>
+	
+	
+</mx:TitleWindow>  

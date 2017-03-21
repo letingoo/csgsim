@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="550"
+				height="388"
+				creationComplete="init()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{MyPopupManager.removePopUp(this)}">
+	<!--<mx:Script source="../actionscript/InterposeSearchTitle.as" />-->
+	<!--<mx:RemoteObject id="subMessage" destination="RemoteMessage"  endpoint="{ModelLocator.END_POINT}" 
+					 result="subMessage_resultHandler(event)" /> -->	
+	<mx:VBox height="100%" width="100%" >
+		<mx:HBox width="100%"
+				 height="20">	
+		</mx:HBox>
+		<mx:HBox width="100%" height="100%"  verticalAlign="middle" horizontalAlign="center">
+			<mx:Label  text="业务名称" width="62" />
+			<mx:TextInput id="BUSINESS_NAME"  width="392" />
+		</mx:HBox>
+		<mx:HBox width="100%" height="100%"  verticalAlign="middle" horizontalAlign="center">
+			<mx:Label text="业务类型" width="62"  />
+			<mx:ComboBox id="BUSINESS_TYPE_ID" labelField="BUSINESS_TYPE_NAME"    width="392" dataProvider="{type}"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="100%"  verticalAlign="middle" horizontalAlign="center">
+			<mx:Label text="业务速率" width="62"  />
+			<mx:ComboBox id="BUSINESS_RATE"   width="392" dataProvider="{rate}"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="100%"  verticalAlign="middle" horizontalAlign="center">
+			<mx:Label  text="起始设备" width="62" />
+			<mx:ComboBox id="station"   width="162" dataProvider="{Shareds.stationdata}" labelField="name" prompt="-- 选择站点 --" change="station_changeHandler(event)"/>
+			<mx:ComboBox id="equip"   width="220"  labelField="names"  dataProvider="{equipdata}" prompt="-- 选择设备 --"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="100%"  verticalAlign="middle" horizontalAlign="center">
+			 <mx:Label  text="终止设备" width="62" />
+			<mx:ComboBox id="estation"   width="162" dataProvider="{Shareds.stationdata}" prompt="-- 选择站点 --" labelField="name" change="estation_changeHandler(event)"/>
+			<mx:ComboBox id="eequip"   width="220" dataProvider="{eequipdata}" labelField="names"    prompt="-- 选择设备 --"/>
+		</mx:HBox>
+		<mx:HBox width="100%"
+				 height="20">	
+		</mx:HBox>
+
+		<mx:HBox width="100%"
+				 height="56"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			<mx:Button id="btn"
+					   label="确定"
+					   styleName="loginprimary"
+					   width="80"
+					   click="confirmHandler(event)"/>
+			<mx:Spacer width="40"/>
+			<mx:Button id="btn1"
+					   label="取消"
+					   styleName="loginprimary"
+					   width="80"
+					   click="cancelHandler(event)"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.core.ByteArrayAsset;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.events.ValidationResultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.validators.ValidationResult;		
+			import sourceCode.sysGraph.actionscript.Shareds;
+			public var mainApp:Object = null;  
+			public   static  var mx:int;
+			[Bindable]
+			public  static var equipdatas:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public  static var group:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var callbackFunction:Function; 
+			[Bindable]
+			public  var  equipdata:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public  var  estationdata:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var eequipdata:ArrayCollection = new ArrayCollection();
+			
+			[ Bindable]
+			private var rate:ArrayCollection = new ArrayCollection([
+				"--- 选择速率 ---","2M","155M","622M","1G", "2.5G", "10G"]);
+			[ Bindable]
+			private var type:ArrayCollection = new ArrayCollection([
+				"--- 业务类型 ---","继电保护", "安稳业务", "调度数据网","通信监控业务","通信监测业务","行政电话","会议电视","光设备互联业务","用户用电信息采集","故障信息远传业务"]);
+
+			public function init():void
+			{   
+				BUSINESS_NAME.setFocus();
+			}
+			
+			private function getConditon2(event:ResultEvent):void{	
+	/* 	var nac:ArrayCollection = new ArrayCollection();  
+				for each(var item:String in ac)  
+				{  
+					if(nac.contains(item))       //去除重复项  （就不用在后台去重了）
+						continue;  
+					nac.addItem(item);  
+				} */
+				equipdata=event.result as ArrayCollection;
+				if(equip.dropdown != null) {  
+					equip.dropdown.dataProvider = equipdata;  
+					
+				} 
+
+			}
+			private function getConditon3(event:ResultEvent):void{	
+				eequipdata=event.result as ArrayCollection;
+				if(eequip.dropdown != null) {  
+					eequip.dropdown.dataProvider = eequipdata;  				
+				}
+			
+			}
+			
+			public function cancelHandler(event:MouseEvent):void
+			{MyPopupManager.removePopUp(this);
+			}
+			public function confirmHandler(event:MouseEvent):void
+			{   
+				if(BUSINESS_NAME.text==null||BUSINESS_NAME.text=="")
+				{ Alert.show("业务名称不能为空！");
+				}
+				else
+				{   
+
+					group.addItem({name:BUSINESS_NAME.text,start:equip.selectedLabel,end:eequip.selectedLabel,rate:BUSINESS_RATE.selectedLabel,type:BUSINESS_TYPE_ID.selectedLabel});
+					Shareds.str_new = "<system  name='"+BUSINESS_NAME.text+"' x_coordinate=\"0\" y_coordinate=\"0\" itemShowCheckBox=\"false\" isBranch=\"false\" type=\"business\" checked=\"0\"></system>";
+				    callbackFunction.call(mainApp);
+				 MyPopupManager.removePopUp(this);
+				}
+			}	
+			   
+			protected function estation_changeHandler(event:ListEvent):void
+			{      
+				var ro1:RemoteObject = new RemoteObject("topolink");
+				ro1.endpoint = ModelLocator.END_POINT;
+				ro1.showBusyCursor = true;
+				ro1.addEventListener(ResultEvent.RESULT,getConditon3);	
+				ro1.qsse(estation.selectedLabel);  
+			}
+			protected function station_changeHandler(event:ListEvent):void
+			{
+				var ro2:RemoteObject = new RemoteObject("topolink");
+				ro2.endpoint = ModelLocator.END_POINT;
+				ro2.showBusyCursor = true;
+				ro2.addEventListener(ResultEvent.RESULT,getConditon2);	
+				ro2.qsse(station.selectedLabel);  
+			}
+
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

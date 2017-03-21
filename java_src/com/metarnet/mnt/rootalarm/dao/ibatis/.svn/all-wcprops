@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/csgsim/!svn/ver/1/java_src/com/metarnet/mnt/rootalarm/dao/ibatis
+END
+RealRootAlarmSQL.xml
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/csgsim/!svn/ver/1/java_src/com/metarnet/mnt/rootalarm/dao/ibatis/RealRootAlarmSQL.xml
+END
+RootAlarmMgrSQL.xml
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/csgsim/!svn/ver/1/java_src/com/metarnet/mnt/rootalarm/dao/ibatis/RootAlarmMgrSQL.xml
+END

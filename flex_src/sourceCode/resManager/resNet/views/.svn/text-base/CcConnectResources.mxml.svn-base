@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		 xmlns:views="sourceCode.tableResurces.views.*"
+		 width="100%"
+		 height="100%"
+		 creationComplete="init()"
+		 preinitialize="preinitialize()"
+		 xmlns:component="common.component.*">
+	
+	<mx:Script source="../actionscript/CcConnectResources.as" />
+	
+	<mx:VBox id="h" width="100%" height="100%" paddingBottom="0" 
+			 paddingLeft="0" paddingRight="0" paddingTop="0" 
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		
+		<component:ControlBar id="controlBar" width="100%" height="38" modelName="交叉连接" imgName="pcm"
+							  showAddButton="{isAdd}" showEditButton="{isEdit}" showDelButton="{isDelete}" showSearchButton="{isSearch}"
+							  showExportExcelButton="{isExport}" showImportButton="{isImport}"
+							  controlAdd="toolbar_toolEventAddHandler(event)" controlEdit="toolbar_toolEventEditHandler(event)" 
+							  controlDel="toolbar_toolEventDeleteHandler(event)" controlSearch="toolbar_toolEventSearchHandler(event)"
+							  controlExportExcel="toolbar_toolEventEmpExcelHandler(event)" controlImport="toolbar_toolEventImpExcelHandler(event)"/>
+		<mx:DataGrid id ="dg" 
+					 width="100%" 
+					 height="100%" 
+					 editable="false" 
+					 horizontalScrollPolicy="auto" 
+					 doubleClickEnabled="true"
+					 headerRelease="dg_headerReleaseHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn headerText="序号" width="50" dataField="no" sortable="false" />
+				<mx:DataGridColumn headerText="交叉编码" dataField="id" width="200" visible="false"/>
+				<mx:DataGridColumn headerText="所属设备" dataField="pid" width="200"/>
+				<mx:DataGridColumn headerText="速率" dataField="rate" width="100"/>
+				<mx:DataGridColumn headerText="连接方向" dataField="direction" width="80"/>
+				<mx:DataGridColumn headerText="A端端口" dataField="aptp" width="120"/>
+				<mx:DataGridColumn headerText="A端时隙" dataField="aslot" width="80"/>
+				<mx:DataGridColumn headerText="Z端端口" dataField="zptp" width="120"/>
+				<mx:DataGridColumn headerText="Z端时隙" dataField="zslot" width="80"/>
+				<mx:DataGridColumn headerText="更新人" dataField="updateperson" width="80"/>
+				<mx:DataGridColumn headerText="配置方式" dataField="isdefault" width="100"/>
+				<mx:DataGridColumn headerText="更新时间" dataField="updatedate" width="100"/>
+				
+			</mx:columns> 
+		</mx:DataGrid>
+		<component:pagetoolbar 
+			id="serverPagingBar" 
+			width="100%"/>
+	</mx:VBox>
+</mx:VBox>

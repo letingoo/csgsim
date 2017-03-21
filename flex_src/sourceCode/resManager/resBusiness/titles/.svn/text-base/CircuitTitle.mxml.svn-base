@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				width="680" height="420"
+				creationComplete="initApp()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%" close="{MyPopupManager.removePopUp(this)}" fontFamily="宋体"
+				fontSize="12" layout="absolute" showCloseButton="true" xmlns:states="com.degrafa.states.*">
+
+	<mx:Script source="../actionscript/CircuitTitle.as"/>
+	
+	<mx:states>
+		<mx:State name="search"><!--查询状态下把所有字段必填项的属性设置为false-->
+			<mx:SetProperty target="{this}" name="height" value="398" />
+			<mx:SetProperty target="{formItem1}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem2}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem3}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem4}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem5}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem6}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem7}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem8}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem9}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem14}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem15}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem9}" name="visible" value="false"/>
+			<mx:SetProperty target="{formItem4}" name="visible" value="false"/>
+		</mx:State>
+		<mx:State name="add"/><!--添加状态-->
+		<mx:State name="modify"><!--修改状态-->
+			<mx:SetProperty target="{this}" name="height" value="398" />
+			<mx:SetProperty target="{formItem1}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem2}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem3}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem4}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem5}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem6}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem7}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem8}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem9}" name="required" value="false"/>
+			<mx:SetProperty target="{formItem11}" name="required" value="true"/>
+			
+		</mx:State>
+	</mx:states>
+	
+	<mx:VBox width="100%" height="100%" horizontalAlign="center" paddingBottom="0" paddingLeft="0"
+			 paddingRight="0" paddingTop="0" verticalGap="0">
+		<mx:HBox id="hbox1" width="100%" height="80%">
+			<mx:Form width="100%" height="100%">
+				
+				<mx:FormItem label="方式单编号" id="formItem1" required="true" visible="false">
+					<mx:TextInput id="schedulerid" width="180" />
+				</mx:FormItem>
+				
+				<mx:FormItem label="电路编号" id="formItem11" enabled="{showcircuit}">
+					<mx:TextInput id="circuitcode" width="180"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="A端局站" id="formItem2" required="true">
+					<mx:TextInput id="station1" width="180" editable="false" click="station1_clickHandler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="业务类型" >
+					<mx:ComboBox id="x_purpose" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="网管A端端口" id="formItem3" required="true" toolTip="单击输入框，弹出选择树！">
+					<mx:TextInput id="portname1" width="180" editable="false" mouseDown="portcode_mouseDownHandler(event,portname1,'A')"/>
+				</mx:FormItem>
+				
+				<!--<mx:FormItem label="资源A端端口" id="formItem12">
+					<mx:TextInput id="portserialno1" width="180"/>
+				</mx:FormItem>-->
+				
+				<mx:FormItem label="A端端口时隙" id="formItem4" required="true">
+					<!--<mx:ComboBox id="slot1" width="180" restrict="0-9" />-->
+					<mx:TextInput id="slot1" width="180" editable="false" click="slot1_clickHandler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="主用路由路径" id="formItem18" >
+					<mx:TextInput id="path" width="180"  />
+				</mx:FormItem>
+				
+				<mx:FormItem label="开通时间" >
+					<mx:DateField id="usetime" width="180" dayNames="{days}"
+								  formatString="YYYY-MM-DD" monthNames="{monthNames}"
+								  yearNavigationEnabled="true"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="主用传输时延" id="formItem19" visible="false">
+					<mx:TextInput id="delay1" width="180"  />
+				</mx:FormItem>
+				<mx:FormItem label="端口编号1" id="formItem14" required="true" >
+					<mx:TextInput id="portcode1" width="180" editable="false" />
+				</mx:FormItem>
+				<mx:FormItem label="速率1" id="formItem16" >
+					<mx:TextInput id="rate0" width="180" editable="false" />
+				</mx:FormItem>
+				<mx:FormItem label="业务类型1" id="formItem17" >
+					<mx:TextInput id="x_purpose1" width="180" editable="false" />
+				</mx:FormItem>
+				
+			</mx:Form>
+			<mx:Form id="form1" width="100%" height="100%">
+				<mx:FormItem label="电路名称" id="formItem5" required="true">
+					<mx:TextInput id="username" width="180"/>
+				</mx:FormItem>
+				<mx:FormItem label="Z端局站" id="formItem6" required="true">
+					<mx:TextInput id="station2" width="180" editable="false" click="station2_clickHandler(event)"/>
+				</mx:FormItem>
+				<mx:FormItem label="速率" id="formItem7" required="true">
+					<mx:ComboBox id="rate" width="180"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="网管Z端端口" id="formItem8" required="true" toolTip="单击输入框，弹出选择树！">
+					<mx:TextInput id="portname2" width="180" editable="false" mouseDown="portcode_mouseDownHandler(event,portname2,'Z')"/>
+				</mx:FormItem>
+				<!--<mx:FormItem label="资源Z端端口" id="formItem13">
+					<mx:TextInput id="portserialno2" width="180"/>
+				</mx:FormItem>-->
+				
+				<mx:FormItem label="Z端端口时隙" id="formItem9" required="true">
+					<mx:TextInput id="slot2" width="180" editable="false" click="slot2_clickHandler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="备用路由路径" id="formItem20" >
+					<mx:TextInput id="remark" width="180"  />
+				</mx:FormItem>
+				<mx:FormItem label="备用传输时延" id="formItem21" visible="false">
+					<mx:TextInput id="delay2" width="180"  />
+				</mx:FormItem>
+				<mx:FormItem label="端口编号2" id="formItem15" required="true" >
+					<mx:TextInput id="portcode2" width="180" editable="false"  />
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		
+		<mx:HBox id="buttomhbox" width="100%" height="20%"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%" horizontalAlign="center" verticalAlign="middle">
+			<mx:Button id="btn" width="80" label="{this.title}" click="btn_clickHandler(event)"
+					   styleName="loginprimary"/>
+			<mx:Spacer width="80"/>
+			<mx:Button width="80" label="关闭" click="PopUpManager.removePopUp(this)"
+					   styleName="loginsecondary"/>
+		</mx:HBox>
+		
+	</mx:VBox>
+	
+</mx:TitleWindow>

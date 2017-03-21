@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--系统组织图-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+		 width="100%"
+		 height="100%"
+		 verticalGap="0"
+		 horizontalGap="0"
+		 creationComplete="init();initEvent()" 
+		 preinitialize="preinitialize()"
+		 xmlns:views="sourceCode.sysGraph.views.*" 
+		 xmlns:actionscript="sourceCode.sysGraph.actionscript.*"
+		 
+		 xmlns:base="base.*"
+		 xmlns:component="common.component.*" 
+		 xmlns:h="sourceCode.sysGraph.actionscript.*">
+
+	<!--mx:NumberValidator id="numValid"  source="{ddd}" property="text" required="true" domain="real" allowNegative="false"  
+						requiredFieldError="不能为空，请输入！" integerError="请输入正整数！"  trigger="{diClick}" triggerEvent="click" valid="diClickHandler();"/-->
+	<mx:Script source="../actionscript/sysGraphRoute.as"/>
+	
+	<mx:ArrayCollection id="linkItemss">
+		<actionscript:ActionTile label="flexional link" imageName="link_flexional_icon" 
+								 action="{function():void{
+								 createLinkInteraction(Link,Consts.LINK_TYPE_PARALLEL,createLinkCallBack);
+								 }}" />
+	</mx:ArrayCollection>
+	
+	<mx:RemoteObject id="fww"  destination="fiberWire" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}"
+					 fault="DealFault(event)" result="resultHandler(event)"/>
+	
+	<component:ControlBar id="controlBar" width="100%" height="30" modelName="网络拓扑图" imgName="sysorgmap"/>
+	<mx:HDividedBox width="100%" height="100%" right="20" left="0">
+	
+		<mx:VBox id="leftpanel" width="200" height="100%" verticalGap="0">
+				<component:SearchTextInput id="searchText" height="35" width="100%" searchEnter="{enter()}"
+										   clickButton="searchText_clickHandler(event)" />
+				<h:CheckTree id="tree" 
+							 width="100%" 
+							 height="100%"
+							 rowHeight="20"
+							 dataProvider="{XMLData}" 
+							 labelField="@name"
+							 iconFunction="iconFun" 
+							 checkBoxOpenItemsOnCheck="true"
+							 checkBoxStateField="@checked"							 
+							 backgroundImage="@Embed(source='assets/images/treebg.png')"
+							 backgroundSize="100%"									
+							 click="showSystemMap(event)" 
+							 doubleClickEnabled="true"
+							 doubleClick="tree_doubleClickHandler(event)"/>					
+		</mx:VBox>	
+
+		<mx:Canvas id="cvs" width="100%" height="100%" >
+			
+			<mx:VBox width="100%" height="100%" horizontalGap="0" verticalGap="0">
+				<mx:HBox>
+					<mx:HBox id="toolbar" width="100%" horizontalGap="0" visible="true"  verticalAlign="middle">
+						<mx:Button id="set" label="业务设置"  click="setBusiness()" />
+						<mx:Button id="creat" label="业务生成"  click="createBusiness(event)" />
+						<mx:Button id="adjust" label="业务调整"  click="createBusiness(event)" />		
+					</mx:HBox>
+					<!--			//#40E0D0  主
+					//#9932CC  备用
+					//#A0522D  迂回-->
+					<mx:HBox width="100%"  horizontalGap="0"  visible="true" height="21">					
+						<mx:Spacer height="100%" width="50" />				
+						<mx:Canvas width="10" backgroundColor="0x96CDCD" >
+							<mx:Label width="100%" height="100%" />
+						</mx:Canvas>
+						<mx:Spacer height="100%" width="3" />
+						<mx:Label text="主路由路径"/>
+						<mx:Spacer height="100%" width="10" />
+						
+						<mx:Canvas width="10" backgroundColor="0x9932CC" >
+							<mx:Label width="100%" height="100%" />
+						</mx:Canvas>
+						<mx:Spacer height="100%" width="3" />
+						<mx:Label text="备用路由路径"/>
+						<mx:Spacer height="100%" width="10" />
+						
+						<mx:Canvas width="10" backgroundColor="0xA0522D" >
+							<mx:Label width="100%" height="100%" />
+						</mx:Canvas>
+						<mx:Spacer height="100%" width="3" />
+						<mx:Label text="迂回路由路径"/>
+						<mx:Spacer height="100%" width="10" />
+						<!--<mx:Button id="word" label="导出"  click="exportTo()" />-->
+						
+					</mx:HBox>	
+					<mx:Label   text="节点个数：" fontSize="14"/>
+					<mx:Label  id ="nod" text="" color="0x7B68EE" fontSize="14"  />
+				</mx:HBox>
+				<tw:Network id="systemorgmap1" 
+							width="100%" 
+							height="100%"  
+							backgroundColor="0xffffff"   							
+							dragEnter="onDragEnter(event)" 
+							dragOver="onDragOver(event)"
+							dragDrop="onGridDragDrop(event)"
+							dragExit="onDragExit(event)"
+							keyboardRemoveEnabled="false" 
+							keyDown="sysNetwork_keyDownHandler(event)"							
+							visible="true"
+							/>	
+				<!--doubleClick="doubleChickHandler(event)"-->
+				<mx:DataGrid id="busGrids" width="1155" height="96" sortableColumns="false"  dataProvider="{myData}" visible="false">
+					<mx:columns>
+						<mx:DataGridColumn id="BUSINESS_NAME" dataField="BUSINESS_NAME" headerText="业务名称" visible="true" width="550" wordWrap="true"/>
+						<mx:DataGridColumn id="PA" dataField="PA" headerText="起始设备" visible="true" width="200"/>
+						<mx:DataGridColumn id="PB" dataField="PB" headerText="终止设备" visible="true" width="200"/>
+						<mx:DataGridColumn id="BUSINESS_RATE" dataField="BUSINESS_RATE" headerText="业务类型" visible="true"/>
+						<mx:DataGridColumn id="BUSINESS_TYPE_ID" dataField="BUSINESS_TYPE_ID" headerText="业务速率" visible="true"/>
+					</mx:columns>
+				</mx:DataGrid>
+					    <mx:DataGrid id="busGrid" width="1155" height="96" sortableColumns="false"  dataProvider="{abc_route}" visible="false" wordWrap="true" doubleClick="itemListClickHander(event)" doubleClickEnabled="true">
+						 <mx:columns>
+							 <mx:DataGridColumn id="ID" headerText="序号" dataField="lfRowNum1_1" width="110" visible="true" labelFunction="lfRowNum1_1" />
+							 <mx:DataGridColumn id="strategy" headerText="路由类型" dataField="route" width="110" visible="true"/>	
+							 <mx:DataGridColumn id="B_route" headerText="具体路径" dataField="name" width="605" visible="true" />
+							 <mx:DataGridColumn id="B_stress"  dataField="stress" width="110" visible="false" />
+							 <mx:DataGridColumn id="B_delay" headerText="时延(ms)" dataField="delay" width="110" visible="true" />
+							 <mx:DataGridColumn id="ch_stress" headerText="时延差(ms)" dataField="chdelay" width="110" visible="true" />
+						 </mx:columns>
+					    </mx:DataGrid>
+<!--				      </mx:HBox>-->
+					  <mx:HBox  id="cB"  width="100%"  paddingTop="10" horizontalAlign="center" horizontalCenter="0" verticalAlign="middle" visible="false">
+							<mx:ComboBox id="ServDownList" dataProvider="{strategyArr}" prompt="请选择策略！" click="ServDownList_closeHandler(event)"/>
+						    <mx:Spacer width="40" />
+							<mx:Button id="btonConfirm" label="确定"  click="btonConfirm_click(event)" />
+						    <mx:Spacer width="20" />
+							<mx:Button id="btoncancle" label="取消"  click="btoncancle_click(event)" />
+					  </mx:HBox>						
+						
+			
+</mx:VBox>
+		</mx:Canvas>					
+		
+	</mx:HDividedBox>
+</mx:VBox>

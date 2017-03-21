@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/csgsim/!svn/ver/1/dbscript/updatesql
+END
+alter_table.sql
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/csgsim/!svn/ver/1/dbscript/updatesql/alter_table.sql
+END
+disRootAlarm.sql
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/csgsim/!svn/ver/1/dbscript/updatesql/disRootAlarm.sql
+END

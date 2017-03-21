@@ -1,0 +1,21 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="方式选择树" label="方式选择树" creationComplete="init();" width="400" height="400"  layout="horizontal" xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script source="../actionscript/circuitTree.as" />
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0" >
+		<mx:Tree id="channelTree" dataProvider="{folderCollection}" 			
+				 labelField="@label"
+				 width="100%" 
+				 showRoot="true"
+				 height="100%" 
+				 defaultLeafIcon="{null}" 
+				 borderStyle="none"
+				 doubleClickEnabled="true"
+				 doubleClick="clickTree()"
+				 iconFunction="deviceiconFun"
+				 backgroundSize="100%"
+				 itemClick="tree_itemClick(event)"
+				 />
+	</mx:VBox>
+	
+</mx:TitleWindow>  

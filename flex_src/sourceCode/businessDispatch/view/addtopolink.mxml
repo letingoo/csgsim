@@ -1,0 +1,296 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				fontSize="12" xmlns:controls="ht.*"  
+				showCloseButton="true" close="close()" title="配置复用段" label="配置复用段" creationComplete="init();" width="400" height="564"  layout="absolute"  xmlns:demo="demo.*" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex" xmlns:common="demo.common.*" xmlns:local="*" xmlns:code="http://code.google.com/p/flexlib/">
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			import common.other.events.EventNames;
+			
+			import flexunit.utils.ArrayList;
+			
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.Tree;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.events.DragEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.events.ChannelEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+
+			
+			import sourceCode.channelRoute.model.Circuit;
+			import sourceCode.packGraph.views.checkedEquipPack;
+			
+			import twaver.*;
+			import twaver.ElementBox;
+			import twaver.core.util.l.l;
+			import twaver.network.Network;
+			
+			public var equip_a_code:String;
+			public var port_a_code:String;
+			public var parent_page:selectEquipment;
+			public var link:Link;
+			public var circuit_rateCode:String;
+			private function init():void
+			{
+				
+				equip_a.text = link.fromNode.name;
+				equip_z.text = link.toNode.name;
+				if(link.getClient("topolinkProperty")!=null){
+				   
+				
+				}else{
+					frame_a.text = '1';
+					slot_a.text = '1';
+					pack_a_serial.text = '1';
+					port_a.text = '1';
+					frame_z.text='1';
+					slot_z.text= '1';
+					pack_z_serial.text='1';
+					port_z.text = '1';
+				}
+				
+				var ppobj1:RemoteObject = new RemoteObject("businessDispatch");
+				ppobj1.endpoint=ModelLocator.END_POINT;
+				ppobj1.showBusyCursor=true;
+				ppobj1.getSystemcode();
+				ppobj1.addEventListener(ResultEvent.RESULT, function (e: ResultEvent):void{
+				
+					var XMLData:XMLList = new XMLList(e.result.toString());
+					systemcode.dataProvider = XMLData.children();
+					systemcode.labelField = "@label";
+				});
+				
+				var rtobj11:RemoteObject = new RemoteObject("equInfo");
+				rtobj11.endpoint = ModelLocator.END_POINT;
+				rtobj11.showBusyCursor = true;
+				rtobj11.getFromXTBM('ZY1106__');//根据系统编码查询对应信息(速率)
+				rtobj11.addEventListener(ResultEvent.RESULT, function(e:ResultEvent){
+					var XMLData_Rate:XMLList = new XMLList(e.result.toString())
+					linerate.dataProvider = XMLData_Rate.children();
+					linerate.labelField = "@label";
+				})	
+				
+				
+			}
+			private function close():void  
+			{  
+				PopUpManager.removePopUp(this);  
+			}
+			private function save():void
+			{
+				if(equip_a.text==""||equip_a.text==null){
+					Alert.show("A端设备名称不能为空","温馨提示");
+				}else if(frame_a.text==""||frame_a.text==null){
+					Alert.show("A端机框序号不能为空","温馨提示");
+				}else if(slot_a.text==""||slot_a.text==null){
+					Alert.show("A端机槽序号不能为空","温馨提示");
+				}else if(pack_a_serial.text==""||pack_a_serial.text==null){
+					Alert.show("A端机盘序号不能为空","温馨提示");
+				}else if(pack_a_name.text==""||pack_a_name.text==null){
+					Alert.show("A端机盘类型不能为空","温馨提示");
+				}else if(port_a.text==""||port_a.text==null){
+					Alert.show("A端端口序号不能为空","温馨提示");
+				}else if(equip_z.text==""||equip_z.text==null){
+					Alert.show("Z端设备名称不能为空","温馨提示");
+				}else if(frame_z.text==""||frame_z.text==null){
+					Alert.show("Z端机框序号不能为空","温馨提示");
+				}else if(slot_z.text==""||slot_z.text==null){
+					Alert.show("Z端机槽序号不能为空","温馨提示");
+				}else if(pack_z_serial.text==""||pack_z_serial.text==null){
+					Alert.show("Z端机盘序号不能为空","温馨提示");
+				}else if(pack_z_name.text==""||pack_z_name.text==null){
+					Alert.show("Z端机盘类型不能为空","温馨提示");
+				}else if(port_z.text==""||port_z.text==null){
+					Alert.show("Z端端口序号不能为空","温馨提示");
+				}else if(systemcode.text==""||systemcode.text==null){
+					Alert.show("系统名称不能为空","温馨提示");
+				}else if(linerate.text==""||linerate.text==null){
+					Alert.show("速率不能为空","温馨提示");
+				}else if(linerate.text!="2Mb/s" && linerate.text!="其它" && linerate.text!="64K"){/*  */
+					if(timeSlot.text==""||timeSlot.text==null){
+					Alert.show("该速率下时隙不能为空","温馨提示");
+					}else
+					{
+					   this.saveDataIntoNode();
+					   this.close();
+					}
+				}else{
+				
+					    this.saveDataIntoNode();
+						this.close();
+				}
+			
+			}
+			
+			public function saveDataIntoNode():void{
+				var obj:Object = new Object();
+				obj.equip_a = equip_a.text;
+				obj.frame_a = frame_a.text;
+				obj.slot_a = slot_a.text;
+				obj.pack_a_serial = pack_a_serial.text;
+				obj.pack_a_name = pack_a_name.text;
+				obj.port_a = port_a.text;
+				obj.slot_z= slot_z.text;
+				obj.port_z = port_z.text;
+				obj.equip_z = equip_z.text;
+				obj.frame_z = frame_a.text;
+				obj.pack_z_name = pack_z_name.text;
+				obj.pack_z_serial = pack_z_serial.text;
+				obj.systemcode = systemcode.text;
+				obj.linerate = linerate.selectedItem.@code;
+				obj.linerateName = linerate.text;
+				link.name = "【"+equip_a.text+"】"+slot_a.text+"槽"+port_a.text+"端口\n【"+equip_z.text+"】"+slot_z.text+"槽"+port_z.text+"端口";
+				if(timeSlot.text!=null){
+					link.name = link.name+"\n【时隙】"+timeSlot.text;
+				}
+				obj.hasVirtualTopolinkValue = '1';	
+				link.setClient("topolinkProperty",obj);
+				link.setClient("equip_a",equip_a.text);
+				link.setClient("frame_a",frame_a.text);
+				link.setClient("slot_a",slot_a.text);
+				link.setClient("pack_a_serial",pack_a_serial.text);
+				link.setClient("pack_a_name",pack_a_name.text);
+				link.setClient("port_a",port_a.text);
+				link.setClient("equip_z",equip_z.text);
+				link.setClient("frame_z",frame_z.text);
+				link.setClient("slot_z",slot_z.text);
+				link.setClient("pack_z_serial",pack_z_serial.text);
+				link.setClient("pack_z_name",pack_z_name.text);
+				link.setClient("port_z",port_z.text);
+				link.setClient("systemcode",systemcode.text);
+				link.setClient("linerate",new String(linerate.selectedItem.@code));
+				link.setClient("linerateName",linerate.text);
+				link.setClient("hasTopoLinkValue",'1');
+			
+			}
+			
+			private function controlTimeSlotDisplay(e:ListEvent):void{
+				 var xml:XML = linerate.selectedItem as XML;
+				 var code = xml.@code;
+				if (code == 'ZY110601' || code == 'ZY110602' || code == 'ZY110603' || code == 'ZY110604') {
+					timeSlot.enabled = true;
+				}else{
+				timeSlot.enabled = false;
+				}
+				
+				
+			}
+		   private function getSlot(e:Event):void{
+		   if(timeSlot.enabled==true){
+			   var slot_tree:virtualslottree = new virtualslottree();
+			   slot_tree.rate = circuit_rateCode;
+			   slot_tree.linerate=linerate.selectedItem.@code;
+			   slot_tree.parent_page = this;
+			   
+			   slot_tree.flag = 'topolink';
+			   slot_tree.e_link = link;
+			   PopUpManager.addPopUp(slot_tree, this, true);
+			   PopUpManager.centerPopUp(slot_tree);
+		   }
+		   }
+		]]>
+	</mx:Script>
+	
+	<mx:VBox width="100%" height="100%" backgroundImage="@Embed(source='assets/images/popwindowbg.png')" backgroundSize="100%">
+		<mx:Canvas width="100%" height="485">
+			
+
+	<mx:Label text="A端设备名称"  y="12" height="25" fontFamily="宋体" x="71.5" textAlign="center" fontSize="12"/>  
+	<mx:TextInput id="equip_a" width="120" x="171.5" y="10" fontFamily="宋体" fontSize="12"/> 
+	
+	
+	<mx:Label text=" A端机框序号"  y="44" x="65.5" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="171.5" y="42"  id="frame_a"  width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text=" A端机槽序号"  y="74" x="65.5" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="171.5" y="72"  id="slot_a"  width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text=" A端机盘序号"  y="104" x="65.5" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="171.5" y="102" id="pack_a_serial" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text=" A端机盘类型"  y="137" x="65.5" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="171.5" y="135"  id="pack_a_name"  width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text=" A端端口序号"  y="168" x="65.5" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="77"/>
+	<mx:TextInput x="171.5" y="166"  id="port_a"  width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="Z端设备名称"  y="201" x="69.5" height="25" fontFamily="宋体" fontSize="12" textAlign="center" width="73"/>
+	<mx:TextInput id="equip_z" width="120" x="171.5" y="199" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="Z端机框序号"  y="231" x="72.5" height="25" fontFamily="宋体" fontSize="12" width="72"/>
+	<mx:TextInput x="171.5" y="235" editable="true" id="frame_z" width="120" fontFamily="宋体" fontSize="12"></mx:TextInput>
+
+	
+	<mx:Label text="Z端机槽序号"  y="266" x="72.5" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput id='slot_z' width="120" x="170.5" y="266" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="Z端机盘序号"  y="301" x="72.5" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput x="170.5" y="299" id="pack_z_serial" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="Z端机盘类型"  y="329" x="72.5" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput x="170.5" y="327"  id="pack_z_name" width="120" fontFamily="宋体" fontSize="12"/>
+	
+	
+	<mx:Label text="Z端端口序号"  y="362" x="72.5" height="20" fontFamily="宋体" fontSize="12"/>
+	<mx:TextInput x="170.5" y="355"  id="port_z" width="120" fontFamily="宋体" fontSize="12"/>
+
+	
+	<mx:Label text="系统名称"  y="390" x="72.5" height="25" fontFamily="宋体" fontSize="12"/>
+	<mx:ComboBox x="170.5" y="390" id="systemcode" width="120" fontFamily="宋体" fontSize="12" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0"/>
+	
+	
+	<mx:Label text="速    率"  y="420" x="72.5" height="25" fontFamily="宋体" fontSize="12" width="53"/>
+	<mx:ComboBox id="linerate"  width="120" change="controlTimeSlotDisplay(event)"  x="170.5" y="420" fontFamily="宋体" fontSize="12" fontStyle="normal" fontWeight="normal" cornerRadius="0" alpha="1.0" />
+	
+	
+	<mx:Label text="时    隙"    y="450" x="72.5" height="25" fontFamily="宋体" fontSize="12" width="56" enabled="true"/>
+	<mx:TextInput x="170.5" y="450" width="120"  id="timeSlot" enabled="true"  click="getSlot(event)" />
+	
+		</mx:Canvas>
+	<mx:Canvas width="100%" height="100%" backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%"> 
+		
+
+	<mx:Button label="保存" click="save()"   styleName="loginprimary"  x="94" y="6" height="22" textAlign="center" fontFamily="宋体" fontSize="12"   width="80"/>
+	<mx:Button label="关闭" click="close()"   styleName="loginsecondary" x="204" y="6" height="22" textAlign="center" fontFamily="宋体" fontSize="12" width="80"/> 
+	
+	
+	</mx:Canvas>
+		
+	</mx:VBox>
+	<mx:Validator source="{equip_a}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{frame_a}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{slot_a}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{pack_a_serial}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{pack_a_name}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{port_a}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{equip_z}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{frame_z}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{slot_z}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{pack_z_serial}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{pack_z_name}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{port_z}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{systemcode}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{linerate}" property="text" requiredFieldError="该项不能为空"/>
+	<mx:Validator source="{timeSlot}" property="text" requiredFieldError="该项不能为空"/>
+</mx:TitleWindow>  

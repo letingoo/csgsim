@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="equInfo">
+  <typeAlias alias="topoLink" type="fiberwire.model.TopoLinkModel"/>
+	
+    <update id="updateEquInfo" parameterClass="fiberwire.model.EquInfoModel">
+    	<![CDATA[	
+			update equipment e
+			   set S_SBMC     = '$equipname$',
+			       x_vendor      = #x_vendor#,
+			       x_model       = #x_model#,
+			       e.equiptype   = #equiptype#,
+			       nename        = #nename#,
+			       nsap          = #nsap#,
+			       stationcode=#stationcode#,
+			       roomcode=#roomcode#,
+			       e.property    = #property#,
+			       e.price       = #price#,
+			       e.purpose     = #purpose#,
+			       e.status      = #status#,
+			       e.projectname = #projectname#,
+			       equiplabel    = #equiplabel#,
+			       remark        = #remark#
+			 where equipcode = #equipcode#
+    	 ]]>
+	</update>
+	<insert id="insertEquInfo" parameterClass="fiberwire.model.EquInfoModel">
+		<selectKey resultClass="String" keyProperty="equipcode">
+			select METAR_UTL.gen_equip_code() as equipcode from dual
+        </selectKey>	
+		insert into equipment
+		  (equipcode,
+		   S_SBMC,
+		   province,
+		   stationcode,
+		   roomcode,
+		   x_vendor,
+		   x_model,
+		   equiptype,
+		   nename,
+		   status,
+		   projectname,
+		   equiplabel,
+		   remark,
+		   property,
+		   version,
+		   system_name
+		   )
+		values
+		  (#equipcode#,
+		   '$equipname$',
+		   #province#,
+		   #stationcode#,
+		   #roomcode#,
+		   '$x_vendor$',
+		   '$x_model$',
+		   '$equiptype$',
+		   '$nename$',
+		   #status#,
+		   #projectname#,
+		   '$equiplabel$',
+		   #remark#,
+		   '$property$',
+		   '$version$',
+		   '$systemcode$'
+		   )
+	</insert>
+
+
+	<insert id="insertRe_sys_equip" parameterClass = "java.util.HashMap">
+		
+		insert into re_sys_equip(equipcode, systemcode, remark, updateperson, updatedate) 
+								values ('$equipcode$',
+								'$systemcode$', '$remark$' , '$updateperson$', to_date('$updatedate$','YYYY-MM-DD'))
+		
+	</insert>
+	 <select id="getXTBMList2" resultClass="java.util.HashMap" parameterClass="String">
+      <![CDATA[	
+       		select t.xtbm,t.xtxx from xtbm t where t.xtbm like '$xtbm$' 
+        ]]>  
+    </select>
+    
+    
+    <select id="getSystemList" resultClass="java.util.HashMap">
+      <![CDATA[	
+       select systemcode,sysname from  transsystem  
+        ]]>  
+    </select>
+    
+	
+	
+    <select id="getCarryOperaN1" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+		select distinct c.circuitcode,
+		                getxtxx(cir.rate) as rate,
+		                getportlabellite(cir.portserialno1) portserialno1,
+		                gettimeslot373(cir.slot1, getxtxx(cir.rate)) slot1,
+		                getportlabellite(cir.portserialno2) portserialno2,
+		                gettimeslot373(cir.slot2, getxtxx(cir.rate)) slot2,
+		                cir.username username,
+		                x.xtxx transrate,
+		                cir.remark remark
+		  from cctmp c, equiplogicport l1, equiplogicport l2, circuit cir, xtbm x
+		 where c.aptp = l1.logicport
+		   and c.zptp = l2.logicport
+		   and (l1.equipcode = #equipcode# or
+		       l2.equipcode = #equipcode#)
+		   and c.circuitcode = cir.circuitcode
+		   and cir.rate = x.xtbm
+                 
+		]]>			
+    </select>
+  
+    <select id="getCarryOperaByLogicPortN1" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+		select distinct c.circuitcode,
+		                getxtxx(cir.rate) as rate,
+		                getportlabellite(cir.portserialno1) portserialno1,
+		                gettimeslot373(cir.slot1, getxtxx(cir.rate)) slot1,
+		                getportlabellite(cir.portserialno2) portserialno2,
+		                gettimeslot373(cir.slot2, getxtxx(cir.rate)) slot2,
+		                cir.username username,
+		                x.xtxx transrate,
+		                cir.remark remark
+		  from cctmp c, circuit cir, xtbm x
+		 where (c.aptp = #logicport# or
+		       c.zptp = #logicport#)
+		   and c.circuitcode = cir.circuitcode
+		   and cir.rate = x.xtbm
+		]]>			
+    </select>
+  
+     <select id="getCarryOperaByTopoLinkN1" resultClass="java.util.HashMap" parameterClass="String">
+     <![CDATA[ 
+		select distinct c.circuitcode,
+		                decode(getxtxx(cir.rate), null, ' 0', getxtxx(cir.rate)) rate,
+		                getportlabellite(cir.portserialno1) portserialno1,
+		                decode(cir.slot1,
+		                       null,
+		                       ' 0',
+		                       gettimeslot373(cir.slot1, getxtxx(cir.rate))) slot1,
+		                getportlabellite(cir.portserialno2) portserialno2,
+		                decode(cir.slot2,
+		                       null,
+		                       ' 0',
+		                       gettimeslot373(cir.slot2, getxtxx(cir.rate))) slot2,
+		                cir.username username,
+		                x.xtxx transrate,
+		                cir.remark remark
+		  from cctmp c, circuit cir, xtbm x
+		 where c.id in (select m.id
+		                  from (select c.id, c.circuitcode, e.label
+		                          from cctmp c, en_topolink e
+		                         where (e.aendptp = c.aptp or e.aendptp = c.zptp)
+		                           and e.label = #label#) m,
+		                       (select c.id, c.circuitcode, e.label
+		                          from cctmp c, en_topolink e
+		                         where (e.zendptp = c.aptp or e.zendptp = c.zptp)
+		                           and e.label = #label#) n
+		                 where m.circuitcode = n.circuitcode
+		                   and m.label = n.label)
+		   and c.circuitcode = cir.circuitcode
+		   and cir.rate = x.xtbm
+   ]]>
+    </select>
+  
+    <select id="hasEquipPack" resultClass="java.util.HashMap" parameterClass="String">
+     <![CDATA[ 
+     	select * from equippack where equipcode='$equipcode$'
+      ]]>
+    </select>
+    <update id="delEquip" parameterClass="String">
+    	<![CDATA[ 
+    	delete from equipment where equipcode='$equipcode$'
+    	]]>
+	</update>
+    <select id="getDeviceCountByStationcode" resultClass="int" parameterClass="String">
+                select count(*)from equipment where stationcode = '$stationcode$'
+    </select>
+   
+    <select id="getListByStationcode" resultClass="fiberwire.model.EquInfoModel" parameterClass="String">
+    	<![CDATA[
+    	select S_SBMC equipname,getxtxx(x_vendor) x_vendor,x_model,getxtxx(equiptype) equiptype,nename
+    	from equipment where stationcode='$stationcode$'
+    	]]>
+    </select>
+     <!-- 查看设备按厂家分类汇总信息 -->
+	<select id="getDeviceSummaryByVendor" resultClass="java.util.HashMap" parameterClass="String">
+	 <![CDATA[ 
+             select count(distinct eq.equipcode) value, getxtxx(eq.x_vendor) vendor
+             from equipment eq 
+             where stationcode='$stationcode$'
+             group by eq.x_vendor 
+                 
+		]]>			
+    </select>
+ 	<select id="getProvince" resultClass="java.util.HashMap">
+		<![CDATA[
+			select province ,provincename from  en_province order by province
+		]]>
+	</select>
+	
+	<select id="getMaxCircuitcode" resultClass="string">
+		select max(c.circuitcode)+1 as circuitcode from circuit c
+	</select>
+</sqlMap>

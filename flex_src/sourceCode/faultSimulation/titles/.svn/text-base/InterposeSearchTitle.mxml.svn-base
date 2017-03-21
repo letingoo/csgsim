@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*"
+				layout="absolute"
+				fontFamily="宋体"
+				fontSize="12"
+				showCloseButton="true"
+				width="840"
+				height="428"
+				creationComplete="init()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"
+				close="{MyPopupManager.removePopUp(this)}">
+	
+	
+	<mx:Script source="../actionscript/InterposeSearchTitle.as" />
+	<mx:RemoteObject id="subMessage" destination="RemoteMessage"  endpoint="{ModelLocator.END_POINT}" 
+					 result="subMessage_resultHandler(event)" /> 
+	<mx:VBox width="100%"
+			 height="100%"
+			 paddingTop="0"
+			 paddingBottom="0"
+			 paddingLeft="0"
+			 paddingRight="0"
+			 horizontalAlign="center"
+			 verticalGap="0">
+		
+		<mx:HBox width="100%"
+				 height="80%">
+			
+			<mx:Form width="100%" height="100%">
+				
+				<mx:FormItem label="科目名称" required="{isRequired}" >
+					<mx:TextInput id="interposename" width="220" />
+				</mx:FormItem>
+				
+				<mx:FormItem id="equipnameform" label="设备名称" required="{isRequired}">
+					<mx:TextInput id="equipname" width="220" editable="false" click="selectEquipInfoHandler(event)"/>
+				</mx:FormItem>
+				
+				<mx:FormItem id="equiptypeform" label="资源类型" required="{isRequired}">
+					<mx:ComboBox id="equiptype" width="220" editable="false" change="equiptype_changeHandler(event);"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="故障类型" required="{isRequired}">
+					<mx:ComboBox id="faulttype"  width="220" editable="false" />
+				</mx:FormItem>
+				
+				<mx:FormItem label="设备编号"  visible="false">
+					<mx:TextInput id="equipcode" width="220" editable="false" />
+				</mx:FormItem>
+				<mx:FormItem label="资源编号" visible="false">
+					<mx:TextInput id="resourcecode" width="220" editable="false" />
+				</mx:FormItem>
+				
+				
+				<mx:FormItem label="是否主科目" required="false"  visible="false">
+					<mx:ComboBox id="ismaininterpose" width="220" editable="false" selectedIndex="-1">
+						<mx:ArrayCollection> 
+							<mx:Object label="是" data="0"/> 
+							<mx:Object label="否" data="1"/> 
+						</mx:ArrayCollection> 
+					</mx:ComboBox>
+				</mx:FormItem>
+			</mx:Form>
+			
+			<mx:Form width="100%" height="100%">
+
+				<mx:FormItem label="参演人员" required="{isRequired}">
+					<mx:HBox width="100%"
+							 height="100%">
+						<mx:TextInput id="user_name" width="170" editable="false" click="selectCheckUserInfo(event)"/>
+						<mx:Button id="button"
+								   label="选择"
+								   styleName="loginprimary"
+								   width="65"
+								   click="selectCheckUserInfo(event)"/>
+						<mx:Spacer width="1"/>
+						<mx:Button label="清空"
+								   width="65"
+								   styleName="loginsecondary"
+								   click="clearUserInfoHandler(event)"/>
+					</mx:HBox>
+				</mx:FormItem>
+				<mx:FormItem id="interposetypeform" label="科目类型" required="{isRequired}">
+					<mx:ComboBox id="interposetype"  width="220" editable="false" change="getFaultTypeHander(event);"/>
+				</mx:FormItem>
+				
+				<mx:FormItem id="resourcenameform" label="资源名称" required="{isRequired}">
+					<mx:TextInput id="resourcename" width="220" />
+				</mx:FormItem>
+				
+				<mx:FormItem label="备注" >
+					<mx:TextArea id="remark" width="220" height="50"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="参演人员ID" visible="false">
+					<mx:TextInput id="user_id" width="180"/>
+				</mx:FormItem>
+				
+			</mx:Form>
+			
+		</mx:HBox>
+		
+		<mx:HBox width="100%"
+				 height="20%"
+				 verticalAlign="middle"
+				 horizontalAlign="center"
+				 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+				 backgroundSize="100%">
+			
+			<mx:Button id="btn"
+					   label="{this.title}"
+					   styleName="loginprimary"
+					   width="80"
+					   click="btn_clickHandler(event)"/>
+			<mx:Spacer width="80"/>
+			<mx:Button label="关闭"
+					   width="80"
+					   styleName="loginsecondary"
+					   click="PopUpManager.removePopUp(this)"/>
+			
+		</mx:HBox>
+		
+	</mx:VBox>
+</mx:TitleWindow>

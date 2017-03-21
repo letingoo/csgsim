@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  
+				width="620"
+				height="370" 								
+				fontFamily="宋体" fontSize="12"
+				title="设备属性"
+				showCloseButton="true"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%"> 
+	<mx:Metadata>
+		[Event(name="AfterAddEquip",type="common.other.events.FourParameterEvent")]
+	</mx:Metadata>
+	<mx:Script>  
+		<![CDATA[  
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.other.events.FourParameterEvent;
+			
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.sysGraph.model.EquInfo;
+			
+			import twaver.core.util.h._ED;	
+			
+			[Bindable]
+			private var XMLData_Systems:XMLList;//传输系统下拉框列表
+			[Bindable]
+			private var XMLData_Province:XMLList;//省份下拉框列表
+			[Bindable]
+			private var XMLData_Vendors:XMLList;//厂家列表
+			[Bindable]
+			private var XMLData_Equiptypes:XMLList;//设备类型列表 
+			[Bindable]
+			private var XMLData_Depts:XMLList;//维护单位下拉框列表
+			[Bindable]
+			private var XMLData_Status:XMLList;//使用情况下拉框列表			
+			
+			[Bindable]public var boo:Boolean = true;
+			public var _equipcode:String="";
+			private var systemcode:String;
+			private var x_vendor:String;
+			private var x_model:String;
+			public var stationcode:String="";
+			public var roomcode:String="";
+			public function get equipcode():String
+			{
+				return _equipcode;
+			}
+			
+			public function set equipcode(value:String):void
+			{
+				_equipcode = value;
+			}
+			
+			
+			
+			
+			
+			public function setVendorAndModel(systemcode:String,vendor:String,model:String):void
+			{
+				this.systemcode=systemcode;
+				
+				this.x_vendor=vendor;
+				this.x_model=model;				
+				roSystem.getSystems();//根据系统编码查询对应信息(所属系统)			
+				
+				
+			}
+			private function setParameter(systemcode:String,x_vendor:String,x_model:String):void
+			{
+				
+				this.setSelectedItem(this.combSystem,systemcode);				
+				this.setSelectedItem(this.vendor_name,x_vendor);
+				this.txtx_model.text=x_model;
+				this.combSystem.enabled=false;
+				this.vendor_name.enabled=false;
+				this.txtx_model.enabled=false;
+				
+			}
+			
+			private var xml:XML = new XML("<name label='' code=''/>");
+			private function generateSystemsInfo(event:ResultEvent):void{ 
+				XMLData_Systems = new XMLList(event.result.toString());			
+				combSystem.dataProvider = XMLData_Systems.children();
+				roProvince.getProvince();//根据系统编码查询对应信息(所在省份)				
+				
+				
+			}
+			private function generateProvinceInfo(event:ResultEvent):void
+			{
+				XMLData_Province=new XMLList(event.result.toString());
+				//XMLData_Province.insertChildBefore(XMLData_Province.name[0],xml);
+				province_name.dataProvider=XMLData_Province.children();
+				roVendor.getFromXTBM('ZY08__');//根据系统编码查询对应信息(厂家)	
+				
+				
+			}
+			private function generateVendorsInfo(event:ResultEvent):void{   
+				XMLData_Vendors = new XMLList(event.result.toString());	
+				XMLData_Vendors.insertChildBefore(XMLData_Vendors.name[0],xml);
+				vendor_name.dataProvider = XMLData_Vendors.children();
+				roEquiptype.getFromXTBM('ZY030702__');//根据系统编码查询对应信息(设备类型)				
+				
+				
+			}
+			
+			private function generateEquiptypesInfo(event:ResultEvent):void{ 
+				XMLData_Equiptypes = new XMLList(event.result.toString());					
+				equiptype_name.dataProvider = XMLData_Equiptypes.children();
+				roDept.getFromXTBM('YW010601__');//根据系统编码查询对应信息(维护单位)
+				
+				
+			}
+			
+			private function generateDeptsInfo(event:ResultEvent):void{ 
+				XMLData_Depts = new XMLList(event.result.toString());
+				property_name.dataProvider = XMLData_Depts.children();
+				roStatus.getFromXTBM('ZY0304__');//根据系统编码查询对应信息(用途)
+				
+			}
+			private function generateStatusInfo(event:ResultEvent):void
+			{
+				XMLData_Status=new XMLList(event.result.toString());
+				XMLData_Status.insertChildBefore(XMLData_Status.name[0],xml);
+				comb_status.dataProvider=XMLData_Status.children();
+			    setParameter(this.systemcode,this.x_vendor,this.x_model);
+			}
+			
+			private function close():void  
+			{  
+
+				 dispatchEvent(new CloseEvent(CloseEvent.CLOSE,false,false,0));
+				
+			}
+			
+			private function save():void  
+			{  
+				
+				var item:EquInfo=new EquInfo();					
+				item.equipcode=this._equipcode;
+				item.systemcode=XML(this.combSystem.selectedItem).@code; //所属系统
+				item.province=XML(this.province_name .selectedItem).@code;
+				item.equipcode=this.equipcode.toString(); //设备编码	
+				item.stationcode=this.stationcode;
+				item.roomcode=this.roomcode;
+				item.x_vendor=XML(this.vendor_name.selectedItem).@code; //厂家
+				item.equipname=this.equipname.text; //设备名称				
+				item.x_model=this.txtx_model.text; //型号
+				item.equiptype=XML(this.equiptype_name.selectedItem).@code; //设备类型
+				item.property=XML(this.property_name.selectedItem).@code; //维护单位
+				item.nename=this.nename.text; //网元名称
+				item.status=XML(this.comb_status.selectedItem).@code;
+				item.projectname=this.projectname.text;
+				item.equiplabel=this.equiplabel.text; //设备标签
+				item.remark=this.remark.text;
+				item.version=this.version_name.text;
+//				item.hardware_version=this.hardware_version.text;
+				roSaveEquip.insertEquInfo(item); //更新设备信息
+				
+				
+			} 
+			private function validateValue():String //对设备各个字段进行验证
+			{
+//				var errorString:String="";
+//				if (equipname.text == "")
+//					errorString+="设备名称不能为空";
+//				else if (view.vendor_name.selectedLabel == "")
+//					errorString+="设备厂家不能为空";
+//				else if (view.x_model.text == "")
+//					errorString+="设备型号不能为空";
+//				else if (view.equiptype_name.selectedLabel == "")
+//					errorString+="设备类型不能为空";
+//				return errorString;
+				return "";
+			}
+			private function afterSaveEquip(event:ResultEvent):void
+			{				
+				MyPopupManager.removePopUp(this);
+			
+				this.dispatchEvent(new FourParameterEvent("AfterAddEquip",event.result.toString(),this.equipname.text,XML(this.vendor_name.selectedItem).@code,this.txtx_model.text));				
+				resetValue();
+			}
+			public function resetValue():void{
+				combSystem.selectedIndex = 0;
+				this._equipcode="";
+				province_name.selectedIndex=0;
+				txtStationName.text="";
+				txtRoomName.text="";	
+				vendor_name.selectedIndex = 0;	
+				equipname.text = "";
+				txtx_model.text="";
+				equiptype_name.selectedIndex = 0;
+				property_name.selectedIndex=0;
+				nename.text = "";
+				comb_status.selectedIndex=0;
+				projectname.text="";
+				equiplabel.text = "";
+				remark.text="";
+				equipname.errorString = "";
+				txtx_model.errorString = "";
+			}
+			private  function setSelectedItem(cmb:ComboBox,value:String):void{
+				
+				for(var i:int=0;i<cmb.dataProvider.length;i++){
+					if(cmb.dataProvider[i].@code == value){
+						
+						cmb.selectedIndex = i;						
+						break;
+					}
+				}
+			}
+			protected function txtStationName_clickHandler(event:MouseEvent):void
+			{
+				var stations:eStationTree = new eStationTree();
+				PopUpManager.addPopUp(stations,this,true);
+				stations.page_parent=this;
+				PopUpManager.centerPopUp(stations);
+			}
+			protected function comRoomName_clickHandler(event:MouseEvent):void
+			{
+				
+				var rooms:eRoomTree = new eRoomTree();
+				if(txtStationName.text=="")
+				{
+					Alert.show("请先选择所属局站!","提示");
+				}else
+				{
+					PopUpManager.addPopUp(rooms,this,true);
+					rooms.page_parent=this;
+					rooms.elabel =txtStationName.text;
+					PopUpManager.centerPopUp(rooms);
+				}
+			}
+			
+		]]>  
+		
+	</mx:Script>
+	<mx:RemoteObject id="roSystem" destination="equInfo" endpoint="{ModelLocator.END_POINT}"  showBusyCursor="true" result="generateSystemsInfo(event)"/> 
+	<mx:RemoteObject id="roProvince" destination="equInfo" endpoint="{ModelLocator.END_POINT}"  showBusyCursor="true" result="generateProvinceInfo(event)"/>
+	<mx:RemoteObject id="roVendor"  destination="equInfo" endpoint="{ModelLocator.END_POINT}"  showBusyCursor="true" result="generateVendorsInfo(event)"/>
+	<mx:RemoteObject id="roEquiptype"  destination="equInfo" endpoint="{ModelLocator.END_POINT}"  showBusyCursor="true" result="generateEquiptypesInfo(event)"/>
+	<mx:RemoteObject id="roDept"  destination="equInfo" endpoint="{ModelLocator.END_POINT}"  showBusyCursor="true" result="generateDeptsInfo(event)"/>
+	<mx:RemoteObject id="roStatus"  destination="equInfo" endpoint="{ModelLocator.END_POINT}"  showBusyCursor="true" result="generateStatusInfo(event)"/>
+	<mx:RemoteObject id="roSaveEquip" destination="equInfo" endpoint="{ModelLocator.END_POINT}"  showBusyCursor="true" result="afterSaveEquip(event)"/> 
+	
+	<mx:HBox width="100%" height="100%" fontSize="12" >
+		
+		<mx:Form width="100%" height="100%">
+			
+			<mx:FormItem label="设备名称" required="true">
+				<mx:TextInput id="equipname" width="180" /> 				
+			</mx:FormItem>
+			<mx:FormItem label="所属局站">
+				<mx:TextInput id="txtStationName"  width="180" click="txtStationName_clickHandler(event)"  />	
+			</mx:FormItem>
+			<mx:FormItem label="生产厂家" required="true">
+				<mx:ComboBox id="vendor_name" width="180"  labelField="@label"/>
+			</mx:FormItem>
+			<mx:FormItem label="类型" required="true">
+				<mx:ComboBox id="equiptype_name" width="180"  labelField="@label"/>
+			</mx:FormItem>
+			<mx:FormItem label="网管名称">
+				<mx:TextInput id="equiplabel" width="180"  />
+			</mx:FormItem>
+			<mx:FormItem label="安装地市">
+				<mx:ComboBox id="province_name" width="180" labelField="@label" />
+			</mx:FormItem>		
+			<mx:FormItem label="软件版本">
+				<mx:TextInput id="version_name" width="180" />
+			</mx:FormItem>		
+			<mx:FormItem label="使用情况">
+				<mx:ComboBox id="comb_status" width="180"  labelField="@label"/>
+			</mx:FormItem>
+			
+		</mx:Form>	
+		<mx:Form width="100%" height="100%">
+			<mx:FormItem label="所属系统">
+				<mx:ComboBox id="combSystem" width="180" labelField="@label"/>
+			</mx:FormItem>
+			<mx:FormItem label="所属机房">
+			<mx:TextInput id="txtRoomName" width="180" click="comRoomName_clickHandler(event)"  />	
+			</mx:FormItem>
+			<mx:FormItem label="型号" required="true">
+				<mx:TextInput id="txtx_model" width="180" maxChars="100" /> 
+			</mx:FormItem>
+			<mx:FormItem label="网元名称">
+				<mx:TextInput id="nename" width="180"  />	
+			</mx:FormItem>
+			<mx:FormItem label="工程项目">
+				<mx:TextInput id="projectname" width="180"  />
+			</mx:FormItem>
+			<mx:FormItem label="维护单位" required="true">
+				<mx:ComboBox id="property_name" width="180"  labelField="@label" dropdownWidth="210"/>
+			</mx:FormItem>	
+			<!--<mx:FormItem label="硬件版本">
+				<mx:TextInput id="hardware_version" width="180" />
+			</mx:FormItem>	-->
+			<mx:FormItem label="备注">
+				<mx:TextArea id="remark" width="180" />
+			</mx:FormItem>
+		</mx:Form>	
+		
+		
+	</mx:HBox>
+	<mx:HBox width="100%" height="40"   verticalAlign="middle" horizontalAlign="center" 
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+		<mx:Button label="保存" visible="{boo}" click="save()"  width="80"  textAlign="center" styleName="loginprimary"  height="30"/>
+		<mx:Spacer width="20"/>
+		<mx:Button label="取消" visible="{boo}"  click="close()" width="80"  textAlign="center" styleName="loginsecondary"  height="32"/> 
+	</mx:HBox>
+	
+	
+	<mx:StringValidator property="text" source="{equipname}" required="true" requiredFieldError="设备名称不能为空!"/>
+	<mx:StringValidator property="text" source="{txtx_model}" required="true" requiredFieldError="设备型号不能为空!"/>	
+	<mx:StringValidator property="text" source="{vendor_name}" required="true" requiredFieldError="设备厂家不能为空!"/>
+	<mx:StringValidator property="text" source="{equiptype_name}" required="true" requiredFieldError="设备型号不能为空!"/>
+</mx:TitleWindow>

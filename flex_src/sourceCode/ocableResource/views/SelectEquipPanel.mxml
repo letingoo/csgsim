@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute" title="添加设备" 
+				width="400" height="500" 
+				showCloseButton="true" close="this_closeHandler(event)" 
+				creationComplete="initApp()">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import twaver.Consts;
+			import twaver.DemoImages;
+			import twaver.ElementBox;
+			import twaver.Follower;
+			import twaver.Node;
+			import twaver.Styles;
+			
+			public var box:ElementBox;
+			public var node:Node;
+			public var stationIcon:String = "twaverImages/businessDispatch/equip_dispatch.png";
+			protected function initApp():void
+			{
+				getEquipTree();
+			}
+			
+			protected function this_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function getEquipTree():void{
+				var stationcode:String = node.getClient("stationcode");
+				var ro:RemoteObject = new RemoteObject("ocableResources");
+				ro.endpoint = ModelLocator.END_POINT;
+				ro.showBusyCursor = true;
+				ro.getEquipTreedata(stationcode);
+				ro.addEventListener(ResultEvent.RESULT, equipTreeHandler);
+				ro.addEventListener(FaultEvent.FAULT, faultHandler);
+			}
+			
+			private function faultHandler(event:FaultEvent):void
+			{
+				Alert.show(event.fault.toString(), "错误提示");
+			}
+			
+			private function equipTreeHandler(event:ResultEvent):void
+			{
+				var xmldata:XMLList = new XMLList(event.result.toString());
+				equipTree.dataProvider = xmldata;
+			}
+			
+			protected function equipTree_doubleClickHandler(event:MouseEvent):void
+			{
+				var obj:XML = equipTree.selectedItem as XML;
+				var flag:String = obj.@type;
+				if(flag == "equipmodel"){
+					if(node.followers != null){
+						box.remove(node.followers.getItemAt(0));
+					}
+					node.image = stationIcon;
+					node.setStyle(Styles.INNER_COLOR,0xFFFFFF);
+					node.setSize(67,77);
+					//添加设备follower
+					var fo:Follower = new Follower();
+					fo.image = null;
+					fo.setCenterLocation(node.centerLocation.x, node.centerLocation.y - 33);
+					fo.host = node;
+					fo.name = getX_Model(obj.@model);
+					fo.setStyle(Styles.LABEL_SIZE,9);
+					fo.setClient("flag", "equipment");
+					fo.setClient("equipcode", obj.@code);
+					fo.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+					box.add(fo);
+					this.dispatchEvent(new Event("addequipment"));
+//					Alert.show("添加成功！", "提示");
+					PopUpManager.removePopUp(this);
+				}
+			}
+			
+			private function deviceiconFun(item:Object):*{
+				if(item.@isBranch == "false")
+					return ModelLocator.equipIcon;
+				else
+					return DemoImages.file;
+			}
+			//格式化设备型号
+			private function getX_Model(x_model:String):String{
+				if(x_model.indexOf("NEC_SDH_") > -1)
+					return x_model.replace("NEC_SDH_", "");
+				if(x_model.indexOf("烽火SDH ") > -1)
+					return x_model.replace("烽火SDH ", "");
+				if(x_model.indexOf("马可尼") > -1)
+					return x_model.replace("马可尼", "");
+				if(x_model.indexOf("中兴SDH ") > -1)
+					return x_model.replace("中兴SDH ", "");
+				if(x_model.indexOf("格林威尔多业务接入平台 ") > -1)
+					return x_model.replace("格林威尔多业务接入平台 ", "");
+				if(x_model.indexOf("格林威尔继电保护PCM ") > -1)
+					return x_model.replace("格林威尔继电保护PCM ", "");
+				if(x_model.indexOf("OptiX ") > -1)
+					return x_model.replace("OptiX ", "");
+				return x_model;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:Tree id="equipTree" 
+				 width="100%" height="100%"
+				 defaultLeafIcon="{null}"
+				 iconFunction="deviceiconFun"
+				 labelField="@label"
+				 doubleClickEnabled="true" 
+				 doubleClick="equipTree_doubleClickHandler(event)" 
+				 itemClick="ModelLocator.tree_itemClick(event, equipTree)"/>
+	</mx:VBox>
+</mx:TitleWindow>

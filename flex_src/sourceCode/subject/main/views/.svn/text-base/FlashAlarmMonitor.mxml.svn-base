@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--频闪告警监视-->
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml"
+		  xmlns:cellrender="sourceCode.subject.main.actionscript.*"
+		  creationComplete="init()"
+		  borderThickness="1" borderThicknessBottom="2"  borderThicknessLeft="2"
+		  borderThicknessRight="2" borderThicknessTop="2"
+		  headerHeight="0"  backgroundAlpha="1" borderColor="#157baa"
+		  >
+	<mx:Style>
+		.DataGrid1 {
+			alternatingItemColors: #ffffff, #eef4ff;
+			verticalGridLineColor: #d3e9ff;
+			borderColor: #d3e9ff;
+			headerBackgroundSkin: Embed(source="assets/images/mntsubject/theme_formbg.png");
+			horizontalGridLines: false;
+			verticalGridLineColor: #dadada;
+			fontFamily: Arial;
+			fontSize: 12;
+			textAlign: center;
+			headerStyleName: "mydataGridHeaderStyle1";
+		}
+		.mydataGridHeaderStyle1 {
+			fontFamily: Arial;
+			fontWeight: normal;
+			fontSize: 12;
+			fontStyle: normal;
+			textDecoration: none;
+			textAlign: center;
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			import common.actionscript.Registry;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.channels.AMFChannel;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.events.MessageFaultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import sourceCode.alarmmgr.views.AlarmManager;
+			import sourceCode.flashalarm.ShowFlashAlarmDetail;
+			import sourceCode.rootalarm.views.RootAlarmMgr;
+			import sourceCode.subject.main.actionscript.*;
+			
+			public var type:String="";
+			private var rootAlarmWin:TitleWindow;
+			private var alarmWin:TitleWindow;
+			private var unAckedBizWin:TitleWindow;
+			[Bindable]
+			public var ts:ArrayCollection = new ArrayCollection(); 
+			[Embed(source="assets/images/rootalarm/alarm_message.png")]
+			public var Icon:Class; 
+			public var param:ArrayCollection= new ArrayCollection();
+			[Bindable]
+			public var operPerson:String="";
+			public var alarmid:String="";
+			private var consumers:Object;
+			private var flag:int=0;
+			
+			[Bindable]
+			private var contextMeau:ContextMenu;
+			private var fixAlarmMeau:ContextMenuItem;  //定位告警
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+//			public var cd:ChooseDeal = new ChooseDeal();
+			
+			private function init(){
+				DealAlarmUtil.initMessage();
+				consumers = new Object();
+				subscriberFlashAlarmInfo("flashAlarmInfo");
+				pagingFunction7();
+				getUserName();
+//				type=dg.selectedItem.ALARMSTATUS;
+			}
+			
+			private function subscriberFlashAlarmInfo(subtopic:String):void{				
+				var consumer:Consumer =new Consumer();				
+				var channelSet:ChannelSet = new ChannelSet();   
+				channelSet.addChannel(DealAlarmUtil.streamingAMF);   
+				channelSet.addChannel(DealAlarmUtil.pollingAMF);
+				consumer.destination = DealAlarmUtil.sdestination; 
+				consumer.channelSet = channelSet;
+				consumer.subtopic = subtopic;
+				consumer.addEventListener(MessageEvent.MESSAGE,handleFlashAlarmInfo);
+				consumer.addEventListener(MessageFaultEvent.FAULT,faultHandlerMsg);
+				consumer.subscribe();
+				consumers[subtopic] = consumer;
+			}
+			private function handleFlashAlarmInfo(msg:MessageEvent):void{
+				if(msg.message.body==null && msg.message.body==""){
+					Alert.show('接到的消息为空',"提示信息",4,this,null,iconClass); return;
+				}
+				var flashAlarmInfoAC:ArrayCollection = msg.message.body as ArrayCollection;
+				dg.dataProvider = flashAlarmInfoAC;
+				
+			}
+			private function faultHandlerMsg(event:MessageFaultEvent):void{
+//				Alert.okLabel = "确  定";
+//				Alert.show(event.faultString,"消息处理失败！！",4,this,null,iconClass);			
+			}
+			
+			public function linkRelationUI(obj:Object,alarmGrade:String):void{
+				if(alarmGrade=="flashcount"){
+					rootAlarmWin =new TitleWindow();
+					rootAlarmWin.layout="absolute";
+					rootAlarmWin.x=0;
+					rootAlarmWin.y=0;
+					rootAlarmWin.styleName="popwindow";
+					rootAlarmWin.showCloseButton="true";
+					rootAlarmWin.title="频闪告警分析";
+					rootAlarmWin.titleIcon=Icon;
+					var ram:ShowFlashAlarmDetail = new ShowFlashAlarmDetail();
+					ram.alarmNumber = obj.ALARMNUMBER;
+					rootAlarmWin.addEventListener(CloseEvent.CLOSE,titlewinclose);
+					rootAlarmWin.addChild(ram);
+					PopUpManager.addPopUp(rootAlarmWin,main(Application.application),true);
+					PopUpManager.centerPopUp(rootAlarmWin);
+				}else if(alarmGrade=="alarmobjdesc"){
+					if(obj.ISACKED=="0" || obj.ATTENTIONINFO=="未做关注处理"){
+						if(obj.ATTENTIONINFO!="已转根告警处理"){
+							alarmid= dg.selectedItem.ALARMNUMBER;
+							var cd:ChooseDeal=new ChooseDeal();
+							cd.fm = this;
+							PopUpManager.addPopUp(cd,this,true); 
+							PopUpManager.centerPopUp(cd);
+						}
+						}
+					}
+					
+				}
+				
+			public function changeOrdinaryAlarm(aid:String):void{
+				var rtobj:RemoteObject= new RemoteObject("FlashAlarmMonitorDwr");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.changeCurrentAlarmToRootAlarm(alarmid);
+				rtobj.addEventListener(ResultEvent.RESULT,getcommonresult);
+				rtobj.addEventListener(FaultEvent.FAULT,fault);
+			}
+			
+			
+			public function IgnoreAlarm(aid:String):void{
+				var rtobj:RemoteObject= new RemoteObject("FlashAlarmMonitorDwr");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.changeIgnoreAlarm(alarmid,operPerson);
+				rtobj.addEventListener(ResultEvent.RESULT,getignorealarmresult);
+				rtobj.addEventListener(FaultEvent.FAULT,fault);
+			}
+			
+			
+			public function FollowAlarm(aid:String):void{
+				var rtobj:RemoteObject= new RemoteObject("FlashAlarmMonitorDwr");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.changeFollowAlarm(alarmid,operPerson);
+				rtobj.addEventListener(ResultEvent.RESULT,getfollowalarmresult);
+				rtobj.addEventListener(FaultEvent.FAULT,fault);
+			}
+			
+			private function fault(event:FaultEvent):void{
+			
+				Alert.show(event.fault.toString());
+			}
+			
+			private function getcommonresult(event:ResultEvent):void{
+				
+				if(event.result=="成功"){
+					Alert.show('已转为根告警',"提示信息",4,this,null,iconClass);
+					if(flag==0){
+						pagingFunction7();
+					}else{
+						pagingFunction();
+					}
+				}else{
+					Alert.show('转为根告警失败',"提示信息",4,this,null,iconClass);
+				}
+			}
+			
+			private function getignorealarmresult(event:ResultEvent):void{
+				
+				if(event.result=="成功"){
+					Alert.show('已忽略',"提示信息",4,this,null,iconClass);
+					if(flag==0){
+						pagingFunction7();
+					}else{
+						pagingFunction();
+					}
+				}else{
+					Alert.show('忽略失败',"提示信息",4,this,null,iconClass);
+				}
+			}
+			
+			private function getfollowalarmresult(event:ResultEvent):void{
+				
+				if(event.result=="成功"){
+					Alert.show('已关注',"提示信息",4,this,null,iconClass);
+					if(flag==0){
+						pagingFunction7();
+					}else{
+						pagingFunction();
+					}
+				}else{
+					Alert.show('关注失败',"提示信息",4,this,null,iconClass);
+				}
+			}
+			
+			
+			private function toHttp():void
+			{
+				Security.loadPolicyFile(ModelLocator.getURL()+"/WEB-INF/flex/crossdomain.xml");
+				var params:URLVariables = new URLVariables();
+				httpService.url=DealAlarmUtil.getUrl()+"/adaptivemsg/receiveRealTimeData";
+				httpService.method="post";
+				params.alarmNo=alarmid;
+				params.isCleaned = "0";
+				params.biztype="backAck";
+				params.isAcked=dg.selectedItem.ISACKED;
+				httpService.send(params);
+				
+			}
+			
+			private function titlewinclose(evt:CloseEvent):void{
+				PopUpManager.removePopUp(rootAlarmWin);
+			}
+			
+			private function load(event:ResultEvent):void{
+				param=event.result as ArrayCollection;
+				dg.dataProvider=param;
+			}
+			
+			public function pagingFunction7():void {
+				flag=0;
+				if(dg.dataProvider)
+					dg.dataProvider.removeAll();
+				var rtobj:RemoteObject = new RemoteObject("FlashAlarmMonitorDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getFlashAlarmMonitor7();
+				rtobj.addEventListener(ResultEvent.RESULT, load);
+			}
+			public function getUserName():void{
+				var rtobj:RemoteObject = new RemoteObject("RootAlarmMgrDwr");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.getusername();
+				rtobj.addEventListener(ResultEvent.RESULT,function(e:ResultEvent){
+					if(e.result!=null){
+						operPerson = e.result.toString();
+					}
+					
+				})
+				
+			}
+			public function onGetResultHandler(event:ResultEvent):void
+			{
+			}
+			
+			public function onFalutHandler(event:FaultEvent):void
+			{
+				Alert.show("向后台发送消息失败!","提示信息",4,this,null,iconClass);
+			}
+			
+			public function pagingFunction():void {
+				flag=1;
+				if(dg.dataProvider)
+					dg.dataProvider.removeAll();
+				var rtobj:RemoteObject = new RemoteObject("FlashAlarmMonitorDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				rtobj.getFlashAlarmMonitor();
+				rtobj.addEventListener(ResultEvent.RESULT, load);
+			}
+			public function flashAlarmEquip():void{
+				var flashalarmequip:FlashAlarmEquip = new FlashAlarmEquip();
+				flashalarmequip.flag=flag;
+				flashalarmequip.fm=this;
+				PopUpManager.addPopUp(flashalarmequip,this,true);
+				PopUpManager.centerPopUp(flashalarmequip);
+			}
+			
+			
+			protected function dg_clickHandler(event:MouseEvent):void
+			{
+				if(dg.selectedItem!=null && dg.selectedItem != ""){
+					fixAlarmMeau =new ContextMenuItem("定位告警");
+					fixAlarmMeau.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,getFixAlarm);
+					contextMeau = new ContextMenu();
+					contextMeau.hideBuiltInItems();
+					contextMeau.customItems = [fixAlarmMeau];
+				}
+				
+			}
+			
+			private function getFixAlarm (event:ContextMenuEvent) :void{
+				if(dg.selectedItem.BELONGPORTOBJECT!=null && dg.selectedItem.BELONGPORTOBJECT!=""){
+					var strport:String=dg.selectedItem.BELONGPORTOBJECT;
+					if(strport!=null && strport!=""){
+						var strarray:Array=strport.split("=");
+						strport="";
+						for(var i:int=0;i<strarray.length;i++)
+						{  
+							if(i!=strarray.length-1)
+								strport+=strarray[i]+",";
+							else
+								strport+=strarray[i];
+						}
+						Registry.register("packcode", strport);
+						Registry.register("portcode", dg.selectedItem.BELONGPORTCODE);
+						Application.application.openModel("机盘管理视图", false);
+					}
+				}else{
+					Alert.show("无法定位该告警，请确定该告警类型","提示信息",4,this,null,iconClass);
+				}
+				
+			}
+			
+
+			protected function dg_doubleClickHandler(event:MouseEvent):void
+			{
+				if(dg.selectedItem.BELONGPORTOBJECT!=null && dg.selectedItem.BELONGPORTOBJECT!=""){
+					var strport:String=dg.selectedItem.BELONGPORTOBJECT;
+					if(strport!=null && strport!=""){
+						var strarray:Array=strport.split("=");
+						strport="";
+						for(var i:int=0;i<strarray.length;i++)
+						{  
+							if(i!=strarray.length-1)
+								strport+=strarray[i]+",";
+							else
+								strport+=strarray[i];
+						}
+						Registry.register("packcode", strport);
+						Registry.register("portcode", dg.selectedItem.BELONGPORTCODE);
+						Application.application.openModel("机盘管理视图", false);
+					}
+				}else{
+					Alert.show("无法定位该告警，请确定该告警类型","提示信息",4,this,null,iconClass);
+				}
+				// TODO Auto-generated method stub
+			}
+
+		]]>
+	</mx:Script>
+	
+	<mx:HTTPService id="httpService"  useProxy="false" resultFormat="text" 
+					fault="onFalutHandler(event)" result="onGetResultHandler(event)"/>
+	
+	<mx:Grid width="100%" height="100%" verticalGap="0" horizontalGap="0"  backgroundColor="#FFFFFF">
+		<mx:GridRow width="100%" height="28" >
+			<!-- 以下banner 条部分-->
+			<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="100%" height="100%" >						
+				<mx:Grid id="transline" width="100%" height="28" verticalGap="0" horizontalGap="0" backgroundColor="#FFFFFF">
+					<mx:GridRow width="100%" height="28" backgroundImage="@Embed(source='assets/images/mntsubject/themeheader.png')" backgroundSize="100%" >
+						<mx:GridItem horizontalAlign="left" verticalAlign="middle" width="30%" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerbg.png')" backgroundSize="100%" color="#FFFFFF">				          
+							<mx:Label text="频闪告警监视"  />
+						</mx:GridItem>
+						<mx:GridItem horizontalAlign="right"  width="35" height="100%" backgroundImage="@Embed(source='assets/images/mntsubject/content_headerrightbg.png')" />
+						<mx:GridItem horizontalAlign="right" verticalAlign="middle" width="55%" height="100%" >
+							<mx:HBox>
+								<mx:LinkButton  icon="@Embed(source='assets/images/mntsubject/falshalarmequip.png')" click="flashAlarmEquip()"/>
+								<!--<mx:LinkButton  icon="@Embed(source='assets/images/mntsubject/flashalarm_part7.png')" click="pagingFunction7()"/>
+								<mx:LinkButton  icon="@Embed(source='assets/images/mntsubject/flashalarm_all.png')" click="pagingFunction()"/>-->
+							</mx:HBox>
+						</mx:GridItem>
+					</mx:GridRow>
+				</mx:Grid>
+			</mx:GridItem>	
+			<!-- 以上banner 条部分-->
+		</mx:GridRow>	
+		<mx:GridRow width="100%" height="100%">
+			<mx:GridItem width="100%" height="100%" >
+				<!-- 以下监控拓扑区-->
+				<mx:DataGrid id="dg"  sortableColumns="false"   horizontalScrollPolicy="off"  wordWrap="true"  styleName="DataGrid1"
+							 width="100%"  height="100%" rowHeight="30" textAlign="center" doubleClick="dg_doubleClickHandler(event)" doubleClickEnabled="true">
+					<mx:columns>
+						<mx:DataGridColumn headerText="序号"  dataField="ROWNO"  width="50" >
+						<mx:itemRenderer>
+							<mx:Component>
+								<cellrender:RollOverItemRenderer_hz alarmGrade="rowno" isAcked="{data.ISACKED}" attentioninfo="{data.ATTENTIONINFO}"  click="outerDocument.linkRelationUI(data,'rowno')"/>
+							</mx:Component>
+						</mx:itemRenderer>
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="告警对象" dataField="ALARMOBJDESC"  showDataTips="true" dataTipField="alarmobjdesc" textAlign="left">
+							<mx:itemRenderer>
+								<mx:Component>
+								<cellrender:RollOverItemRenderer_hz alarmGrade="alarmobjdesc" isAcked="{data.ISACKED}" isCleared="{data.ISCLEARED}" attentioninfo="{data.ATTENTIONINFO}" click="outerDocument.linkRelationUI(data,'alarmobjdesc')"/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+						
+						<mx:DataGridColumn headerText="告警描述" dataField="ALARMDESC" showDataTips="true" dataTipField="alarmobjdesc" textAlign="left">
+						</mx:DataGridColumn>
+						
+						<mx:DataGridColumn headerText="频闪次数" dataField="FLASHCOUNT"  width="80">
+							<mx:itemRenderer>
+								<mx:Component>
+									<cellrender:RollOverItemRenderer alarmGrade="flashcount"   click="outerDocument.linkRelationUI(data,'flashcount')"/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="类型" dataField="ALARMSTATUS" showDataTips="true" visible="false" >
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:GridItem>	
+		</mx:GridRow>
+	</mx:Grid>				
+</mx:Panel>

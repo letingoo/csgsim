@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+		 creationComplete="init()"
+		 xmlns:views="sourceCode.tableResurces.views.*" 
+		 xmlns:component="common.component.*"
+		 verticalGap="0">
+	
+	<mx:Script>
+		<![CDATA[  
+			import common.actionscript.ModelLocator;
+			import common.actionscript.MyPopupManager;
+			import common.actionscript.Registry;
+			import flash.events.Event;
+			import flash.events.ContextMenuEvent;
+			import flash.events.Event;
+			import flash.ui.ContextMenu;
+			import flash.ui.ContextMenuItem;
+			import mx.events.ListEvent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.events.DataGridEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.channelRoute.views.trustover;
+			import sourceCode.systemManagement.model.PermissionControlModel;
+			import sourceCode.tableResurces.Events.ToopEvent;
+			import sourceCode.tableResurces.model.ResultModel;
+			import sourceCode.tableResurces.views.DataImportFirstStep;
+			import sourceCode.tableResurces.views.FileExportFirstStep;
+			
+			import twaver.DemoUtils;
+			[Bindable]
+			private var allBusiness:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var mmy:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var arr_cb:ArrayCollection=new ArrayCollection([
+				{label:'--业务类型--'},
+				{label:'继电保护'},
+				{label:'行政电话'},
+				{label:'调度电话'},
+				{label:'通信PCM'},
+				{label:'调度自动化'},
+				{label:'调度数据网'},
+				{label:'综合数据网'},
+				{label:'电视电话会议'},
+				{label:'安全自动装置'}]);
+			
+			private function init():void{
+
+			}
+			private function getConditons(event:ResultEvent):void{
+				allBusiness=event.result as ArrayCollection;
+				//Alert.show(allBusiness.length.toString());
+			}
+			
+			private function clearSelected():void{
+				selectedBus.removeAll();
+				for(var i:int=0; i<allBusiness.length; i++){
+					if(allBusiness.getItemAt(i).available){
+						allBusiness.getItemAt(i).available = false;
+						dg.indexToItemRenderer(i).document.abox.selected=false;
+					
+					}
+				}
+			}
+		
+			public static var selectedBus:ArrayCollection= new ArrayCollection();
+			
+			public  function analysisN1():void{
+				selectedBus.removeAll();
+				for(var i:int=0; i<allBusiness.length; i++){
+					if(allBusiness.getItemAt(i).available)
+						selectedBus.addItem(allBusiness.getItemAt(i));        
+		                    	}
+				//Alert.show(selectedBus.length.toString());
+				if(selectedBus.length==1)
+				{
+					Alert.show("请选择多条业务！");
+				}
+				if(selectedBus.length>1)
+				{
+					var bra:trustover = new trustover();
+					PopUpManager.addPopUp(bra, this, true);    
+					PopUpManager.centerPopUp(bra); 
+				}
+
+			}
+			protected function cob_changeHandler(event:ListEvent):void
+			{   	
+				if(cob.selectedLabel.toString()=="--业务类型--"){
+					clearSelected();
+					allBusiness.removeAll();
+				}
+				if(cob.selectedLabel.toString()=="调度数据网"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}
+				if(cob.selectedLabel.toString()=="电视电话会议"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}
+				if(cob.selectedLabel.toString()=="综合数据网"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}
+				if(cob.selectedLabel.toString()=="继电保护"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}
+				if(cob.selectedLabel.toString()=="通信PCM"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}
+				if(cob.selectedLabel.toString()=="调度自动化"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}
+				if(cob.selectedLabel.toString()=="行政电话"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}
+				if(cob.selectedLabel.toString()=="安全自动装置"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}		if(cob.selectedLabel.toString()=="调度电话"){
+					var type:String=cob.selectedLabel.toString();
+					var rtobj:RemoteObject = new RemoteObject("channelRoute");
+					rtobj.endpoint = ModelLocator.END_POINT;
+					rtobj.showBusyCursor = true;
+					rtobj.addEventListener(ResultEvent.RESULT,getConditons);
+					rtobj.getHBusiness(type);
+				}
+				
+				
+			}
+			protected function cob_clickHandler(event:MouseEvent):void
+			{ 
+			
+			}
+			
+		]]>
+	</mx:Script>
+<!--	<mx:Script source="../actionscript/BusinessReliabilityAnalysis.as" />-->	
+	<mx:HBox>
+		<mx:ComboBox id="cob" dataProvider="{arr_cb}" labelField="label"  width="170"  change="cob_changeHandler(event)"   
+					 click="cob_clickHandler(event)" textAlign="center" height="25"/>
+		<mx:Button id="n1Analysis" label="选中业务分析" click="analysisN1()" height="25"/> 
+<!--		<mx:Button id="n2Analysis" label="选中业务N-2分析" click="analysisN2()"/>-->
+		<mx:Button id="clearCheck" label="清空选项" click="clearSelected()" height="25"/>
+	</mx:HBox>
+	
+	<!--<component:pagetoolbar width="100%"/>-->
+	<mx:VBox id="h" width="100%" height="100%" paddingBottom="0" 
+			 paddingLeft="0" paddingRight="0" paddingTop="0"  
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		<!--多选功能-->
+		<mx:DataGrid id ="dg" 
+					 width="100%" 
+					 height="100%" 
+					 editable="false" 
+					 horizontalScrollPolicy="auto" 
+					 doubleClickEnabled="true" dataProvider="{allBusiness}"
+					 allowMultipleSelection="true">
+			<mx:columns>
+				<mx:DataGridColumn headerText="选择" editable="false"  textAlign="center" width="40"> 
+					<mx:itemRenderer> 
+						<mx:Component> 
+							<mx:HBox horizontalAlign="center">
+
+							<mx:CheckBox id="abox" label="" selected="{data.available}" textAlign="center"
+										 click="data.available = !data.available" />
+							</mx:HBox>
+						</mx:Component> 
+					</mx:itemRenderer> 
+				</mx:DataGridColumn> 
+				<mx:DataGridColumn id="data1" headerText="业务名称" width="600" dataField="BUSINESS_NAME"/>
+				<mx:DataGridColumn id="data2" headerText="使用单位" dataField="BUSINESS_USEUNIT" width="200"/>
+				<mx:DataGridColumn id="data3" headerText="业务类别" dataField="BUSINESS_TYPE" width="200"/>
+				<mx:DataGridColumn id="data4" headerText="业务状态" dataField="BUSINESS_STATE" width="100"/>
+				<!--<mx:DataGridColumn headerText="业务所属版本" dataField="direction" width="80"/>-->
+				<!--<mx:DataGridColumn id="data5" headerText="开通日期" dataField="BUSINESS_OPENDATE" width="200"/>-->	
+			</mx:columns> 
+		</mx:DataGrid>
+	</mx:VBox>
+</mx:VBox>

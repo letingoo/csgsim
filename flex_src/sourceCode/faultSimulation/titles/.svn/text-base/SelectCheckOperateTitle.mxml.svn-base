@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				xmlns:component="common.component.*" 
+				title="选择方法"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="init()"
+				width="240" height="300" fontSize="13">
+	<mx:Script>
+		<![CDATA[
+			import common.actionscript.ModelLocator;
+			import common.other.events.CustomEvent;
+			
+			import mx.events.ListEvent;
+			import mx.collections.*;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			private var eqsearch:String="";//模糊查询的条件
+			public var myCallBack:Function;//定义的方法变量
+			public var mainApp:Object = null;
+			public var ids:String="";
+			public var names:String="";
+			[Bindable]   
+			public var folderList:XMLList= new XMLList(); 
+			[Bindable]   
+			public var folderCollection:XMLList;
+			private var curIndex:int;
+			//初始化
+			private function init():void{
+				folderList = new XMLList("<list><system label='操作列表' id='system' isBranch='true'></system></list>");
+				folderCollection=new XMLList(folderList); 
+				eqsearchlist.dataProvider = folderCollection.system;
+				var rt:RemoteObject=new RemoteObject("faultSimulation");
+				rt.endpoint=ModelLocator.END_POINT;
+				rt.showBusyCursor=true;
+				rt.addEventListener(ResultEvent.RESULT,userinfoSearchHandler);
+				rt.getOperateByeqsearch(names,ids);
+				Application.application.faultEventHandler(rt);
+//				rt.getUserInfoByeqsearch(eqsearch);
+				
+			}
+			//查询之后的处理函数
+			private function userinfoSearchHandler(event:ResultEvent):void{
+				var xmllist= eqsearchlist.dataProvider;
+				var xml:XMLListCollection = xmllist;
+				for each (var element:XML in xml) {
+					if(element.@id=="system" ){
+						var str:String = event.result.toString(); 
+						if(str!=null&&str!=""){  
+							var child:XMLList= new XMLList(str);
+							if(element.children()==null||element.children().length()==0){ 
+								element.appendChild(child);
+								this.eqsearchlist.expandItem(element,true);
+							}
+						}
+					}
+				}
+			}
+			//双击list列表的处理函数
+			private function doubleclickHandler(event:MouseEvent):void{
+				this.close();	
+				var obj:Object=new Object;
+				obj.id=eqsearchlist.selectedItem.@id;
+				obj.name=eqsearchlist.selectedItem.@label;
+				myCallBack.call(mainApp,obj);
+				
+			}
+			//关闭窗体
+			private function close():void{
+				PopUpManager.removePopUp(this);
+				
+			}
+			private function deviceiconFun(item:Object):*
+			{
+				if(item.@isBranch==false)
+					return ModelLocator.equipIcon;
+				else
+					return ModelLocator.systemIcon;
+			}
+			//点击树触发事件：
+			private function treeChange():void{ 	
+				try{	
+					eqsearchlist.selectedIndex = curIndex;
+					if(this.eqsearchlist.selectedItem.@isBranch==true){
+					}
+				}catch(e:Error){
+					Alert.show(e.message);
+				}
+			} 
+			function btn_clickHandler(event:MouseEvent):void{
+				var xmllist= eqsearchlist.dataProvider;
+				var xml:XMLListCollection = xmllist;
+				var checkLabel:String="";
+				var checkId:String="";
+				for each(var element:XML in xml.elements()){
+					if(element.@checked==1){
+						checkId+=element.@id+",";
+						checkLabel+=element.@label+",";
+					}
+				}
+				this.close();	
+				var obj:Object=new Object;
+				obj.id=checkId;
+				obj.name=checkLabel;
+				myCallBack.call(mainApp,obj);
+				
+			}
+				
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+			<mx:Tree id="eqsearchlist" dataProvider="{folderCollection}" 
+					 itemRenderer="twaver.PermissionsTreeItemRenderer" 	
+					 backgroundImage="assets/images/treebg.png"
+					 backgroundSize="100%"
+					 labelField="@label"
+					 width="100%" 
+					 iconFunction="deviceiconFun"
+					 height="100%" 
+					 defaultLeafIcon="{null}" 
+					 borderStyle="none"
+					 itemRollOver="curIndex = event.rowIndex">
+			</mx:Tree>
+		<mx:HBox width="100%">
+			<mx:Button id="btn"
+					   label="选择"
+					   styleName="loginprimary"
+					   width="80"
+					   click="btn_clickHandler(event);"/>
+			<mx:Button id="closeBtn"
+					   label="关闭"
+					   styleName="loginsecondary"
+					   width="80"
+					   click="this.close();"/>
+		</mx:HBox>
+		
+	</mx:VBox>
+	
+	
+</mx:TitleWindow>

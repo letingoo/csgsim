@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:tw="http://www.servasoftware.com/2009/twaver/flex"
+	paddingLeft="0" 
+	width="100%" 
+	height="100%"  
+	paddingRight="0" 
+	paddingTop="0" 
+	paddingBottom="0"
+	creationComplete="init()" >-->
+<!--为改问题，改的，被屏的地方是原来的东西.byxujiao2012-7-23-->
+<panel:PanelWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				   xmlns:pgtb="common.component.*"
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:tw="http://www.servasoftware.com/2009/twaver/flex" 
+				   xmlns:views="sourceCode.ocableResource.views.*"
+				   backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				   backgroundSize="100%"
+				   windowContainer="{Application.application.windowContainer}"
+				   width="{parentApplication.workspace.width}"
+				   height="{parentApplication.workspace.height+70}"
+				   xmlns:panel="common.other.SuperPanelControl.nl.wv.extenders.panel.*"
+		           creationComplete="init()" >
+	
+	<mx:Script source="../actionscript/ocableDetails.as"/>	
+	
+	<mx:RemoteObject id="roOcableTopo" destination="ocableResources" showBusyCursor="true" endpoint="{ModelLocator.END_POINT}" 
+		fault="DealFault(event)" result="ro_resultHandler(event)"/>
+	<mx:HDividedBox width="100%" height="100%" backgroundColor="0xCCCCCC">
+		<!--mx:TabNavigator width="100%" height="100%" id="tabnavigator" creationPolicy="all"  change="ChangeEvent()" -->
+			<mx:VBox width="100%" id="boxOcableGraphParallel" height="100%" verticalGap="0" horizontalGap="0" label="图形">
+				<mx:HBox width="100%" height="100%" verticalGap="0" horizontalGap="0">
+					<tw:Network id="nwOcableGraphParallel" width="100%" height="100%" backgroundColor="0xffffff"  doubleClickEnabled="false" doubleClick="nwOcableGraphParallel_doubleClickHandler(event)"/>
+					<!--<mx:DataGrid id="dgSingleFiber" width="30%" height="100%" dataProvider="{dgSingleFiberData}" wordWrap="true" visible="false" includeInLayout="false">
+						<mx:columns>
+							<mx:DataGridColumn headerText="属性" dataField="col1"/>
+							<mx:DataGridColumn headerText="值" dataField="col2"/>
+						</mx:columns>
+					</mx:DataGrid>-->
+				</mx:HBox>
+			</mx:VBox>
+			<mx:VBox width="100%" id="boxOcableGraph" height="100%" verticalGap="0" horizontalGap="0" label="图形" visible="false" includeInLayout="false">
+				<mx:HBox width="100%" height="100%" verticalGap="0" horizontalGap="0">
+					<tw:Network id="nwOcableGraph" width="100%" height="100%" backgroundColor="0xffffff" />
+					<mx:DataGrid id="singlefibergrid" width="30%" height="100%" dataProvider="{singlefibergriddata}" wordWrap="true" visible="false">
+						<mx:columns>
+							<mx:DataGridColumn headerText="属性" dataField="col1"/>
+							<mx:DataGridColumn headerText="值" dataField="col2"/>
+						</mx:columns>
+					</mx:DataGrid>
+				</mx:HBox>
+			</mx:VBox>
+			<!--mx:VBox width="100%" id="boxOcableList" height="100%" verticalGap="0" horizontalGap="0" label="列表">
+				<mx:DataGrid id="fibergrid" width="100%" height="100%" dataProvider="{fibergriddata}" wordWrap="true" horizontalScrollPolicy="on">
+					<mx:columns>
+						<mx:DataGridColumn headerText="纤芯号" dataField="@fiberserial" />
+						<mx:DataGridColumn headerText="所属光缆接续段" dataField="@ocablesectionname" />
+						<mx:DataGridColumn headerText="承载系统" dataField="@name_std" />
+						<mx:DataGridColumn headerText="长度" dataField="@length" />
+						<mx:DataGridColumn headerText="产权" dataField="@property" />
+						<mx:DataGridColumn headerText="状态" dataField="@status" />
+						<mx:DataGridColumn headerText="类型" dataField="@fibermodel" />
+						<mx:DataGridColumn headerText="备注" dataField="@remark" />
+						<mx:DataGridColumn headerText="起始设备" dataField="@aendeqport" />
+						<mx:DataGridColumn headerText="终止设备" dataField="@zendeqport" />
+						<mx:DataGridColumn headerText="起始端口" dataField="@aendodfport" />
+						<mx:DataGridColumn headerText="终止端口" dataField="@zendodfport" />
+						<mx:DataGridColumn headerText="更新人" dataField="@updateperson" />
+						<mx:DataGridColumn headerText="更新时间" dataField="@updatedate" />
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox-->			
+		<!--/mx:TabNavigator-->
+		<mx:Canvas id="cvsOcable" width="25" height="100%">
+			<mx:Panel id="mypanel" backgroundAlpha="0.6" width="100%" height="100%" 
+				borderThicknessBottom="0" borderThicknessLeft="0" borderThicknessRight="0" borderThicknessTop="0"
+				horizontalScrollPolicy="auto" verticalScrollPolicy="auto">
+				<mx:VBox width="100%" height="100%" id="vbOcable" visible="false" includeInLayout="false">
+					<!--<mx:List width="100%" height="30%" id="ocableList" doubleClickEnabled="true" wordWrap="true"
+						itemClick="itemClickHandler(event)"></mx:List>
+					<mx:DataGrid id="ocablegrid" width="100%" height="100%" dataProvider="{ocablegriddata}" wordWrap="true">
+						<mx:columns>
+							<mx:DataGridColumn headerText="属性" dataField="col1"/>
+							<mx:DataGridColumn headerText="值" dataField="col2"/>
+						</mx:columns>
+					</mx:DataGrid>-->
+					
+					<mx:DataGrid id="fibergrid" width="100%" height="100%" wordWrap="true" variableRowHeight="true" horizontalScrollPolicy="on" sortableColumns="false">
+						<mx:columns>
+							<mx:DataGridColumn headerText="光缆段编号" dataField="ocablecode" visible="false"/>
+							<mx:DataGridColumn headerText="纤芯编号" dataField="fibercode" visible="false"/>
+							<mx:DataGridColumn headerText="纤芯序号" dataField="fiberserial" width="80"/>
+							<mx:DataGridColumn headerText="所属光缆段" dataField="ocablesectionname" width="220"/>
+							<mx:DataGridColumn headerText="承载系统" dataField="name_std" visible="false" />
+							<mx:DataGridColumn headerText="长度" dataField="length" />
+							<mx:DataGridColumn headerText="产权" dataField="property" />
+							<mx:DataGridColumn headerText="状态" dataField="status"  visible="false" />
+							<mx:DataGridColumn headerText="类型" dataField="fibermodel" visible="false"/>
+							<mx:DataGridColumn headerText="起始设备类型" dataField="aequiptype" width="120" visible="false"/>
+							<mx:DataGridColumn headerText="起始设备" dataField="aequip" width="250"/>
+							<mx:DataGridColumn headerText="终止设备类型" dataField="zequiptype" width="120" visible="false"/>
+							<mx:DataGridColumn headerText="终止设备" dataField="zequip" width="250"/>
+							<mx:DataGridColumn headerText="起始端口" dataField="aendeqport" width="250"/>
+							<mx:DataGridColumn headerText="终止端口" dataField="zendeqport"  width="250"/>
+							<mx:DataGridColumn headerText="起始ODF端口" dataField="aendodfport" visible="false"/>
+							<mx:DataGridColumn headerText="终止ODF端口" dataField="zendodfport" visible="false" />
+							<mx:DataGridColumn headerText="备注" dataField="remark" />
+						</mx:columns>
+					</mx:DataGrid>
+				</mx:VBox>
+				<mx:TextArea  id="text" borderThickness="4" backgroundAlpha="0.6" backgroundColor="0xCCCCCC" borderColor="0xCCCCCC" fontSize="14" text="光纤信息" width="25" height="100%" />
+			</mx:Panel>
+			<mx:LinkButton id="linkButton" width="25" label="{btnlabel}" textAlign="right" fontThickness="2"  fontSize="12" click="changeState();" top="4" right="0" />
+		</mx:Canvas>
+	</mx:HDividedBox> 	
+<!--</mx:VBox>-->
+</panel:PanelWindow>
+

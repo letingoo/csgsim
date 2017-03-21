@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--告警经验查看-->
+<mx:VBox
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	creationComplete="init();"
+	width="100%" height="100%" preinitialize="preinitialize()"
+	styleName="popwindow" 
+	xmlns:component="common.component.*" xmlns:views="sourceCode.wireConfiguration.views.*" >
+	<mx:Script>  
+		<![CDATA[ 
+			import common.actionscript.DealAlarmUtil;
+			import common.actionscript.ModelLocator;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import sourceCode.systemManagement.model.PermissionControlModel;
+			
+			public var setValue:Function;
+			public var start:String = "0";
+			[Bindable]
+			public var end:String = "50";
+			[Bindable]
+			public var vendor:String="";
+			[Bindable]
+			public var alarmtext:String="";
+			[Bindable]
+			public var initFlag:int=0;
+			[Bindable]
+			public var vendors:ArrayCollection;
+			public var expid:Number;
+			private var flag:Boolean=false;
+			public var analyse:String="";
+			public var experience:String="";
+			public var alarmExpid:String="";
+			[Bindable]public var showAddShurtCutButton:Boolean = true;
+			[Bindable]public var showDelShurtCutButton:Boolean = true;
+			
+			[Embed(source="assets/images/mntsubject/bubble-chat.png")] 
+			private var iconClass:Class; 
+			
+			[Bindable]			
+			public var obj:Object=new Object();
+			
+
+			[Bindable]
+			private var isAdd:Boolean = false;
+			[Bindable]
+			private var isEdit:Boolean = false;
+			[Bindable]
+			private var isDelete:Boolean = false;
+//			[Bindable]
+//			private var isExport:Boolean = false;
+			private function preinitialize():void{
+				if(ModelLocator.permissionList != null && ModelLocator.permissionList.length > 0){
+					var model:PermissionControlModel;
+					for(var i:int=0,max:int=ModelLocator.permissionList.length; i<max; i++){
+						model = ModelLocator.permissionList[i];
+						if(model.oper_name != null && model.oper_name == "添加操作"){
+							isAdd = true;
+						}
+						if(model.oper_name != null && model.oper_name == "修改操作"){
+							isEdit = true;
+						}
+						if(model.oper_name != null && model.oper_name == "删除操作"){
+							isDelete = true;
+						}
+//						if(model.oper_name != null && model.oper_name == "导出操作"){
+//							isExport = true;
+//						}
+					}
+				}
+			} 			
+			
+			
+			
+			public function init():void {
+				
+				creationCompleteHandler();
+				/*初始化界面*/
+				
+				
+				txt_vendor.text=alarmtext;
+				
+				var	rtobj= new RemoteObject("RealRootAlarmDwr");
+				
+				rtobj.endpoint = ModelLocator.END_POINT;
+				
+				rtobj.showBusyCursor = true;
+				
+				rtobj.getAlarmExperiecnceVendor();
+				
+				rtobj.addEventListener(ResultEvent.RESULT,initVendor); 
+				
+				pagingFunction(0,50);
+				
+				
+				if(obj!=null && obj!=""){
+					TXT_ALARMCAUSE.text = obj.alarmcause;
+					TXT_ALARMDESC.text = obj.alarmdesc;
+					TXT_ALARMLEVELZH.text = obj.alarmlevelzh;
+					TXT_VENDORZH.text = obj.vendorzh;
+					TXT_LOCALDESC.text = obj.localdesc;
+					TXT_ANALYSE.text = obj.analyse;
+					TXT_EXPERIENCE.text = obj.exprience;
+				}
+				
+				
+			}
+			
+			private  function initVendor(event:ResultEvent):void
+			{   
+				
+				vendors = new ArrayCollection;
+				var xml:String = event.result.toString();
+				var xmlVendor:XMLList=new XMLList(xml);
+				vendors.addItem({label:"全部",data:""});
+				for (var i:int=0;i<xmlVendor.length();i++){
+					
+					vendors.addItem({label:xmlVendor[i].VENDORZH,data:xmlVendor[i].VENDOR});
+				}
+				cmb_vendor.dataProvider=vendors; 
+				
+				for(var i:int = 0;i<vendors.length;i++)
+				{ 
+					if(vendors[i].data==vendor)
+					{
+						cmb_vendor.selectedIndex = i;
+						break;
+					}
+				}  
+			}
+			
+			private function pagingFunction(pageIndex:int,pageSize:int):void{
+				
+				start = (pageIndex * pageSize+1).toString();
+				end = ((pageIndex * pageSize) + pageSize).toString();
+				
+				
+				if (flag){
+					vendor=cmb_vendor.selectedItem.data+"";
+					alarmtext=txt_vendor.text+"";
+				}else{
+					vendor=vendor;
+					alarmtext=alarmtext;
+				}
+				if (vendor==""){
+					vendor="";
+				} 
+				
+				var	rtobj= new RemoteObject("RealRootAlarmDwr");
+				rtobj.endpoint = ModelLocator.END_POINT;
+				rtobj.showBusyCursor = true;
+				
+				rtobj.getAlarmDealInfoByMessage(vendor,alarmtext,start,end);
+				rtobj.addEventListener(ResultEvent.RESULT,initGridByCollection);
+			}
+			
+			
+			
+			private function initGridByCollection(event:ResultEvent):void
+			{
+				var rs : ArrayCollection =event.result.listEXP as ArrayCollection;
+				if (rs.length>0)
+				{
+					TXT_ALARMCAUSE.text = rs[0].ALARMCAUSE;
+					TXT_ALARMDESC.text = rs[0].ALARMDESC;
+					TXT_ALARMLEVELZH.text = rs[0].ALARMLEVELZH;
+					TXT_VENDORZH.text = rs[0].VENDORZH;
+					TXT_LOCALDESC.text = rs[0].LOCALDESC;
+					TXT_ANALYSE.text = rs[0].ANALYSE;
+					TXT_EXPERIENCE.text = rs[0].EXPERIENCE;
+				}
+				else
+				{
+					Alert.show('无此查询条件结果',"提示信息",4,this,null,iconClass);
+					TXT_ALARMCAUSE.text = "";
+					TXT_ALARMDESC.text = "";
+					TXT_ALARMLEVELZH.text = "";
+					TXT_VENDORZH.text = "";
+					TXT_LOCALDESC.text = "";
+					TXT_ANALYSE.text = "";
+					TXT_EXPERIENCE.text ="";
+				}
+				
+				datagrid_alarmexp.dataProvider=rs;
+				pagingToolBarforAlarmExp.orgData=rs;
+				var count:int =int(event.result.countEXP);
+				pagingToolBarforAlarmExp.totalRecord = count;
+				pagingToolBarforAlarmExp.dataBind(true);	
+				
+			}
+			
+			
+			protected function btn_search_clickHandler():void
+			{
+				flag=true;
+				
+				pagingFunction(0,50);
+			}
+			
+			protected function datagrid_alarmexp_changeHandler(event:ListEvent):void
+			{
+				selectDatagridRow();
+				
+			}
+			
+			private function selectDatagridRow():void
+			{
+				TXT_ALARMCAUSE.text = datagrid_alarmexp.selectedItem.ALARMCAUSE;
+				TXT_ALARMDESC.text = datagrid_alarmexp.selectedItem.ALARMDESC;
+				TXT_ALARMLEVELZH.text = datagrid_alarmexp.selectedItem.ALARMLEVELZH;
+				TXT_VENDORZH.text = datagrid_alarmexp.selectedItem.VENDORZH;
+				TXT_LOCALDESC.text = datagrid_alarmexp.selectedItem.LOCALDESC;
+				TXT_ANALYSE.text = datagrid_alarmexp.selectedItem.ANALYSE;
+				TXT_EXPERIENCE.text = datagrid_alarmexp.selectedItem.EXPERIENCE;
+			}
+			
+			private function addalarmexprience():void{
+				var addalarmexprience:add_alarmexperience = new add_alarmexperience(); 
+				addalarmexprience.vendorfactory = vendors;
+				addalarmexprience.owner = this;
+				PopUpManager.addPopUp(addalarmexprience,this,true); 
+				PopUpManager.centerPopUp(addalarmexprience);
+				
+			} 
+			
+			private function updatealarmexprience():void{
+				if(datagrid_alarmexp.selectedItem==null){
+					Alert.show('请选择你要修改的一条数据',"提示信息",4,this,null,iconClass);
+				}else{
+					var updatealarmexprience:update_alarmexperience = new update_alarmexperience(); 
+					updatealarmexprience.gridcontext = datagrid_alarmexp.selectedItem;
+					updatealarmexprience.vendorfactory = vendors;
+					updatealarmexprience.owner=this;
+					PopUpManager.addPopUp(updatealarmexprience,this,true); 
+					PopUpManager.centerPopUp(updatealarmexprience);
+				}
+			} 
+			
+			
+			private function deletealarmexprience():void{
+				if(datagrid_alarmexp.selectedItem==null){
+					Alert.show('请选择你要刪除的一条数据',"提示信息",4,this,null,iconClass);
+				}else{
+					expid = Number(datagrid_alarmexp.selectedItem.EXPID);
+					if(expid!=0){
+						Alert.show("确定要删除吗?","信息",Alert.YES|Alert.NO,this,closehandle,iconClass);
+					}
+				}
+			} 
+			
+			private function closehandle(event:CloseEvent):void{
+				if(event.detail==Alert.YES){
+					var rtobj:mx.rpc.remoting.mxml.RemoteObject= new mx.rpc.remoting.mxml.RemoteObject("alarmHelp");
+					rtobj.endpoint = DealAlarmUtil.endpurl;
+					rtobj.showBusyCursor = true;
+					rtobj.deleteAlarmExperience(expid);
+					rtobj.addEventListener(ResultEvent.RESULT,deleteexperienceresult);
+				}else{
+					return;
+				}
+				
+			}
+			
+			
+			
+			private function deleteexperienceresult(event:ResultEvent):void{
+				if(event.result==null){
+					Alert.show('获取数据失败',"提示信息",4,this,null,iconClass);return;
+				}
+				var a:int = int(event.result);
+				if(a>0){
+					reset();
+					Alert.show('刪除成功',"提示信息",4,this,null,iconClass);
+					init();
+				}else{
+					Alert.show('刪除失败',"提示信息",4,this,null,iconClass);
+				}
+				
+			}
+			
+			public function set tc(f:Function){
+				this.setValue=f;
+			}
+			
+			
+			protected function datagrid_alarmexp_doubleClickHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				analyse=TXT_ANALYSE.text;
+				experience=TXT_EXPERIENCE.text;
+				alarmExpid=datagrid_alarmexp.selectedItem.EXPID;
+				this.setValue(analyse,experience,alarmExpid);
+				PopUpManager.removePopUp(this);
+			}
+			
+			
+			private function addShurtCut():void{
+				parentApplication.addShorcut("告警处理经验维护","alarmexperience");
+				setBtnVisible(true);
+			}
+			private function setBtnVisible(bool:Boolean):void{
+				addShortBtn.visible = !bool;
+				addShortBtn.includeInLayout = !bool;
+				delShortBtn.visible = bool;
+				delShortBtn.includeInLayout = bool;
+			}
+			private function delShurtCut():void{
+				parentApplication.delShortcut("告警处理经验维护");
+				setBtnVisible(false);
+			}
+			private function creationCompleteHandler():void{
+				if(showAddShurtCutButton && showDelShurtCutButton){
+					if(parentApplication.checkShortcut("告警处理经验维护")){
+						setBtnVisible(true);
+					}else{
+						setBtnVisible(false);
+					}
+				}
+			}
+			
+			private function reset():void{
+				alarmtext="";
+				txt_vendor.text="";
+				cmb_vendor.selectedIndex=0;
+				TXT_ALARMCAUSE.text="";
+				TXT_ALARMDESC.text="";
+				TXT_VENDORZH.text="";
+				TXT_ALARMLEVELZH.text="";
+				TXT_LOCALDESC.text="";
+				TXT_ANALYSE.text="";
+				TXT_EXPERIENCE.text="";
+			}
+			
+		]]>	
+	</mx:Script>
+	
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		<mx:HBox width="100%" backgroundImage="@Embed(source='assets/images/iconbar_bg.png')" backgroundSize="100%" verticalAlign="middle" height="38" paddingRight="10" paddingLeft="10">
+			<mx:LinkButton id="addShortBtn" label="添加快捷方式" styleName="iconbar" icon="@Embed(source='assets/images/icon_tjkjfs.png')"
+						   visible="{showAddShurtCutButton}" includeInLayout="{showAddShurtCutButton}" click="addShurtCut()"/>
+			<mx:LinkButton id="delShortBtn" label="取消快捷方式" styleName="iconbar" icon="@Embed(source='assets/images/icon_qxkjfs.png')"
+						   visible="{showDelShurtCutButton}" includeInLayout="{showDelShurtCutButton}" click="delShurtCut()"/>
+			<mx:LinkButton visible="{isAdd}" includeInLayout="{isAdd}" label="添加处理经验"  click="addalarmexprience()"   styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_add.png')"/>
+			<mx:LinkButton visible="{isEdit}" includeInLayout="{isEdit}" label="修改" click="updatealarmexprience()" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_edit.png')"/>
+			<mx:LinkButton visible="{isDelete}" includeInLayout="{isDelete}" label="删除" click="deletealarmexprience()" styleName="iconbar" icon="@Embed(source='assets/images/icons/icon_del.png')"/>
+			<mx:Spacer height="38" width="100%"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="100%"  backgroundImage="@Embed(source='assets/images/alarmexp_bg.png')" backgroundSize="100%">
+			<mx:VBox width="60%" height="100%">
+				<mx:VBox width="100%" height="100%" borderColor="#FFFFFF"  backgroundColor="#FFFFFF">
+					<mx:VBox width="100%" height="100%" verticalGap="0" horizontalGap="0">
+						<mx:HBox width="100%" height="34" styleName="search1" verticalAlign="middle">
+							<mx:Label text="厂家:" styleName="blacknormalleft"/>
+							<mx:ComboBox styleName="combox" id="cmb_vendor" width="120"></mx:ComboBox>
+							<mx:Label text="告警英文描述:" styleName="blacknormalleft"/>
+							<mx:TextInput styleName="input" id="txt_vendor" width="120"/>
+							<mx:Button label="查 询" styleName="normal"  id="btn_search" click="btn_search_clickHandler()"/>
+						</mx:HBox>
+						<mx:DataGrid width="100%" height="90%" styleName="alarm" id="datagrid_alarmexp" change="datagrid_alarmexp_changeHandler(event)"  
+									 headerHeight="25"  itemDoubleClick="datagrid_alarmexp_doubleClickHandler(event)" doubleClickEnabled="false">
+							<mx:columns>
+								<mx:DataGridColumn headerText="英文描述" dataField="ALARMCAUSE" width="150" textAlign="left"/>
+								<mx:DataGridColumn headerText="中文描述" dataField="ALARMDESC" textAlign="left" width="150"/>
+								<mx:DataGridColumn dataField="ALARMLEVELZH" headerText="中文告警级别"  width="100"  textAlign="left"/>
+								<mx:DataGridColumn dataField="EXPID" headerText="经验ID" visible="false"/>
+								<mx:DataGridColumn dataField="VENDORZH" headerText="中文厂家" visible="false"/>
+								<mx:DataGridColumn dataField="LOCALDESC" headerText="告警现象描述" visible="false"/>
+								<mx:DataGridColumn dataField="ANALYSE" headerText="告警分析" visible="false"/>
+								<mx:DataGridColumn dataField="EXPERIENCE" headerText="告警经验" visible="false"/>
+							</mx:columns>
+						</mx:DataGrid> 
+						<views:pagetoolbar width="100%" height="6%" id="pagingToolBarforAlarmExp" dataGrid="{datagrid_alarmexp}" pagingFunction="pagingFunction">
+						</views:pagetoolbar>
+						<!-- <mx:Spacer height="2%"/> -->
+					</mx:VBox>
+				</mx:VBox>
+			</mx:VBox>
+			<mx:VBox width="40%" height="100%" verticalGap="0">
+				<mx:HBox width="100%" height="80" horizontalAlign="right">
+					<mx:Image source="assets/images/alarm_exprance_title.png"/>
+				</mx:HBox>
+				<mx:VBox width="100%" height="100%" borderColor="#FFFFFF" borderSides="top" borderStyle="solid" borderThickness="1" backgroundAlpha="0.4" backgroundColor="#FFFFFF" paddingBottom="5" paddingLeft="5" paddingRight="5" verticalGap="3" paddingTop="5">
+					<mx:Label text="告警处理经验详情" styleName="blackbigboldleft"/>
+					<mx:HRule width="100%" height="1"/>
+					<mx:Grid verticalGap="5" horizontalGap="5" width="100%">
+						<mx:GridRow width="100%" height="100%">
+							<mx:GridItem width="80" height="100%" horizontalAlign="right" verticalAlign="middle">
+								<mx:Label text="告警英文描述" styleName="blacknormalleft"/>
+							</mx:GridItem>
+							<mx:GridItem width="130" height="100%" verticalAlign="middle" horizontalAlign="left">
+								<mx:TextInput styleName="input" editable="false" id="TXT_ALARMCAUSE"  width="120"/>
+							</mx:GridItem>
+							<mx:GridItem width="80" height="100%" horizontalAlign="right" verticalAlign="middle">
+								<mx:Label text="告警中文描述" styleName="blacknormalleft"/>
+							</mx:GridItem>
+							<mx:GridItem width="130" height="100%" verticalAlign="middle" horizontalAlign="left">
+								<mx:TextInput styleName="input" editable="false" id="TXT_ALARMDESC" width="100%"/>
+							</mx:GridItem>
+						</mx:GridRow>
+						<mx:GridRow width="100%" height="100%">
+							<mx:GridItem width="80" height="100%" horizontalAlign="right" verticalAlign="middle">
+								<mx:Label text="厂家" styleName="blacknormalleft"/>
+							</mx:GridItem>
+							<mx:GridItem width="130" height="100%" verticalAlign="middle" horizontalAlign="left">
+								<mx:TextInput styleName="input" editable="false" id="TXT_VENDORZH" width="120"/>
+							</mx:GridItem>
+							<mx:GridItem width="80" height="100%" horizontalAlign="right" verticalAlign="middle">
+								<mx:Label text="告警级别" styleName="blacknormalleft"/>
+							</mx:GridItem>
+							<mx:GridItem width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
+								<mx:TextInput styleName="input" width="100%" id="TXT_ALARMLEVELZH" />
+							</mx:GridItem>
+						</mx:GridRow>
+					</mx:Grid>
+					<mx:Label text="现象描述" styleName="blackboldleft"/>
+					<mx:TextArea width="100%" editable="false" id="TXT_LOCALDESC" height="50" styleName="taxtarea" />
+					<mx:Label text="原因分析" styleName="blackboldleft"/>
+					<mx:TextArea width="100%" editable="false" id="TXT_ANALYSE" height="60" styleName="taxtarea" />
+					<mx:Label text="处理经验" styleName="blackboldleft"/>
+					<mx:TextArea width="100%" height="100%" editable="false" id="TXT_EXPERIENCE" styleName="taxtarea" />
+				</mx:VBox>
+			</mx:VBox>
+		</mx:HBox>
+	</mx:VBox>
+</mx:VBox>

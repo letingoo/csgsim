@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="{parentApplication.workspace.width}" 
+				height="{parentApplication.workspace.height+70}" title="配置时隙" showCloseButton="true" 
+				xmlns:servasoftware="http://www.servasoftware.com/2009/twaver/flex"
+				creationComplete="init()" close="close()">
+	<mx:VDividedBox width="100%" height="100%">
+		<mx:VBox id="vbMode" width="100%" height="50%">
+			<mx:HBox id="toolBar" width="100%" horizontalGap="0"/>
+			<servasoftware:Network id="modeNetwork" name="modeNetwork" width="100%" height="100%"/>
+		</mx:VBox>
+		<mx:VBox id="vbTopoLink" width="100%" height="50%">
+			<mx:HBox id="toolBar1" width="100%" horizontalGap="0"/>
+			<servasoftware:Network id="topoLinkNetwork" name="topoLinkNetwork" width="100%" height="100%"/>
+		</mx:VBox>
+	</mx:VDividedBox>
+	<mx:Script source="../actionscript/DisposeSlot.as"/>
+</mx:TitleWindow>

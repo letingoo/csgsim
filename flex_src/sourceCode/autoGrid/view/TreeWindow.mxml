@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				showCloseButton="true"
+				close="{PopUpManager.removePopUp(this)}"
+				creationComplete="App(event);initEvent();"
+				layout="absolute" minWidth="955" minHeight="600" width="400" height="400" fontSize="13">
+	<mx:Script source="../actionscript/TreeWindow.as"/>
+	<mx:VBox width="100%" height="100%">
+	<mx:Tree x="0" y="0" 
+			 width="100%" height="100%" 
+			 dataProvider="{folderCollection}"
+			 labelField="@label"
+			 defaultLeafIcon="{leafPic}" 
+			 borderStyle="none"
+			 change="changeHandler()"
+			 itemClick="tree_itemClick(event)"
+			 itemOpen="changeHandler()"
+			 itemRollOver="curIndex = event.rowIndex"
+			 verticalScrollPolicy="auto"
+			 id="autoTree"/>
+	<mx:HBox width="100%" height="40" horizontalAlign="center" verticalAlign="middle" 
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')" backgroundSize="100%">
+		<mx:Button label="确认" width="80" click="clickSaveButton(event)"  textAlign="center" styleName="loginprimary"  height="30" />
+		<mx:Button label="取消" width="80" click="close()" textAlign="center" styleName="loginsecondary"  height="30"/>
+	</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>

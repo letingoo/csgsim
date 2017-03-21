@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				showCloseButton="true" title="修改告警处理经验"
+				width="640" height="480" layout="absolute" styleName="popwindow"
+				close="PopUpManager.removePopUp(this)"
+				initialize="init()"
+				>
+	
+	
+	<mx:Script>
+		<![CDATA[
+			
+			import common.actionscript.DealAlarmUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			public var gridcontext:Object = new Object();
+			[Bindable]
+			public var vendorfactory:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var level:ArrayCollection = new ArrayCollection();
+			
+			public var vendor:String = "";
+			public var vendorzh:String = "";
+			public var alarmlevel:String = "";
+			public var alarmlevelzh:String = "";
+			public var localdesc:String = "";
+			public var analyse:String = "";
+			public var alarmdesc:String = "";
+			public var exprience:String = "";
+			public var alarmcause:String = "";
+			
+			private function init():void{
+				TXT_VENDORZH.dataProvider=vendorfactory;
+				initlevel();
+				
+				TXT_ALARMCAUSE.text = gridcontext.ALARMCAUSE;
+				TXT_ALARMDESC.text = gridcontext.ALARMDESC;
+				
+				// gridcontext.ALARMLEVELZH;
+				if(level!=null){
+					var j:Number = 0;
+					for each(var a :Object in level){
+						j++;
+						if(a.code == gridcontext.ALARMLEVEL){
+							TXT_ALARMLEVELZH.selectedIndex = j-1;
+						}
+					}
+				
+				} 
+				var i:Number=0;
+				for each(var a:Object in vendorfactory){
+					
+					i++;
+					if(a.data == gridcontext.VENDOR){
+						TXT_VENDORZH.selectedIndex=i-1;
+					}
+				}
+				TXT_LOCALDESC.text = gridcontext.LOCALDESC;
+				TXT_ANALYSE.text = gridcontext.ANALYSE;
+				TXT_EXPERIENCE.text = gridcontext.EXPERIENCE;
+			}
+			
+			public function initlevel():void{
+				var rtobj:RemoteObject= new RemoteObject("alarmHelp");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.getlevel();
+				rtobj.addEventListener(ResultEvent.RESULT,getlevelresult);
+			}
+			
+			private function getlevelresult(event:ResultEvent):void{
+				if(event.result==null){
+					Alert.show('获取数据失败','提示消息');return;
+				}
+				level.removeAll();
+				var ts:ArrayCollection = new ArrayCollection();
+				ts = event.result as ArrayCollection;
+				for each(var a : Object in ts){
+					level.addItem({label:a.LEVEL_NAME,code:a.ENDESC});
+				}
+				TXT_ALARMLEVELZH.dataProvider = level;
+			}
+			
+			
+			
+			private function updatetoexperience():void{
+				if(TXT_VENDORZH.selectedItem.data.toString()==""){
+					Alert.show('请选择厂家','提示消息');
+				}else{
+					vendor=TXT_VENDORZH.selectedItem.data.toString();
+					vendorzh=TXT_VENDORZH.selectedItem.label.toString();
+				}
+				if(TXT_ALARMLEVELZH.selectedItem.label.toString()=="不确定告警"){
+					alarmlevel="indeterminacy";
+					alarmlevelzh=TXT_ALARMLEVELZH.selectedItem.label.toString();
+				}else{
+					alarmlevel=TXT_ALARMLEVELZH.selectedItem.code.toString();
+					alarmlevelzh=TXT_ALARMLEVELZH.selectedItem.label.toString();
+				}
+				localdesc =  TXT_LOCALDESC.text.toString();
+				analyse = TXT_ANALYSE.text.toString();
+				alarmdesc = TXT_ALARMDESC.text.toString();
+				exprience = TXT_EXPERIENCE.text.toString();
+				alarmcause =TXT_ALARMCAUSE.text.toString();
+				var expid:Number = Number(gridcontext.EXPID);
+				
+				var rtobj:RemoteObject= new RemoteObject("alarmHelp");
+				rtobj.endpoint = DealAlarmUtil.endpurl;
+				rtobj.showBusyCursor = true;
+				rtobj.updateAlarmExperience(expid,vendor,alarmlevel,localdesc,analyse,alarmdesc,exprience,alarmcause);
+				rtobj.addEventListener(ResultEvent.RESULT,updateexperienceresult);
+			
+			}
+			private function updateexperienceresult(event:ResultEvent):void{
+				if(event.result==null){
+					Alert.show('获取数据失败','提示消息');return;
+				}
+				var a:int = int(event.result);
+				if(a>0){
+					Alert.show('修改成功','提示消息');
+					
+					var update_data:AlarmHelpEXP = this.owner as AlarmHelpEXP;
+					update_data.obj.alarmcause= alarmcause;
+					update_data.obj.alarmdesc=alarmdesc;
+					update_data.obj.alarmlevelzh=alarmlevelzh;
+					update_data.obj.vendorzh=vendorzh;
+					update_data.obj.localdesc=localdesc;
+					update_data.obj.analyse=analyse;
+					update_data.obj.exprience =exprience;
+					PopUpManager.removePopUp(this);
+					update_data.init();
+				}else{
+					Alert.show('修改失败','提示消息');
+				}
+			}
+			
+			private function closeexperience():void{
+				PopUpManager.removePopUp(this);
+			}		
+			
+			
+		]]>
+	</mx:Script>
+	
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		<mx:VBox width="100%" height="100%" paddingBottom="10" paddingLeft="20"  paddingRight="20" paddingTop="10" verticalGap="0">
+			<mx:HBox width="100%" height="30" verticalAlign="middle">
+				<mx:Label text="基本信息" styleName="blackboldleft"/>
+				<mx:HRule width="100%" strokeWidth="1"/>
+			</mx:HBox>
+			<mx:Grid verticalGap="5" horizontalGap="5" width="100%">
+				<mx:GridRow width="100%" height="100%">
+					<mx:GridItem width="80" height="100%"  horizontalAlign="right" verticalAlign="middle">
+						<mx:Label text="告警英文描述"  styleName="blacknormalleft"/>
+					</mx:GridItem>
+					<mx:GridItem width="130" height="100%"  verticalAlign="middle" horizontalAlign="left">
+						<mx:TextInput styleName="input" width="120"  id="TXT_ALARMCAUSE"/>
+					</mx:GridItem>
+					<mx:GridItem width="80" height="100%" horizontalAlign="right" verticalAlign="middle">
+						<mx:Label text="告警中文描述" styleName="blacknormalleft"/>
+					</mx:GridItem>
+					<mx:GridItem width="130" height="100%" verticalAlign="middle" horizontalAlign="left">
+						<mx:TextInput styleName="input" width="100%"  id="TXT_ALARMDESC"/>
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow width="100%" height="100%">
+					<mx:GridItem width="80" height="100%"  horizontalAlign="right" verticalAlign="middle">
+						<mx:Label text="厂家" styleName="blacknormalleft"/>
+					</mx:GridItem>
+					<mx:GridItem width="130" height="100%" verticalAlign="middle" horizontalAlign="left">
+						<mx:ComboBox styleName="combox" id="TXT_VENDORZH" width="120"></mx:ComboBox>
+					</mx:GridItem>
+					<mx:GridItem width="80" height="100%" horizontalAlign="right" verticalAlign="middle">
+						<mx:Label text="告警级别" styleName="blacknormalleft"/>
+					</mx:GridItem>
+					<mx:GridItem width="100%" height="100%"  verticalAlign="middle" horizontalAlign="left">
+						<mx:ComboBox styleName="combox" width="120" id="TXT_ALARMLEVELZH"></mx:ComboBox>
+					</mx:GridItem>
+				</mx:GridRow>
+			</mx:Grid>
+			<mx:HBox width="100%" height="30" verticalAlign="middle">
+				<mx:Label text="现象描述" styleName="blackboldleft"/>
+				<mx:HRule width="100%" strokeWidth="1"/>
+			</mx:HBox>
+			<mx:TextArea width="100%" height="50" styleName="taxtarea" id="TXT_LOCALDESC"/>
+			<mx:HBox width="100%" height="30" verticalAlign="middle">
+				<mx:Label text="原因分析" styleName="blackboldleft"/>
+				<mx:HRule width="100%" strokeWidth="1"/>
+			</mx:HBox>
+			<mx:TextArea width="100%" height="60" styleName="taxtarea" id="TXT_ANALYSE"/>
+			<mx:HBox width="100%" height="30" verticalAlign="middle">
+				<mx:Label text="处理经验" styleName="blackboldleft"/>
+				<mx:HRule width="100%" strokeWidth="1"/>
+			</mx:HBox>
+			<mx:TextArea width="100%" height="100%" styleName="taxtarea" id="TXT_EXPERIENCE"/>
+		</mx:VBox>
+		<mx:HBox width="100%" height="50" styleName="btnbg">
+			<mx:Button label="修改到经验库" styleName="primary" click="updatetoexperience()"/>
+			<mx:Button label="取消" styleName="secondary" click="closeexperience()"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>
+

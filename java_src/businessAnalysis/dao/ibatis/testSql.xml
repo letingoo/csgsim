@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test">
+	
+	<select id="equipA_list" resultClass="java.util.HashMap" parameterClass="String">
+		select 
+		e.equipcode equip_id,
+		e.s_sbmc equip_name,
+		e.name_std equip_shortname,
+		e.s_sbmc equip_label,
+		e.equipcode equip_code,
+		'' equip_icon,
+		'' factory_id,
+		e.x_model equip_model_id,
+		e.updatedate equip_date,
+		e.stationcode station_id,
+		e.equip_status equip_state,
+		'1' split_rule,
+		e.x equip_x,
+		e.y equip_y,
+		'' pa, '' pb,
+		'1' version_id,
+		e.system_name transmison,
+		'0' planning,
+		'1.00' price
+		
+		from equipment e where  e.system_name=#tranSys#
+		order by e.equipcode 
+	
+	</select>
+	
+	<select id="linkA_list" resultClass="java.util.HashMap" parameterClass="String">
+			select t.label link_id,
+			t.label link_name,
+			t.equip_a from_equip_id,
+			t.equip_z to_equip_id,
+			e1.s_sbmc from_equip_name,
+			e2.s_sbmc to_equip_name,
+			t.aendptp from_port_id,
+			t.zendptp to_port_id,
+			'' cable_id,
+			'0' link_type,
+			x.xtxx link_rate,
+			t.linelength length,
+			'' pa,'' pb,
+			0 version_id,
+			x.xtxx link_remained_rate,
+			e1.system_name transmision,
+			'0' planning,
+			'0.00' price
+			from  en_topolink t ,equipment e1,equipment e2,xtbm x
+			where t.equip_a=e1.equipcode
+			and t.equip_z = e2.equipcode
+			and x.xtbm = t.linerate
+			and e1.system_name=#tranSys#
+			 order by label
+  	</select>
+  	
+  	<select id="businessA_list" resultClass="java.util.HashMap" parameterClass="String">
+		select c.circuitcode business_id,
+       c.circuitcode dispatch_no,
+       ' ' complete_date,
+       c.netmanagerid business_type_id,
+       c.username business_name,
+       c.rate business_rate,
+       e1.equipcode pa,
+       e1.equipcode pb,
+       1 version_id       
+	  from circuit        c,
+	       equiplogicport l1,
+	       equipment      e1,
+	       equiplogicport l2,
+	       equipment      e2
+	 where c.portcode1 = l1.logicport
+	   and e1.equipcode = l1.equipcode
+	   and c.portcode2 = l2.logicport
+	   and e2.equipcode = l2.equipcode
+	   and c.sync_status !='ZT03'
+	   and e1.system_name=#tranSys#
+	 order by circuitcode
+  	</select>
+  	<select id="getTranSystemLst" resultClass="netres.model.ComboxDataModel">
+  		select distinct systemcode as id ,sysname as label from transsystem t 
+		order by systemcode
+  	</select>
+  	
+  	<select id="circuitRouteA_list" resultClass="java.util.HashMap" parameterClass="String">
+		  select ci.circuit_id,
+                ci.equip_name,
+                ci.equip_id,
+                ci.port_name,
+                ci.port_id,
+                ci.is_optical,
+                ci.port_rate,
+                ci.serial,
+                ci.slot_id,
+                ci.pa,
+                ci.pb,
+                ci.version,
+                ci.link_id,
+                decode(cn.cnt,null,0,cn.cnt) groupno
+                from 
+				(select distinct m.circuit_id,
+                m.equip_name,
+                m.equip_id,
+                m.port_name,
+                m.port_id,
+                m.is_optical,
+                m.port_rate,
+                m.serial,
+                m.slot_id,
+                m.pa,
+                m.pb,
+                m.version,
+                s.label link_id
+				  from (select t.circuitcode circuit_id,
+				               e.s_sbmc equip_name,
+				               t.equipcode equip_id,
+				               t.tp_id_a port_name,
+				               t.tp_id_a port_id,
+				               1 is_optical,
+				               t.real_rate port_rate,
+				               t.id serial,
+				               t.real_ts_a slot_id,
+				               t.ccid link_id,
+				               '' pa,
+				               '' pb,
+				               1 version
+				          from circuit_cc t, equipment e
+				         where t.equipcode = e.equipcode
+				           and e.system_name = #tranSys#
+				        union 
+				        select t.circuitcode circuit_id,
+				               e.s_sbmc equip_name,
+				               t.equipcode equip_id,
+				               t.tp_id_z port_name,
+				               t.tp_id_z port_id,
+				               1 is_optical,
+				               t.real_rate port_rate,
+				               t.id serial,
+				               t.real_ts_z slot_id,
+				               t.ccid link_id,
+				               '' pa,
+				               '' pb,
+				               1 version
+				          from circuit_cc t, equipment e
+				         where t.equipcode = e.equipcode
+				           and e.system_name =#tranSys# ) m,
+				       en_topolink s,
+				       cc c
+				 where ((s.aendptp = c.aptp or s.zendptp = c.aptp) or
+				       (s.aendptp = c.zptp or s.zendptp = c.zptp))
+				   and c.id = m.link_id
+				   and m.circuit_id in (select distinct c.circuitcode business_id
+				                          from circuit        c,
+				                               equiplogicport l1,
+				                               equipment      e1,
+				                               equiplogicport l2,
+				                               equipment      e2
+				                         where c.portcode1 = l1.logicport
+				                           and e1.equipcode = l1.equipcode
+				                           and c.portcode2 = l2.logicport
+				                           and e2.equipcode = l2.equipcode
+				                           and c.sync_status != 'ZT03'
+				                           and e1.system_name =#tranSys#
+				                        
+				                        )
+				 order by CIRCUIT_ID, SERIAL) ci,circuit_equipment_cnt cn
+				 where ci.circuit_id=cn.circuitcode(+)
+				 and ci.equip_id=cn.equipcode(+)
+  				order by ci.CIRCUIT_ID, GROUPNO, SERIAL
+  		<!--  
+		select distinct m.circuit_id,
+                m.equip_name,
+                m.equip_id,
+                m.groupno,
+                m.port_name,
+                m.port_id,
+                m.is_optical,
+                m.port_rate,
+                m.serial,
+                m.slot_id,
+                m.pa,
+                m.pb,
+                m.version,
+                s.label link_id
+  from (select t.circuitcode circuit_id,
+               e.s_sbmc equip_name,
+               t.equipcode equip_id,
+               0 groupno,
+               t.tp_id_a port_name,
+               t.tp_id_a port_id,
+               1 is_optical,
+               t.real_rate port_rate,
+               t.id serial,
+               t.real_ts_a slot_id,
+               t.ccid link_id,
+               '' pa,
+               '' pb,
+               1 version
+          from circuit_cc t, equipment e
+         where t.equipcode = e.equipcode
+           and e.system_name = #tranSys#
+        union
+        select t.circuitcode circuit_id,
+               e.s_sbmc equip_name,
+               t.equipcode equip_id,
+               0 groupno,
+               t.tp_id_z port_name,
+               t.tp_id_z port_id,
+               1 is_optical,
+               t.real_rate port_rate,
+               t.id serial,
+               t.real_ts_z slot_id,
+               t.ccid link_id,
+               '' pa,
+               '' pb,
+               1 version
+          from circuit_cc t, equipment e
+         where t.equipcode = e.equipcode
+           and e.system_name = #tranSys#) m,
+       en_topolink s,
+       cc c
+ where ((s.aendptp = c.aptp or s.zendptp = c.aptp) or
+       (s.aendptp = c.zptp or s.zendptp = c.zptp))
+   and c.id = m.link_id
+   and m.circuit_id in (select distinct c.circuitcode business_id
+                          from circuit        c,
+                               equiplogicport l1,
+                               equipment      e1,
+                               equiplogicport l2,
+                               equipment      e2
+                         where c.portcode1 = l1.logicport
+                           and e1.equipcode = l1.equipcode
+                           and c.portcode2 = l2.logicport
+                           and e2.equipcode = l2.equipcode
+                           and c.sync_status != 'ZT03'
+                           and e1.system_name =#tranSys#
+                        
+                        )
+ order by CIRCUIT_ID, GROUPNO, SERIAL
+ 	-->
+  	</select>
+  	
+  	<select id="getBusinessInfo" parameterClass="string" resultClass="string">
+  		select c.circuitcode || '==' || c.x_purpose
+  from circuit c
+ where c.circuitcode =
+       (select distinct t.circuitcode
+          from business_circuit t
+         where t.business_id = #business_name#)
+  	</select>
+  
+</sqlMap>

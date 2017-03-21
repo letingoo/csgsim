@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="366" height="252" 
+				layout="absolute" title="添加ODF子模块"  close="close()" showCloseButton="true"
+			    creationComplete="init()"
+				backgroundImage="@Embed(source='assets/images/popwindowbg.png')"
+				backgroundSize="100%" >
+	<mx:Script source="../actionscript/OdfPortWireconfig.as" />
+	<mx:Label x="70" y="78" text="起始模块:" width="59" height="20" textAlign="right"/>
+	<mx:ComboBox id="cmbStartA" x="131" y="76" width="122" labelField="label"/>
+	<mx:Label x="59" y="120" text="终止模块:" width="70" height="20" textAlign="right"/>
+	<mx:ComboBox id="cmbStartZ" x="131" y="118" width="122"/>
+	<mx:HBox id="buttomhbox"
+			 width="100%"
+			 height="100%"
+			 verticalAlign="middle"
+			 horizontalAlign="center"
+			 backgroundImage="@Embed(source='assets/images/popwindowbtnbg.png')"
+			 backgroundSize="100%" x="0" y="165">
+		<mx:Button label="确定" styleName="primary" click="save()" width="70"/>
+		<mx:HRule width="16" visible="false"/>
+		<mx:Button label="取消" styleName="secondary" click="close()" width="70"/>
+	</mx:HBox>
+	<mx:Label x="70" y="37" text="起始标签:" width="59" textAlign="right" />
+	<mx:TextInput x="131" y="35" width="122" id="txtlabel" restrict="a-z\A-Z\0-9" maxChars="3"/>
+</mx:TitleWindow>

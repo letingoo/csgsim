@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+				close="close()" width="650" height="472"
+				title="用户单位配置" showCloseButton="true"
+				creationComplete="init()">
+	<mx:RemoteObject id="to_configOperate" destination="userManager" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}"
+					 result="getConfigOperateHandler(event)"/>
+	<mx:RemoteObject id="to_notConfigOperate" destination="userManager" 
+					 showBusyCursor="true"
+					 endpoint="{ModelLocator.END_POINT}"
+					 result="getNotConfigOperateHandler(event)"/>
+	<mx:Script source="../../actionscript/comp/ConfigOperate.as"/>   
+		<mx:VBox width="100%" height="80%">
+			<mx:HBox width="100%" height="26" baseline="0" paddingTop="5" paddingBottom="0" >
+				<mx:Label text="未配置单位" width="50%" fontSize="14" fontWeight="bold" fontFamily="黑体" height="22"/>
+				<mx:Label width="50%" fontSize="14" text="已配置单位" fontWeight="bold" fontFamily="黑体"/>
+			</mx:HBox>
+			<mx:HBox width="100%" height="90%" paddingBottom="0" paddingTop="0">
+				<mx:DataGrid id="notseted" width="50%" height="85%" 
+							 dataProvider="{nOperateDepart}" 
+							 itemDoubleClick="notseted_itemDoubleClick()" 
+							 dropEnabled="true"
+							 doubleClickEnabled="true" alternatingItemColors="white">
+					<mx:columns>
+						<mx:DataGridColumn headerText="depart" id="ndepartCode" dataField="departCode" visible="false"/>
+						<mx:DataGridColumn headerText="调度中心" id="ndepartName" dataField="departName"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<mx:DataGrid id="seted" width="50%" height="85%" dataProvider="{operateDepart}" itemDoubleClick="seted_itemDoubleClick()" doubleClickEnabled="true" alternatingItemColors="white">
+					<mx:columns>
+						<mx:DataGridColumn headerText="depart" id="departCode" dataField="departCode" visible="false"/>
+						<mx:DataGridColumn headerText="调度中心" id="departName" dataField="departName"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:HBox>		
+		</mx:VBox>
+	<mx:HBox width="100%">
+		<mx:Spacer width="80%"/>
+		<mx:Button label="保存" click="save()" />
+		<mx:Spacer width="2%"/>
+		<mx:Button label="重置" click="operateReset()"/>
+		<mx:Spacer width="10%"/>
+	</mx:HBox>
+			<mx:HRule x="0" y="355" width="635" height="0"/>
+</mx:TitleWindow>
